@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// --- Firebase Imports ---
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+// --- Firebase Imports (Fix: Using ESM.sh URLs to ensure modular SDK exports are available in browser environment) ---
+import { initializeApp, getApps, getApp } from 'https://esm.sh/firebase@10.8.1/app';
+import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, query, orderBy, onSnapshot } from 'https://esm.sh/firebase@10.8.1/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://esm.sh/firebase@10.8.1/storage';
 
 // --- Data Types ---
 interface Recipe {
@@ -154,7 +155,6 @@ const CloudArchive = {
     }
   },
 
-  // Added missing deleteTrivia method to fix error in AdminView
   async deleteTrivia(id: string): Promise<void> {
     const provider = this.getProvider();
     if (provider === 'firebase') {
@@ -211,7 +211,6 @@ const CloudArchive = {
     }
   },
 
-  // Fallback direct getters (used when subscriptions aren't needed or for local mode)
   async getRecipes(): Promise<Recipe[]> {
     const data = localStorage.getItem('schafer_db_recipes');
     return data ? JSON.parse(data) : [];
@@ -387,6 +386,7 @@ const AdminView: React.FC<{
     if (!rawText.trim()) return;
     setIsMagicLoading(true);
     try {
+      // Fix: Follow @google/genai guidelines for initializing client and querying content
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -407,6 +407,7 @@ const AdminView: React.FC<{
           }
         }
       });
+      // Fix: Use the .text property directly as per latest SDK property definition
       const parsed = JSON.parse(response.text);
       setRecipeForm(prev => ({ ...prev, ...parsed }));
       setRawText('');
@@ -714,6 +715,8 @@ const App: React.FC = () => {
     activeProvider: CloudArchive.getProvider()
   });
 
+  const [loginName, setLoginName] = useState('');
+
   // Filters
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -740,12 +743,13 @@ const App: React.FC = () => {
     setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
   }, [recipes, trivia, gallery]);
 
-  const handleLogin = (name: string) => {
-    // Fixed: Added missing 'id' property to satisfy UserProfile interface
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginName.trim()) return;
     const u: UserProfile = { 
       id: 'u' + Date.now(),
-      name, 
-      picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}` 
+      name: loginName, 
+      picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${loginName}` 
     };
     localStorage.setItem('schafer_user', JSON.stringify(u));
     setCurrentUser(u);
@@ -762,13 +766,57 @@ const App: React.FC = () => {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-8">
-        <div className="bg-white rounded-[4rem] p-16 w-full max-w-lg shadow-2xl text-center">
-          <img src={LOGO_URL} className="w-24 h-24 rounded-full mx-auto mb-10 object-cover shadow-xl border-4 border-white" />
-          <h1 className="text-4xl font-serif italic text-[#2D4635] mb-2">The Archive</h1>
-          <p className="text-stone-400 mb-12 italic font-serif">Welcome back to the table, Schafer.</p>
-          <input id="loginName" placeholder="Your Family Name" className="w-full p-5 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none mb-6" onKeyPress={e => e.key === 'Enter' && handleLogin((e.target as HTMLInputElement).value)} />
-          <button onClick={() => { const v = (document.getElementById('loginName') as HTMLInputElement).value; if(v) handleLogin(v); }} className="w-full py-5 bg-[#2D4635] text-white rounded-full font-black uppercase tracking-[0.4em] text-[11px] shadow-2xl">Enter Legacy</button>
+      <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-6">
+        <div className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-800 via-orange-300 to-emerald-800" />
+          
+          <div className="relative mb-12">
+            <div className="w-24 h-24 bg-stone-100 rounded-full mx-auto relative overflow-hidden border-4 border-white shadow-2xl group transition-all">
+              {loginName ? (
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${loginName}`} 
+                  className="w-full h-full object-cover animate-in fade-in zoom-in" 
+                  alt="Identity"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-stone-300 text-3xl font-serif">?</div>
+              )}
+            </div>
+            <div className="mt-8">
+              <h1 className="text-4xl font-serif italic text-[#2D4635] mb-2">Identify Yourself</h1>
+              <p className="text-stone-400 italic font-serif text-sm">Welcome to the Schafer Family Archive.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="space-y-8 relative z-10">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Legacy Contributor Name</label>
+              <input 
+                autoFocus
+                type="text"
+                placeholder="e.g. Grandma Joan" 
+                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner" 
+                value={loginName}
+                onChange={e => setLoginName(e.target.value)}
+              />
+            </div>
+            
+            <button 
+              type="submit"
+              disabled={!loginName.trim()}
+              className="w-full py-6 bg-[#2D4635] text-white rounded-full font-black uppercase tracking-[0.5em] text-[11px] shadow-2xl disabled:opacity-30 disabled:translate-y-0 transition-all active:scale-95 hover:bg-[#1e3023] hover:-translate-y-1"
+            >
+              Enter the Vault
+            </button>
+            
+            <div className="pt-4">
+              <p className="text-[9px] uppercase tracking-widest text-stone-300 font-bold">Provenance & Legacy • Established 1954</p>
+            </div>
+          </form>
+
+          {/* Decorative Corner Elements */}
+          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-stone-50 rounded-full opacity-50" />
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-stone-50 rounded-full opacity-50" />
         </div>
       </div>
     );
