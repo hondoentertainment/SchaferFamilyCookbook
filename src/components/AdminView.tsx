@@ -24,6 +24,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [galleryFile, setGalleryFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfig, setShowConfig] = useState(false);
@@ -39,9 +40,25 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [fbConfig, setFbConfig] = useState(() => JSON.parse(localStorage.getItem('schafer_firebase_config') || '{"apiKey":"","projectId":""}'));
 
     useEffect(() => {
-        if (editingRecipe) setRecipeForm(editingRecipe);
-        else setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
+        if (editingRecipe) {
+            setRecipeForm(editingRecipe);
+            setPreviewUrl(editingRecipe.image);
+        } else {
+            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
+            setPreviewUrl(null);
+        }
+        setRecipeFile(null);
     }, [editingRecipe]);
+
+    useEffect(() => {
+        if (!recipeFile) {
+            if (!editingRecipe) setPreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(recipeFile);
+        setPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [recipeFile, editingRecipe]);
 
     const handleMagicImport = async () => {
         if (!rawText.trim()) return;
@@ -96,7 +113,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             });
             const b64 = response.image?.image64;
             if (b64) {
-                setRecipeForm(prev => ({ ...prev, image: `data:image/png;base64,${b64}` }));
+                const dataUrl = `data:image/png;base64,${b64}`;
+                setRecipeForm(prev => ({ ...prev, image: dataUrl }));
+                setPreviewUrl(dataUrl);
                 setRecipeFile(null);
             }
         } catch (e: any) {
@@ -248,14 +267,26 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
+
+                                    {previewUrl && (
+                                        <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner group">
+                                            <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-white">Current Heritage Photo</p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="relative group">
                                         <input type="file" accept="image/*" onChange={e => setRecipeFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                                        <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all">
-                                            <span className="text-lg">📷</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">{recipeFile ? recipeFile.name : recipeForm.image?.startsWith('data:') ? 'AI Image Generated' : 'Upload Heritage Photo'}</span>
+                                        <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
+                                            <span className="text-lg">📁</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                {recipeFile ? recipeFile.name : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
+                                            </span>
                                         </div>
                                     </div>
-                                    <button type="button" onClick={handleGenerateImage} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2">
+                                    <button type="button" onClick={handleGenerateImage} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
                                         {isGeneratingImage ? 'Generating Deliciousness...' : '✨ Generate Photo with AI'}
                                     </button>
                                 </div>
