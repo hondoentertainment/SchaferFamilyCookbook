@@ -43,6 +43,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
 
+    const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
+
     // Cloud Config state
     const [provider, setProvider] = useState<'local' | 'firebase'>(dbStats.activeProvider === 'firebase' ? 'firebase' : 'local');
     const [fbConfig, setFbConfig] = useState(() => JSON.parse(localStorage.getItem('schafer_firebase_config') || '{"apiKey":"","projectId":""}'));
@@ -156,51 +158,53 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="max-w-7xl mx-auto px-6 py-12 space-y-20">
-                {/* Permissions & Admin Management */}
-                <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
-                    <div className="relative z-10">
-                        <h3 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
-                            <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">🔐</span>
-                            Admin & Permissions
-                        </h3>
-                        <div className="grid md:grid-cols-2 gap-12">
-                            <div className="space-y-6">
-                                <p className="text-stone-500 text-sm leading-relaxed">Promote family members to admin status by their legacy name.</p>
-                                <div className="flex gap-4">
-                                    <input type="text" placeholder="Enter name (e.g. Aunt Mary)" className="flex-1 px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} />
-                                    <button onClick={() => {
-                                        if (!newAdminName.trim()) return;
-                                        const name = newAdminName.trim();
-                                        const profile = props.contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
-                                        onUpdateContributor({
-                                            id: profile?.id || 'c_' + Date.now(),
-                                            name: profile?.name || name,
-                                            avatar: profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-                                            role: 'admin'
-                                        });
-                                        setNewAdminName('');
-                                        alert(`${name} has been promoted.`);
-                                    }} className="px-8 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">Grant Access</button>
+                {/* Permissions & Admin Management - Restricted to Super Admins */}
+                {isSuperAdmin && (
+                    <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+                        <div className="relative z-10">
+                            <h3 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
+                                <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">🔐</span>
+                                Admin & Permissions
+                            </h3>
+                            <div className="grid md:grid-cols-2 gap-12">
+                                <div className="space-y-6">
+                                    <p className="text-stone-500 text-sm leading-relaxed">Promote family members to admin status by their legacy name.</p>
+                                    <div className="flex gap-4">
+                                        <input type="text" placeholder="Enter name (e.g. Aunt Mary)" className="flex-1 px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} />
+                                        <button onClick={() => {
+                                            if (!newAdminName.trim()) return;
+                                            const name = newAdminName.trim();
+                                            const profile = props.contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
+                                            onUpdateContributor({
+                                                id: profile?.id || 'c_' + Date.now(),
+                                                name: profile?.name || name,
+                                                avatar: profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+                                                role: 'admin'
+                                            });
+                                            setNewAdminName('');
+                                            alert(`${name} has been promoted.`);
+                                        }} className="px-8 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">Grant Access</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Current Administrators</h4>
-                                <div className="flex flex-wrap gap-3">
-                                    {props.contributors.filter(c => c.role === 'admin').map(admin => (
-                                        <div key={admin.id} className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-full border border-stone-100 group">
-                                            <img src={admin.avatar} className="w-6 h-6 rounded-full border border-white" alt={admin.name} />
-                                            <span className="text-xs font-bold text-stone-600">{admin.name}</span>
-                                            {admin.name.toLowerCase() !== 'admin' && (
-                                                <button onClick={() => { if (confirm(`Revoke admin access for ${admin.name}?`)) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-4 h-4 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>
-                                            )}
-                                        </div>
-                                    ))}
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Current Administrators</h4>
+                                    <div className="flex flex-wrap gap-3">
+                                        {props.contributors.filter(c => c.role === 'admin').map(admin => (
+                                            <div key={admin.id} className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-full border border-stone-100 group">
+                                                <img src={admin.avatar} className="w-6 h-6 rounded-full border border-white" alt={admin.name} />
+                                                <span className="text-xs font-bold text-stone-600">{admin.name}</span>
+                                                {admin.name.toLowerCase() !== 'admin' && (
+                                                    <button onClick={() => { if (confirm(`Revoke admin access for ${admin.name}?`)) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-4 h-4 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                )}
 
                 <div className="bg-white rounded-[3rem] p-8 md:p-12 border border-stone-100 shadow-xl overflow-hidden relative">
                     <div className="flex justify-between items-center mb-12">
@@ -353,9 +357,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <div className="flex gap-2">
                                         <span onClick={(e) => { e.stopPropagation(); const url = prompt(`Enter new avatar URL for ${name}:`, avatar); if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role }); }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
                                         {role === 'admin' ? (
-                                            <span onClick={(e) => { e.stopPropagation(); if (confirm(`Revoke admin access for ${name}?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' }); }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
+                                            <span onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
+                                                if (confirm(`Revoke admin access for ${name}?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
+                                            }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
                                         ) : (
-                                            <span onClick={(e) => { e.stopPropagation(); if (confirm(`Promote ${name} to Administrator?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' }); }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
+                                            <span onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
+                                                if (confirm(`Promote ${name} to Administrator?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
+                                            }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
                                         )}
                                     </div>
                                 </div>

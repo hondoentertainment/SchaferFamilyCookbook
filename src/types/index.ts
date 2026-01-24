@@ -36,6 +36,7 @@ export interface UserProfile {
   name: string;
   picture: string;
   role: 'admin' | 'user';
+  email?: string;
 }
 
 export interface DBStats {
@@ -51,4 +52,5 @@ export interface ContributorProfile {
   name: string;
   avatar: string;
   role: 'admin' | 'user';
+  email?: string;
 }

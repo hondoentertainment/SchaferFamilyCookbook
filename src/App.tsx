@@ -20,10 +20,13 @@ const App: React.FC = () => {
         if (!s) return null;
         try {
             const u = JSON.parse(s);
-            if (!u.role) {
+            // Super Admin Auto-assign
+            if (u.name.toLowerCase() === 'kyle' || u.email === 'hondo4185@gmail.com') {
+                u.role = 'admin';
+            } else if (!u.role) {
                 u.role = (u.name.toLowerCase() === 'admin' ? 'admin' : 'user');
-                localStorage.setItem('schafer_user', JSON.stringify(u));
             }
+            localStorage.setItem('schafer_user', JSON.stringify(u));
             return u;
         } catch (e) {
             return null;
@@ -76,13 +79,19 @@ const App: React.FC = () => {
         if (!loginName.trim()) return;
 
         // Check if we have a stored profile for this person
-        const existing = contributors.find(c => c.name.toLowerCase() === loginName.toLowerCase());
+        const name = loginName.trim();
+        const existing = contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
+
+        // Super Admin Detection
+        const isSuper = name.toLowerCase() === 'kyle' || name.toLowerCase() === 'hondo4185@gmail.com';
+        const email = isSuper && name.includes('@') ? name : (existing?.email);
 
         const u: UserProfile = {
             id: existing?.id || 'u' + Date.now(),
-            name: existing?.name || loginName, // Use canonical capitalization if found
-            picture: existing?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${loginName}`,
-            role: (existing?.role as any) || (loginName.toLowerCase() === 'admin' ? 'admin' : 'user')
+            name: existing?.name || name,
+            picture: existing?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+            role: isSuper ? 'admin' : ((existing?.role as any) || (name.toLowerCase() === 'admin' ? 'admin' : 'user')),
+            email: email
         };
         localStorage.setItem('schafer_user', JSON.stringify(u));
         setCurrentUser(u);
