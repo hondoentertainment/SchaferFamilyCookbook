@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, Recipe, HistoryEntry } from '../types';
+import { CATEGORY_IMAGES } from '../constants';
 
 interface ProfileViewProps {
     currentUser: UserProfile;
@@ -85,7 +86,14 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     <div className="space-y-4">
                         {userRecipes.map(recipe => (
                             <div key={recipe.id} className="bg-white p-6 rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-6 group hover:shadow-md transition-all">
-                                <img src={recipe.image} className="w-20 h-20 rounded-2xl object-cover shadow-sm" alt={recipe.title} />
+                                <img
+                                    src={recipe.image}
+                                    className="w-20 h-20 rounded-2xl object-cover shadow-sm"
+                                    alt={recipe.title}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
+                                    }}
+                                />
                                 <div className="flex-1">
                                     <h4 className="font-serif italic text-[#2D4635] text-xl">{recipe.title}</h4>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
