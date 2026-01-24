@@ -54,3 +54,12 @@ export interface ContributorProfile {
   role: 'admin' | 'user';
   email?: string;
 }
+
+export interface HistoryEntry {
+  id: string;
+  contributor: string;
+  action: 'added' | 'updated' | 'deleted';
+  type: 'recipe' | 'gallery' | 'trivia';
+  itemName: string;
+  timestamp: string;
+}

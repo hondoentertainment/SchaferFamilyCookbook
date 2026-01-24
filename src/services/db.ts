@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, collection, setDoc, doc, deleteDoc, query, orderBy, onSnapshot, Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
-import { Recipe, GalleryItem, Trivia, ContributorProfile } from '../types';
+import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
 import defaultRecipes from '../data/recipes.json';
 
 export const CloudArchive = {
@@ -65,6 +65,15 @@ export const CloudArchive = {
         });
     },
 
+    subscribeHistory(callback: (history: HistoryEntry[]) => void) {
+        const fb = this.getFirebase();
+        if (!fb) return () => { };
+        const q = query(collection(fb.db, "history"), orderBy("timestamp", "desc"));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(doc => doc.data() as HistoryEntry));
+        });
+    },
+
     async uploadFile(file: File, folder: string): Promise<string | null> {
         const provider = this.getProvider();
         if (provider !== 'firebase') return null;
@@ -113,13 +122,24 @@ export const CloudArchive = {
         }
     },
 
-    async upsertRecipe(recipe: Recipe): Promise<void> {
+    async upsertRecipe(recipe: Recipe, contributorName?: string): Promise<void> {
         const provider = this.getProvider();
         const payload = { ...recipe, created_at: recipe.created_at || new Date().toISOString() };
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
+            const isNew = !(await this.getRecipes()).find(r => r.id === recipe.id);
             await setDoc(doc(fb.db, "recipes", recipe.id), payload);
+            if (contributorName) {
+                await this.addHistoryEntry({
+                    id: 'h' + Date.now(),
+                    contributor: contributorName,
+                    action: isNew ? 'added' : 'updated',
+                    type: 'recipe',
+                    itemName: recipe.title,
+                    timestamp: new Date().toISOString()
+                });
+            }
         } else {
             const current = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
             const index = current.findIndex((r: any) => r.id === recipe.id);
@@ -218,5 +238,23 @@ export const CloudArchive = {
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as ContributorProfile));
         });
+    },
+
+    async addHistoryEntry(entry: HistoryEntry): Promise<void> {
+        const provider = this.getProvider();
+        if (provider === 'firebase') {
+            const fb = this.getFirebase();
+            if (!fb) return;
+            await setDoc(doc(fb.db, "history", entry.id), entry);
+        } else {
+            const current = JSON.parse(localStorage.getItem('schafer_db_history') || '[]');
+            current.unshift(entry);
+            localStorage.setItem('schafer_db_history', JSON.stringify(current.slice(0, 100))); // Keep last 100
+        }
+    },
+
+    async getHistory(): Promise<HistoryEntry[]> {
+        const data = localStorage.getItem('schafer_db_history');
+        return data ? JSON.parse(data) : [];
     }
 };

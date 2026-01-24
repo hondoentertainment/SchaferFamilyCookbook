@@ -6,6 +6,8 @@ import { RecipeModal } from './components/RecipeModal';
 import { AdminView } from './components/AdminView';
 import { AlphabeticalIndex } from './components/AlphabeticalIndex';
 import { ContributorsView } from './components/ContributorsView';
+import { ProfileView } from './components/ProfileView';
+import { HistoryEntry } from './types';
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
@@ -13,6 +15,7 @@ const App: React.FC = () => {
     const [gallery, setGallery] = useState<GalleryItem[]>([]);
     const [trivia, setTrivia] = useState<Trivia[]>([]);
     const [contributors, setContributors] = useState<ContributorProfile[]>([]);
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
     const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
@@ -60,6 +63,7 @@ const App: React.FC = () => {
             CloudArchive.getTrivia().then(setTrivia);
             CloudArchive.getGallery().then(setGallery);
             CloudArchive.getContributors().then(setContributors);
+            CloudArchive.getHistory().then(setHistory);
             return;
         }
 
@@ -67,7 +71,8 @@ const App: React.FC = () => {
         const unsubT = CloudArchive.subscribeTrivia(setTrivia);
         const unsubG = CloudArchive.subscribeGallery(setGallery);
         const unsubC = CloudArchive.subscribeContributors(setContributors);
-        return () => { unsubR(); unsubT(); unsubG(); unsubC(); };
+        const unsubH = CloudArchive.subscribeHistory(setHistory);
+        return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); };
     }, []);
 
     useEffect(() => {
@@ -358,7 +363,7 @@ const App: React.FC = () => {
                     dbStats={dbStats}
                     onAddRecipe={async (r, f) => {
                         const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
-                        await CloudArchive.upsertRecipe({ ...r, image: url || r.image });
+                        await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
                     }}
                     onAddGallery={async (g, f) => {
                         const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
@@ -397,6 +402,30 @@ const App: React.FC = () => {
                         </p>
                     </div>
                 </div>
+            )}
+
+            {tab === 'Profile' && currentUser && (
+                <ProfileView
+                    currentUser={currentUser}
+                    userRecipes={recipes.filter(r => r.contributor === currentUser.name)}
+                    userHistory={history.filter(h => h.contributor === currentUser.name)}
+                    onUpdateProfile={async (name, avatar) => {
+                        const updatedUser = { ...currentUser, name, picture: avatar };
+                        setCurrentUser(updatedUser);
+                        localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                        await CloudArchive.upsertContributor({
+                            id: currentUser.id,
+                            name,
+                            avatar,
+                            role: currentUser.role,
+                            email: currentUser.email
+                        });
+                    }}
+                    onEditRecipe={(recipe) => {
+                        setEditingRecipe(recipe);
+                        setTab('Admin');
+                    }}
+                />
             )}
         </div>
     );
