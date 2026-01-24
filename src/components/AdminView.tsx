@@ -352,7 +352,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
                                     <div className="flex gap-2">
                                         <span onClick={(e) => { e.stopPropagation(); const url = prompt(`Enter new avatar URL for ${name}:`, avatar); if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role }); }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
-                                        <span onClick={(e) => { e.stopPropagation(); const newRole = role === 'admin' ? 'user' : 'admin'; onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: newRole }); }} className={`text-[9px] uppercase tracking-widest ${role === 'admin' ? 'text-orange-500 font-bold' : 'text-stone-400'} hover:font-bold`}>{role}</span>
+                                        {role === 'admin' ? (
+                                            <span onClick={(e) => { e.stopPropagation(); if (confirm(`Revoke admin access for ${name}?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' }); }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
+                                        ) : (
+                                            <span onClick={(e) => { e.stopPropagation(); if (confirm(`Promote ${name} to Administrator?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' }); }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
+                                        )}
                                     </div>
                                 </div>
                             );

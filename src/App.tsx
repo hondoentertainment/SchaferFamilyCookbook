@@ -361,9 +361,32 @@ const App: React.FC = () => {
                 />
             )}
             {tab === 'Admin' && currentUser.role !== 'admin' && (
-                <div className="py-20 text-center space-y-4">
-                    <span className="text-4xl">🚫</span>
-                    <p className="font-serif italic text-stone-400">Access Denied. Admins only.</p>
+                <div className="max-w-4xl mx-auto py-20 px-6 space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                    <div className="text-center space-y-6">
+                        <div className="w-24 h-24 bg-orange-50 rounded-full mx-auto flex items-center justify-center text-4xl shadow-inner border border-stone-100">🔐</div>
+                        <h2 className="text-5xl font-serif italic text-[#2D4635]">Meet your Administrators</h2>
+                        <p className="text-stone-400 font-serif max-w-lg mx-auto italic">
+                            These family members help maintain the archive, organize heritage recipes, and verify memories.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                        {contributors.filter(c => c.role === 'admin').map(admin => (
+                            <div key={admin.id} className="bg-white p-8 rounded-[3rem] border border-stone-100 shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-xl hover:scale-105">
+                                <img src={admin.avatar} className="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-stone-50" alt={admin.name} />
+                                <div className="text-center">
+                                    <h4 className="font-serif italic text-[#2D4635] text-xl leading-none">{admin.name}</h4>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Legacy Custodian</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="pt-12 border-t border-stone-50 text-center">
+                        <p className="text-stone-400 text-xs italic">
+                            Need administrative access? Contact one of the curators above to be promoted.
+                        </p>
+                    </div>
                 </div>
             )}
         </div>
