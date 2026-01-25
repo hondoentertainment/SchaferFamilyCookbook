@@ -34,6 +34,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
+    const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory'>('records');
 
     const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
 
@@ -169,16 +170,37 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="max-w-7xl mx-auto px-6 py-12 space-y-20">
-                {/* Permissions & Admin Management - Restricted to Super Admins */}
-                {isSuperAdmin && (
-                    <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden">
+            <div className="max-w-7xl mx-auto px-6 py-12 space-y-12">
+                {/* Sub-navigation bar */}
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-8 bg-white/50 backdrop-blur p-2 rounded-full border border-stone-100 shadow-sm sticky top-24 z-40">
+                    {[
+                        { id: 'records', label: '📖 New Heritage Record' },
+                        { id: 'gallery', label: '🖼️ Family Archive' },
+                        { id: 'trivia', label: '💡 Family Trivia' },
+                        { id: 'directory', label: '👥 Family Directory & Avatars' },
+                        { id: 'permissions', label: '🔐 Admin & Permissions', restricted: true },
+                    ].map(tab => (
+                        (!tab.restricted || isSuperAdmin) && (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveSubtab(tab.id as any)}
+                                className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${activeSubtab === tab.id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-white'}`}
+                            >
+                                {tab.label}
+                            </button>
+                        )
+                    ))}
+                </div>
+
+                {/* Permissions & Admin Management */}
+                {activeSubtab === 'permissions' && isSuperAdmin && (
+                    <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
                         <div className="relative z-10">
-                            <h3 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
+                            <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
                                 <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">🔐</span>
                                 Admin & Permissions
-                            </h3>
+                            </h2>
                             <div className="grid md:grid-cols-2 gap-12">
                                 <div className="space-y-6">
                                     <p className="text-stone-500 text-sm leading-relaxed">Promote family members to admin status by their legacy name.</p>
@@ -218,202 +240,214 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     </section>
                 )}
 
-                <div className="bg-white rounded-[3rem] p-8 md:p-12 border border-stone-100 shadow-xl overflow-hidden relative">
-                    <div className="flex justify-between items-center mb-12">
-                        <h2 className="text-3xl font-serif italic text-[#2D4635]">Archive Command</h2>
-                        <button onClick={() => setShowConfig(!showConfig)} className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-[#2D4635] flex items-center gap-2">
-                            {showConfig ? '✕ Close Setup' : '⚙️ Cloud Setup'}
-                        </button>
-                    </div>
-
-                    {showConfig && (
-                        <div className="mb-12 p-10 bg-stone-50/50 rounded-[3rem] border border-stone-100">
-                            <h3 className="text-xl font-serif italic text-[#2D4635] mb-6">Database Vault Configuration</h3>
-                            <div className="space-y-6">
-                                <div className="flex gap-4 p-1 bg-white rounded-2xl border border-stone-100">
-                                    {['local', 'firebase'].map((p: any) => (
-                                        <button key={p} onClick={() => setProvider(p)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${provider === p ? 'bg-[#2D4635] text-white shadow-md' : 'text-stone-400'}`}>
-                                            {p}
-                                        </button>
-                                    ))}
-                                </div>
-                                {provider === 'firebase' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Firebase API Key</label>
-                                            <input type="password" value={fbConfig.apiKey} onChange={e => setFbConfig({ ...fbConfig, apiKey: e.target.value })} className="w-full p-4 border border-stone-200 rounded-2xl text-xs bg-white" placeholder="AIzaSy..." />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Project ID</label>
-                                            <input value={fbConfig.projectId} onChange={e => setFbConfig({ ...fbConfig, projectId: e.target.value })} className="w-full p-4 border border-stone-200 rounded-2xl text-xs bg-white" placeholder="schafer-archive-..." />
-                                        </div>
-                                    </div>
-                                )}
-                                <button onClick={saveConfig} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Update Cloud Settings</button>
-                            </div>
+                {(activeSubtab === 'records' || activeSubtab === 'gallery' || activeSubtab === 'trivia') && (
+                    <div className="bg-white rounded-[3rem] p-8 md:p-12 border border-stone-100 shadow-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex justify-between items-center mb-12">
+                            <h2 className="text-3xl font-serif italic text-[#2D4635]">
+                                {activeSubtab === 'records' ? 'New Heritage Record' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
+                            </h2>
+                            <button onClick={() => setShowConfig(!showConfig)} className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-[#2D4635] flex items-center gap-2">
+                                {showConfig ? '✕ Close Setup' : '⚙️ Cloud Setup'}
+                            </button>
                         </div>
-                    )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                        <section className="space-y-8">
-                            <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
-                                <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">📖</span>
-                                {editingRecipe ? 'Edit Archival Entry' : 'New Heritage Record'}
-                            </h3>
-                            {!editingRecipe && (
-                                <div className="space-y-4">
-                                    <textarea placeholder="Paste raw recipe text here..." className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-sm bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
-                                    <button onClick={handleMagicImport} disabled={isMagicLoading} className="w-full py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
-                                        {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
-                                    </button>
-                                </div>
-                            )}
-                            <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
-
-                                    {previewUrl && (
-                                        <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner group">
-                                            <img
-                                                src={previewUrl}
-                                                className="w-full h-full object-cover"
-                                                alt="Preview"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic;
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white">Current Heritage Photo</p>
+                        {showConfig && (
+                            <div className="mb-12 p-10 bg-stone-50/50 rounded-[3rem] border border-stone-100">
+                                <h3 className="text-xl font-serif italic text-[#2D4635] mb-6">Database Vault Configuration</h3>
+                                <div className="space-y-6">
+                                    <div className="flex gap-4 p-1 bg-white rounded-2xl border border-stone-100">
+                                        {['local', 'firebase'].map((p: any) => (
+                                            <button key={p} onClick={() => setProvider(p)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${provider === p ? 'bg-[#2D4635] text-white shadow-md' : 'text-stone-400'}`}>
+                                                {p}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {provider === 'firebase' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Firebase API Key</label>
+                                                <input type="password" value={fbConfig.apiKey} onChange={e => setFbConfig({ ...fbConfig, apiKey: e.target.value })} className="w-full p-4 border border-stone-200 rounded-2xl text-xs bg-white" placeholder="AIzaSy..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Project ID</label>
+                                                <input value={fbConfig.projectId} onChange={e => setFbConfig({ ...fbConfig, projectId: e.target.value })} className="w-full p-4 border border-stone-200 rounded-2xl text-xs bg-white" placeholder="schafer-archive-..." />
                                             </div>
                                         </div>
                                     )}
+                                    <button onClick={saveConfig} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Update Cloud Settings</button>
+                                </div>
+                            </div>
+                        )}
 
-                                    <div className="relative group">
-                                        <input type="file" accept="image/*" onChange={e => setRecipeFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                                        <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
-                                            <span className="text-lg">📁</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">
-                                                {recipeFile ? recipeFile.name : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
-                                            </span>
+                        <div className="grid grid-cols-1 gap-16">
+                            {activeSubtab === 'records' && (
+                                <section className="space-y-8 animate-in fade-in">
+                                    <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
+                                        <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">📖</span>
+                                        {editingRecipe ? 'Edit Archival Entry' : 'New Heritage Record'}
+                                    </h3>
+                                    {!editingRecipe && (
+                                        <div className="space-y-4">
+                                            <textarea placeholder="Paste raw recipe text here..." className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-sm bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
+                                            <button onClick={handleMagicImport} disabled={isMagicLoading} className="w-full py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
+                                                {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
+                                            </button>
                                         </div>
-                                    </div>
-                                    <button type="button" onClick={handleGenerateImage} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
-                                        {isGeneratingImage ? 'Generating Deliciousness...' : '✨ Generate Photo with AI'}
-                                    </button>
-                                </div>
-                                <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <select className="p-4 border border-stone-200 rounded-2xl text-sm bg-white" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
-                                        {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
-                                    </select>
-                                    <input placeholder="Prep Time" className="p-4 border border-stone-200 rounded-2xl text-sm" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
-                                </div>
-                                <textarea placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
-                                <textarea placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
-                                <div className="flex gap-4">
-                                    <button type="submit" disabled={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                        {isSubmitting ? 'Archiving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
-                                    </button>
-                                    {editingRecipe && <button type="button" onClick={clearEditing} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400">Cancel</button>}
-                                </div>
-                            </form>
-                        </section>
-                        <div className="space-y-16">
-                            <section className="space-y-6">
-                                <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
-                                    <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">🖼️</span>
-                                    Family Gallery
-                                </h3>
-                                <form onSubmit={handleGallerySubmit} className="space-y-4">
-                                    <div className="relative group">
-                                        <input type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                                        <div className="w-full h-32 border-2 border-dashed border-stone-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-stone-300 group-hover:border-[#A0522D] group-hover:text-[#A0522D] transition-all">
-                                            <span className="text-3xl">🏞️</span>
-                                            <span className="text-[9px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Photo or Video'}</span>
+                                    )}
+                                    <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
+
+                                            {previewUrl && (
+                                                <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner group">
+                                                    <img
+                                                        src={previewUrl}
+                                                        className="w-full h-full object-cover"
+                                                        alt="Preview"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic;
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-white">Current Heritage Photo</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="relative group">
+                                                <input type="file" accept="image/*" onChange={e => setRecipeFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                                                <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
+                                                    <span className="text-lg">📁</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">
+                                                        {recipeFile ? recipeFile.name : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <button type="button" onClick={handleGenerateImage} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
+                                                {isGeneratingImage ? 'Generating Deliciousness...' : '✨ Generate Photo with AI'}
+                                            </button>
                                         </div>
-                                    </div>
-                                    <input placeholder="Short caption..." className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
-                                    <button type="submit" disabled={!galleryFile || isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-                                        {isSubmitting ? 'Uploading...' : 'Upload Memory'}
-                                    </button>
-                                </form>
-                            </section>
-                            <section className="space-y-6">
-                                <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
-                                    <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">💡</span>
-                                    Family Trivia
-                                </h3>
-                                <form onSubmit={async (e) => { e.preventDefault(); if (!triviaForm.question) return; await onAddTrivia(triviaForm as Trivia); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }) }} className="space-y-4">
-                                    <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {triviaForm.options?.map((opt, i) => (
-                                            <input key={i} placeholder={`Opt ${i + 1}`} className="p-3 border border-stone-200 rounded-xl text-xs" value={opt} onChange={e => { const n = [...(triviaForm.options || [])]; n[i] = e.target.value; setTriviaForm({ ...triviaForm, options: n }) }} />
+                                        <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <select className="p-4 border border-stone-200 rounded-2xl text-sm bg-white" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
+                                                {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
+                                            </select>
+                                            <input placeholder="Prep Time" className="p-4 border border-stone-200 rounded-2xl text-sm" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
+                                        </div>
+                                        <textarea placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
+                                        <textarea placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
+                                        <div className="flex gap-4">
+                                            <button type="submit" disabled={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
+                                                {isSubmitting ? 'Archiving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
+                                            </button>
+                                            {editingRecipe && <button type="button" onClick={clearEditing} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400">Cancel</button>}
+                                        </div>
+                                    </form>
+                                </section>
+                            )}
+
+                            {activeSubtab === 'gallery' && (
+                                <section className="space-y-6 animate-in fade-in">
+                                    <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
+                                        <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">🖼️</span>
+                                        Family Archive
+                                    </h3>
+                                    <form onSubmit={handleGallerySubmit} className="space-y-4">
+                                        <div className="relative group">
+                                            <input type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                                            <div className="w-full h-32 border-2 border-dashed border-stone-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-stone-300 group-hover:border-[#A0522D] group-hover:text-[#A0522D] transition-all">
+                                                <span className="text-3xl">🏞️</span>
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Photo or Video'}</span>
+                                            </div>
+                                        </div>
+                                        <input placeholder="Short caption..." className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
+                                        <button type="submit" disabled={!galleryFile || isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                            {isSubmitting ? 'Uploading...' : 'Upload Memory'}
+                                        </button>
+                                    </form>
+                                </section>
+                            )}
+
+                            {activeSubtab === 'trivia' && (
+                                <section className="space-y-6 animate-in fade-in">
+                                    <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
+                                        <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">💡</span>
+                                        Family Trivia
+                                    </h3>
+                                    <form onSubmit={async (e) => { e.preventDefault(); if (!triviaForm.question) return; await onAddTrivia(triviaForm as Trivia); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }) }} className="space-y-4">
+                                        <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {triviaForm.options?.map((opt, i) => (
+                                                <input key={i} placeholder={`Opt ${i + 1}`} className="p-3 border border-stone-200 rounded-xl text-xs" value={opt} onChange={e => { const n = [...(triviaForm.options || [])]; n[i] = e.target.value; setTriviaForm({ ...triviaForm, options: n }) }} />
+                                            ))}
+                                        </div>
+                                        <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-sm font-bold bg-stone-50" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
+                                        <button type="submit" className="w-full py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">Add Question</button>
+                                    </form>
+                                    <div className="pt-8 border-t border-stone-100 max-h-96 overflow-y-auto custom-scrollbar">
+                                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-4">Current Questions</h4>
+                                        {trivia.map(t => (
+                                            <div key={t.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl mb-2 group">
+                                                <span className="text-xs truncate">{t.question}</span>
+                                                <button onClick={() => onDeleteTrivia(t.id)} className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                                            </div>
                                         ))}
                                     </div>
-                                    <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-sm font-bold bg-stone-50" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
-                                    <button type="submit" className="w-full py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">Add Question</button>
-                                </form>
-                                <div className="pt-8 border-t border-stone-100 max-h-60 overflow-y-auto custom-scrollbar">
-                                    <h4 className="text-[10px] font-black uppercase text-stone-400 mb-4">Current Questions</h4>
-                                    {trivia.map(t => (
-                                        <div key={t.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl mb-2 group">
-                                            <span className="text-xs truncate">{t.question}</span>
-                                            <button onClick={() => onDeleteTrivia(t.id)} className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
+                                </section>
+                            )}
                         </div>
                     </div>
-                </div>
+                )}
 
-                <section className="mt-16 pt-16 border-t border-stone-100">
-                    <h3 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
-                        <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">👥</span>
-                        Family Directory & Avatars
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                        {Array.from(new Set([
-                            ...(props.recipes || []).map(r => r.contributor),
-                            ...(props.trivia || []).map(t => t.contributor),
-                            ...(props.contributors || []).map(c => c.name)
-                        ].filter(Boolean))).sort().map(name => {
-                            const profile = contributors.find(c => c.name === name);
-                            const avatar = profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
-                            const role = profile?.role || 'user';
-                            return (
-                                <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-3xl border border-stone-100 hover:shadow-lg transition-all cursor-pointer group relative">
-                                    <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
-                                    <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
-                                    <div className="flex gap-2">
-                                        <span onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (isSuperAdmin) {
-                                                setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
-                                            } else {
-                                                const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
-                                                if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
-                                            }
-                                        }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
-                                        {role === 'admin' ? (
+                {activeSubtab === 'directory' && (
+                    <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl animate-in fade-in slide-in-from-bottom-4">
+                        <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
+                            <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">👥</span>
+                            Family Directory & Avatars
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                            {Array.from(new Set([
+                                ...(props.recipes || []).map(r => r.contributor),
+                                ...(props.trivia || []).map(t => t.contributor),
+                                ...(props.contributors || []).map(c => c.name)
+                            ].filter(Boolean))).sort().map(name => {
+                                const profile = contributors.find(c => c.name === name);
+                                const avatar = profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+                                const role = profile?.role || 'user';
+                                return (
+                                    <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-3xl border border-stone-100 hover:shadow-lg transition-all cursor-pointer group relative">
+                                        <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
+                                        <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
+                                        <div className="flex gap-2">
                                             <span onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
-                                                if (confirm(`Revoke admin access for ${name}?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
-                                            }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
-                                        ) : (
-                                            <span onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
-                                                if (confirm(`Promote ${name} to Administrator?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
-                                            }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
-                                        )}
+                                                if (isSuperAdmin) {
+                                                    setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
+                                                } else {
+                                                    const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
+                                                    if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
+                                                }
+                                            }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
+                                            {role === 'admin' ? (
+                                                <span onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
+                                                    if (confirm(`Revoke admin access for ${name}?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
+                                                }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
+                                            ) : (
+                                                <span onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
+                                                    if (confirm(`Promote ${name} to Administrator?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
+                                                }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
+                                );
+                            })}
+                        </div>
+                    </section>
+                )}
 
                 {pickerTarget && isSuperAdmin && (
                     <AvatarPicker
