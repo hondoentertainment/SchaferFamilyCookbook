@@ -105,23 +105,30 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         } finally { setIsMagicLoading(false); }
     };
 
-    const handleGenerateImage = async () => {
+    const handleVisualSourcing = async () => {
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) throw new Error("Missing Gemini API Key");
             const ai = new GoogleGenAI({ apiKey });
-            const response: any = await (ai.models as any).generateImage({
-                model: 'imagen-3.0-generate-001',
-                prompt: `A delicious photography shot of ${recipeForm.title}, ${recipeForm.category} dish.`,
-                config: { numberOfImages: 1 }
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-1.5-flash',
+                contents: [{
+                    role: 'user',
+                    parts: [{
+                        text: `You are a heritage food photography curator. Based on the recipe: "${recipeForm.title}" (${recipeForm.category}), find a high-quality Unsplash Image ID that best represents this dish in a vintage 'family archive' aesthetic. Return ONLY the ID (e.g. 1547592166-23ac45744acd).`
+                    }]
+                }],
             });
-            const b64 = response.image?.image64;
-            if (b64) {
-                const dataUrl = `data:image/png;base64,${b64}`;
-                setRecipeForm(prev => ({ ...prev, image: dataUrl }));
-                setPreviewUrl(dataUrl);
+
+            const photoId = response.text.trim().replace(/['"]/g, '');
+
+            if (photoId.length > 5) {
+                const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
+                setRecipeForm(prev => ({ ...prev, image: url }));
+                setPreviewUrl(url);
                 setRecipeFile(null);
             }
         } catch (e: any) {
@@ -326,8 +333,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <button type="button" onClick={handleGenerateImage} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
-                                                {isGeneratingImage ? 'Generating Deliciousness...' : '✨ Generate Photo with AI'}
+                                            <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
+                                                {isGeneratingImage ? 'Sourcing Legacy Visual...' : '✨ Find Heritage Photo with AI'}
                                             </button>
                                         </div>
                                         <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
