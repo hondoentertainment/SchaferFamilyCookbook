@@ -14,17 +14,21 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats, onLogout }) => {
     return (
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100">
-            <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setTab('Recipes')}>
-                        <img src={LOGO_URL} className="w-8 h-8 rounded-full object-cover" alt="Schafer Logo" />
-                        <span className="font-serif italic text-xl text-[#2D4635] hidden md:block">The Schafer Archive</span>
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3 md:gap-8 min-w-0">
+                    <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setTab('Recipes')}>
+                        <img src={LOGO_URL} className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover" alt="Schafer Logo" />
+                        <span className="font-serif italic text-lg md:text-xl text-[#2D4635] hidden sm:block">Archive</span>
                     </div>
-                    <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                    <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth">
                         {['Recipes', 'Index', 'Gallery', 'Trivia', 'History', 'Contributors', 'Admin'].map(t => (
                             <button
                                 key={t}
-                                onClick={() => setTab(t)}
+                                id={`tab-${t}`}
+                                onClick={() => {
+                                    setTab(t);
+                                    document.getElementById(`tab-${t}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                }}
                                 className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
                                     }`}
                             >

@@ -31,12 +31,12 @@ export const HistoryView: React.FC = () => {
                     </section>
 
                     {/* The Oehler Family */}
-                    <section className="space-y-8 bg-white/50 backdrop-blur-sm p-12 md:p-20 rounded-[4rem] border border-stone-100 shadow-sm relative overflow-hidden">
+                    <section className="space-y-8 bg-white/50 backdrop-blur-sm p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] border border-stone-100 shadow-sm relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50" />
-                        <h2 className="text-4xl font-serif italic text-[#2D4635] mb-8 relative">The Oehler Family</h2>
+                        <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8 relative">The Oehler Family</h2>
                         <div className="space-y-6 relative text-stone-600">
                             <p>
-                                <span className="float-left text-7xl font-serif text-[#A0522D] mr-4 leading-[0.8] mt-1 italic">T</span>
+                                <span className="float-left text-6xl md:text-7xl font-serif text-[#A0522D] mr-4 leading-[0.8] mt-1 italic">T</span>
                                 he Oehler family originally came from Bavaria in southern Germany to the United States in the mid-1800s. The name Oehler means to produce or deal in oil—presumably rendering oil from animals such as cattle, pigs, geese, and chickens, and selling it to others. How the Oehlers found their way to southern Minnesota, I do not know, but I hope to find out someday.
                             </p>
                             <p>
@@ -63,8 +63,8 @@ export const HistoryView: React.FC = () => {
                     </section>
 
                     {/* The Schafer Family */}
-                    <section className="space-y-8 p-12 md:p-20">
-                        <h2 className="text-4xl font-serif italic text-[#2D4635] mb-8">The Schafer Family</h2>
+                    <section className="space-y-8 p-8 md:p-20">
+                        <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8">The Schafer Family</h2>
                         <div className="space-y-6 text-stone-600">
                             <p>
                                 The Schafer family immigrated from northern Germany to the United States in the mid-1800s, living first in Indiana, Illinois, and Iowa before settling in the Sherburne, Minnesota area just north of the Iowa border. Schafer means shepherd in German, and it seems likely the Schafers were shepherds and farmers for generations.
@@ -72,7 +72,7 @@ export const HistoryView: React.FC = () => {
                             <p>
                                 John Daniel “JD” Schafer (born 1873) and Dora (Finke) Schafer (born 1875) had eleven children in the Sherburne area. Oliver (born 1915) was the tenth of the eleven. In 1919, JD and Dora moved the family to the farm south of Buffalo Lake where James, Kay, Ruthann, and I were raised.
                             </p>
-                            <div className="bg-stone-50 p-8 rounded-3xl border border-stone-100 italic text-[#2D4635]/80">
+                            <div className="bg-stone-50 p-6 md:p-8 rounded-3xl border border-stone-100 italic text-[#2D4635]/80">
                                 "Oliver told happy stories of growing up in a large farm family. When he was young, the fields were worked with horses—Pet and Patty were his favorites. East of the old farmhouse was an orchard of plums and apples. Oliver fondly remembered his sisters drying plums on screens laid out on the porch roof."
                             </div>
                             <p>
@@ -82,9 +82,9 @@ export const HistoryView: React.FC = () => {
                     </section>
 
                     {/* Harriet and Oliver */}
-                    <section className="space-y-8 bg-[#2D4635] text-emerald-50 p-12 md:p-20 rounded-[4rem] shadow-2xl relative overflow-hidden">
+                    <section className="space-y-8 bg-[#2D4635] text-emerald-50 p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] shadow-2xl relative overflow-hidden">
                         <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-400 rounded-full blur-[120px] -ml-48 -mb-48 opacity-10" />
-                        <h2 className="text-4xl font-serif italic text-[#F4A460] mb-8 relative">Harriet and Oliver</h2>
+                        <h2 className="text-3xl md:text-4xl font-serif italic text-[#F4A460] mb-8 relative">Harriet and Oliver</h2>
                         <div className="space-y-6 relative opacity-90">
                             <p>
                                 Harriet and Oliver married in 1935 and lived with Minnie and Edward on their farm during the Depression. Times were hard. Soon after, the farm was sold, and Harriet, Oliver, and little Jimmy moved in with JD and Dora.

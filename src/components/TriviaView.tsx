@@ -133,14 +133,14 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
                 />
             </div>
 
-            <div className="bg-white rounded-[4rem] p-10 md:p-16 border border-stone-100 shadow-2xl relative overflow-hidden group">
+            <div className="bg-white rounded-[3rem] md:rounded-[4rem] p-6 md:p-16 border border-stone-100 shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-800 via-[#F4A460] to-emerald-800 opacity-50" />
 
-                <h3 className="text-3xl font-serif text-[#2D4635] mb-12 leading-snug">
+                <h3 className="text-2xl md:text-3xl font-serif text-[#2D4635] mb-8 md:mb-12 leading-snug">
                     {currentQuestion.question}
                 </h3>
 
-                <div className="grid gap-4">
+                <div className="grid gap-3 md:gap-4">
                     {currentQuestion.options.map((opt, i) => {
                         const isCorrect = opt === currentQuestion.answer;
                         const isSelected = selectedOption === opt;
@@ -157,11 +157,11 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
                                 key={i}
                                 disabled={isAnswered}
                                 onClick={() => handleOptionSelect(opt)}
-                                className={`p-6 text-left rounded-3xl transition-all font-serif text-lg flex justify-between items-center group/btn relative overflow-hidden ${buttonStyles}`}
+                                className={`p-4 md:p-6 text-left rounded-2xl md:rounded-3xl transition-all font-serif text-base md:text-lg flex justify-between items-center group/btn relative overflow-hidden ${buttonStyles}`}
                             >
                                 <span className="relative z-10">{opt}</span>
-                                {isAnswered && isCorrect && <span className="text-xs font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Correct</span>}
-                                {isAnswered && isSelected && !isCorrect && <span className="text-xs font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Incorrect</span>}
+                                {isAnswered && isCorrect && <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Correct</span>}
+                                {isAnswered && isSelected && !isCorrect && <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Incorrect</span>}
                             </button>
                         );
                     })}

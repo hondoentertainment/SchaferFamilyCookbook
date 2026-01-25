@@ -29,13 +29,13 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto py-12 px-6 space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-12 md:space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Identity Card */}
-            <section className="bg-white rounded-[4rem] p-10 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden">
+            <section className="bg-white rounded-[3rem] md:rounded-[4rem] p-6 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
                     <div className="relative group">
-                        <img src={avatar} className="w-48 h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} />
+                        <img src={avatar} className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} />
                         <button
                             onClick={() => setShowPicker(true)}
                             className="absolute bottom-4 right-4 w-12 h-12 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-xl"
@@ -76,37 +76,37 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
             <div className="grid lg:grid-cols-2 gap-12">
                 {/* My Recipes */}
-                <section className="space-y-8">
-                    <h3 className="text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center not-italic text-2xl">📖</span>
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-50 flex items-center justify-center not-italic text-xl md:text-2xl">📖</span>
                         My Shared Recipes
                     </h3>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3 md:space-y-4">
                         {userRecipes.map(recipe => (
-                            <div key={recipe.id} className="bg-white p-6 rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-6 group hover:shadow-md transition-all">
+                            <div key={recipe.id} className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all">
                                 <img
                                     src={recipe.image}
-                                    className="w-20 h-20 rounded-2xl object-cover shadow-sm"
+                                    className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}
                                 />
-                                <div className="flex-1">
-                                    <h4 className="font-serif italic text-[#2D4635] text-xl">{recipe.title}</h4>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
                                 </div>
                                 <button
                                     onClick={() => onEditRecipe(recipe)}
-                                    className="p-4 bg-stone-50 text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner"
+                                    className="p-3 md:p-4 bg-stone-50 text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0"
                                 >
                                     ✏️
                                 </button>
                             </div>
                         ))}
                         {userRecipes.length === 0 && (
-                            <div className="py-20 text-center border-2 border-dashed border-stone-100 rounded-[3rem]">
+                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
                                 <p className="text-stone-300 font-serif italic text-lg">No recipes shared yet.</p>
                             </div>
                         )}
@@ -114,26 +114,26 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                 </section>
 
                 {/* My History */}
-                <section className="space-y-8">
-                    <h3 className="text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-2xl">⏲️</span>
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-xl md:text-2xl">⏲️</span>
                         My Contribution Log
                     </h3>
 
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3 md:space-y-4 max-h-[500px] md:max-h-[600px] overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
                         {userHistory.map(entry => (
-                            <div key={entry.id} className="flex gap-4 p-5 bg-stone-50/50 rounded-3xl border border-stone-100 items-start">
-                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-lg mt-1">
+                            <div key={entry.id} className="flex gap-4 p-4 md:p-5 bg-stone-50/50 rounded-2xl md:rounded-3xl border border-stone-100 items-start">
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-base md:text-lg mt-0.5 md:mt-1 shrink-0">
                                     {entry.type === 'recipe' ? '🍲' : entry.type === 'gallery' ? '🖼️' : '💡'}
                                 </div>
-                                <div className="flex-1 space-y-1">
-                                    <p className="text-sm text-stone-600">
+                                <div className="flex-1 space-y-1 min-w-0">
+                                    <p className="text-xs md:text-sm text-stone-600">
                                         <span className="font-bold text-[#2D4635] capitalize">{entry.action}</span>
                                         {' '}{entry.type}{' '}
                                         <span className="italic font-serif">"{entry.itemName}"</span>
                                     </p>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-300">
-                                        {new Date(entry.timestamp).toLocaleDateString()} at {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-stone-300">
+                                        {new Date(entry.timestamp).toLocaleDateString()}
                                     </p>
                                 </div>
                             </div>

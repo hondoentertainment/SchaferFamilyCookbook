@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +8,58 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+    rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
       font-family: 'Lato', sans-serif;
       background-color: #FDFBF7;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior-y: none;
     }
-    h1, h2, h3, h4, .serif {
+
+    h1,
+    h2,
+    h3,
+    h4,
+    .serif {
       font-family: 'Playfair Display', serif;
     }
+
     .recipe-card:hover .recipe-overlay {
       opacity: 1;
     }
+
     .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f1f1;
+      background: transparent;
     }
+
     .custom-scrollbar::-webkit-scrollbar-thumb {
       background: #2D4635;
       border-radius: 10px;
     }
+
+    /* Mobile Touch Targets & Scrolling */
+    @media (max-width: 768px) {
+      .custom-scrollbar {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      button,
+      a {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
   </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -47,8 +75,10 @@
 }
 </script>
 </head>
+
 <body>
   <div id="root"></div>
   <script type="module" src="/src/index.tsx"></script>
 </body>
+
 </html>

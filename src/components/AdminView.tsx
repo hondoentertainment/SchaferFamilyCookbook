@@ -175,19 +175,19 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="max-w-7xl mx-auto px-6 py-12 space-y-12">
                 {/* Sub-navigation bar */}
-                <div className="flex flex-wrap items-center justify-center gap-2 mb-8 bg-white/50 backdrop-blur p-2 rounded-full border border-stone-100 shadow-sm sticky top-24 z-40">
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-full px-2">
                     {[
-                        { id: 'records', label: '📖 New Heritage Record' },
-                        { id: 'gallery', label: '🖼️ Family Archive' },
-                        { id: 'trivia', label: '💡 Family Trivia' },
-                        { id: 'directory', label: '👥 Family Directory & Avatars' },
-                        { id: 'permissions', label: '🔐 Admin & Permissions', restricted: true },
+                        { id: 'records', label: '📖 Record' },
+                        { id: 'gallery', label: '🖼️ Gallery' },
+                        { id: 'trivia', label: '💡 Trivia' },
+                        { id: 'directory', label: '👥 Directory' },
+                        { id: 'permissions', label: '🔐 Admins', restricted: true },
                     ].map(tab => (
                         (!tab.restricted || isSuperAdmin) && (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveSubtab(tab.id as any)}
-                                className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${activeSubtab === tab.id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-white'}`}
+                                className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSubtab === tab.id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-white'}`}
                             >
                                 {tab.label}
                             </button>
@@ -197,7 +197,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                 {/* Permissions & Admin Management */}
                 {activeSubtab === 'permissions' && isSuperAdmin && (
-                    <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                    <section className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
                         <div className="relative z-10">
                             <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
@@ -244,8 +244,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 )}
 
                 {(activeSubtab === 'records' || activeSubtab === 'gallery' || activeSubtab === 'trivia') && (
-                    <div className="bg-white rounded-[3rem] p-8 md:p-12 border border-stone-100 shadow-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-4">
-                        <div className="flex justify-between items-center mb-12">
+                    <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-100 shadow-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                             <h2 className="text-3xl font-serif italic text-[#2D4635]">
                                 {activeSubtab === 'records' ? 'New Heritage Record' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
                             </h2>
