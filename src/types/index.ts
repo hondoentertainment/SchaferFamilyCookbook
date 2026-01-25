@@ -9,6 +9,7 @@ export interface Recipe {
   image: string;
   prepTime?: string;
   cookTime?: string;
+  calories?: number;
   created_at?: string;
 }
 

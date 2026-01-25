@@ -32,10 +32,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onEdi
                         <h2 className="text-4xl font-serif italic text-[#2D4635] mt-2 leading-tight">{recipe.title}</h2>
                         <div className="flex gap-4 mt-4 text-[10px] font-black uppercase text-stone-400 tracking-widest">
                             <span>By {recipe.contributor}</span>
-                            {(recipe.prepTime || recipe.cookTime) && (
+                            {(recipe.prepTime || recipe.cookTime || recipe.calories) && (
                                 <span className="flex gap-2 text-[#A0522D]">
                                     {recipe.prepTime && <span>Prep: {recipe.prepTime}</span>}
                                     {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
+                                    {recipe.calories && <span className="flex items-center gap-1"><span>•</span> <span>~{recipe.calories} kcal</span></span>}
                                 </span>
                             )}
                         </div>

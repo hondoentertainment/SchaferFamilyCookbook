@@ -17,7 +17,7 @@ export const HistoryView: React.FC = () => {
                     <p className="text-stone-500 font-serif italic text-lg max-w-2xl mx-auto leading-relaxed">
                         "As remembered by Julie Joy Schafer Johnson, from stories told by my parents Oliver Schafer and Harriet (Oehler) Schafer, and from our extended family."
                     </p>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D]">Prepared for the 2022 Schafer Family Cookbook</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D]">Prepared for the Schafer Family Cookbook</p>
                 </header>
 
                 {/* Main Content Sections */}

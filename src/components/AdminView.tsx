@@ -35,6 +35,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [newAdminName, setNewAdminName] = useState('');
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
     const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory'>('records');
+    const [editingTrivia, setEditingTrivia] = useState<Trivia | null>(null);
 
     const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
 
@@ -75,7 +76,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 model: 'gemini-1.5-flash',
                 contents: [{ role: 'user', parts: [{ text: `Recipe text: ${rawText}` }] }],
                 config: {
-                    systemInstruction: "Analyze this recipe and extract structured JSON data. Fields: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime.",
+                    systemInstruction: "Analyze this recipe and extract structured JSON data. Fields: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime, calories (number - estimated total).",
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
@@ -86,6 +87,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
                             prepTime: { type: Type.STRING },
                             cookTime: { type: Type.STRING },
+                            calories: { type: Type.NUMBER },
                         }
                     }
                 }
@@ -328,11 +330,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             </button>
                                         </div>
                                         <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                             <select className="p-4 border border-stone-200 rounded-2xl text-sm bg-white" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
                                                 {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
                                             </select>
                                             <input placeholder="Prep Time" className="p-4 border border-stone-200 rounded-2xl text-sm" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
+                                            <input type="number" placeholder="Est. Calories" className="p-4 border border-stone-200 rounded-2xl text-sm" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
                                         </div>
                                         <textarea placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
                                         <textarea placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
@@ -374,7 +377,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">💡</span>
                                         Family Trivia
                                     </h3>
-                                    <form onSubmit={async (e) => { e.preventDefault(); if (!triviaForm.question) return; await onAddTrivia(triviaForm as Trivia); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }) }} className="space-y-4">
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        if (!triviaForm.question) return;
+                                        await onAddTrivia({
+                                            ...(triviaForm as Trivia),
+                                            id: editingTrivia?.id || 't_' + Date.now(),
+                                            contributor: editingTrivia?.contributor || currentUser?.name || 'Unknown'
+                                        });
+                                        setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' });
+                                        setEditingTrivia(null);
+                                    }} className="space-y-4">
                                         <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} />
                                         <div className="grid grid-cols-2 gap-3">
                                             {triviaForm.options?.map((opt, i) => (
@@ -382,14 +395,22 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             ))}
                                         </div>
                                         <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-sm font-bold bg-stone-50" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
-                                        <button type="submit" className="w-full py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">Add Question</button>
+                                        <div className="flex gap-4">
+                                            <button type="submit" className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                                                {editingTrivia ? 'Update Question' : 'Add Question'}
+                                            </button>
+                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400">Cancel</button>}
+                                        </div>
                                     </form>
                                     <div className="pt-8 border-t border-stone-100 max-h-96 overflow-y-auto custom-scrollbar">
                                         <h4 className="text-[10px] font-black uppercase text-stone-400 mb-4">Current Questions</h4>
                                         {trivia.map(t => (
                                             <div key={t.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl mb-2 group">
-                                                <span className="text-xs truncate">{t.question}</span>
-                                                <button onClick={() => onDeleteTrivia(t.id)} className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                                                <div className="flex flex-col truncate flex-1 cursor-pointer" onClick={() => { setEditingTrivia(t); setTriviaForm(t); }}>
+                                                    <span className="text-xs truncate font-bold text-[#2D4635]">{t.question}</span>
+                                                    <span className="text-[9px] uppercase tracking-widest text-stone-400">Click to edit</span>
+                                                </div>
+                                                <button onClick={() => onDeleteTrivia(t.id)} className="text-stone-300 hover:text-red-500 transition-all ml-4">✕</button>
                                             </div>
                                         ))}
                                     </div>
