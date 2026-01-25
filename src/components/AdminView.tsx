@@ -42,7 +42,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     useEffect(() => {
         if (editingRecipe) {
             setRecipeForm(editingRecipe);
-            setPreviewUrl(editingRecipe.image);
+            setPreviewUrl(editingRecipe.image || CATEGORY_IMAGES[editingRecipe.category] || CATEGORY_IMAGES.Generic);
         } else {
             setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
             setPreviewUrl(null);
@@ -270,7 +270,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                     {previewUrl && (
                                         <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner group">
-                                            <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                                            <img
+                                                src={previewUrl}
+                                                className="w-full h-full object-cover"
+                                                alt="Preview"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic;
+                                                }}
+                                            />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                 <p className="text-[10px] font-black uppercase tracking-widest text-white">Current Heritage Photo</p>
                                             </div>
