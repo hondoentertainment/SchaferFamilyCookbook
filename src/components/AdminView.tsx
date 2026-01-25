@@ -67,11 +67,18 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         return () => URL.revokeObjectURL(url);
     }, [recipeFile, editingRecipe]);
 
+    const getGeminiApiKey = () => {
+        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
+            (process.env?.GEMINI_API_KEY) ||
+            (process.env?.VITE_GEMINI_API_KEY) ||
+            '';
+    };
+
     const handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
         try {
-            const apiKey = process.env.GEMINI_API_KEY;
+            const apiKey = getGeminiApiKey();
             if (!apiKey) throw new Error("Missing Gemini API Key");
 
             const ai = new GoogleGenAI({ apiKey });
@@ -111,7 +118,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
-            const apiKey = process.env.GEMINI_API_KEY;
+            const apiKey = getGeminiApiKey();
             if (!apiKey) throw new Error("Missing Gemini API Key");
             const ai = new GoogleGenAI({ apiKey });
 
@@ -155,7 +162,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setIsBulkSourcing(true);
         setBulkProgress({ current: 0, total: placeholders.length });
 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = getGeminiApiKey();
         if (!apiKey) {
             alert("Missing Gemini API Key");
             setIsBulkSourcing(false);
