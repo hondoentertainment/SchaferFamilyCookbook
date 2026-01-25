@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
+import { AvatarPicker } from './AvatarPicker';
 
 interface AdminViewProps {
     editingRecipe: Recipe | null;
@@ -32,6 +33,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isMagicLoading, setIsMagicLoading] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
+    const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
 
     const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
 
@@ -382,7 +384,15 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
                                     <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
                                     <div className="flex gap-2">
-                                        <span onClick={(e) => { e.stopPropagation(); const url = prompt(`Enter new avatar URL for ${name}:`, avatar); if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role }); }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
+                                        <span onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (isSuperAdmin) {
+                                                setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
+                                            } else {
+                                                const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
+                                                if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
+                                            }
+                                        }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
                                         {role === 'admin' ? (
                                             <span onClick={(e) => {
                                                 e.stopPropagation();
@@ -402,6 +412,19 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         })}
                     </div>
                 </section>
+
+                {pickerTarget && isSuperAdmin && (
+                    <AvatarPicker
+                        currentAvatar={pickerTarget.avatar}
+                        onSelect={(url) => {
+                            onUpdateContributor({
+                                ...pickerTarget,
+                                avatar: url
+                            });
+                        }}
+                        onClose={() => setPickerTarget(null)}
+                    />
+                )}
             </div>
         </div>
     );

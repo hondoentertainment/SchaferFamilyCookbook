@@ -9,3 +9,22 @@ export const CATEGORY_IMAGES: Record<string, string> = {
     Snack: "https://images.unsplash.com/photo-1629115916087-7e8c114a24ed?auto=format&fit=crop&q=80&w=800",
     Generic: "https://images.unsplash.com/photo-1495195129352-aec325a55b65?auto=format&fit=crop&q=80&w=800"
 };
+
+export const HERITAGE_AVATARS = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aria",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Willow",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Sasha",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Cleo",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Sam",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Nala",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Ziggy",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Daisy"
+];
