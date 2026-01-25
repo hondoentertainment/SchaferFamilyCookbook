@@ -7,6 +7,7 @@ import { AdminView } from './components/AdminView';
 import { AlphabeticalIndex } from './components/AlphabeticalIndex';
 import { ContributorsView } from './components/ContributorsView';
 import { ProfileView } from './components/ProfileView';
+import { HistoryView } from './components/HistoryView';
 import { HistoryEntry } from './types';
 
 const App: React.FC = () => {
@@ -376,6 +377,8 @@ const App: React.FC = () => {
             )}
 
             {tab === 'Index' && <AlphabeticalIndex recipes={recipes} onSelect={setSelectedRecipe} />}
+
+            {tab === 'History' && <HistoryView />}
 
             {tab === 'Contributors' && <ContributorsView recipes={recipes} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />}
 

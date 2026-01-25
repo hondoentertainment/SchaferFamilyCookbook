@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         <span className="font-serif italic text-xl text-[#2D4635] hidden md:block">The Schafer Archive</span>
                     </div>
                     <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                        {['Recipes', 'Index', 'Gallery', 'Trivia', 'Contributors', 'Admin'].map(t => (
+                        {['Recipes', 'Index', 'Gallery', 'Trivia', 'History', 'Contributors', 'Admin'].map(t => (
                             <button
                                 key={t}
                                 onClick={() => setTab(t)}
