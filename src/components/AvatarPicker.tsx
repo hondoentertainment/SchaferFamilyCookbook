@@ -8,6 +8,8 @@ interface AvatarPickerProps {
 }
 
 export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSelect, onClose }) => {
+    const [selectedUrl, setSelectedUrl] = React.useState(currentAvatar);
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl border border-stone-100 overflow-hidden animate-in zoom-in-95 duration-300">
@@ -28,15 +30,12 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                     {HERITAGE_AVATARS.map((url, i) => (
                         <button
                             key={i}
-                            onClick={() => {
-                                onSelect(url);
-                                onClose();
-                            }}
-                            className={`relative group rounded-2xl overflow-hidden transition-all hover:scale-110 active:scale-90 p-2 ${currentAvatar === url ? 'bg-emerald-50 ring-2 ring-[#2D4635]' : 'bg-stone-50 hover:bg-white'
+                            onClick={() => setSelectedUrl(url)}
+                            className={`relative group rounded-2xl overflow-hidden transition-all hover:scale-110 active:scale-90 p-2 ${selectedUrl === url ? 'bg-emerald-50 ring-2 ring-[#2D4635]' : 'bg-stone-50 hover:bg-white'
                                 }`}
                         >
                             <img src={url} className="w-full h-full object-contain" alt={`Avatar ${i}`} />
-                            {currentAvatar === url && (
+                            {selectedUrl === url && (
                                 <div className="absolute top-1 right-1 w-4 h-4 bg-[#2D4635] text-white rounded-full flex items-center justify-center text-[8px]">
                                     ✓
                                 </div>
@@ -45,14 +44,25 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                     ))}
                 </div>
 
-                <div className="p-8 bg-stone-50 flex justify-between items-center">
-                    <p className="text-[10px] text-stone-300 italic">Select an icon to instantly update family identity.</p>
+                <div className="p-8 bg-stone-50 flex justify-between items-center gap-4">
                     <button
                         onClick={onClose}
-                        className="px-8 py-3 bg-stone-200 text-stone-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-stone-300 transition-all"
+                        className="px-8 py-3 bg-white border border-stone-200 text-stone-400 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-stone-100 transition-all"
                     >
-                        Done
+                        Cancel
                     </button>
+                    <div className="flex items-center gap-4">
+                        <p className="text-[10px] text-stone-400 italic hidden sm:block">Select an icon then click save.</p>
+                        <button
+                            onClick={() => {
+                                onSelect(selectedUrl);
+                                onClose();
+                            }}
+                            className="px-8 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] transition-all"
+                        >
+                            Save Identity
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
