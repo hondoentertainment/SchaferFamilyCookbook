@@ -147,10 +147,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (!galleryFile || isSubmitting) return;
         setIsSubmitting(true);
         try {
+            const isVideo = galleryFile.type.startsWith('video/');
             await onAddGallery({
                 id: 'g' + Date.now(),
-                type: 'image', url: '',
-                caption: galleryForm.caption || 'Family Memory',
+                type: isVideo ? 'video' : 'image',
+                url: '',
+                caption: galleryForm.caption || (isVideo ? 'Family Video' : 'Family Memory'),
                 contributor: currentUser?.name || 'Family'
             }, galleryFile);
             setGalleryForm({ caption: '' });
@@ -324,10 +326,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 </h3>
                                 <form onSubmit={handleGallerySubmit} className="space-y-4">
                                     <div className="relative group">
-                                        <input type="file" accept="image/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                                        <input type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                                         <div className="w-full h-32 border-2 border-dashed border-stone-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-stone-300 group-hover:border-[#A0522D] group-hover:text-[#A0522D] transition-all">
                                             <span className="text-3xl">🏞️</span>
-                                            <span className="text-[9px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Photo'}</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Photo or Video'}</span>
                                         </div>
                                     </div>
                                     <input placeholder="Short caption..." className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />

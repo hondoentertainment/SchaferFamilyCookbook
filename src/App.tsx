@@ -171,7 +171,20 @@ const App: React.FC = () => {
                     <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
                         {gallery.map(item => (
                             <div key={item.id} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md group hover:shadow-2xl transition-all">
-                                <img src={item.url || `https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500`} className="w-full rounded-2xl mb-4" alt={item.caption} />
+                                {item.type === 'video' ? (
+                                    <div className="relative rounded-2xl overflow-hidden mb-4 bg-black">
+                                        <video
+                                            src={item.url}
+                                            className="w-full"
+                                            controls
+                                            muted
+                                            onMouseOver={e => (e.target as HTMLVideoElement).play()}
+                                            onMouseOut={e => (e.target as HTMLVideoElement).pause()}
+                                        />
+                                    </div>
+                                ) : (
+                                    <img src={item.url || `https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500`} className="w-full rounded-2xl mb-4" alt={item.caption} />
+                                )}
                                 <p className="font-serif italic text-stone-800 text-lg px-2">{item.caption}</p>
                                 <div className="flex justify-between items-center mt-4 px-2">
                                     <div className="flex items-center gap-2">
