@@ -55,15 +55,29 @@ const App: React.FC = () => {
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
 
+    const refreshLocalState = async () => {
+        const provider = CloudArchive.getProvider();
+        if (provider === 'local') {
+            const [r, t, g, c, h] = await Promise.all([
+                CloudArchive.getRecipes(),
+                CloudArchive.getTrivia(),
+                CloudArchive.getGallery(),
+                CloudArchive.getContributors(),
+                CloudArchive.getHistory()
+            ]);
+            setRecipes(r);
+            setTrivia(t);
+            setGallery(g);
+            setContributors(c);
+            setHistory(h);
+        }
+    };
+
     // Sync Listeners
     useEffect(() => {
         const provider = CloudArchive.getProvider();
         if (provider !== 'firebase' || !CloudArchive.getFirebase()) {
-            CloudArchive.getRecipes().then(setRecipes);
-            CloudArchive.getTrivia().then(setTrivia);
-            CloudArchive.getGallery().then(setGallery);
-            CloudArchive.getContributors().then(setContributors);
-            CloudArchive.getHistory().then(setHistory);
+            refreshLocalState();
             return;
         }
 
@@ -377,14 +391,25 @@ const App: React.FC = () => {
                     onAddRecipe={async (r, f) => {
                         const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
                         await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
+                        await refreshLocalState();
                     }}
                     onAddGallery={async (g, f) => {
                         const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
                         await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
+                        await refreshLocalState();
                     }}
-                    onAddTrivia={CloudArchive.upsertTrivia}
-                    onDeleteTrivia={CloudArchive.deleteTrivia}
-                    onUpdateContributor={CloudArchive.upsertContributor}
+                    onAddTrivia={async (t) => {
+                        await CloudArchive.upsertTrivia(t);
+                        await refreshLocalState();
+                    }}
+                    onDeleteTrivia={async (id) => {
+                        await CloudArchive.deleteTrivia(id);
+                        await refreshLocalState();
+                    }}
+                    onUpdateContributor={async (p) => {
+                        await CloudArchive.upsertContributor(p);
+                        await refreshLocalState();
+                    }}
                 />
             )}
             {tab === 'Admin' && currentUser.role !== 'admin' && (
