@@ -34,14 +34,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     </nav>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-stone-50 rounded-full border border-stone-200">
-                        <div className={`w-1.5 h-1.5 rounded-full ${dbStats.activeProvider === 'local' ? 'bg-emerald-400' : 'bg-orange-400'}`} />
-                        <span className="text-[7px] font-bold uppercase text-stone-500 tracking-tighter">
-                            {dbStats.activeProvider.toUpperCase()} {dbStats.isCloudActive ? 'LIVE' : 'MODE'}
-                        </span>
-                    </div>
                     {currentUser && (
-                        <div className="flex items-center gap-4 pl-4 border-l border-stone-100">
+                        <div className="flex items-center gap-4">
                             <div
                                 className={`flex items-center gap-3 cursor-pointer group px-2 py-1 rounded-full transition-all ${activeTab === 'Profile' ? 'bg-stone-50' : 'hover:bg-stone-50/50'}`}
                                 onClick={() => setTab('Profile')}
@@ -52,13 +46,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 </div>
                                 <img src={currentUser.picture} className={`w-9 h-9 rounded-full border-2 transition-all shadow-sm ${activeTab === 'Profile' ? 'border-[#2D4635]' : 'border-white group-hover:border-stone-200'}`} alt={currentUser.name} />
                             </div>
-                            <button
-                                onClick={onLogout}
-                                className="w-8 h-8 rounded-full bg-stone-50 text-[#A0522D] flex items-center justify-center hover:bg-orange-50 transition-all text-[10px] shadow-inner border border-stone-100"
-                                title="Exit Archive"
-                            >
-                                🚪
-                            </button>
                         </div>
                     )}
                 </div>
