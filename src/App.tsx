@@ -51,6 +51,8 @@ const App: React.FC = () => {
         activeProvider: CloudArchive.getProvider()
     });
 
+    const [archivePhone, setArchivePhone] = useState(() => localStorage.getItem('schafer_archive_phone') || '');
+
     const [loginName, setLoginName] = useState('');
 
     // Filters
@@ -195,6 +197,21 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-[#FDFBF7]">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
                 <div className="max-w-7xl mx-auto py-12 px-6">
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
+                        <div>
+                            <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
+                            <p className="text-stone-400 font-serif italic mt-2">Captured moments across the generations.</p>
+                        </div>
+                        {archivePhone && (
+                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700">
+                                <span className="text-3xl">📱</span>
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">Text your memories</h4>
+                                    <p className="text-sm text-emerald-700 font-serif italic">Photo/Video to: <span className="font-bold not-italic">{archivePhone}</span></p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
                         {gallery.map(item => (
                             <div key={item.id} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md group hover:shadow-2xl transition-all">
@@ -379,7 +396,7 @@ const App: React.FC = () => {
                     trivia={trivia}
                     contributors={contributors}
                     currentUser={currentUser}
-                    dbStats={dbStats}
+                    dbStats={{ ...dbStats, archivePhone }}
                     onAddRecipe={async (r, f) => {
                         const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
                         await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
@@ -407,6 +424,10 @@ const App: React.FC = () => {
                             localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
                         }
                         await refreshLocalState();
+                    }}
+                    onUpdateArchivePhone={(p) => {
+                        setArchivePhone(p);
+                        localStorage.setItem('schafer_archive_phone', p);
                     }}
                 />
             )}

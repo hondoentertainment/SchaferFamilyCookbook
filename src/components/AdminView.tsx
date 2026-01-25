@@ -17,10 +17,11 @@ interface AdminViewProps {
     onAddTrivia: (t: Trivia) => Promise<void>;
     onDeleteTrivia: (id: string) => void;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
+    onUpdateArchivePhone: (p: string) => void;
 }
 
 export const AdminView: React.FC<AdminViewProps> = (props) => {
-    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onUpdateContributor } = props;
+    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onUpdateContributor, onUpdateArchivePhone } = props;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
@@ -361,8 +362,20 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Archive by Text</h4>
                                             <p className="text-xs text-emerald-700 font-serif italic mt-1 leading-relaxed">
                                                 Family members can text photos or videos to the archive. Text to: <br />
-                                                <span className="font-bold not-italic">Configure Twilio Number</span>
+                                                <span className="font-bold not-italic">{dbStats.archivePhone || 'Not Configured'}</span>
                                             </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 bg-stone-50 rounded-3xl border border-stone-100 mb-8">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-4">Twilio Configuration</h4>
+                                        <div className="flex gap-4">
+                                            <input
+                                                placeholder="designate archive number..."
+                                                className="flex-1 p-3 border border-stone-200 rounded-xl text-xs bg-white"
+                                                value={dbStats.archivePhone || ''}
+                                                onChange={e => onUpdateArchivePhone(e.target.value)}
+                                            />
                                         </div>
                                     </div>
                                     <form onSubmit={handleGallerySubmit} className="space-y-4">

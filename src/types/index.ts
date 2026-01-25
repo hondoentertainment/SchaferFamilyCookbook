@@ -46,6 +46,7 @@ export interface DBStats {
   triviaCount: number;
   isCloudActive: boolean;
   activeProvider: 'local' | 'supabase' | 'firebase';
+  archivePhone?: string;
 }
 
 export interface ContributorProfile {
