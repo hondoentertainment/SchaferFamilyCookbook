@@ -54,6 +54,7 @@ export interface ContributorProfile {
   avatar: string;
   role: 'admin' | 'user';
   email?: string;
+  phone?: string;
 }
 
 export interface HistoryEntry {

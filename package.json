@@ -9,10 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.38.0",
+    "busboy": "^1.6.0",
+    "firebase": "^12.8.0",
+    "firebase-admin": "^13.6.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "@google/genai": "^1.38.0",
-    "firebase": "^12.8.0"
+    "twilio": "^5.12.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -355,6 +355,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">🖼️</span>
                                         Family Archive
                                     </h3>
+                                    <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex items-start gap-4 mb-4">
+                                        <span className="text-2xl mt-1">📱</span>
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Archive by Text</h4>
+                                            <p className="text-xs text-emerald-700 font-serif italic mt-1 leading-relaxed">
+                                                Family members can text photos or videos to the archive. Text to: <br />
+                                                <span className="font-bold not-italic">Configure Twilio Number</span>
+                                            </p>
+                                        </div>
+                                    </div>
                                     <form onSubmit={handleGallerySubmit} className="space-y-4">
                                         <div className="relative group">
                                             <input type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
@@ -440,6 +450,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
                                         <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
                                         <div className="flex gap-2">
+                                            <span onClick={(e) => {
+                                                e.stopPropagation();
+                                                const phone = prompt(`Enter phone number for ${name} (e.g. +1234567890):`, profile?.phone || '');
+                                                if (phone !== null) {
+                                                    const updatedProfile = profile ? { ...profile, phone } : { id: 'c_' + Date.now(), name, avatar, role: 'user', phone };
+                                                    onUpdateContributor(updatedProfile as any);
+                                                }
+                                            }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Phone</span>
                                             <span onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (isSuperAdmin) {
