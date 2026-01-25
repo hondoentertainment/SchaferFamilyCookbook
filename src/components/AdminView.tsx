@@ -37,6 +37,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
     const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory'>('records');
     const [editingTrivia, setEditingTrivia] = useState<Trivia | null>(null);
+    const [isBulkSourcing, setIsBulkSourcing] = useState(false);
+    const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
     const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
 
@@ -136,6 +138,64 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         } finally { setIsGeneratingImage(false); }
     };
 
+    const handleBulkVisualSourcing = async () => {
+        const placeholders = recipes.filter(r => {
+            const isCategoryPlaceholder = Object.values(CATEGORY_IMAGES).includes(r.image);
+            const isMissingImage = !r.image || r.image.includes('fallback-gradient');
+            return isCategoryPlaceholder || isMissingImage;
+        });
+
+        if (placeholders.length === 0) {
+            alert("No placeholders found! All recipes appear to have custom visuals.");
+            return;
+        }
+
+        if (!confirm(`Found ${placeholders.length} recipes with placeholder images. Start bulk sourcing?`)) return;
+
+        setIsBulkSourcing(true);
+        setBulkProgress({ current: 0, total: placeholders.length });
+
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            alert("Missing Gemini API Key");
+            setIsBulkSourcing(false);
+            return;
+        }
+
+        const ai = new GoogleGenAI({ apiKey });
+
+        for (let i = 0; i < placeholders.length; i++) {
+            const recipe = placeholders[i];
+            setBulkProgress(prev => ({ ...prev, current: i + 1 }));
+
+            try {
+                const response = await ai.models.generateContent({
+                    model: 'gemini-1.5-flash',
+                    contents: [{
+                        role: 'user',
+                        parts: [{
+                            text: `You are a heritage food photography curator. Based on the recipe: "${recipe.title}" (${recipe.category}), find a high-quality Unsplash Image ID that best represents this dish in a vintage 'family archive' aesthetic. Return ONLY the ID (e.g. 1547592166-23ac45744acd).`
+                        }]
+                    }],
+                });
+
+                const photoId = response.text.trim().replace(/['"]/g, '');
+
+                if (photoId.length > 5) {
+                    const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
+                    await onAddRecipe({ ...recipe, image: url });
+                }
+            } catch (e) {
+                console.error(`Failed to source visual for ${recipe.title}:`, e);
+            }
+
+            // Subtle delay to avoid rate limits
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        setIsBulkSourcing(false);
+        alert("Bulk archival sourcing complete!");
+    };
     const handleRecipeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!recipeForm.title || isSubmitting) return;
@@ -299,9 +359,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {!editingRecipe && (
                                         <div className="space-y-4">
                                             <textarea placeholder="Paste raw recipe text here..." className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-sm bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
-                                            <button onClick={handleMagicImport} disabled={isMagicLoading} className="w-full py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
-                                                {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
-                                            </button>
+                                            <div className="flex gap-4">
+                                                <button onClick={handleMagicImport} disabled={isMagicLoading} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
+                                                    {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
+                                                </button>
+                                                <button onClick={handleBulkVisualSourcing} disabled={isBulkSourcing} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
+                                                    {isBulkSourcing ? `Sourcing (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Bulk Visual Sourcing'}
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                     <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
