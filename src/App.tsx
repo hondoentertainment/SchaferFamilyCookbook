@@ -369,7 +369,7 @@ const App: React.FC = () => {
 
             {tab === 'History' && <HistoryView />}
 
-            {tab === 'Contributors' && <ContributorsView recipes={recipes} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />}
+            {tab === 'Contributors' && <ContributorsView recipes={recipes} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />}
 
             {tab === 'Admin' && currentUser.role === 'admin' && (
                 <AdminView
