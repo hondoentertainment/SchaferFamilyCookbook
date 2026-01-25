@@ -400,6 +400,12 @@ const App: React.FC = () => {
                     }}
                     onUpdateContributor={async (p) => {
                         await CloudArchive.upsertContributor(p);
+                        // Sync with current user if they just updated themselves
+                        if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
+                            const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
+                            setCurrentUser(updatedUser);
+                            localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                        }
                         await refreshLocalState();
                     }}
                 />
@@ -440,16 +446,23 @@ const App: React.FC = () => {
                     userRecipes={recipes.filter(r => r.contributor === currentUser.name)}
                     userHistory={history.filter(h => h.contributor === currentUser.name)}
                     onUpdateProfile={async (name, avatar) => {
-                        const updatedUser = { ...currentUser, name, picture: avatar };
-                        setCurrentUser(updatedUser);
-                        localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
-                        await CloudArchive.upsertContributor({
-                            id: currentUser.id,
+                        const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
+                        const profileToUpdate = {
+                            id: existing?.id || currentUser.id,
                             name,
                             avatar,
                             role: currentUser.role,
                             email: currentUser.email
-                        });
+                        };
+
+                        await CloudArchive.upsertContributor(profileToUpdate);
+
+                        // Local sync
+                        const updatedUser = { ...currentUser, name, picture: avatar };
+                        setCurrentUser(updatedUser);
+                        localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+
+                        await refreshLocalState();
                     }}
                     onEditRecipe={(recipe) => {
                         setEditingRecipe(recipe);

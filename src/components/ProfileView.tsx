@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, Recipe, HistoryEntry } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
+import { AvatarPicker } from './AvatarPicker';
 
 interface ProfileViewProps {
     currentUser: UserProfile;
@@ -15,6 +16,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
     const [isSaving, setIsSaving] = useState(false);
+    const [showPicker, setShowPicker] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -35,13 +37,10 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     <div className="relative group">
                         <img src={avatar} className="w-48 h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} />
                         <button
-                            onClick={() => {
-                                const newUrl = prompt("Enter new Avatar URL:", avatar);
-                                if (newUrl) setAvatar(newUrl);
-                            }}
+                            onClick={() => setShowPicker(true)}
                             className="absolute bottom-4 right-4 w-12 h-12 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-xl"
                         >
-                            📷
+                            🎭
                         </button>
                     </div>
 
@@ -147,6 +146,17 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     </div>
                 </section>
             </div>
+
+            {showPicker && (
+                <AvatarPicker
+                    currentAvatar={avatar}
+                    onSelect={(url) => {
+                        setAvatar(url);
+                        setShowPicker(false);
+                    }}
+                    onClose={() => setShowPicker(false)}
+                />
+            )}
         </div>
     );
 };
