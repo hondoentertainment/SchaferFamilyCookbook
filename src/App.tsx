@@ -8,7 +8,9 @@ import { AlphabeticalIndex } from './components/AlphabeticalIndex';
 import { ContributorsView } from './components/ContributorsView';
 import { ProfileView } from './components/ProfileView';
 import { HistoryView } from './components/HistoryView';
+import { TriviaView } from './components/TriviaView';
 import { HistoryEntry } from './types';
+import { TRIVIA_SEED } from './data/trivia_seed';
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
@@ -78,7 +80,17 @@ const App: React.FC = () => {
     useEffect(() => {
         const provider = CloudArchive.getProvider();
         if (provider !== 'firebase' || !CloudArchive.getFirebase()) {
-            refreshLocalState();
+            refreshLocalState().then(() => {
+                // Auto-seed trivia if empty in local mode
+                if (provider === 'local') {
+                    CloudArchive.getTrivia().then(current => {
+                        if (current.length === 0) {
+                            Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as any)))
+                                .then(refreshLocalState);
+                        }
+                    });
+                }
+            });
             return;
         }
 
@@ -221,41 +233,18 @@ const App: React.FC = () => {
         return (
             <div className="min-h-screen bg-[#FDFBF7]">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <div className="max-w-3xl mx-auto py-20 px-6 space-y-12">
-                    <div className="text-center space-y-4">
-                        <h2 className="text-5xl font-serif italic text-[#2D4635]">Family Trivia</h2>
-                        <p className="text-stone-400">Test your knowledge of Schafer history.</p>
-                    </div>
-
-                    <div className="space-y-8">
-                        {trivia.map(t => (
-                            <div key={t.id} className="bg-white rounded-[3rem] p-10 border border-stone-100 shadow-sm hover:shadow-xl transition-all">
-                                <h3 className="text-2xl font-serif text-[#2D4635] mb-8 leading-snug">{t.question}</h3>
-                                <div className="grid gap-3">
-                                    {t.options.map((opt, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                if (opt === t.answer) alert("Correct! 🎉");
-                                                else alert("Try again! 😅");
-                                            }}
-                                            className="p-5 text-left rounded-2xl bg-stone-50 hover:bg-[#2D4635] hover:text-white transition-all text-sm font-medium"
-                                        >
-                                            {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="mt-8 pt-6 border-t border-stone-50 flex justify-between items-center text-[10px] uppercase tracking-widest text-stone-400">
-                                    <div className="flex items-center gap-2">
-                                        <img src={getAvatar(t.contributor)} className="w-5 h-5 rounded-full" alt="" />
-                                        <span>Added by {t.contributor}</span>
-                                    </div>
-                                    {currentUser.name === t.contributor && <button onClick={() => CloudArchive.deleteTrivia(t.id)} className="text-red-400 hover:text-red-600">Delete Question</button>}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <TriviaView
+                    trivia={trivia}
+                    currentUser={currentUser as any}
+                    onAddTrivia={async (t) => {
+                        await CloudArchive.upsertTrivia(t);
+                        await refreshLocalState();
+                    }}
+                    onDeleteTrivia={async (id) => {
+                        await CloudArchive.deleteTrivia(id);
+                        await refreshLocalState();
+                    }}
+                />
             </div>
         );
     }
