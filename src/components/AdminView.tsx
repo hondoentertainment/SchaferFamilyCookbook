@@ -121,15 +121,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 contents: [{
                     role: 'user',
                     parts: [{
-                        text: `You are a heritage food photography curator. Based on the recipe: "${recipeForm.title}" (${recipeForm.category}), find a high-quality Unsplash Image ID that best represents this dish in a vintage 'family archive' aesthetic. Return ONLY the ID (e.g. 1547592166-23ac45744acd).`
+                        text: `Describe the dish "${recipeForm.title}" (${recipeForm.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
                     }]
                 }],
             });
 
-            const photoId = safelyGetText(response).trim().replace(/['"]/g, '');
+            const description = safelyGetText(response).trim().replace(/['"\\n]/g, '');
 
-            if (photoId.length > 5) {
-                const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
+            if (description.length > 5) {
+                const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
+                const seed = Math.floor(Math.random() * 1000);
+                const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
                 setRecipeForm(prev => ({ ...prev, image: url }));
                 setPreviewUrl(url);
                 setRecipeFile(null);

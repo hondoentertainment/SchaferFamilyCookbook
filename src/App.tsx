@@ -111,6 +111,15 @@ const App: React.FC = () => {
         setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
     }, [recipes, trivia, gallery]);
 
+    useEffect(() => {
+        if (selectedRecipe) {
+            const updated = recipes.find(r => r.id === selectedRecipe.id);
+            if (updated && updated !== selectedRecipe) {
+                setSelectedRecipe(updated);
+            }
+        }
+    }, [recipes, selectedRecipe]);
+
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!loginName.trim()) return;
