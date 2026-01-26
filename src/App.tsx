@@ -173,15 +173,15 @@ const App: React.FC = () => {
                 contents: [{
                     role: 'user',
                     parts: [{
-                        text: `For the recipe "${recipe.title}" (${recipe.category}), provide 2-3 simple food photography keywords separated by commas. Return ONLY the keywords.`
+                        text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
                     }]
                 }],
             });
-            const keywords = response.text.trim().replace(/['"\\n]/g, '').toLowerCase();
-            if (keywords.length > 3) {
-                const encodedKeywords = encodeURIComponent(keywords);
-                const uniqueSeed = Date.now();
-                return `https://source.unsplash.com/800x600/?${encodedKeywords}&sig=${uniqueSeed}`;
+            const description = response.text.trim().replace(/['"\\n]/g, '');
+            if (description.length > 5) {
+                const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
+                const seed = Math.floor(Math.random() * 1000);
+                return `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
             }
         } catch (e) {
             console.error('Auto-source image failed:', e);

@@ -182,24 +182,25 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setBulkProgress(prev => ({ ...prev, current: i + 1 }));
 
             try {
-                // Ask Gemini for 2-3 keywords that describe this dish visually
+                // Ask Gemini for a visual prompt for AI image generation
                 const response = await ai.models.generateContent({
                     model: 'gemini-1.5-flash',
                     contents: [{
                         role: 'user',
                         parts: [{
-                            text: `For the recipe "${recipe.title}" (${recipe.category}), provide 2-3 simple food photography keywords separated by commas. These will be used to search for stock photos. Examples: "pancakes,breakfast,maple syrup" or "roast chicken,dinner,herbs". Return ONLY the keywords, nothing else.`
+                            text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
                         }]
                     }],
                 });
 
-                const keywords = response.text.trim().replace(/['"\\n]/g, '').toLowerCase();
+                const description = response.text.trim().replace(/['"\\n]/g, '');
 
-                if (keywords.length > 3) {
-                    // Use Unsplash Source API with keywords for reliable images
-                    const encodedKeywords = encodeURIComponent(keywords);
-                    const uniqueSeed = Date.now() + i; // Ensure unique images
-                    const url = `https://source.unsplash.com/800x600/?${encodedKeywords}&sig=${uniqueSeed}`;
+                if (description.length > 5) {
+                    // Use Pollinations.ai for reliable AI image generation
+                    // We add a random seed to the prompt to ensure unique variations if retried
+                    const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
+                    const seed = Math.floor(Math.random() * 1000);
+                    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
                     await onAddRecipe({ ...recipe, image: url });
                 }
             } catch (e) {
