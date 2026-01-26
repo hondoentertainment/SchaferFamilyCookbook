@@ -424,42 +424,6 @@ const App: React.FC = () => {
                         </select>
                     </div>
 
-                    {/* Admin Quick Actions */}
-                    {currentUser?.role === 'admin' && (
-                        <div className="flex gap-3 items-center justify-end">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Admin:</span>
-                            <button
-                                onClick={async () => {
-                                    const missing = recipes.filter(r => needsImage(r));
-                                    if (missing.length === 0) { alert('All recipes have images!'); return; }
-                                    if (!confirm(`Source images for ${missing.length} recipes?`)) return;
-                                    for (const r of missing) {
-                                        const url = await autoSourceImage(r);
-                                        if (url) await CloudArchive.upsertRecipe({ ...r, image: url }, currentUser.name);
-                                    }
-                                    await refreshLocalState();
-                                    alert('Done!');
-                                }}
-                                className="px-4 py-2 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-colors"
-                            >
-                                🖼️ Fill Missing Images
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    if (!confirm(`Refresh images for ALL ${recipes.length} recipes?`)) return;
-                                    for (const r of recipes) {
-                                        const url = await autoSourceImage(r);
-                                        if (url) await CloudArchive.upsertRecipe({ ...r, image: url }, currentUser.name);
-                                    }
-                                    await refreshLocalState();
-                                    alert('Done!');
-                                }}
-                                className="px-4 py-2 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 hover:bg-red-100 transition-colors"
-                            >
-                                🔄 Refresh All
-                            </button>
-                        </div>
-                    )}
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                         {filteredRecipes.map(recipe => (
