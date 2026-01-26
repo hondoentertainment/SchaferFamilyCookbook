@@ -64,7 +64,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onEdi
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} />
                 <div className="bg-[#FDFBF7] w-full md:max-w-4xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
                     <div className="absolute top-6 right-6 z-10 flex gap-2">
-                        <button onClick={() => { if (confirm("Discard this record forever?")) onDelete(recipe.id); }} className="w-10 h-10 bg-white border border-stone-100 rounded-full shadow-lg flex items-center justify-center text-stone-300 hover:text-red-500 transition-colors" title="Delete">✕</button>
+                        <button onClick={() => { if (confirm("Discard this record forever?")) onDelete(recipe.id); }} className="w-10 h-10 bg-white border border-stone-100 rounded-full shadow-lg flex items-center justify-center text-stone-300 hover:text-red-500 transition-colors" title="Delete Record">🗑️</button>
                         <button onClick={() => onEdit(recipe)} className="w-10 h-10 bg-[#2D4635] rounded-full shadow-lg flex items-center justify-center text-white hover:bg-[#1e3023] transition-colors" title="Edit">✎</button>
                         <button onClick={onClose} className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-stone-400 hover:text-stone-900 transition-colors" title="Close">✕</button>
                     </div>
