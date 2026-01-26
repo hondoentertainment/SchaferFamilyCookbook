@@ -176,20 +176,24 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setBulkProgress(prev => ({ ...prev, current: i + 1 }));
 
             try {
+                // Ask Gemini for 2-3 keywords that describe this dish visually
                 const response = await ai.models.generateContent({
                     model: 'gemini-1.5-flash',
                     contents: [{
                         role: 'user',
                         parts: [{
-                            text: `You are a heritage food photography curator. Based on the recipe: "${recipe.title}" (${recipe.category}), find a high-quality Unsplash Image ID that best represents this dish in a vintage 'family archive' aesthetic. Return ONLY the ID (e.g. 1547592166-23ac45744acd).`
+                            text: `For the recipe "${recipe.title}" (${recipe.category}), provide 2-3 simple food photography keywords separated by commas. These will be used to search for stock photos. Examples: "pancakes,breakfast,maple syrup" or "roast chicken,dinner,herbs". Return ONLY the keywords, nothing else.`
                         }]
                     }],
                 });
 
-                const photoId = response.text.trim().replace(/['"]/g, '');
+                const keywords = response.text.trim().replace(/['"\n]/g, '').toLowerCase();
 
-                if (photoId.length > 5) {
-                    const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
+                if (keywords.length > 3) {
+                    // Use Unsplash Source API with keywords for reliable images
+                    const encodedKeywords = encodeURIComponent(keywords);
+                    const uniqueSeed = Date.now() + i; // Ensure unique images
+                    const url = `https://source.unsplash.com/800x600/?${encodedKeywords}&sig=${uniqueSeed}`;
                     await onAddRecipe({ ...recipe, image: url });
                 }
             } catch (e) {
@@ -197,11 +201,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             }
 
             // Subtle delay to avoid rate limits
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 300));
         }
 
         setIsBulkSourcing(false);
-        alert("Bulk archival sourcing complete!");
+        alert("Bulk archival sourcing complete! Refresh if images don't appear immediately.");
     };
     const handleRecipeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
