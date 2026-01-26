@@ -145,22 +145,28 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         } finally { setIsGeneratingImage(false); }
     };
 
-    const handleBulkVisualSourcing = async () => {
-        const placeholders = recipes.filter(r => {
-            const isCategoryPlaceholder = Object.values(CATEGORY_IMAGES).includes(r.image);
-            const isMissingImage = !r.image || r.image.includes('fallback-gradient');
-            return isCategoryPlaceholder || isMissingImage;
-        });
+    const handleBulkVisualSourcing = async (forceRefresh: boolean = false) => {
+        const targetRecipes = forceRefresh
+            ? recipes
+            : recipes.filter(r => {
+                const isCategoryPlaceholder = Object.values(CATEGORY_IMAGES).includes(r.image);
+                const isMissingImage = !r.image || r.image.includes('fallback-gradient') || r.image.includes('source.unsplash.com');
+                return isCategoryPlaceholder || isMissingImage;
+            });
 
-        if (placeholders.length === 0) {
-            alert("No placeholders found! All recipes appear to have custom visuals.");
+        if (targetRecipes.length === 0) {
+            alert("No recipes to update!");
             return;
         }
 
-        if (!confirm(`Found ${placeholders.length} recipes with placeholder images. Start bulk sourcing?`)) return;
+        const message = forceRefresh
+            ? `This will refresh images for ALL ${targetRecipes.length} recipes. Continue?`
+            : `Found ${targetRecipes.length} recipes with placeholder images. Start bulk sourcing?`;
+
+        if (!confirm(message)) return;
 
         setIsBulkSourcing(true);
-        setBulkProgress({ current: 0, total: placeholders.length });
+        setBulkProgress({ current: 0, total: targetRecipes.length });
 
         const apiKey = getGeminiApiKey();
         if (!apiKey) {
@@ -171,8 +177,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
         const ai = new GoogleGenAI({ apiKey });
 
-        for (let i = 0; i < placeholders.length; i++) {
-            const recipe = placeholders[i];
+        for (let i = 0; i < targetRecipes.length; i++) {
+            const recipe = targetRecipes[i];
             setBulkProgress(prev => ({ ...prev, current: i + 1 }));
 
             try {
@@ -187,7 +193,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     }],
                 });
 
-                const keywords = response.text.trim().replace(/['"\n]/g, '').toLowerCase();
+                const keywords = response.text.trim().replace(/['"\\n]/g, '').toLowerCase();
 
                 if (keywords.length > 3) {
                     // Use Unsplash Source API with keywords for reliable images
@@ -374,8 +380,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <button onClick={handleMagicImport} disabled={isMagicLoading} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
                                                     {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
                                                 </button>
-                                                <button onClick={handleBulkVisualSourcing} disabled={isBulkSourcing} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
-                                                    {isBulkSourcing ? `Sourcing (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Bulk Visual Sourcing'}
+                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
+                                                    {isBulkSourcing ? `Sourcing (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing'}
+                                                </button>
+                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing} className="flex-1 py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
+                                                    {isBulkSourcing ? `Sourcing...` : '🔄 Refresh All'}
                                                 </button>
                                             </div>
                                         </div>
