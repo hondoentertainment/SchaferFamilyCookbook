@@ -11,6 +11,8 @@ import { HistoryView } from './components/HistoryView';
 import { TriviaView } from './components/TriviaView';
 import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
+import { CATEGORY_IMAGES } from './constants';
+import { GoogleGenAI } from '@google/genai';
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
@@ -145,6 +147,60 @@ const App: React.FC = () => {
             return matchS && matchC && matchA;
         });
     }, [recipes, search, category, contributor]);
+
+    const getGeminiApiKey = () => {
+        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
+            (process.env?.GEMINI_API_KEY) ||
+            (process.env?.VITE_GEMINI_API_KEY) ||
+            '';
+    };
+
+    const needsImage = (recipe: Recipe) => {
+        if (!recipe.image) return true;
+        if (Object.values(CATEGORY_IMAGES).includes(recipe.image)) return true;
+        if (recipe.image.includes('fallback-gradient')) return true;
+        return false;
+    };
+
+    const autoSourceImage = async (recipe: Recipe): Promise<string | null> => {
+        const apiKey = getGeminiApiKey();
+        if (!apiKey) return null;
+
+        try {
+            const ai = new GoogleGenAI({ apiKey });
+            const response = await ai.models.generateContent({
+                model: 'gemini-1.5-flash',
+                contents: [{
+                    role: 'user',
+                    parts: [{
+                        text: `For the recipe "${recipe.title}" (${recipe.category}), provide 2-3 simple food photography keywords separated by commas. Return ONLY the keywords.`
+                    }]
+                }],
+            });
+            const keywords = response.text.trim().replace(/['"\\n]/g, '').toLowerCase();
+            if (keywords.length > 3) {
+                const encodedKeywords = encodeURIComponent(keywords);
+                const uniqueSeed = Date.now();
+                return `https://source.unsplash.com/800x600/?${encodedKeywords}&sig=${uniqueSeed}`;
+            }
+        } catch (e) {
+            console.error('Auto-source image failed:', e);
+        }
+        return null;
+    };
+
+    const handleRecipeClick = async (recipe: Recipe) => {
+        if (needsImage(recipe)) {
+            // Auto-source image in background, don't block opening
+            autoSourceImage(recipe).then(async (url) => {
+                if (url && currentUser) {
+                    await CloudArchive.upsertRecipe({ ...recipe, image: url }, currentUser.name);
+                    await refreshLocalState();
+                }
+            });
+        }
+        setSelectedRecipe(recipe);
+    };
 
     if (!currentUser) {
         return (
@@ -331,11 +387,48 @@ const App: React.FC = () => {
                         </select>
                     </div>
 
+                    {/* Admin Quick Actions */}
+                    {currentUser?.role === 'admin' && (
+                        <div className="flex gap-3 items-center justify-end">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Admin:</span>
+                            <button
+                                onClick={async () => {
+                                    const missing = recipes.filter(r => needsImage(r));
+                                    if (missing.length === 0) { alert('All recipes have images!'); return; }
+                                    if (!confirm(`Source images for ${missing.length} recipes?`)) return;
+                                    for (const r of missing) {
+                                        const url = await autoSourceImage(r);
+                                        if (url) await CloudArchive.upsertRecipe({ ...r, image: url }, currentUser.name);
+                                    }
+                                    await refreshLocalState();
+                                    alert('Done!');
+                                }}
+                                className="px-4 py-2 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-colors"
+                            >
+                                🖼️ Fill Missing Images
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (!confirm(`Refresh images for ALL ${recipes.length} recipes?`)) return;
+                                    for (const r of recipes) {
+                                        const url = await autoSourceImage(r);
+                                        if (url) await CloudArchive.upsertRecipe({ ...r, image: url }, currentUser.name);
+                                    }
+                                    await refreshLocalState();
+                                    alert('Done!');
+                                }}
+                                className="px-4 py-2 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 hover:bg-red-100 transition-colors"
+                            >
+                                🔄 Refresh All
+                            </button>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                         {filteredRecipes.map(recipe => (
                             <div
                                 key={recipe.id}
-                                onClick={() => setSelectedRecipe(recipe)}
+                                onClick={() => handleRecipeClick(recipe)}
                                 className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500"
                             >
                                 {/* Image or Fallback Gradient */}
