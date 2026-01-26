@@ -13,6 +13,7 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import { CATEGORY_IMAGES } from './constants';
 import { GoogleGenAI } from '@google/genai';
+import { getGeminiApiKey, safelyGetText } from './services/ai';
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
@@ -148,13 +149,6 @@ const App: React.FC = () => {
         });
     }, [recipes, search, category, contributor]);
 
-    const getGeminiApiKey = () => {
-        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-            (process.env?.GEMINI_API_KEY) ||
-            (process.env?.VITE_GEMINI_API_KEY) ||
-            '';
-    };
-
     const needsImage = (recipe: Recipe) => {
         if (!recipe.image) return true;
         if (Object.values(CATEGORY_IMAGES).includes(recipe.image)) return true;
@@ -177,7 +171,7 @@ const App: React.FC = () => {
                     }]
                 }],
             });
-            const description = response.text.trim().replace(/['"\\n]/g, '');
+            const description = safelyGetText(response).trim().replace(/['"\\n]/g, '');
             if (description.length > 5) {
                 const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
                 const seed = Math.floor(Math.random() * 1000);

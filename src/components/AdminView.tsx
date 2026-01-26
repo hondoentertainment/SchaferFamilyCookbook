@@ -3,6 +3,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
+import { getGeminiApiKey, safelyGetText } from '../services/ai';
 
 interface AdminViewProps {
     editingRecipe: Recipe | null;
@@ -67,13 +68,6 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         return () => URL.revokeObjectURL(url);
     }, [recipeFile, editingRecipe]);
 
-    const getGeminiApiKey = () => {
-        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-            (process.env?.GEMINI_API_KEY) ||
-            (process.env?.VITE_GEMINI_API_KEY) ||
-            '';
-    };
-
     const handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
@@ -103,7 +97,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 }
             });
 
-            const responseText = (response as any).text;
+            const responseText = safelyGetText(response);
             const parsed = JSON.parse(responseText || '{}');
             setRecipeForm(prev => ({ ...prev, ...parsed }));
             setRawText('');
@@ -132,7 +126,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 }],
             });
 
-            const photoId = response.text.trim().replace(/['"]/g, '');
+            const photoId = safelyGetText(response).trim().replace(/['"]/g, '');
 
             if (photoId.length > 5) {
                 const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
@@ -193,7 +187,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     }],
                 });
 
-                const description = response.text.trim().replace(/['"\\n]/g, '');
+                const description = safelyGetText(response).trim().replace(/['"\\n]/g, '');
 
                 if (description.length > 5) {
                     // Use Pollinations.ai for reliable AI image generation
@@ -208,7 +202,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             }
 
             // Subtle delay to avoid rate limits
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 1000));
         }
 
         setIsBulkSourcing(false);
