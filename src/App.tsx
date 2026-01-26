@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
@@ -56,6 +56,25 @@ const App: React.FC = () => {
     const [archivePhone, setArchivePhone] = useState(() => localStorage.getItem('schafer_archive_phone') || '');
 
     const [loginName, setLoginName] = useState('');
+
+    // Upload State
+    const [uploadTarget, setUploadTarget] = useState<Recipe | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const triggerUpload = (recipe: Recipe) => {
+        setUploadTarget(recipe);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleGlobalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (uploadTarget && e.target.files?.[0]) {
+            handleRecipeUpdate(uploadTarget, e.target.files[0]);
+        }
+        setUploadTarget(null);
+    };
 
     // Filters
     const [search, setSearch] = useState('');
@@ -189,13 +208,29 @@ const App: React.FC = () => {
         return null;
     };
 
+    const handleRecipeUpdate = async (recipe: Recipe, file?: File) => {
+        if (!currentUser) return;
+        let url = recipe.image;
+        if (file) {
+            url = await CloudArchive.uploadFile(file, 'recipes') || url;
+        }
+        await CloudArchive.upsertRecipe({ ...recipe, image: url }, currentUser.name);
+        await refreshLocalState();
+        if (selectedRecipe && selectedRecipe.id === recipe.id) {
+            setSelectedRecipe({ ...recipe, image: url });
+        }
+    };
+
     const handleRecipeClick = async (recipe: Recipe) => {
         if (needsImage(recipe)) {
-            // Auto-source image in background, don't block opening
+            // Auto-source image in background
             autoSourceImage(recipe).then(async (url) => {
                 if (url && currentUser) {
                     await CloudArchive.upsertRecipe({ ...recipe, image: url }, currentUser.name);
                     await refreshLocalState();
+                    if (selectedRecipe && selectedRecipe.id === recipe.id) {
+                        setSelectedRecipe(prev => prev ? { ...prev, image: url } : null);
+                    }
                 }
             });
         }
@@ -324,6 +359,7 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-20">
+            <input type="file" ref={fileInputRef} onChange={handleGlobalFileChange} className="hidden" accept="image/*" />
             <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
             {selectedRecipe && (
@@ -339,6 +375,7 @@ const App: React.FC = () => {
                         CloudArchive.deleteRecipe(id);
                         setSelectedRecipe(null);
                     }}
+                    onUpdate={handleRecipeUpdate}
                 />
             )}
 
@@ -455,6 +492,13 @@ const App: React.FC = () => {
                                     <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                         <div className="flex justify-between items-center mb-2 opacity-80">
                                             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); triggerUpload(recipe); }}
+                                                className="w-8 h-8 bg-white/10 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors opacity-0 group-hover:opacity-100"
+                                                title="Quick Upload Image"
+                                            >
+                                                📷
+                                            </button>
                                         </div>
                                         <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
                                         <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">

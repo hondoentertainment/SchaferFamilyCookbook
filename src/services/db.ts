@@ -76,7 +76,17 @@ export const CloudArchive = {
 
     async uploadFile(file: File, folder: string): Promise<string | null> {
         const provider = this.getProvider();
-        if (provider !== 'firebase') return null;
+
+        // Local mode fallback: Convert to Data URL
+        if (provider !== 'firebase') {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         const fb = this.getFirebase();
         if (!fb) return null;
 
