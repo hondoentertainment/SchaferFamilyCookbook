@@ -130,20 +130,24 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
-            // Build a descriptive prompt directly from recipe data
-            const ingredientsList = recipeForm.ingredients?.slice(0, 3).join(', ') || '';
-            const category = recipeForm.category || 'Main';
+            const apiKey = getGeminiApiKey();
+            let description = '';
 
-            // Create description directly without needing Gemini
-            let description = `${recipeForm.title}`;
-            if (ingredientsList) {
-                description += ` with ${ingredientsList}`;
+            if (apiKey) {
+                const ai = new GoogleGenAI({ apiKey });
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.0-flash',
+                    contents: [{
+                        role: 'user',
+                        parts: [{ text: `Describe the dish "${recipeForm.title}" (${recipeForm.category}) in 5-10 words for an AI image generator. Return ONLY the description.` }]
+                    }]
+                });
+                description = response.text.trim().replace(/['"\\n]/g, '');
+            } else {
+                description = `${recipeForm.title}, ${recipeForm.category} dish`;
             }
-            description += `, ${category.toLowerCase()} dish`;
 
-            // Use Pollinations.ai for reliable AI image generation
-            const fullPrompt = `${description}, food photography, highly detailed, 4k, appetizing, warm lighting, vintage cookbook style, rustic family kitchen aesthetic`;
-            const encodedPrompt = encodeURIComponent(fullPrompt);
+            const encodedPrompt = encodeURIComponent(`${description}, food photography, highly detailed, 4k, appetizing, warm lighting`);
             const seed = Math.floor(Math.random() * 1000);
             const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
 
@@ -154,6 +158,39 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             console.error(e);
             alert(`Failed to generate image: ${e.message}`);
         } finally { setIsGeneratingImage(false); }
+    };
+
+    const handleQuickSource = async (recipe: Recipe) => {
+        setIsGeneratingImage(true);
+        try {
+            const apiKey = getGeminiApiKey();
+            let description = '';
+
+            if (apiKey) {
+                const ai = new GoogleGenAI({ apiKey });
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.0-flash',
+                    contents: [{
+                        role: 'user',
+                        parts: [{ text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Return ONLY the description.` }]
+                    }]
+                });
+                description = response.text.trim().replace(/['"\\n]/g, '');
+            } else {
+                description = `${recipe.title}, ${recipe.category} dish`;
+            }
+
+            const encodedPrompt = encodeURIComponent(`${description}, food photography, highly detailed, 4k, appetizing, warm lighting`);
+            const seed = Math.floor(Math.random() * 1000);
+            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
+
+            await onAddRecipe({ ...recipe, image: url });
+        } catch (e: any) {
+            console.error(e);
+            alert(`Quick generation failed: ${e.message}`);
+        } finally {
+            setIsGeneratingImage(false);
+        }
     };
 
     const handleBulkVisualSourcing = async (forceRefresh: boolean = false) => {
@@ -181,49 +218,55 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
         const apiKey = getGeminiApiKey();
         if (!apiKey) {
-            alert("Missing Gemini API Key");
+            alert("Missing Gemini API Key. Bulk sourcing requires Gemini for quality prompts.");
             setIsBulkSourcing(false);
             return;
         }
 
         const ai = new GoogleGenAI({ apiKey });
+        const BATCH_SIZE = 5;
 
-        for (let i = 0; i < targetRecipes.length; i++) {
-            const recipe = targetRecipes[i];
-            setBulkProgress(prev => ({ ...prev, current: i + 1 }));
+        for (let i = 0; i < targetRecipes.length; i += BATCH_SIZE) {
+            const batch = targetRecipes.slice(i, i + BATCH_SIZE);
+            const batchIndices = batch.map((_, idx) => i + idx + 1);
 
             try {
-                // Ask Gemini for a visual prompt for AI image generation
+                // Batch request prompts from Gemini
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.0-flash',
                     contents: [{
                         role: 'user',
                         parts: [{
-                            text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
+                            text: `Generate descriptive visual prompts for these ${batch.length} dishes for an AI image generator. Return a JSON object where the keys are the recipe titles and the values are the 5-10 word descriptions.
+                            Dishes: ${batch.map(r => `"${r.title}" (${r.category})`).join(', ')}`
                         }]
                     }],
+                    config: { responseMimeType: "application/json" }
                 });
 
-                const description = response.text.trim().replace(/['"\\n]/g, '');
+                const promptsMap = JSON.parse(response.text || '{}');
 
-                if (description.length > 5) {
-                    // Use Pollinations.ai for reliable AI image generation
-                    // We add a random seed to the prompt to ensure unique variations if retried
-                    const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
+                // Process batch in parallel (limited)
+                await Promise.all(batch.map(async (recipe, idx) => {
+                    const description = (promptsMap[recipe.title] || promptsMap[recipe.title.toLowerCase()] || `${recipe.title} food photography`).replace(/['"\\n]/g, '');
+                    const encodedPrompt = encodeURIComponent(`${description}, highly detailed, 4k, appetizing, rustic aesthetic`);
                     const seed = Math.floor(Math.random() * 1000);
                     const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
+
                     await onAddRecipe({ ...recipe, image: url });
-                }
+                    setBulkProgress(prev => ({ ...prev, current: Math.min(prev.total, i + idx + 1) }));
+                }));
+
             } catch (e) {
-                console.error(`Failed to source visual for ${recipe.title}:`, e);
+                console.error(`Batch processing failed starting at index ${i}:`, e);
             }
 
-            // Subtle delay to avoid rate limits
-            await new Promise(r => setTimeout(r, 300));
+            // Subtle delay between batches
+            await new Promise(r => setTimeout(r, 500));
         }
 
         setIsBulkSourcing(false);
-        alert("Bulk archival sourcing complete! Refresh if images don't appear immediately.");
+        alert("Bulk sourcing complete!");
     };
     const handleRecipeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -463,6 +506,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => handleQuickSource(r)}
+                                                                disabled={isGeneratingImage}
+                                                                className="px-3 py-2 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-bold uppercase hover:bg-amber-100 disabled:opacity-50"
+                                                                title="One-Click Quick Gen"
+                                                            >
+                                                                {isGeneratingImage ? '...' : '✨'}
+                                                            </button>
                                                             <button
                                                                 onClick={() => {
                                                                     onEditRecipe(r);
