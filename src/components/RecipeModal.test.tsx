@@ -5,20 +5,13 @@ import { createMockRecipe, renderWithProviders } from '../test/utils';
 
 describe('RecipeModal', () => {
     const mockOnClose = vi.fn();
-    const mockOnEdit = vi.fn();
-    const mockOnDelete = vi.fn();
-
     const defaultProps = {
         recipe: createMockRecipe(),
         onClose: mockOnClose,
-        onEdit: mockOnEdit,
-        onDelete: mockOnDelete,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // Mock window.confirm
-        global.confirm = vi.fn(() => true);
     });
 
     it('should render recipe details correctly', () => {
@@ -72,41 +65,10 @@ describe('RecipeModal', () => {
     it('should call onClose when close button is clicked', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
 
-        const closeButtons = screen.getAllByTitle('Close');
-        fireEvent.click(closeButtons[0]);
+        const closeButton = screen.getByTitle('Close');
+        fireEvent.click(closeButton);
 
         expect(mockOnClose).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call onEdit with recipe when edit button is clicked', () => {
-        renderWithProviders(<RecipeModal {...defaultProps} />);
-
-        const editButton = screen.getByTitle('Edit');
-        fireEvent.click(editButton);
-
-        expect(mockOnEdit).toHaveBeenCalledWith(defaultProps.recipe);
-    });
-
-    it('should call onDelete when delete button is clicked and confirmed', () => {
-        global.confirm = vi.fn(() => true);
-        renderWithProviders(<RecipeModal {...defaultProps} />);
-
-        const deleteButton = screen.getByTitle('Delete');
-        fireEvent.click(deleteButton);
-
-        expect(global.confirm).toHaveBeenCalledWith('Discard this record forever?');
-        expect(mockOnDelete).toHaveBeenCalledWith(defaultProps.recipe.id);
-    });
-
-    it('should not call onDelete when delete is cancelled', () => {
-        global.confirm = vi.fn(() => false);
-        renderWithProviders(<RecipeModal {...defaultProps} />);
-
-        const deleteButton = screen.getByTitle('Delete');
-        fireEvent.click(deleteButton);
-
-        expect(global.confirm).toHaveBeenCalledWith('Discard this record forever?');
-        expect(mockOnDelete).not.toHaveBeenCalled();
     });
 
     it('should call onClose when backdrop is clicked', () => {

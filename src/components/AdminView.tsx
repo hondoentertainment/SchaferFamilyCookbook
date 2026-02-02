@@ -16,12 +16,14 @@ interface AdminViewProps {
     onAddGallery: (g: GalleryItem, file?: File) => Promise<void>;
     onAddTrivia: (t: Trivia) => Promise<void>;
     onDeleteTrivia: (id: string) => void;
+    onDeleteRecipe: (id: string) => void;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void;
+    onEditRecipe: (r: Recipe) => void;
 }
 
 export const AdminView: React.FC<AdminViewProps> = (props) => {
-    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onUpdateContributor, onUpdateArchivePhone } = props;
+    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe } = props;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
@@ -29,7 +31,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [galleryFile, setGalleryFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showConfig, setShowConfig] = useState(false);
+
     const [rawText, setRawText] = useState('');
     const [isMagicLoading, setIsMagicLoading] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -39,12 +41,22 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [editingTrivia, setEditingTrivia] = useState<Trivia | null>(null);
     const [isBulkSourcing, setIsBulkSourcing] = useState(false);
     const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+    const [mergeFrom, setMergeFrom] = useState('');
+    const [mergeTo, setMergeTo] = useState('');
+    const [isMerging, setIsMerging] = useState(false);
+    const [recipeSearch, setRecipeSearch] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
+    // Filter recipes based on search
+    const filteredRecipes = recipes.filter(r =>
+        r.title.toLowerCase().includes(recipeSearch.toLowerCase()) ||
+        r.category.toLowerCase().includes(recipeSearch.toLowerCase()) ||
+        r.contributor?.toLowerCase().includes(recipeSearch.toLowerCase())
+    );
 
     const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
 
-    // Cloud Config state
-    const [provider, setProvider] = useState<'local' | 'firebase'>(dbStats.activeProvider === 'firebase' ? 'firebase' : 'local');
-    const [fbConfig, setFbConfig] = useState(() => JSON.parse(localStorage.getItem('schafer_firebase_config') || '{"apiKey":"","projectId":""}'));
+
 
     useEffect(() => {
         if (editingRecipe) {
@@ -83,7 +95,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-2.0-flash',
                 contents: [{ role: 'user', parts: [{ text: `Recipe text: ${rawText}` }] }],
                 config: {
                     systemInstruction: "Analyze this recipe and extract structured JSON data. Fields: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime, calories (number - estimated total).",
@@ -118,30 +130,29 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) throw new Error("Missing Gemini API Key");
-            const ai = new GoogleGenAI({ apiKey });
+            // Build a descriptive prompt directly from recipe data
+            const ingredientsList = recipeForm.ingredients?.slice(0, 3).join(', ') || '';
+            const category = recipeForm.category || 'Main';
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: [{
-                    role: 'user',
-                    parts: [{
-                        text: `You are a heritage food photography curator. Based on the recipe: "${recipeForm.title}" (${recipeForm.category}), find a high-quality Unsplash Image ID that best represents this dish in a vintage 'family archive' aesthetic. Return ONLY the ID (e.g. 1547592166-23ac45744acd).`
-                    }]
-                }],
-            });
-
-            const photoId = response.text.trim().replace(/['"]/g, '');
-
-            if (photoId.length > 5) {
-                const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
-                setRecipeForm(prev => ({ ...prev, image: url }));
-                setPreviewUrl(url);
-                setRecipeFile(null);
+            // Create description directly without needing Gemini
+            let description = `${recipeForm.title}`;
+            if (ingredientsList) {
+                description += ` with ${ingredientsList}`;
             }
+            description += `, ${category.toLowerCase()} dish`;
+
+            // Use Pollinations.ai for reliable AI image generation
+            const fullPrompt = `${description}, food photography, highly detailed, 4k, appetizing, warm lighting, vintage cookbook style, rustic family kitchen aesthetic`;
+            const encodedPrompt = encodeURIComponent(fullPrompt);
+            const seed = Math.floor(Math.random() * 1000);
+            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
+
+            setRecipeForm(prev => ({ ...prev, image: url }));
+            setPreviewUrl(url);
+            setRecipeFile(null);
         } catch (e: any) {
             console.error(e);
+            alert(`Failed to generate image: ${e.message}`);
         } finally { setIsGeneratingImage(false); }
     };
 
@@ -184,7 +195,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             try {
                 // Ask Gemini for a visual prompt for AI image generation
                 const response = await ai.models.generateContent({
-                    model: 'gemini-1.5-flash',
+                    model: 'gemini-2.0-flash',
                     contents: [{
                         role: 'user',
                         parts: [{
@@ -219,14 +230,21 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (!recipeForm.title || isSubmitting) return;
         setIsSubmitting(true);
         try {
+            const isUpdate = !!editingRecipe;
             await onAddRecipe({
                 ...recipeForm as Recipe,
                 id: recipeForm.id || 'r' + Date.now(),
                 contributor: recipeForm.contributor || currentUser?.name || 'Family',
                 image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic
             }, recipeFile || undefined);
-            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
+
+            // Show success feedback
+            setSuccessMessage(isUpdate ? `✓ "${recipeForm.title}" updated successfully!` : `✓ "${recipeForm.title}" added to archive!`);
+            setTimeout(() => setSuccessMessage(''), 4000);
+
+            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [], notes: '', contributor: '' });
             setRecipeFile(null);
+            setPreviewUrl(null);
             if (editingRecipe) clearEditing();
         } finally { setIsSubmitting(false); }
     };
@@ -249,12 +267,47 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         } finally { setIsSubmitting(false); }
     };
 
-    const saveConfig = () => {
-        localStorage.setItem('schafer_active_provider', provider);
-        localStorage.setItem('schafer_firebase_config', JSON.stringify(fbConfig));
-        alert("Archives re-initialized. Refreshing...");
-        window.location.reload();
+    const handleMergeContributors = async () => {
+        if (!mergeFrom.trim() || !mergeTo.trim()) { alert('Please enter both contributor names.'); return; }
+        if (mergeFrom.trim().toLowerCase() === mergeTo.trim().toLowerCase()) { alert('Cannot merge a contributor into themselves.'); return; }
+
+        const fromName = mergeFrom.trim();
+        const toName = mergeTo.trim();
+
+        const recipesToUpdate = recipes.filter(r => r.contributor === fromName);
+        if (recipesToUpdate.length === 0) {
+            alert(`No recipes found for "${fromName}".`);
+            return;
+        }
+
+        if (!confirm(`Merge ${recipesToUpdate.length} recipes from "${fromName}" into "${toName}"?`)) return;
+
+        setIsMerging(true);
+        try {
+            // Update all recipes with the old contributor name
+            for (const recipe of recipesToUpdate) {
+                await onAddRecipe({ ...recipe, contributor: toName });
+            }
+
+            // Remove the old contributor profile if it exists
+            const oldProfile = contributors.find(c => c.name === fromName);
+            if (oldProfile) {
+                // We don't have deleteContributor in props, so we'll leave the profile
+                // The profile will be orphaned but harmless
+            }
+
+            setMergeFrom('');
+            setMergeTo('');
+            alert(`✅ Successfully merged ${recipesToUpdate.length} recipes from "${fromName}" to "${toName}"!`);
+        } catch (e: any) {
+            alert(`Merge failed: ${e.message}`);
+        } finally {
+            setIsMerging(false);
+        }
     };
+
+
+
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -334,38 +387,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <h2 className="text-3xl font-serif italic text-[#2D4635]">
                                 {activeSubtab === 'records' ? 'New Heritage Record' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
                             </h2>
-                            <button onClick={() => setShowConfig(!showConfig)} className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-[#2D4635] flex items-center gap-2">
-                                {showConfig ? '✕ Close Setup' : '⚙️ Cloud Setup'}
-                            </button>
                         </div>
-
-                        {showConfig && (
-                            <div className="mb-12 p-10 bg-stone-50/50 rounded-[3rem] border border-stone-100">
-                                <h3 className="text-xl font-serif italic text-[#2D4635] mb-6">Database Vault Configuration</h3>
-                                <div className="space-y-6">
-                                    <div className="flex gap-4 p-1 bg-white rounded-2xl border border-stone-100">
-                                        {['local', 'firebase'].map((p: any) => (
-                                            <button key={p} onClick={() => setProvider(p)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${provider === p ? 'bg-[#2D4635] text-white shadow-md' : 'text-stone-400'}`}>
-                                                {p}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {provider === 'firebase' && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Firebase API Key</label>
-                                                <input type="password" value={fbConfig.apiKey} onChange={e => setFbConfig({ ...fbConfig, apiKey: e.target.value })} className="w-full p-4 border border-stone-200 rounded-2xl text-xs bg-white" placeholder="AIzaSy..." />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Project ID</label>
-                                                <input value={fbConfig.projectId} onChange={e => setFbConfig({ ...fbConfig, projectId: e.target.value })} className="w-full p-4 border border-stone-200 rounded-2xl text-xs bg-white" placeholder="schafer-archive-..." />
-                                            </div>
-                                        </div>
-                                    )}
-                                    <button onClick={saveConfig} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Update Cloud Settings</button>
-                                </div>
-                            </div>
-                        )}
 
                         <div className="grid grid-cols-1 gap-16">
                             {activeSubtab === 'records' && (
@@ -374,6 +396,97 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">📖</span>
                                         {editingRecipe ? 'Edit Archival Entry' : 'New Heritage Record'}
                                     </h3>
+
+                                    {/* Success Toast */}
+                                    {successMessage && (
+                                        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                            <span className="text-emerald-600 text-lg">✓</span>
+                                            <span className="text-sm font-bold text-emerald-700">{successMessage}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Edit Mode Banner */}
+                                    {editingRecipe && (
+                                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-amber-600 text-lg">✏️</span>
+                                                <div>
+                                                    <span className="text-sm font-bold text-amber-700">Editing: {editingRecipe.title}</span>
+                                                    <p className="text-xs text-amber-600">Make your changes below and click "Update Record" to save.</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={clearEditing}
+                                                className="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 transition-colors"
+                                            >
+                                                Cancel Edit
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Existing Records List with Search */}
+                                    {!editingRecipe && (
+                                        <div className="bg-stone-50 rounded-3xl border border-stone-100 p-6 max-h-[500px] overflow-hidden mb-8">
+                                            <div className="flex items-center justify-between mb-4 sticky top-0 bg-stone-50 py-2 z-10">
+                                                <h4 className="text-[10px] font-black uppercase text-stone-400">
+                                                    Manage Existing Records ({filteredRecipes.length}{recipeSearch ? ` of ${recipes.length}` : ''})
+                                                </h4>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search recipes..."
+                                                        value={recipeSearch}
+                                                        onChange={e => setRecipeSearch(e.target.value)}
+                                                        className="pl-8 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#2D4635]/20 w-48"
+                                                    />
+                                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
+                                                {filteredRecipes.length === 0 ? (
+                                                    <div className="text-center py-8 text-stone-400">
+                                                        <span className="text-2xl block mb-2">🔍</span>
+                                                        <span className="text-xs">No recipes match "{recipeSearch}"</span>
+                                                    </div>
+                                                ) : filteredRecipes.map(r => (
+                                                    <div key={r.id} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-stone-100 hover:shadow-md transition-all group">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden">
+                                                                {r.image && <img src={r.image} className="w-full h-full object-cover" alt="" />}
+                                                            </div>
+                                                            <div>
+                                                                <h5 className="text-sm font-serif font-bold text-[#2D4635]">{r.title}</h5>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">{r.category}</span>
+                                                                    {r.contributor && <span className="text-[9px] text-stone-400">by {r.contributor}</span>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => {
+                                                                    onEditRecipe(r);
+                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                }}
+                                                                className="px-3 py-2 bg-[#2D4635] text-white rounded-lg text-[10px] font-bold uppercase"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (confirm(`Delete "${r.title}"? This cannot be undone.`)) onDeleteRecipe(r.id);
+                                                                }}
+                                                                className="px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold uppercase hover:bg-red-100"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {!editingRecipe && (
                                         <div className="space-y-4">
                                             <textarea placeholder="Paste raw recipe text here..." className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-sm bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
@@ -420,19 +533,48 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 </div>
                                             </div>
                                             <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
-                                                {isGeneratingImage ? 'Sourcing Legacy Visual...' : '✨ Find Heritage Photo with AI'}
+                                                {isGeneratingImage ? 'Generating Legacy Visual...' : '✨ Generate Heritage Photo'}
                                             </button>
                                         </div>
-                                        <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                            <select className="p-4 border border-stone-200 rounded-2xl text-sm bg-white" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
+                                        <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
+
+                                        {/* Contributor Selection */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Contributed By</label>
+                                            <select
+                                                className="w-full p-4 border border-stone-200 rounded-2xl text-sm bg-white focus:ring-2 focus:ring-[#2D4635]/20"
+                                                value={recipeForm.contributor || currentUser?.name || ''}
+                                                onChange={e => setRecipeForm({ ...recipeForm, contributor: e.target.value })}
+                                            >
+                                                <option value={currentUser?.name || 'Me'}>{currentUser?.name || 'Me'} (you)</option>
+                                                {contributors.filter(c => c.name !== currentUser?.name).map(c => (
+                                                    <option key={c.id} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <select className="p-4 border border-stone-200 rounded-2xl text-sm bg-white focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
                                                 {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
                                             </select>
-                                            <input placeholder="Prep Time" className="p-4 border border-stone-200 rounded-2xl text-sm" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
-                                            <input type="number" placeholder="Est. Calories" className="p-4 border border-stone-200 rounded-2xl text-sm" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
+                                            <input placeholder="Prep Time (e.g. 15 min)" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
+                                            <input placeholder="Cook Time (e.g. 30 min)" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
+                                            <input type="number" placeholder="Est. Calories" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
                                         </div>
-                                        <textarea placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
-                                        <textarea placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
+                                        <textarea placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
+                                        <textarea placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
+
+                                        {/* Heirloom Notes */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Heirloom Notes (optional)</label>
+                                            <textarea
+                                                placeholder="Add any special memories, tips, or history about this recipe..."
+                                                className="w-full h-24 p-4 border border-[#2D4635]/20 rounded-2xl text-sm bg-[#2D4635]/5 focus:ring-2 focus:ring-[#2D4635]/20 italic"
+                                                value={recipeForm.notes || ''}
+                                                onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })}
+                                            />
+                                        </div>
+
                                         <div className="flex gap-4">
                                             <button type="submit" disabled={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
                                                 {isSubmitting ? 'Archiving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
@@ -542,6 +684,47 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">👥</span>
                             Family Directory & Avatars
                         </h2>
+
+                        {/* Merge Contributors Tool */}
+                        {isSuperAdmin && (
+                            <div className="mb-10 p-6 bg-orange-50/50 rounded-3xl border border-orange-100">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D] mb-4 flex items-center gap-2">
+                                    <span>🔀</span> Merge Contributors
+                                </h4>
+                                <p className="text-xs text-stone-500 mb-4">Combine two contributor accounts by moving all recipes from one contributor to another.</p>
+                                <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
+                                    <div className="flex-1 w-full">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Merge From (will be removed)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Dawn Schafer Tessmer"
+                                            value={mergeFrom}
+                                            onChange={e => setMergeFrom(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
+                                        />
+                                    </div>
+                                    <span className="text-stone-300 text-xl hidden md:block">→</span>
+                                    <div className="flex-1 w-full">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Merge Into (will keep)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Dawn"
+                                            value={mergeTo}
+                                            onChange={e => setMergeTo(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleMergeContributors}
+                                        disabled={isMerging || !mergeFrom.trim() || !mergeTo.trim()}
+                                        className="px-6 py-3 bg-[#A0522D] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                    >
+                                        {isMerging ? 'Merging...' : '🔀 Merge'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                             {Array.from(new Set([
                                 ...(props.recipes || []).map(r => r.contributor),

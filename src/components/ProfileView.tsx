@@ -17,12 +17,15 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const [avatar, setAvatar] = useState(currentUser.picture);
     const [isSaving, setIsSaving] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
+        setSaveSuccess(false);
         try {
             await onUpdateProfile(name, avatar);
-            alert("Profile updated successfully!");
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
         } finally {
             setIsSaving(false);
         }
@@ -63,6 +66,12 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             >
                                 {isSaving ? 'Updating...' : 'Save Profile'}
                             </button>
+                            {saveSuccess && (
+                                <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 animate-in fade-in slide-in-from-left-4 duration-300">
+                                    <span className="text-lg">✓</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Profile Updated</span>
+                                </div>
+                            )}
                             <div className="flex items-center gap-3 px-8 py-4 bg-stone-50 rounded-full border border-stone-100">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Status:</span>
                                 <span className={`text-[10px] font-black uppercase tracking-widest ${currentUser.role === 'admin' ? 'text-orange-500' : 'text-emerald-600'}`}>

@@ -174,40 +174,6 @@ const App: React.FC = () => {
             '';
     };
 
-    const needsImage = (recipe: Recipe) => {
-        if (!recipe.image) return true;
-        if (Object.values(CATEGORY_IMAGES).includes(recipe.image)) return true;
-        if (recipe.image.includes('fallback-gradient')) return true;
-        return false;
-    };
-
-    const autoSourceImage = async (recipe: Recipe): Promise<string | null> => {
-        const apiKey = getGeminiApiKey();
-        if (!apiKey) return null;
-
-        try {
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: [{
-                    role: 'user',
-                    parts: [{
-                        text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
-                    }]
-                }],
-            });
-            const description = response.text.trim().replace(/['"\\n]/g, '');
-            if (description.length > 5) {
-                const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
-                const seed = Math.floor(Math.random() * 1000);
-                return `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
-            }
-        } catch (e) {
-            console.error('Auto-source image failed:', e);
-        }
-        return null;
-    };
-
     const handleRecipeUpdate = async (recipe: Recipe, file?: File) => {
         if (!currentUser) return;
         let url = recipe.image;
@@ -222,18 +188,6 @@ const App: React.FC = () => {
     };
 
     const handleRecipeClick = async (recipe: Recipe) => {
-        if (needsImage(recipe)) {
-            // Auto-source image in background
-            autoSourceImage(recipe).then(async (url) => {
-                if (url && currentUser) {
-                    await CloudArchive.upsertRecipe({ ...recipe, image: url }, currentUser.name);
-                    await refreshLocalState();
-                    if (selectedRecipe && selectedRecipe.id === recipe.id) {
-                        setSelectedRecipe(prev => prev ? { ...prev, image: url } : null);
-                    }
-                }
-            });
-        }
         setSelectedRecipe(recipe);
     };
 
@@ -359,23 +313,12 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-20">
-            <input type="file" ref={fileInputRef} onChange={handleGlobalFileChange} className="hidden" accept="image/*" />
             <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
             {selectedRecipe && (
                 <RecipeModal
                     recipe={selectedRecipe}
                     onClose={() => setSelectedRecipe(null)}
-                    onEdit={(r) => {
-                        setEditingRecipe(r);
-                        setSelectedRecipe(null);
-                        setTab('Admin');
-                    }}
-                    onDelete={(id) => {
-                        CloudArchive.deleteRecipe(id);
-                        setSelectedRecipe(null);
-                    }}
-                    onUpdate={handleRecipeUpdate}
                 />
             )}
 
@@ -432,7 +375,7 @@ const App: React.FC = () => {
                                 onClick={() => handleRecipeClick(recipe)}
                                 className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500"
                             >
-                                {/* Image or Fallback Gradient */}
+                                {/* Image or Category Fallback */}
                                 {recipe.image ? (
                                     <img
                                         src={recipe.image}
@@ -440,13 +383,28 @@ const App: React.FC = () => {
                                         loading="lazy"
                                         alt={recipe.title}
                                         onError={(e) => {
-                                            // Fallback if image fails
-                                            e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement?.classList.add('fallback-gradient');
+                                            // Fallback to category image if primary fails
+                                            const fallbackUrl = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
+                                            if (e.currentTarget.src !== fallbackUrl) {
+                                                e.currentTarget.src = fallbackUrl;
+                                            }
                                         }}
                                     />
                                 ) : (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635] to-[#A0522D] opacity-80" />
+                                    <>
+                                        <img
+                                            src={CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic}
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60"
+                                            loading="lazy"
+                                            alt={recipe.title}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#2D4635]/80 to-transparent" />
+                                        {/* "Needs Photo" indicator */}
+                                        <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg z-10">
+                                            <span className="text-xs">📷</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Needs Photo</span>
+                                        </div>
+                                    </>
                                 )}
 
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
@@ -456,13 +414,10 @@ const App: React.FC = () => {
                                     <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                         <div className="flex justify-between items-center mb-2 opacity-80">
                                             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); triggerUpload(recipe); }}
-                                                className="w-8 h-8 bg-white/10 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors opacity-0 group-hover:opacity-100"
-                                                title="Quick Upload Image"
-                                            >
-                                                📷
-                                            </button>
+                                            {/* AI Generated Badge */}
+                                            {recipe.image?.includes('pollinations.ai') && (
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-purple-300 bg-purple-900/50 px-2 py-0.5 rounded-full backdrop-blur-sm animate-pulse">✨ AI</span>
+                                            )}
                                         </div>
                                         <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
                                         <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
@@ -470,6 +425,22 @@ const App: React.FC = () => {
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* Admin Quick-Action Button */}
+                                {currentUser?.role === 'admin' && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingRecipe(recipe);
+                                            setTab('Admin');
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
+                                        title="Edit with AI"
+                                    >
+                                        ✨
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -516,6 +487,10 @@ const App: React.FC = () => {
                         await CloudArchive.deleteTrivia(id);
                         await refreshLocalState();
                     }}
+                    onDeleteRecipe={async (id) => {
+                        await CloudArchive.deleteRecipe(id);
+                        await refreshLocalState();
+                    }}
                     onUpdateContributor={async (p) => {
                         await CloudArchive.upsertContributor(p);
                         // Sync with current user if they just updated themselves
@@ -530,6 +505,7 @@ const App: React.FC = () => {
                         setArchivePhone(p);
                         localStorage.setItem('schafer_archive_phone', p);
                     }}
+                    onEditRecipe={setEditingRecipe}
                 />
             )}
             {tab === 'Admin' && currentUser.role !== 'admin' && (

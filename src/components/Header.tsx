@@ -21,20 +21,22 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         <span className="font-serif italic text-lg md:text-xl text-[#2D4635] hidden sm:block">Archive</span>
                     </div>
                     <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth">
-                        {['Recipes', 'Index', 'Gallery', 'Trivia', 'History', 'Contributors', 'Admin'].map(t => (
-                            <button
-                                key={t}
-                                id={`tab-${t}`}
-                                onClick={() => {
-                                    setTab(t);
-                                    document.getElementById(`tab-${t}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                                }}
-                                className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
-                                    }`}
-                            >
-                                {t === 'Admin' && currentUser?.role !== 'admin' ? '🔒 Admin' : t}
-                            </button>
-                        ))}
+                        {['Recipes', 'Index', 'Gallery', 'Trivia', 'History', 'Contributors', 'Profile', 'Admin']
+                            .filter(t => t !== 'Profile' || currentUser) // Only show Profile when logged in
+                            .map(t => (
+                                <button
+                                    key={t}
+                                    id={`tab-${t}`}
+                                    onClick={() => {
+                                        setTab(t);
+                                        document.getElementById(`tab-${t}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                    }}
+                                    className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
+                                        }`}
+                                >
+                                    {t === 'Admin' && currentUser?.role !== 'admin' ? '🔒 Admin' : t}
+                                </button>
+                            ))}
                     </nav>
                 </div>
                 <div className="flex items-center gap-4">
