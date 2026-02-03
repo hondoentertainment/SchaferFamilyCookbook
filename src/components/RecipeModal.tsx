@@ -53,9 +53,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
             {/* Main Modal */}
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} />
-                <div className="bg-[#FDFBF7] w-full md:max-w-4xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
-                    <div className="absolute top-6 right-6 z-10 flex gap-2">
-                        <button onClick={onClose} className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-stone-400 hover:text-stone-900 transition-colors" title="Close">✕</button>
+                <div className="bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
+                    <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
+                        <button onClick={onClose} className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" title="Close">
+                            <span className="text-xl font-light">✕</span>
+                        </button>
                     </div>
 
                     <div
@@ -99,50 +101,87 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-8 md:p-12 space-y-8">
-                        <div>
-                            <span className="text-[10px] font-black uppercase text-[#A0522D] tracking-widest">{recipe.category}</span>
-                            <h2 className="text-4xl font-serif italic text-[#2D4635] mt-2 leading-tight">{recipe.title}</h2>
-                            <div className="flex gap-4 mt-4 text-[10px] font-black uppercase text-stone-400 tracking-widest">
-                                <span>By {recipe.contributor}</span>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 space-y-8 pb-12">
+                        {/* Header Section */}
+                        <div className="space-y-3">
+                            <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
+                            <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
+                            <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="text-[#A0522D]">👤</span>
+                                    <span>By {recipe.contributor}</span>
+                                </span>
                                 {(recipe.prepTime || recipe.cookTime || recipe.calories) && (
-                                    <span className="flex gap-2 text-[#A0522D]">
-                                        {recipe.prepTime && <span>Prep: {recipe.prepTime}</span>}
-                                        {recipe.cookTime && <span>Cook: {recipe.cookTime}</span>}
-                                        {recipe.calories && <span className="flex items-center gap-1"><span>•</span> <span>~{recipe.calories} kcal</span></span>}
-                                    </span>
+                                    <>
+                                        {recipe.prepTime && (
+                                            <span className="flex items-center gap-1.5 text-[#A0522D]">
+                                                <span>⏱️</span>
+                                                <span>Prep: {recipe.prepTime}</span>
+                                            </span>
+                                        )}
+                                        {recipe.cookTime && (
+                                            <span className="flex items-center gap-1.5 text-[#A0522D]">
+                                                <span>🔥</span>
+                                                <span>Cook: {recipe.cookTime}</span>
+                                            </span>
+                                        )}
+                                        {recipe.calories && (
+                                            <span className="flex items-center gap-1.5 text-[#A0522D]">
+                                                <span>📊</span>
+                                                <span>~{recipe.calories} kcal</span>
+                                            </span>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-serif italic text-[#2D4635] border-b border-stone-100 pb-2">Ingredients</h3>
-                            <ul className="space-y-2">
+                        {/* Ingredients Section */}
+                        <div className="space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50">
+                            <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
+                                <span className="text-2xl">🥘</span>
+                                <span>Ingredients</span>
+                            </h3>
+                            <ul className="space-y-3 pl-2">
                                 {recipe.ingredients.map((ing, i) => (
-                                    <li key={i} className="text-sm text-stone-600 flex items-start gap-3">
-                                        <span className="text-[#A0522D] mt-1.5 w-1.5 h-1.5 rounded-full bg-[#A0522D]/20 shrink-0" />
-                                        {ing}
+                                    <li key={i} className="text-sm md:text-base text-stone-700 flex items-start gap-3 leading-relaxed group hover:text-[#2D4635] transition-colors">
+                                        <span className="text-[#A0522D] mt-2 w-2 h-2 rounded-full bg-[#A0522D]/30 shrink-0 group-hover:bg-[#A0522D] transition-colors" />
+                                        <span className="flex-1">{ing}</span>
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-serif italic text-[#2D4635] border-b border-stone-100 pb-2">Instructions</h3>
+                        {/* Instructions Section */}
+                        <div className="space-y-5">
+                            <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2 pb-2 border-b border-stone-200">
+                                <span className="text-2xl">📝</span>
+                                <span>Instructions</span>
+                            </h3>
                             <div className="space-y-6">
                                 {recipe.instructions.map((step, i) => (
-                                    <div key={i} className="flex gap-4">
-                                        <span className="text-2xl font-serif italic text-[#A0522D]/20 shrink-0 tabular-nums">{(i + 1).toString().padStart(2, '0')}</span>
-                                        <p className="text-sm text-stone-700 leading-relaxed">{step}</p>
+                                    <div key={i} className="flex gap-4 group hover:bg-white/50 p-4 rounded-xl transition-all -ml-4">
+                                        <span className="text-3xl font-serif italic text-[#A0522D]/30 group-hover:text-[#A0522D]/50 shrink-0 tabular-nums transition-colors leading-none pt-1">
+                                            {(i + 1).toString().padStart(2, '0')}
+                                        </span>
+                                        <p className="text-sm md:text-base text-stone-700 leading-relaxed flex-1 group-hover:text-[#2D4635] transition-colors">
+                                            {step}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
+                        {/* Notes Section */}
                         {recipe.notes && (
-                            <div className="bg-[#2D4635]/5 p-6 rounded-3xl border border-[#2D4635]/10 italic text-stone-600 text-sm">
-                                <span className="font-serif block mb-1 text-[#2D4635]">Heirloom Notes</span>
-                                {recipe.notes}
+                            <div className="bg-gradient-to-br from-[#2D4635]/5 to-[#A0522D]/5 p-6 md:p-8 rounded-3xl border border-[#2D4635]/10 shadow-inner">
+                                <div className="flex items-start gap-3 mb-3">
+                                    <span className="text-2xl">💭</span>
+                                    <span className="font-serif text-lg italic text-[#2D4635]">Heirloom Notes</span>
+                                </div>
+                                <p className="italic text-stone-600 text-sm md:text-base leading-relaxed pl-9">
+                                    {recipe.notes}
+                                </p>
                             </div>
                         )}
                     </div>

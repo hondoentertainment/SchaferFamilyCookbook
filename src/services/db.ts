@@ -96,6 +96,25 @@ export const CloudArchive = {
         return await getDownloadURL(snapshot.ref);
     },
 
+    // Bulk upload multiple files
+    async uploadFiles(files: File[], folder: string): Promise<{ url: string; name: string; size: number }[]> {
+        const provider = this.getProvider();
+        const results: { url: string; name: string; size: number }[] = [];
+
+        for (const file of files) {
+            try {
+                const url = await this.uploadFile(file, folder);
+                if (url) {
+                    results.push({ url, name: file.name, size: file.size });
+                }
+            } catch (e) {
+                console.error(`Failed to upload ${file.name}:`, e);
+            }
+        }
+
+        return results;
+    },
+
     async deleteRecipe(id: string): Promise<void> {
         const provider = this.getProvider();
         if (provider === 'firebase') {

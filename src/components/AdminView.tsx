@@ -46,6 +46,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isMerging, setIsMerging] = useState(false);
     const [recipeSearch, setRecipeSearch] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [bulkFiles, setBulkFiles] = useState<FileList | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; errors: string[] }>({ current: 0, total: 0, errors: [] });
 
     // Filter recipes based on search
     const filteredRecipes = recipes.filter(r =>
@@ -308,6 +310,53 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setGalleryForm({ caption: '' });
             setGalleryFile(null);
         } finally { setIsSubmitting(false); }
+    };
+
+    const handleBulkGalleryUpload = async () => {
+        if (!bulkFiles || bulkFiles.length === 0) return;
+
+        const files: File[] = (Array.from(bulkFiles) as File[]).filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'));
+        if (files.length === 0) {
+            alert('No valid image or video files selected.');
+            return;
+        }
+
+        if (!confirm(`Upload ${files.length} files to the gallery?`)) return;
+
+        setIsSubmitting(true);
+        setUploadProgress({ current: 0, total: files.length, errors: [] });
+
+        let successCount = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            try {
+                const isVideo = file.type.startsWith('video/');
+                const baseName = file.name.replace(/\.[^/.]+$/, '');
+                await onAddGallery({
+                    id: 'g' + Date.now() + '_' + i,
+                    type: isVideo ? 'video' : 'image',
+                    url: '',
+                    caption: galleryForm.caption || baseName || 'Family Memory',
+                    contributor: currentUser?.name || 'Family'
+                }, file as File);
+                successCount++;
+            } catch (e: any) {
+                errors.push(`${file.name}: ${e.message}`);
+            }
+
+            setUploadProgress({ current: i + 1, total: files.length, errors });
+        }
+
+        setIsSubmitting(false);
+        setBulkFiles(null);
+
+        if (errors.length > 0) {
+            alert(`Upload complete: ${successCount} succeeded, ${errors.length} failed.\n\nErrors:\n${errors.join('\n')}`);
+        } else {
+            alert(`Successfully uploaded ${successCount} files to the gallery!`);
+        }
     };
 
     const handleMergeContributors = async () => {
@@ -677,6 +726,93 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             {isSubmitting ? 'Uploading...' : 'Upload Memory'}
                                         </button>
                                     </form>
+
+                                    {/* Bulk Upload Section */}
+                                    <div className="mt-8 pt-8 border-t border-stone-200">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] mb-4 flex items-center gap-2">
+                                            <span>📚</span> Bulk Image Upload
+                                        </h4>
+                                        <div className="p-6 bg-[#2D4635]/5 rounded-3xl border border-[#2D4635]/10">
+                                            <div className="relative group">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*,video/*"
+                                                    multiple
+                                                    onChange={e => setBulkFiles(e.target.files)}
+                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                />
+                                                <div className="w-full h-24 border-2 border-dashed border-[#2D4635]/30 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-[#2D4635]/60 group-hover:border-[#2D4635] group-hover:text-[#2D4635] transition-all bg-white/50">
+                                                    <span className="text-2xl">📁</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest">
+                                                        {bulkFiles && bulkFiles.length > 0
+                                                            ? `${bulkFiles.length} files selected`
+                                                            : 'Drag & Drop or Click to Select Multiple'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {bulkFiles && bulkFiles.length > 0 && (
+                                                <div className="mt-4 space-y-3">
+                                                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                                                        {(Array.from(bulkFiles) as File[]).slice(0, 10).map((file, idx) => (
+                                                            <span key={idx} className="px-3 py-1 bg-white rounded-full text-[9px] font-medium text-stone-600 truncate max-w-[150px]">
+                                                                {file.name}
+                                                            </span>
+                                                        ))}
+                                                        {bulkFiles.length > 10 && (
+                                                            <span className="px-3 py-1 bg-white/50 rounded-full text-[9px] font-medium text-stone-500">
+                                                                +{bulkFiles.length - 10} more
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <input
+                                                        placeholder="Caption for all (optional)..."
+                                                        className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none bg-white"
+                                                        value={galleryForm.caption}
+                                                        onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })}
+                                                    />
+
+                                                    {/* Progress Display */}
+                                                    {uploadProgress.total > 0 && (
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center justify-between text-[10px] font-bold text-[#2D4635]">
+                                                                <span>Uploading...</span>
+                                                                <span>{uploadProgress.current}/{uploadProgress.total}</span>
+                                                            </div>
+                                                            <div className="w-full h-2 bg-white rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-[#2D4635] transition-all duration-300"
+                                                                    style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <button
+                                                        onClick={handleBulkGalleryUpload}
+                                                        disabled={isSubmitting || uploadProgress.total > 0}
+                                                        className="w-full py-3 bg-[#2D4635] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {isSubmitting && uploadProgress.total > 0
+                                                            ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...`
+                                                            : `Upload ${bulkFiles.length} Files to Gallery`}
+                                                    </button>
+
+                                                    {uploadProgress.errors.length > 0 && (
+                                                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                                                            <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mb-2">
+                                                                {uploadProgress.errors.length} Failed:
+                                                            </p>
+                                                            <p className="text-[9px] text-red-500 max-h-20 overflow-y-auto">
+                                                                {uploadProgress.errors.join('\\n')}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </section>
                             )}
 
