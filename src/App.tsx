@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
+import RecipeCard from './components/RecipeCard';
 import { RecipeModal } from './components/RecipeModal';
 import { AdminView } from './components/AdminView';
 import { AlphabeticalIndex } from './components/AlphabeticalIndex';
@@ -13,6 +14,47 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import { CATEGORY_IMAGES } from './constants';
 import { GoogleGenAI } from '@google/genai';
+
+const getGeminiApiKey = () => {
+    return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
+        (process.env?.GEMINI_API_KEY) ||
+        (process.env?.VITE_GEMINI_API_KEY) ||
+        '';
+};
+
+const needsImage = (recipe: Recipe) => {
+    if (!recipe.image) return true;
+    if (Object.values(CATEGORY_IMAGES).includes(recipe.image)) return true;
+    if (recipe.image.includes('fallback-gradient')) return true;
+    return false;
+};
+
+const autoSourceImage = async (recipe: Recipe): Promise<string | null> => {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) return null;
+
+    try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: [{
+                role: 'user',
+                parts: [{
+                    text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
+                }]
+            }],
+        });
+        const description = response.text.trim().replace(/['"\\n]/g, '');
+        if (description.length > 5) {
+            const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
+            const seed = Math.floor(Math.random() * 1000);
+            return `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
+        }
+    } catch (e) {
+        console.error('Auto-source image failed:', e);
+    }
+    return null;
+};
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
@@ -62,7 +104,8 @@ const App: React.FC = () => {
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
 
-    const refreshLocalState = async () => {
+    // Wrapped in useCallback to maintain reference stability for React.memo
+    const refreshLocalState = useCallback(async () => {
         const provider = CloudArchive.getProvider();
         if (provider === 'local') {
             const [r, t, g, c, h] = await Promise.all([
@@ -78,7 +121,7 @@ const App: React.FC = () => {
             setContributors(c);
             setHistory(h);
         }
-    };
+    }, []);
 
     // Sync Listeners
     useEffect(() => {
@@ -148,48 +191,7 @@ const App: React.FC = () => {
         });
     }, [recipes, search, category, contributor]);
 
-    const getGeminiApiKey = () => {
-        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-            (process.env?.GEMINI_API_KEY) ||
-            (process.env?.VITE_GEMINI_API_KEY) ||
-            '';
-    };
-
-    const needsImage = (recipe: Recipe) => {
-        if (!recipe.image) return true;
-        if (Object.values(CATEGORY_IMAGES).includes(recipe.image)) return true;
-        if (recipe.image.includes('fallback-gradient')) return true;
-        return false;
-    };
-
-    const autoSourceImage = async (recipe: Recipe): Promise<string | null> => {
-        const apiKey = getGeminiApiKey();
-        if (!apiKey) return null;
-
-        try {
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: [{
-                    role: 'user',
-                    parts: [{
-                        text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
-                    }]
-                }],
-            });
-            const description = response.text.trim().replace(/['"\\n]/g, '');
-            if (description.length > 5) {
-                const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
-                const seed = Math.floor(Math.random() * 1000);
-                return `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
-            }
-        } catch (e) {
-            console.error('Auto-source image failed:', e);
-        }
-        return null;
-    };
-
-    const handleRecipeClick = async (recipe: Recipe) => {
+    const handleRecipeClick = useCallback(async (recipe: Recipe) => {
         if (needsImage(recipe)) {
             // Auto-source image in background, don't block opening
             autoSourceImage(recipe).then(async (url) => {
@@ -200,7 +202,7 @@ const App: React.FC = () => {
             });
         }
         setSelectedRecipe(recipe);
-    };
+    }, [currentUser, refreshLocalState]);
 
     if (!currentUser) {
         return (
@@ -426,43 +428,12 @@ const App: React.FC = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                         {filteredRecipes.map(recipe => (
-                            <div
+                            <RecipeCard
                                 key={recipe.id}
-                                onClick={() => handleRecipeClick(recipe)}
-                                className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500"
-                            >
-                                {/* Image or Fallback Gradient */}
-                                {recipe.image ? (
-                                    <img
-                                        src={recipe.image}
-                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                        loading="lazy"
-                                        alt={recipe.title}
-                                        onError={(e) => {
-                                            // Fallback if image fails
-                                            e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement?.classList.add('fallback-gradient');
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635] to-[#A0522D] opacity-80" />
-                                )}
-
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
-
-                                {/* Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end">
-                                    <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                        <div className="flex justify-between items-center mb-2 opacity-80">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
-                                        </div>
-                                        <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
-                                        <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
-                                            By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block" alt="" /> {recipe.contributor}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                recipe={recipe}
+                                onClick={handleRecipeClick}
+                                contributorAvatar={getAvatar(recipe.contributor)}
+                            />
                         ))}
                     </div>
 
