@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
@@ -133,11 +133,21 @@ const App: React.FC = () => {
         setCurrentUser(u);
     };
 
+    // Optimize: Create a map for O(1) avatar lookups
+    const contributorMap = useMemo(() => {
+        const map = new Map<string, string>();
+        contributors.forEach(c => {
+            if (!map.has(c.name)) {
+                map.set(c.name, c.avatar);
+            }
+        });
+        return map;
+    }, [contributors]);
+
     // Helper to get avatar
-    const getAvatar = (name: string) => {
-        const c = contributors.find(p => p.name === name);
-        return c?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
-    };
+    const getAvatar = useCallback((name: string) => {
+        return contributorMap.get(name) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+    }, [contributorMap]);
 
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r => {
