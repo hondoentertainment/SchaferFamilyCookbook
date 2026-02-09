@@ -88,6 +88,49 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             '';
     };
 
+    // Convert base64 image data to a File object
+    const base64ToFile = (base64: string, filename: string): File => {
+        const byteCharacters = atob(base64);
+        const byteArrays: Uint8Array[] = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+            const slice = byteCharacters.slice(offset, offset + 512);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            byteArrays.push(new Uint8Array(byteNumbers));
+        }
+        return new File([new Blob(byteArrays, { type: 'image/png' })], filename, { type: 'image/png' });
+    };
+
+    // Build a rich visual prompt from recipe title, category, AND ingredients
+    const buildImagePrompt = async (ai: InstanceType<typeof GoogleGenAI>, recipe: Partial<Recipe>): Promise<string> => {
+        const topIngredients = (recipe.ingredients || []).slice(0, 8).join(', ');
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash',
+            contents: [{
+                role: 'user',
+                parts: [{
+                    text: `Describe what the finished dish "${recipe.title}" (${recipe.category}) looks like for a food photographer.
+Key ingredients: ${topIngredients}
+Write a vivid 15-25 word visual description focusing on colors, textures, and plating. Return ONLY the description, no quotes.`
+                }]
+            }]
+        });
+        return ((response as any).text || '').trim().replace(/['"\\n]/g, '');
+    };
+
+    // Generate an image using Gemini Imagen and return it as a File
+    const generateImageWithImagen = async (ai: InstanceType<typeof GoogleGenAI>, prompt: string): Promise<File> => {
+        const response = await ai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt: `Professional food photography: ${prompt}. Warm natural lighting, appetizing, rustic table setting, shallow depth of field.`,
+            config: { numberOfImages: 1 }
+        });
+        const imageBytes = (response as any).generatedImages[0].image.imageBytes;
+        return base64ToFile(imageBytes, `recipe-${Date.now()}.png`);
+    };
+
     const handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
@@ -133,29 +176,15 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setIsGeneratingImage(true);
         try {
             const apiKey = getGeminiApiKey();
-            let description = '';
+            if (!apiKey) throw new Error("Missing Gemini API Key. Imagen requires a Gemini API key.");
 
-            if (apiKey) {
-                const ai = new GoogleGenAI({ apiKey });
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.0-flash',
-                    contents: [{
-                        role: 'user',
-                        parts: [{ text: `Describe the dish "${recipeForm.title}" (${recipeForm.category}) in 5-10 words for an AI image generator. Return ONLY the description.` }]
-                    }]
-                });
-                description = response.text.trim().replace(/['"\\n]/g, '');
-            } else {
-                description = `${recipeForm.title}, ${recipeForm.category} dish`;
-            }
+            const ai = new GoogleGenAI({ apiKey });
+            const description = await buildImagePrompt(ai, recipeForm);
+            const file = await generateImageWithImagen(ai, description);
 
-            const encodedPrompt = encodeURIComponent(`${description}, food photography, highly detailed, 4k, appetizing, warm lighting`);
-            const seed = Math.floor(Math.random() * 1000);
-            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
-
-            setRecipeForm(prev => ({ ...prev, image: url }));
-            setPreviewUrl(url);
-            setRecipeFile(null);
+            // Set the file for upload (parent handles Firebase Storage / data URL)
+            setRecipeFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
         } catch (e: any) {
             console.error(e);
             alert(`Failed to generate image: ${e.message}`);
@@ -166,27 +195,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setIsGeneratingImage(true);
         try {
             const apiKey = getGeminiApiKey();
-            let description = '';
+            if (!apiKey) throw new Error("Missing Gemini API Key.");
 
-            if (apiKey) {
-                const ai = new GoogleGenAI({ apiKey });
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.0-flash',
-                    contents: [{
-                        role: 'user',
-                        parts: [{ text: `Describe the dish "${recipe.title}" (${recipe.category}) in 5-10 words for an AI image generator. Return ONLY the description.` }]
-                    }]
-                });
-                description = response.text.trim().replace(/['"\\n]/g, '');
-            } else {
-                description = `${recipe.title}, ${recipe.category} dish`;
-            }
+            const ai = new GoogleGenAI({ apiKey });
+            const description = await buildImagePrompt(ai, recipe);
+            const file = await generateImageWithImagen(ai, description);
 
-            const encodedPrompt = encodeURIComponent(`${description}, food photography, highly detailed, 4k, appetizing, warm lighting`);
-            const seed = Math.floor(Math.random() * 1000);
-            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
-
-            await onAddRecipe({ ...recipe, image: url });
+            await onAddRecipe(recipe, file);
         } catch (e: any) {
             console.error(e);
             alert(`Quick generation failed: ${e.message}`);
@@ -200,8 +215,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             ? recipes
             : recipes.filter(r => {
                 const isCategoryPlaceholder = Object.values(CATEGORY_IMAGES).includes(r.image);
+                const isPollinations = r.image?.includes('pollinations.ai');
                 const isMissingImage = !r.image || r.image.includes('fallback-gradient') || r.image.includes('source.unsplash.com');
-                return isCategoryPlaceholder || isMissingImage;
+                return isCategoryPlaceholder || isPollinations || isMissingImage;
             });
 
         if (targetRecipes.length === 0) {
@@ -210,8 +226,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }
 
         const message = forceRefresh
-            ? `This will refresh images for ALL ${targetRecipes.length} recipes. Continue?`
-            : `Found ${targetRecipes.length} recipes with placeholder images. Start bulk sourcing?`;
+            ? `This will generate Imagen photos for ALL ${targetRecipes.length} recipes using their ingredients. This may take several minutes. Continue?`
+            : `Found ${targetRecipes.length} recipes needing photos. Generate Imagen images from ingredients? This may take several minutes.`;
 
         if (!confirm(message)) return;
 
@@ -220,55 +236,46 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
         const apiKey = getGeminiApiKey();
         if (!apiKey) {
-            alert("Missing Gemini API Key. Bulk sourcing requires Gemini for quality prompts.");
+            alert("Missing Gemini API Key. Bulk sourcing requires Gemini for Imagen image generation.");
             setIsBulkSourcing(false);
             return;
         }
 
         const ai = new GoogleGenAI({ apiKey });
-        const BATCH_SIZE = 5;
+        let successCount = 0;
+        let failCount = 0;
 
-        for (let i = 0; i < targetRecipes.length; i += BATCH_SIZE) {
-            const batch = targetRecipes.slice(i, i + BATCH_SIZE);
-            const batchIndices = batch.map((_, idx) => i + idx + 1);
+        // Process one at a time to respect Imagen rate limits
+        for (let i = 0; i < targetRecipes.length; i++) {
+            const recipe = targetRecipes[i];
 
             try {
-                // Batch request prompts from Gemini
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.0-flash',
-                    contents: [{
-                        role: 'user',
-                        parts: [{
-                            text: `Generate descriptive visual prompts for these ${batch.length} dishes for an AI image generator. Return a JSON object where the keys are the recipe titles and the values are the 5-10 word descriptions.
-                            Dishes: ${batch.map(r => `"${r.title}" (${r.category})`).join(', ')}`
-                        }]
-                    }],
-                    config: { responseMimeType: "application/json" }
-                });
-
-                const promptsMap = JSON.parse(response.text || '{}');
-
-                // Process batch in parallel (limited)
-                await Promise.all(batch.map(async (recipe, idx) => {
-                    const description = (promptsMap[recipe.title] || promptsMap[recipe.title.toLowerCase()] || `${recipe.title} food photography`).replace(/['"\\n]/g, '');
-                    const encodedPrompt = encodeURIComponent(`${description}, highly detailed, 4k, appetizing, rustic aesthetic`);
-                    const seed = Math.floor(Math.random() * 1000);
-                    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
-
-                    await onAddRecipe({ ...recipe, image: url });
-                    setBulkProgress(prev => ({ ...prev, current: Math.min(prev.total, i + idx + 1) }));
-                }));
-
+                // Build prompt from recipe ingredients
+                const description = await buildImagePrompt(ai, recipe);
+                // Generate image with Imagen
+                const file = await generateImageWithImagen(ai, description);
+                // Upload and save via existing pipeline
+                await onAddRecipe(recipe, file);
+                successCount++;
             } catch (e) {
-                console.error(`Batch processing failed starting at index ${i}:`, e);
+                console.error(`Failed to generate image for "${recipe.title}":`, e);
+                failCount++;
             }
 
-            // Subtle delay between batches
-            await new Promise(r => setTimeout(r, 500));
+            setBulkProgress({ current: i + 1, total: targetRecipes.length });
+
+            // Delay between requests to respect rate limits (Imagen is heavier than text)
+            if (i < targetRecipes.length - 1) {
+                await new Promise(r => setTimeout(r, 2000));
+            }
         }
 
         setIsBulkSourcing(false);
-        alert("Bulk sourcing complete!");
+        if (failCount > 0) {
+            alert(`Bulk sourcing complete: ${successCount} succeeded, ${failCount} failed. Failed recipes kept their existing images.`);
+        } else {
+            alert(`Bulk sourcing complete! All ${successCount} recipes now have Imagen-generated photos.`);
+        }
     };
     const handleRecipeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -595,10 +602,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
                                                 </button>
                                                 <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
-                                                    {isBulkSourcing ? `Sourcing (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing'}
+                                                    {isBulkSourcing ? `Imagen (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing (Imagen)'}
                                                 </button>
                                                 <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing} className="flex-1 py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
-                                                    {isBulkSourcing ? `Sourcing...` : '🔄 Refresh All'}
+                                                    {isBulkSourcing ? `Generating...` : '🔄 Regenerate All (Imagen)'}
                                                 </button>
                                             </div>
                                         </div>
@@ -633,7 +640,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 </div>
                                             </div>
                                             <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
-                                                {isGeneratingImage ? 'Generating Legacy Visual...' : '✨ Generate Heritage Photo'}
+                                                {isGeneratingImage ? 'Generating with Imagen...' : '✨ Generate Photo (Imagen)'}
                                             </button>
                                         </div>
                                         <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
