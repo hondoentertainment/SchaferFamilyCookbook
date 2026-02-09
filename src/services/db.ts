@@ -9,7 +9,7 @@ export const CloudArchive = {
     _firestore: null as Firestore | null,
     _storage: null as FirebaseStorage | null,
 
-    getProvider(): 'local' | 'supabase' | 'firebase' {
+    getProvider(): 'local' | 'firebase' {
         return (localStorage.getItem('schafer_active_provider') as any) || 'local';
     },
 
@@ -187,7 +187,9 @@ export const CloudArchive = {
             await setDoc(doc(fb.db, "trivia", item.id), payload);
         } else {
             const current = JSON.parse(localStorage.getItem('schafer_db_trivia') || '[]');
-            current.push(payload);
+            const index = current.findIndex((t: any) => t.id === item.id);
+            if (index > -1) current[index] = payload;
+            else current.push(payload);
             localStorage.setItem('schafer_db_trivia', JSON.stringify(current));
         }
     },
@@ -201,7 +203,9 @@ export const CloudArchive = {
             await setDoc(doc(fb.db, "gallery", item.id), payload);
         } else {
             const current = JSON.parse(localStorage.getItem('schafer_db_gallery') || '[]');
-            current.push(payload);
+            const index = current.findIndex((g: any) => g.id === item.id);
+            if (index > -1) current[index] = payload;
+            else current.push(payload);
             localStorage.setItem('schafer_db_gallery', JSON.stringify(current));
         }
     },

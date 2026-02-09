@@ -45,7 +45,7 @@ export interface DBStats {
   galleryCount: number;
   triviaCount: number;
   isCloudActive: boolean;
-  activeProvider: 'local' | 'supabase' | 'firebase';
+  activeProvider: 'local' | 'firebase';
   archivePhone?: string;
 }
 
