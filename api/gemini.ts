@@ -8,6 +8,23 @@ import {
 
 const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
+type RecipeInput = {
+    title?: string;
+    category?: string;
+    ingredients?: string[];
+    instructions?: string[];
+};
+
+function getErrorMessage(err: unknown): string {
+    if (err instanceof Error) return err.message;
+    return String(err ?? '');
+}
+
+function isQuotaError(message: string): boolean {
+    const lower = message.toLowerCase();
+    return lower.includes('429') || lower.includes('quota') || lower.includes('rate limit');
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
@@ -18,13 +35,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const body = req.body as { action: string; [k: string]: unknown };
-        const { action } = body;
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const action = typeof body.action === 'string' ? body.action : '';
 
         const ai = new GoogleGenAI({ apiKey: API_KEY });
 
         if (action === 'generateContent') {
-            const { text } = body as { text: string };
+            const text = typeof body.text === 'string' ? body.text : '';
             if (!text) return res.status(400).json({ error: 'Missing text' });
             const response = await ai.models.generateContent({
                 model: 'gemini-2.0-flash',
@@ -35,7 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (action === 'generateImage') {
-            const { recipe } = body as { recipe: { title?: string; category?: string; ingredients?: string[]; instructions?: string[] } };
+            const recipe = (body.recipe && typeof body.recipe === 'object')
+                ? (body.recipe as RecipeInput)
+                : undefined;
             if (!recipe?.title) return res.status(400).json({ error: 'Missing recipe' });
 
             const promptText = buildLLMPromptText(recipe);
@@ -58,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (action === 'magicImport') {
-            const { rawText } = body as { rawText: string };
+            const rawText = typeof body.rawText === 'string' ? body.rawText : '';
             if (!rawText) return res.status(400).json({ error: 'Missing rawText' });
             const response = await ai.models.generateContent({
                 model: 'gemini-2.0-flash',
@@ -85,8 +104,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         return res.status(400).json({ error: `Unknown action: ${action}` });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Gemini API error:', err);
-        return res.status(500).json({ error: err?.message || 'Gemini API error' });
+        const message = getErrorMessage(err);
+        if (isQuotaError(message)) {
+            return res.status(429).json({
+                error: 'AI quota exceeded for Gemini. Please try again later or upgrade the Gemini API plan.'
+            });
+        }
+        return res.status(500).json({ error: message || 'Gemini API error' });
     }
 }

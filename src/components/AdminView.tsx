@@ -23,6 +23,7 @@ interface AdminViewProps {
 }
 
 export const AdminView: React.FC<AdminViewProps> = (props) => {
+    const AI_COOLDOWN_MS = 5 * 60 * 1000;
     const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe } = props;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
@@ -48,6 +49,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [successMessage, setSuccessMessage] = useState('');
     const [bulkFiles, setBulkFiles] = useState<FileList | null>(null);
     const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; errors: string[] }>({ current: 0, total: 0, errors: [] });
+    const [aiCooldownUntil, setAiCooldownUntil] = useState<number>(0);
+    const [aiCooldownSecondsLeft, setAiCooldownSecondsLeft] = useState(0);
 
     // Filter recipes based on search
     const filteredRecipes = recipes.filter(r =>
@@ -81,12 +84,65 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         return () => URL.revokeObjectURL(url);
     }, [recipeFile, editingRecipe]);
 
+    useEffect(() => {
+        if (!aiCooldownUntil) {
+            setAiCooldownSecondsLeft(0);
+            return;
+        }
+
+        const tick = () => {
+            const remaining = Math.max(0, Math.ceil((aiCooldownUntil - Date.now()) / 1000));
+            setAiCooldownSecondsLeft(remaining);
+            if (remaining === 0) setAiCooldownUntil(0);
+        };
+
+        tick();
+        const timer = window.setInterval(tick, 1000);
+        return () => window.clearInterval(timer);
+    }, [aiCooldownUntil]);
+
     const getAIErrorMessage = (err: unknown, fallback: string): string => {
         const msg = (err as Error)?.message || '';
+        const lower = msg.toLowerCase();
+        if (msg.includes('429') || lower.includes('quota') || lower.includes('rate limit')) {
+            return 'AI quota is currently exhausted. Quick generation is temporarily unavailable. Please try again later, add a manual photo, or upgrade Gemini API billing limits.';
+        }
         if (msg.includes('500') || msg.includes('not configured')) return 'AI features are not available. Make sure GEMINI_API_KEY is set on the server (Vercel). Try uploading a photo manually instead.';
         if (msg.includes('fetch') || msg.includes('network')) return 'Could not reach the AI service. Check your connection and try again.';
         return fallback.replace('${message}', msg || 'unknown error');
     };
+
+    const isQuotaError = (err: unknown): boolean => {
+        const msg = ((err as Error)?.message || '').toLowerCase();
+        return msg.includes('429') || msg.includes('quota') || msg.includes('rate limit');
+    };
+
+    const formatCooldown = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${String(secs).padStart(2, '0')}`;
+    };
+
+    const handleAIError = (err: unknown, fallback: string) => {
+        if (isQuotaError(err)) {
+            setAiCooldownUntil(Date.now() + AI_COOLDOWN_MS);
+        }
+        alert(getAIErrorMessage(err, fallback));
+    };
+
+    const useDefaultImageForForm = () => {
+        const defaultImage = CATEGORY_IMAGES.Generic || CATEGORY_IMAGES[recipeForm.category || 'Main'];
+        setRecipeFile(null);
+        setPreviewUrl(defaultImage);
+        setRecipeForm(prev => ({ ...prev, image: defaultImage }));
+    };
+
+    const useDefaultImageForRecipe = async (recipe: Recipe) => {
+        const defaultImage = CATEGORY_IMAGES.Generic || CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Main;
+        await onAddRecipe({ ...recipe, image: defaultImage });
+    };
+
+    const isAICooldownActive = aiCooldownSecondsLeft > 0;
 
     const base64ToFile = (base64: string, filename: string): File => {
         const byteCharacters = atob(base64);
@@ -110,7 +166,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             alert("Magic Import Successful!");
         } catch (e: any) {
             console.error(e);
-            alert(getAIErrorMessage(e, 'AI Analysis failed: ${message}'));
+            handleAIError(e, 'AI Analysis failed: ${message}');
         } finally { setIsMagicLoading(false); }
     };
 
@@ -124,7 +180,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setPreviewUrl(URL.createObjectURL(file));
         } catch (e: any) {
             console.error(e);
-            alert(getAIErrorMessage(e, 'Failed to generate image: ${message}. Try uploading a heritage photo instead.'));
+            handleAIError(e, 'Failed to generate image: ${message}. Try uploading a heritage photo instead.');
         } finally { setIsGeneratingImage(false); }
     };
 
@@ -136,7 +192,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             await onAddRecipe(recipe, file);
         } catch (e: any) {
             console.error(e);
-            alert(getAIErrorMessage(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.'));
+            handleAIError(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.');
         } finally { setIsGeneratingImage(false); }
     };
 
@@ -330,6 +386,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="max-w-7xl mx-auto px-6 py-12 space-y-12">
+                {isAICooldownActive && (
+                    <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-widest">
+                        AI generation is cooling down due to quota limits. Try again in {formatCooldown(aiCooldownSecondsLeft)} or use default/manual images.
+                    </div>
+                )}
                 {/* Sub-navigation bar */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-full px-2">
                     {[
@@ -483,11 +544,24 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={() => handleQuickSource(r)}
-                                                                disabled={isGeneratingImage}
+                                                                disabled={isGeneratingImage || isAICooldownActive}
                                                                 className="px-3 py-2 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-bold uppercase hover:bg-amber-100 disabled:opacity-50"
                                                                 title="One-Click Quick Gen"
                                                             >
-                                                                {isGeneratingImage ? '...' : '✨'}
+                                                                {isAICooldownActive ? '⏳' : isGeneratingImage ? '...' : '✨'}
+                                                            </button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await useDefaultImageForRecipe(r);
+                                                                    } catch (e: any) {
+                                                                        alert(`Default image failed: ${e?.message || 'unknown error'}`);
+                                                                    }
+                                                                }}
+                                                                className="px-3 py-2 bg-stone-50 text-stone-600 border border-stone-200 rounded-lg text-[10px] font-bold uppercase hover:bg-stone-100"
+                                                                title="Use default recipe image"
+                                                            >
+                                                                🖼️
                                                             </button>
                                                             <button
                                                                 onClick={() => {
@@ -517,13 +591,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <div className="space-y-4">
                                             <textarea placeholder="Paste raw recipe text here..." className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-sm bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
                                             <div className="flex gap-4">
-                                                <button onClick={handleMagicImport} disabled={isMagicLoading} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
-                                                    {isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
+                                                <button onClick={handleMagicImport} disabled={isMagicLoading || isAICooldownActive} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
+                                                    {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
                                                 </button>
-                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
+                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Imagen (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing (Imagen)'}
                                                 </button>
-                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing} className="flex-1 py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
+                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Generating...` : '🔄 Regenerate All (Imagen)'}
                                                 </button>
                                             </div>
@@ -548,6 +622,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     </div>
                                                 </div>
                                             )}
+                                            {!previewUrl && (
+                                                <div className="w-full h-48 rounded-[2rem] mb-4 border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Recipe image to be added</p>
+                                                </div>
+                                            )}
 
                                             <div className="relative group">
                                                 <input type="file" accept="image/*" onChange={e => setRecipeFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
@@ -558,9 +637,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 mt-2 hover:bg-[#A0522D]/20 transition-all">
-                                                {isGeneratingImage ? 'Generating with Imagen...' : '✨ Generate Photo (Imagen)'}
-                                            </button>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                                                <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title || isAICooldownActive} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-all disabled:opacity-50">
+                                                    {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isGeneratingImage ? 'Generating with Imagen...' : '✨ Generate Photo (Imagen)'}
+                                                </button>
+                                                <button type="button" onClick={useDefaultImageForForm} className="w-full py-3 bg-stone-100 text-stone-700 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-stone-200 hover:bg-stone-200 transition-all">
+                                                    🖼️ Use Default Image
+                                                </button>
+                                            </div>
                                         </div>
                                         <input placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
 
