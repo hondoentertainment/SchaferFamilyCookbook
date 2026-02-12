@@ -7,6 +7,8 @@ export interface Recipe {
   instructions: string[];
   notes?: string;
   image: string;
+  /** How the image was sourced; used for AI badge and accuracy tracking. */
+  imageSource?: 'upload' | 'imagen' | 'pollinations';
   prepTime?: string;
   cookTime?: string;
   calories?: number;

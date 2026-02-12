@@ -78,7 +78,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
     }
 
     if (showResults) {
-        const percentage = Math.round((score / questions.length) * 100);
+        const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
         return (
             <div className="max-w-3xl mx-auto py-20 px-6 text-center space-y-12 animate-in zoom-in duration-700">
                 <div className="space-y-6">

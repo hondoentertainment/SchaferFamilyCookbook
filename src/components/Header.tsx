@@ -21,27 +21,37 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         <span className="font-serif italic text-lg md:text-xl text-[#2D4635] hidden sm:block">Archive</span>
                     </div>
                     <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth">
-                        {['Recipes', 'Index', 'Gallery', 'Trivia', 'History', 'Contributors', 'Profile', 'Admin']
-                            .filter(t => t !== 'Profile' || currentUser) // Only show Profile when logged in
-                            .map(t => (
+                        {[
+                            { id: 'Recipes', title: 'Browse recipes with filters' },
+                            { id: 'Index', title: 'Alphabetical recipe index A–Z' },
+                            { id: 'Gallery', title: 'Family photos and videos' },
+                            { id: 'Trivia', title: 'Family trivia quiz' },
+                            { id: 'Family Story', title: 'Family food history narrative' },
+                            { id: 'Contributors', title: 'Contributor directory' },
+                            { id: 'Profile', title: 'Your profile and contributions' },
+                            { id: 'Admin', title: 'Admin tools' }
+                        ]
+                            .filter(({ id }) => id !== 'Profile' || currentUser)
+                            .map(({ id, title }) => (
                                 <button
-                                    key={t}
-                                    id={`tab-${t}`}
+                                    key={id}
+                                    id={`tab-${id}`}
                                     onClick={() => {
-                                        setTab(t);
-                                        document.getElementById(`tab-${t}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                        setTab(id);
+                                        document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                                     }}
-                                    className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
+                                    title={title}
+                                    className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
                                         }`}
                                 >
-                                    {t === 'Admin' && currentUser?.role !== 'admin' ? '🔒 Admin' : t}
+                                    {id === 'Admin' && currentUser?.role !== 'admin' ? '🔒 Admin' : id}
                                 </button>
                             ))}
                     </nav>
                 </div>
                 <div className="flex items-center gap-4">
                     {currentUser && (
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
                             <div
                                 className={`flex items-center gap-3 cursor-pointer group px-2 py-1 rounded-full transition-all ${activeTab === 'Profile' ? 'bg-stone-50' : 'hover:bg-stone-50/50'}`}
                                 onClick={() => setTab('Profile')}
@@ -52,6 +62,13 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 </div>
                                 <img src={currentUser.picture} className={`w-9 h-9 rounded-full border-2 transition-all shadow-sm ${activeTab === 'Profile' ? 'border-[#2D4635]' : 'border-white group-hover:border-stone-200'}`} alt={currentUser.name} />
                             </div>
+                            <button
+                                onClick={onLogout}
+                                className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-all"
+                                title="Switch identity"
+                            >
+                                Log out
+                            </button>
                         </div>
                     )}
                 </div>

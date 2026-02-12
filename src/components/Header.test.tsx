@@ -42,6 +42,7 @@ describe('Header', () => {
         expect(screen.getByText('Archive')).toBeInTheDocument();
         expect(screen.getByText('Recipes')).toBeInTheDocument();
         expect(screen.getByText('Index')).toBeInTheDocument();
+        expect(screen.getByText('Family Story')).toBeInTheDocument();
     });
 
     it('should call setTab when a navigation button is clicked', () => {
@@ -92,5 +93,12 @@ describe('Header', () => {
 
         expect(screen.getByText('Admin')).toBeInTheDocument();
         expect(screen.queryByText('🔒 Admin')).not.toBeInTheDocument();
+    });
+
+    it('should call onLogout when Log out is clicked', () => {
+        renderWithProviders(<Header {...defaultProps} />);
+
+        fireEvent.click(screen.getByText('Log out'));
+        expect(mockOnLogout).toHaveBeenCalled();
     });
 });

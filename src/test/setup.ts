@@ -37,17 +37,19 @@ vi.mock('firebase/storage', () => ({
     getDownloadURL: vi.fn(() => Promise.resolve('https://example.com/image.jpg')),
 }));
 
-// Mock Google GenAI
+// Mock Google GenAI (package exports GoogleGenAI)
 vi.mock('@google/genai', () => ({
-    GoogleGenerativeAI: vi.fn(() => ({
-        getGenerativeModel: vi.fn(() => ({
-            generateContent: vi.fn(() => Promise.resolve({
-                response: {
-                    text: () => '{"title": "Test Recipe", "ingredients": [], "instructions": []}',
-                },
+    GoogleGenAI: vi.fn(() => ({
+        models: {
+            generateContent: vi.fn(() => Promise.resolve({ text: '{"title": "Test Recipe", "ingredients": [], "instructions": []}' })),
+            generateImages: vi.fn(() => Promise.resolve({
+                generatedImages: [{
+                    image: { imageBytes: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' }
+                }]
             })),
-        })),
+        },
     })),
+    Type: {},
 }));
 
 // Setup global window mocks

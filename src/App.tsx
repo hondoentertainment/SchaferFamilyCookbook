@@ -1,18 +1,47 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
 import { RecipeModal } from './components/RecipeModal';
-import { AdminView } from './components/AdminView';
-import { AlphabeticalIndex } from './components/AlphabeticalIndex';
-import { ContributorsView } from './components/ContributorsView';
-import { ProfileView } from './components/ProfileView';
-import { HistoryView } from './components/HistoryView';
-import { TriviaView } from './components/TriviaView';
+
+const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
+const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
+const ContributorsView = lazy(() => import('./components/ContributorsView').then(m => ({ default: m.ContributorsView })));
+const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
+const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
+const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ default: m.TriviaView })));
+
+const TabFallback = () => (
+    <div className="flex items-center justify-center min-h-[50vh] text-stone-400">
+        <span className="animate-pulse font-serif italic">Loading…</span>
+    </div>
+);
+
+const GalleryImage: React.FC<{ url: string; caption: string }> = ({ url, caption }) => {
+    const [broken, setBroken] = useState(false);
+    if (!url || broken) {
+        return (
+            <div className="w-full aspect-video rounded-2xl mb-4 bg-stone-100 flex flex-col items-center justify-center gap-2 text-stone-400 border-2 border-dashed border-stone-200">
+                <span className="text-2xl">📷</span>
+                <span className="text-xs font-bold uppercase tracking-widest">{url ? 'Image failed to load' : 'No image'}</span>
+                <span className="text-[10px] italic">Upload may have failed or URL is invalid</span>
+            </div>
+        );
+    }
+    return (
+        <img
+            src={url}
+            className="w-full rounded-2xl mb-4"
+            alt={caption || 'Gallery photo'}
+            onError={() => setBroken(true)}
+            loading="lazy"
+        />
+    );
+};
+
 import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import { CATEGORY_IMAGES } from './constants';
-import { GoogleGenAI } from '@google/genai';
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
@@ -167,13 +196,6 @@ const App: React.FC = () => {
         });
     }, [recipes, search, category, contributor]);
 
-    const getGeminiApiKey = () => {
-        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-            (process.env?.GEMINI_API_KEY) ||
-            (process.env?.VITE_GEMINI_API_KEY) ||
-            '';
-    };
-
     const handleRecipeUpdate = async (recipe: Recipe, file?: File) => {
         if (!currentUser) return;
         let url = recipe.image;
@@ -230,6 +252,7 @@ const App: React.FC = () => {
                         <button type="submit" className="w-full py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                             Enter The Archive
                         </button>
+                        <p className="text-stone-400 text-xs italic pt-4">Need access? Contact an administrator.</p>
                     </form>
                 </div>
             </div>
@@ -247,12 +270,20 @@ const App: React.FC = () => {
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
                             <p className="text-stone-400 font-serif italic mt-2">Captured moments across the generations.</p>
                         </div>
-                        {archivePhone && (
+                        {archivePhone ? (
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700">
                                 <span className="text-3xl">📱</span>
                                 <div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">Text your memories</h4>
                                     <p className="text-sm text-emerald-700 font-serif italic">Photo/Video to: <span className="font-bold not-italic">{archivePhone}</span></p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-stone-50 rounded-[2rem] p-6 border border-stone-100 flex items-center gap-6 max-w-md">
+                                <span className="text-2xl">📷</span>
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Want to add photos?</h4>
+                                    <p className="text-sm text-stone-500 font-serif italic">Admins can enable text-to-archive in Admin → Gallery. Or ask an administrator to add your memories.</p>
                                 </div>
                             </div>
                         )}
@@ -272,7 +303,7 @@ const App: React.FC = () => {
                                         />
                                     </div>
                                 ) : (
-                                    <img src={item.url || `https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500`} className="w-full rounded-2xl mb-4" alt={item.caption} />
+                                    <GalleryImage url={item.url} caption={item.caption} />
                                 )}
                                 <p className="font-serif italic text-stone-800 text-lg px-2">{item.caption}</p>
                                 <div className="flex justify-between items-center mt-4 px-2">
@@ -280,7 +311,9 @@ const App: React.FC = () => {
                                         <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full" alt="" />
                                         <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
                                     </div>
-                                    <button onClick={() => CloudArchive.deleteGalleryItem(item.id)} className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                                    {currentUser?.role === 'admin' && (
+                                        <button onClick={() => CloudArchive.deleteGalleryItem(item.id)} className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" title="Remove from gallery">✕</button>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -295,18 +328,20 @@ const App: React.FC = () => {
         return (
             <div className="min-h-screen bg-[#FDFBF7]">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <TriviaView
-                    trivia={trivia}
-                    currentUser={currentUser as any}
-                    onAddTrivia={async (t) => {
-                        await CloudArchive.upsertTrivia(t);
-                        await refreshLocalState();
-                    }}
-                    onDeleteTrivia={async (id) => {
-                        await CloudArchive.deleteTrivia(id);
-                        await refreshLocalState();
-                    }}
-                />
+                <Suspense fallback={<TabFallback />}>
+                    <TriviaView
+                        trivia={trivia}
+                        currentUser={currentUser as any}
+                        onAddTrivia={async (t) => {
+                            await CloudArchive.upsertTrivia(t);
+                            await refreshLocalState();
+                        }}
+                        onDeleteTrivia={async (id) => {
+                            await CloudArchive.deleteTrivia(id);
+                            await refreshLocalState();
+                        }}
+                    />
+                </Suspense>
             </div>
         );
     }
@@ -415,7 +450,7 @@ const App: React.FC = () => {
                                         <div className="flex justify-between items-center mb-2 opacity-80">
                                             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
                                             {/* AI Generated Badge */}
-                                            {recipe.image?.includes('pollinations.ai') && (
+                                            {(recipe.image?.includes('pollinations.ai') || recipe.image?.startsWith('/recipe-images/')) && (
                                                 <span className="text-[8px] font-black uppercase tracking-widest text-purple-300 bg-purple-900/50 px-2 py-0.5 rounded-full backdrop-blur-sm animate-pulse">✨ AI</span>
                                             )}
                                         </div>
@@ -454,13 +489,26 @@ const App: React.FC = () => {
                 </main>
             )}
 
-            {tab === 'Index' && <AlphabeticalIndex recipes={recipes} onSelect={setSelectedRecipe} />}
+            {tab === 'Index' && (
+                <Suspense fallback={<TabFallback />}>
+                    <AlphabeticalIndex recipes={recipes} onSelect={setSelectedRecipe} />
+                </Suspense>
+            )}
 
-            {tab === 'History' && <HistoryView />}
+            {tab === 'Family Story' && (
+                <Suspense fallback={<TabFallback />}>
+                    <HistoryView />
+                </Suspense>
+            )}
 
-            {tab === 'Contributors' && <ContributorsView recipes={recipes} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />}
+            {tab === 'Contributors' && (
+                <Suspense fallback={<TabFallback />}>
+                    <ContributorsView recipes={recipes} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
+                </Suspense>
+            )}
 
             {tab === 'Admin' && currentUser.role === 'admin' && (
+                <Suspense fallback={<TabFallback />}>
                 <AdminView
                     editingRecipe={editingRecipe}
                     clearEditing={() => setEditingRecipe(null)}
@@ -507,6 +555,7 @@ const App: React.FC = () => {
                     }}
                     onEditRecipe={setEditingRecipe}
                 />
+                </Suspense>
             )}
             {tab === 'Admin' && currentUser.role !== 'admin' && (
                 <div className="max-w-4xl mx-auto py-20 px-6 space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -539,6 +588,7 @@ const App: React.FC = () => {
             )}
 
             {tab === 'Profile' && currentUser && (
+                <Suspense fallback={<TabFallback />}>
                 <ProfileView
                     currentUser={currentUser}
                     userRecipes={recipes.filter(r => r.contributor === currentUser.name)}
@@ -567,6 +617,7 @@ const App: React.FC = () => {
                         setTab('Admin');
                     }}
                 />
+                </Suspense>
             )}
         </div>
     );

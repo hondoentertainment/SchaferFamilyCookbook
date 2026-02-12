@@ -158,6 +158,13 @@ describe('CloudArchive', () => {
             expect(history[0].itemName).toBe('Test Recipe');
         });
 
+        it('should get recipes from default seed when localStorage is empty', async () => {
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes.length).toBeGreaterThan(0);
+            expect(recipes[0]).toHaveProperty('title');
+            expect(recipes[0]).toHaveProperty('ingredients');
+        });
+
         it('should limit history to 100 entries', async () => {
             // Add 105 entries
             for (let i = 0; i < 105; i++) {

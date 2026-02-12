@@ -12,14 +12,15 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
         [...recipes]
             .sort((a, b) => a.title.localeCompare(b.title))
             .forEach(r => {
-                const first = r.title[0].toUpperCase();
-                if (!groups[first]) groups[first] = [];
-                groups[first].push(r);
+                const firstChar = r.title[0]?.toUpperCase() || '#';
+                const letter = /[A-Z]/.test(firstChar) ? firstChar : '#';
+                if (!groups[letter]) groups[letter] = [];
+                groups[letter].push(r);
             });
         return groups;
     }, [recipes]);
 
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    const letters = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
     const activeLetters = Object.keys(grouped);
 
     return (

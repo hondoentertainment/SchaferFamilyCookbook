@@ -42,10 +42,17 @@ src/
 ├── test/
 │   ├── setup.ts          # Global test configuration
 │   └── utils.tsx         # Test helpers and mock factories
+├── App.test.tsx          # App integration tests (login, tabs)
 ├── services/
-│   └── db.test.ts        # Database service tests
+│   └── db.test.ts        # Database service tests (18 tests)
 └── components/
-    └── RecipeModal.test.tsx  # Component tests
+    ├── AlphabeticalIndex.test.tsx  # Index grouping & selection (5 tests)
+    ├── ContributorsView.test.tsx  # Contributor stats & actions (3 tests)
+    ├── Header.test.tsx            # Navigation & auth display (7 tests)
+    ├── HistoryView.test.tsx       # Family story content (6 tests)
+    ├── ProfileView.test.tsx       # Profile, recipes, history (8 tests)
+    ├── RecipeModal.test.tsx       # Recipe details & lightbox (14 tests)
+    └── TriviaView.test.tsx        # Quiz flow & scoring (7 tests)
 ```
 
 ## 🛠️ Available Commands

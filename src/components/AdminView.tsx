@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI, Type } from '@google/genai';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
+import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 
@@ -81,93 +81,36 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         return () => URL.revokeObjectURL(url);
     }, [recipeFile, editingRecipe]);
 
-    const getGeminiApiKey = () => {
-        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-            (process.env?.GEMINI_API_KEY) ||
-            (process.env?.VITE_GEMINI_API_KEY) ||
-            '';
+    const getAIErrorMessage = (err: unknown, fallback: string): string => {
+        const msg = (err as Error)?.message || '';
+        if (msg.includes('500') || msg.includes('not configured')) return 'AI features are not available. Make sure GEMINI_API_KEY is set on the server (Vercel). Try uploading a photo manually instead.';
+        if (msg.includes('fetch') || msg.includes('network')) return 'Could not reach the AI service. Check your connection and try again.';
+        return fallback.replace('${message}', msg || 'unknown error');
     };
 
-    // Convert base64 image data to a File object
     const base64ToFile = (base64: string, filename: string): File => {
         const byteCharacters = atob(base64);
         const byteArrays: Uint8Array[] = [];
         for (let offset = 0; offset < byteCharacters.length; offset += 512) {
             const slice = byteCharacters.slice(offset, offset + 512);
             const byteNumbers = new Array(slice.length);
-            for (let i = 0; i < slice.length; i++) {
-                byteNumbers[i] = slice.charCodeAt(i);
-            }
+            for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
             byteArrays.push(new Uint8Array(byteNumbers));
         }
         return new File([new Blob(byteArrays, { type: 'image/png' })], filename, { type: 'image/png' });
-    };
-
-    // Build a rich visual prompt from recipe title, category, AND ingredients
-    const buildImagePrompt = async (ai: InstanceType<typeof GoogleGenAI>, recipe: Partial<Recipe>): Promise<string> => {
-        const topIngredients = (recipe.ingredients || []).slice(0, 8).join(', ');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: [{
-                role: 'user',
-                parts: [{
-                    text: `Describe what the finished dish "${recipe.title}" (${recipe.category}) looks like for a food photographer.
-Key ingredients: ${topIngredients}
-Write a vivid 15-25 word visual description focusing on colors, textures, and plating. Return ONLY the description, no quotes.`
-                }]
-            }]
-        });
-        return ((response as any).text || '').trim().replace(/['"\\n]/g, '');
-    };
-
-    // Generate an image using Gemini Imagen and return it as a File
-    const generateImageWithImagen = async (ai: InstanceType<typeof GoogleGenAI>, prompt: string): Promise<File> => {
-        const response = await ai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
-            prompt: `Professional food photography: ${prompt}. Warm natural lighting, appetizing, rustic table setting, shallow depth of field.`,
-            config: { numberOfImages: 1 }
-        });
-        const imageBytes = (response as any).generatedImages[0].image.imageBytes;
-        return base64ToFile(imageBytes, `recipe-${Date.now()}.png`);
     };
 
     const handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
         try {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) throw new Error("Missing Gemini API Key");
-
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: [{ role: 'user', parts: [{ text: `Recipe text: ${rawText}` }] }],
-                config: {
-                    systemInstruction: "Analyze this recipe and extract structured JSON data. Fields: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime, calories (number - estimated total).",
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: { type: Type.STRING },
-                            category: { type: Type.STRING },
-                            ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            prepTime: { type: Type.STRING },
-                            cookTime: { type: Type.STRING },
-                            calories: { type: Type.NUMBER },
-                        }
-                    }
-                }
-            });
-
-            const responseText = (response as any).text;
-            const parsed = JSON.parse(responseText || '{}');
+            const parsed = await geminiProxy.magicImport(rawText);
             setRecipeForm(prev => ({ ...prev, ...parsed }));
             setRawText('');
             alert("Magic Import Successful!");
         } catch (e: any) {
             console.error(e);
-            alert(`AI Analysis failed: ${e.message}`);
+            alert(getAIErrorMessage(e, 'AI Analysis failed: ${message}'));
         } finally { setIsMagicLoading(false); }
     };
 
@@ -175,39 +118,26 @@ Write a vivid 15-25 word visual description focusing on colors, textures, and pl
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) throw new Error("Missing Gemini API Key. Imagen requires a Gemini API key.");
-
-            const ai = new GoogleGenAI({ apiKey });
-            const description = await buildImagePrompt(ai, recipeForm);
-            const file = await generateImageWithImagen(ai, description);
-
-            // Set the file for upload (parent handles Firebase Storage / data URL)
+            const imageBase64 = await geminiProxy.generateImage(recipeForm);
+            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
             setRecipeFile(file);
             setPreviewUrl(URL.createObjectURL(file));
         } catch (e: any) {
             console.error(e);
-            alert(`Failed to generate image: ${e.message}`);
+            alert(getAIErrorMessage(e, 'Failed to generate image: ${message}. Try uploading a heritage photo instead.'));
         } finally { setIsGeneratingImage(false); }
     };
 
     const handleQuickSource = async (recipe: Recipe) => {
         setIsGeneratingImage(true);
         try {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) throw new Error("Missing Gemini API Key.");
-
-            const ai = new GoogleGenAI({ apiKey });
-            const description = await buildImagePrompt(ai, recipe);
-            const file = await generateImageWithImagen(ai, description);
-
+            const imageBase64 = await geminiProxy.generateImage(recipe);
+            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
             await onAddRecipe(recipe, file);
         } catch (e: any) {
             console.error(e);
-            alert(`Quick generation failed: ${e.message}`);
-        } finally {
-            setIsGeneratingImage(false);
-        }
+            alert(getAIErrorMessage(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.'));
+        } finally { setIsGeneratingImage(false); }
     };
 
     const handleBulkVisualSourcing = async (forceRefresh: boolean = false) => {
@@ -234,40 +164,29 @@ Write a vivid 15-25 word visual description focusing on colors, textures, and pl
         setIsBulkSourcing(true);
         setBulkProgress({ current: 0, total: targetRecipes.length });
 
-        const apiKey = getGeminiApiKey();
-        if (!apiKey) {
-            alert("Missing Gemini API Key. Bulk sourcing requires Gemini for Imagen image generation.");
-            setIsBulkSourcing(false);
-            return;
-        }
-
-        const ai = new GoogleGenAI({ apiKey });
         let successCount = 0;
         let failCount = 0;
 
-        // Process one at a time to respect Imagen rate limits
         for (let i = 0; i < targetRecipes.length; i++) {
             const recipe = targetRecipes[i];
-
             try {
-                // Build prompt from recipe ingredients
-                const description = await buildImagePrompt(ai, recipe);
-                // Generate image with Imagen
-                const file = await generateImageWithImagen(ai, description);
-                // Upload and save via existing pipeline
+                const imageBase64 = await geminiProxy.generateImage(recipe);
+                const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
                 await onAddRecipe(recipe, file);
                 successCount++;
             } catch (e) {
                 console.error(`Failed to generate image for "${recipe.title}":`, e);
                 failCount++;
+                if (failCount === 1) {
+                    const friendly = getAIErrorMessage(e, '${message}');
+                    if (friendly.includes('GEMINI_API_KEY')) {
+                        alert(friendly);
+                        break;
+                    }
+                }
             }
-
             setBulkProgress({ current: i + 1, total: targetRecipes.length });
-
-            // Delay between requests to respect rate limits (Imagen is heavier than text)
-            if (i < targetRecipes.length - 1) {
-                await new Promise(r => setTimeout(r, 2000));
-            }
+            if (i < targetRecipes.length - 1) await new Promise(r => setTimeout(r, 2000));
         }
 
         setIsBulkSourcing(false);
@@ -710,10 +629,11 @@ Write a vivid 15-25 word visual description focusing on colors, textures, and pl
                                     </div>
 
                                     <div className="p-6 bg-stone-50 rounded-3xl border border-stone-100 mb-8">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-4">Twilio Configuration</h4>
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Twilio Configuration</h4>
+                                        <p className="text-xs text-stone-500 mb-4">Enter your Twilio number (E.164, e.g. +15551234567) so family members can text photos and videos to the gallery. The number appears in the Gallery tab once set.</p>
                                         <div className="flex gap-4">
                                             <input
-                                                placeholder="designate archive number..."
+                                                placeholder="e.g. +15551234567"
                                                 className="flex-1 p-3 border border-stone-200 rounded-xl text-xs bg-white"
                                                 value={dbStats.archivePhone || ''}
                                                 onChange={e => onUpdateArchivePhone(e.target.value)}

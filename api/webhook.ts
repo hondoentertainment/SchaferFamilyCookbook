@@ -32,11 +32,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const db = admin.firestore();
         const bucket = admin.storage().bucket();
 
-        // 2. Identify Contributor
-        const contributorsSnapshot = await db.collection('contributors').where('phone', '==', From).get();
+        // 2. Identify Contributor (phone in E.164; try From and normalized variants)
+        const normalizedFrom = From.replace(/\s/g, '');
+        const variants = [normalizedFrom, normalizedFrom.startsWith('+') ? normalizedFrom.slice(1) : `+${normalizedFrom}`];
         let contributorName = "MMS Submission";
-        if (!contributorsSnapshot.empty) {
-            contributorName = contributorsSnapshot.docs[0].data().name;
+        for (const phone of variants) {
+            const snap = await db.collection('contributors').where('phone', '==', phone).get();
+            if (!snap.empty) {
+                contributorName = snap.docs[0].data().name;
+                break;
+            }
         }
 
         // 3. Download Media from Twilio

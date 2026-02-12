@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
  * Generate unique Pollinations AI image URLs for all recipes in recipes.json.
- * Uses the same approach as AdminView's "Bulk Visual Sourcing" feature.
+ * Uses shared/recipeImagePrompts.mjs for canonical anti-hallucination rules.
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { buildPollinationsPrompt } from '../shared/recipeImagePrompts.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const recipesPath = resolve(__dirname, '../src/data/recipes.json');
@@ -94,9 +95,7 @@ for (const recipe of recipes) {
     }
 
     const seed = Math.abs(hashCode(recipe.id));
-    const encodedPrompt = encodeURIComponent(
-        `Professional food photography of ${prompt}, warm lighting, appetizing, top-down angle, rustic kitchen background`
-    );
+    const encodedPrompt = encodeURIComponent(buildPollinationsPrompt(prompt));
     const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
 
     recipe.image = url;

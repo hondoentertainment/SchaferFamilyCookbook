@@ -106,12 +106,18 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
                                 </div>
-                                <button
-                                    onClick={() => onEditRecipe(recipe)}
-                                    className="p-3 md:p-4 bg-stone-50 text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0"
-                                >
-                                    ✏️
-                                </button>
+                                {currentUser.role === 'admin' ? (
+                                    <button
+                                        onClick={() => onEditRecipe(recipe)}
+                                        className="p-3 md:p-4 bg-stone-50 text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0"
+                                        title="Edit recipe"
+                                        aria-label="Edit recipe"
+                                    >
+                                        ✏️
+                                    </button>
+                                ) : (
+                                    <span className="p-3 md:p-4 text-stone-300 text-xs italic shrink-0" title="Contact an administrator to request edits">View only</span>
+                                )}
                             </div>
                         ))}
                         {userRecipes.length === 0 && (

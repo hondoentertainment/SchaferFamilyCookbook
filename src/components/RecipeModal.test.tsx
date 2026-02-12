@@ -65,7 +65,7 @@ describe('RecipeModal', () => {
     it('should call onClose when close button is clicked', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
 
-        const closeButton = screen.getByTitle('Close');
+        const closeButton = screen.getByRole('button', { name: /close recipe/i });
         fireEvent.click(closeButton);
 
         expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -110,5 +110,21 @@ describe('RecipeModal', () => {
         // Instructions should be numbered 01, 02, etc.
         const container = screen.getByText('Mix ingredients').closest('.flex');
         expect(container?.textContent).toContain('01');
+    });
+
+    it('should open lightbox when image is clicked', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        const image = screen.getByAltText('Test Recipe');
+        fireEvent.click(image);
+        expect(screen.getByText('Click anywhere to close')).toBeInTheDocument();
+    });
+
+    it('should close lightbox when close button is clicked', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        fireEvent.click(screen.getByAltText('Test Recipe'));
+        expect(screen.getByText('Click anywhere to close')).toBeInTheDocument();
+        const lightboxClose = screen.getByRole('button', { name: /close enlarged image/i });
+        fireEvent.click(lightboxClose);
+        expect(screen.queryByText('Click anywhere to close')).not.toBeInTheDocument();
     });
 });

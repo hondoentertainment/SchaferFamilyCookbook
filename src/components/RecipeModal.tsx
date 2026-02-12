@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Recipe } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 
@@ -21,21 +21,48 @@ interface RecipeModalProps {
 
 export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const lightboxCloseRef = useRef<HTMLButtonElement>(null);
 
-    if (!recipe) return null; // Safety check
+    useEffect(() => {
+        closeButtonRef.current?.focus();
+    }, []);
+
+    useEffect(() => {
+        if (!lightboxOpen) return;
+        lightboxCloseRef.current?.focus();
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setLightboxOpen(false);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [lightboxOpen]);
+
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
+
+    if (!recipe) return null;
 
     return (
         <>
-            {/* Lightbox Overlay */}
             {lightboxOpen && (
                 <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Enlarged recipe image"
                     className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 cursor-zoom-out"
                     onClick={() => setLightboxOpen(false)}
                 >
                     <button
+                        ref={lightboxCloseRef}
                         onClick={() => setLightboxOpen(false)}
                         className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors"
-                        title="Close"
+                        aria-label="Close enlarged image"
                     >
                         ✕
                     </button>
@@ -50,12 +77,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                 </div>
             )}
 
-            {/* Main Modal */}
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8">
-                <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} />
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8" role="dialog" aria-modal="true" aria-label="Recipe details">
+                <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
                 <div className="bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
                     <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
-                        <button onClick={onClose} className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" title="Close">
+                        <button ref={closeButtonRef} onClick={onClose} className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe">
                             <span className="text-xl font-light">✕</span>
                         </button>
                     </div>
