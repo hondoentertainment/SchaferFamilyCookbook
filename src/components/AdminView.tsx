@@ -3,6 +3,7 @@ import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile }
 import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
+import { useUI } from '../context/UIContext';
 
 interface AdminViewProps {
     editingRecipe: Recipe | null;
@@ -20,15 +21,18 @@ interface AdminViewProps {
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void;
     onEditRecipe: (r: Recipe) => void;
+    defaultRecipeIds?: string[];
 }
 
 export const AdminView: React.FC<AdminViewProps> = (props) => {
+    const { toast, confirm } = useUI();
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
-    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe } = props;
+    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe, defaultRecipeIds = [] } = props;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
+    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'imagen' | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [galleryFile, setGalleryFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,8 +56,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [aiCooldownUntil, setAiCooldownUntil] = useState<number>(0);
     const [aiCooldownSecondsLeft, setAiCooldownSecondsLeft] = useState(0);
 
-    // Filter recipes based on search
-    const filteredRecipes = recipes.filter(r =>
+    // Hide seed/default recipes in Admin record management.
+    const managedRecipes = recipes.filter(r => !defaultRecipeIds.includes(r.id));
+
+    // Filter admin-managed recipes based on search
+    const filteredRecipes = managedRecipes.filter(r =>
         r.title.toLowerCase().includes(recipeSearch.toLowerCase()) ||
         r.category.toLowerCase().includes(recipeSearch.toLowerCase()) ||
         r.contributor?.toLowerCase().includes(recipeSearch.toLowerCase())
@@ -72,6 +79,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setPreviewUrl(null);
         }
         setRecipeFile(null);
+        setImageSourceForCurrent(null);
     }, [editingRecipe]);
 
     useEffect(() => {
@@ -127,19 +135,24 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (isQuotaError(err)) {
             setAiCooldownUntil(Date.now() + AI_COOLDOWN_MS);
         }
-        alert(getAIErrorMessage(err, fallback));
+        toast(getAIErrorMessage(err, fallback), 'error');
     };
 
+    const getDefaultImageForCategory = (category?: string) =>
+        CATEGORY_IMAGES[category || 'Main'] || CATEGORY_IMAGES.Generic;
+
     const useDefaultImageForForm = () => {
-        const defaultImage = CATEGORY_IMAGES.Generic || CATEGORY_IMAGES[recipeForm.category || 'Main'];
+        const defaultImage = getDefaultImageForCategory(recipeForm.category);
         setRecipeFile(null);
         setPreviewUrl(defaultImage);
         setRecipeForm(prev => ({ ...prev, image: defaultImage }));
     };
 
     const useDefaultImageForRecipe = async (recipe: Recipe) => {
-        const defaultImage = CATEGORY_IMAGES.Generic || CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Main;
+        const defaultImage = getDefaultImageForCategory(recipe.category);
         await onAddRecipe({ ...recipe, image: defaultImage });
+        setSuccessMessage(`✓ "${recipe.title}" now uses the default ${recipe.category} image.`);
+        setTimeout(() => setSuccessMessage(''), 4000);
     };
 
     const isAICooldownActive = aiCooldownSecondsLeft > 0;
@@ -153,7 +166,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
             byteArrays.push(new Uint8Array(byteNumbers));
         }
-        return new File([new Blob(byteArrays, { type: 'image/png' })], filename, { type: 'image/png' });
+        const blobs: ArrayBuffer[] = byteArrays.map((ua) => {
+            const ab = new ArrayBuffer(ua.byteLength);
+            new Uint8Array(ab).set(ua);
+            return ab;
+        });
+        return new File([new Blob(blobs, { type: 'image/png' })], filename, { type: 'image/png' });
     };
 
     const handleMagicImport = async () => {
@@ -163,7 +181,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             const parsed = await geminiProxy.magicImport(rawText);
             setRecipeForm(prev => ({ ...prev, ...parsed }));
             setRawText('');
-            alert("Magic Import Successful!");
+            toast('Magic import successful!', 'success');
         } catch (e: any) {
             console.error(e);
             handleAIError(e, 'AI Analysis failed: ${message}');
@@ -177,6 +195,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             const imageBase64 = await geminiProxy.generateImage(recipeForm);
             const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
             setRecipeFile(file);
+            setImageSourceForCurrent('imagen');
             setPreviewUrl(URL.createObjectURL(file));
         } catch (e: any) {
             console.error(e);
@@ -189,7 +208,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         try {
             const imageBase64 = await geminiProxy.generateImage(recipe);
             const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
-            await onAddRecipe(recipe, file);
+            await onAddRecipe({ ...recipe, imageSource: 'imagen' }, file);
         } catch (e: any) {
             console.error(e);
             handleAIError(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.');
@@ -207,7 +226,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             });
 
         if (targetRecipes.length === 0) {
-            alert("No recipes to update!");
+            toast('No recipes to update!', 'info');
             return;
         }
 
@@ -215,7 +234,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             ? `This will generate Imagen photos for ALL ${targetRecipes.length} recipes using their ingredients. This may take several minutes. Continue?`
             : `Found ${targetRecipes.length} recipes needing photos. Generate Imagen images from ingredients? This may take several minutes.`;
 
-        if (!confirm(message)) return;
+        const ok = await confirm(message, { title: 'Bulk Image Generation', confirmLabel: 'Continue' });
+        if (!ok) return;
 
         setIsBulkSourcing(true);
         setBulkProgress({ current: 0, total: targetRecipes.length });
@@ -228,7 +248,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             try {
                 const imageBase64 = await geminiProxy.generateImage(recipe);
                 const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
-                await onAddRecipe(recipe, file);
+                await onAddRecipe({ ...recipe, imageSource: 'imagen' }, file);
                 successCount++;
             } catch (e) {
                 console.error(`Failed to generate image for "${recipe.title}":`, e);
@@ -236,7 +256,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 if (failCount === 1) {
                     const friendly = getAIErrorMessage(e, '${message}');
                     if (friendly.includes('GEMINI_API_KEY')) {
-                        alert(friendly);
+                        toast(friendly, 'error');
                         break;
                     }
                 }
@@ -247,9 +267,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
         setIsBulkSourcing(false);
         if (failCount > 0) {
-            alert(`Bulk sourcing complete: ${successCount} succeeded, ${failCount} failed. Failed recipes kept their existing images.`);
+            toast(`Bulk sourcing complete: ${successCount} succeeded, ${failCount} failed. Failed recipes kept their existing images.`, 'error');
         } else {
-            alert(`Bulk sourcing complete! All ${successCount} recipes now have Imagen-generated photos.`);
+            toast(`Bulk sourcing complete! All ${successCount} recipes now have Imagen-generated photos.`, 'success');
         }
     };
     const handleRecipeSubmit = async (e: React.FormEvent) => {
@@ -258,11 +278,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setIsSubmitting(true);
         try {
             const isUpdate = !!editingRecipe;
+            const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
             await onAddRecipe({
                 ...recipeForm as Recipe,
                 id: recipeForm.id || 'r' + Date.now(),
                 contributor: recipeForm.contributor || currentUser?.name || 'Family',
-                image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic
+                image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic,
+                imageSource: imageSource || undefined
             }, recipeFile || undefined);
 
             // Show success feedback
@@ -271,6 +293,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
             setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [], notes: '', contributor: '' });
             setRecipeFile(null);
+            setImageSourceForCurrent(null);
             setPreviewUrl(null);
             if (editingRecipe) clearEditing();
         } finally { setIsSubmitting(false); }
@@ -299,11 +322,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
         const files: File[] = (Array.from(bulkFiles) as File[]).filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'));
         if (files.length === 0) {
-            alert('No valid image or video files selected.');
+            toast('No valid image or video files selected.', 'error');
             return;
         }
 
-        if (!confirm(`Upload ${files.length} files to the gallery?`)) return;
+        const ok = await confirm(`Upload ${files.length} files to the gallery?`, { title: 'Bulk Upload', confirmLabel: 'Upload' });
+        if (!ok) return;
 
         setIsSubmitting(true);
         setUploadProgress({ current: 0, total: files.length, errors: [] });
@@ -335,26 +359,35 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setBulkFiles(null);
 
         if (errors.length > 0) {
-            alert(`Upload complete: ${successCount} succeeded, ${errors.length} failed.\n\nErrors:\n${errors.join('\n')}`);
+            toast(`Upload complete: ${successCount} succeeded, ${errors.length} failed. ${errors.slice(0, 2).join('; ')}${errors.length > 2 ? '…' : ''}`, 'error');
         } else {
-            alert(`Successfully uploaded ${successCount} files to the gallery!`);
+            toast(`Successfully uploaded ${successCount} files to the gallery!`, 'success');
         }
     };
 
+    // Reset bulk upload progress after completion so user can upload again
+    useEffect(() => {
+        if (!isSubmitting && uploadProgress.total > 0 && uploadProgress.current >= uploadProgress.total) {
+            const t = setTimeout(() => setUploadProgress({ current: 0, total: 0, errors: [] }), 3000);
+            return () => clearTimeout(t);
+        }
+    }, [isSubmitting, uploadProgress.current, uploadProgress.total]);
+
     const handleMergeContributors = async () => {
-        if (!mergeFrom.trim() || !mergeTo.trim()) { alert('Please enter both contributor names.'); return; }
-        if (mergeFrom.trim().toLowerCase() === mergeTo.trim().toLowerCase()) { alert('Cannot merge a contributor into themselves.'); return; }
+        if (!mergeFrom.trim() || !mergeTo.trim()) { toast('Please enter both contributor names.', 'error'); return; }
+        if (mergeFrom.trim().toLowerCase() === mergeTo.trim().toLowerCase()) { toast('Cannot merge a contributor into themselves.', 'error'); return; }
 
         const fromName = mergeFrom.trim();
         const toName = mergeTo.trim();
 
         const recipesToUpdate = recipes.filter(r => r.contributor === fromName);
         if (recipesToUpdate.length === 0) {
-            alert(`No recipes found for "${fromName}".`);
+            toast(`No recipes found for "${fromName}".`, 'error');
             return;
         }
 
-        if (!confirm(`Merge ${recipesToUpdate.length} recipes from "${fromName}" into "${toName}"?`)) return;
+        const ok = await confirm(`Merge ${recipesToUpdate.length} recipes from "${fromName}" into "${toName}"?`, { title: 'Merge Contributors', confirmLabel: 'Merge' });
+        if (!ok) return;
 
         setIsMerging(true);
         try {
@@ -372,9 +405,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
             setMergeFrom('');
             setMergeTo('');
-            alert(`✅ Successfully merged ${recipesToUpdate.length} recipes from "${fromName}" to "${toName}"!`);
+            toast(`Successfully merged ${recipesToUpdate.length} recipes from "${fromName}" to "${toName}"!`, 'success');
         } catch (e: any) {
-            alert(`Merge failed: ${e.message}`);
+            toast(`Merge failed: ${e.message}`, 'error');
         } finally {
             setIsMerging(false);
         }
@@ -437,7 +470,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 role: 'admin'
                                             });
                                             setNewAdminName('');
-                                            alert(`${name} has been promoted.`);
+                                            toast(`${name} has been promoted.`, 'success');
                                         }} className="px-8 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">Grant Access</button>
                                     </div>
                                 </div>
@@ -449,7 +482,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <img src={admin.avatar} className="w-6 h-6 rounded-full border border-white" alt={admin.name} />
                                                 <span className="text-xs font-bold text-stone-600">{admin.name}</span>
                                                 {admin.name.toLowerCase() !== 'admin' && (
-                                                    <button onClick={() => { if (confirm(`Revoke admin access for ${admin.name}?`)) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-4 h-4 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>
+                                                    <button onClick={async () => { if (await confirm(`Revoke admin access for ${admin.name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-4 h-4 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>
                                                 )}
                                             </div>
                                         ))}
@@ -508,7 +541,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <div className="bg-stone-50 rounded-3xl border border-stone-100 p-6 max-h-[500px] overflow-hidden mb-8">
                                             <div className="flex items-center justify-between mb-4 sticky top-0 bg-stone-50 py-2 z-10">
                                                 <h4 className="text-[10px] font-black uppercase text-stone-400">
-                                                    Manage Existing Records ({filteredRecipes.length}{recipeSearch ? ` of ${recipes.length}` : ''})
+                                                    Manage Existing Records ({filteredRecipes.length}{recipeSearch ? ` of ${managedRecipes.length}` : ''})
                                                 </h4>
                                                 <div className="relative">
                                                     <input
@@ -555,7 +588,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     try {
                                                                         await useDefaultImageForRecipe(r);
                                                                     } catch (e: any) {
-                                                                        alert(`Default image failed: ${e?.message || 'unknown error'}`);
+                                                                        toast(`Default image failed: ${e?.message || 'unknown error'}`, 'error');
                                                                     }
                                                                 }}
                                                                 className="px-3 py-2 bg-stone-50 text-stone-600 border border-stone-200 rounded-lg text-[10px] font-bold uppercase hover:bg-stone-100"
@@ -573,8 +606,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                 Edit
                                                             </button>
                                                             <button
-                                                                onClick={() => {
-                                                                    if (confirm(`Delete "${r.title}"? This cannot be undone.`)) onDeleteRecipe(r.id);
+                                                                onClick={async () => {
+                                                                    if (await confirm(`Delete "${r.title}"? This cannot be undone.`, { variant: 'danger', confirmLabel: 'Delete' })) onDeleteRecipe(r.id);
                                                                 }}
                                                                 className="px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold uppercase hover:bg-red-100"
                                                             >
@@ -629,7 +662,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             )}
 
                                             <div className="relative group">
-                                                <input type="file" accept="image/*" onChange={e => setRecipeFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                                                <input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                                                 <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
                                                     <span className="text-lg">📁</span>
                                                     <span className="text-[10px] font-black uppercase tracking-widest">
@@ -786,9 +819,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                                     {/* Progress Display */}
                                                     {uploadProgress.total > 0 && (
-                                                        <div className="space-y-2">
+                                                        <div className="space-y-2" role="status" aria-live="polite" aria-busy={uploadProgress.current < uploadProgress.total}>
                                                             <div className="flex items-center justify-between text-[10px] font-bold text-[#2D4635]">
-                                                                <span>Uploading...</span>
+                                                                <span>{uploadProgress.current >= uploadProgress.total ? '✓ Complete!' : 'Uploading...'}</span>
                                                                 <span>{uploadProgress.current}/{uploadProgress.total}</span>
                                                             </div>
                                                             <div className="w-full h-2 bg-white rounded-full overflow-hidden">
@@ -797,6 +830,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
                                                                 />
                                                             </div>
+                                                            {uploadProgress.errors.length > 0 && (
+                                                                <p className="text-[9px] text-red-600 font-medium">
+                                                                    {uploadProgress.errors.length} file(s) failed to upload
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -955,16 +993,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 }
                                             }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
                                             {role === 'admin' ? (
-                                                <span onClick={(e) => {
+                                                <span onClick={async (e) => {
                                                     e.stopPropagation();
-                                                    if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
-                                                    if (confirm(`Revoke admin access for ${name}?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
+                                                    if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                    if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
                                                 }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
                                             ) : (
-                                                <span onClick={(e) => {
+                                                <span onClick={async (e) => {
                                                     e.stopPropagation();
-                                                    if (!isSuperAdmin) { alert("Only Super Admins (Kyle) can modify roles."); return; }
-                                                    if (confirm(`Promote ${name} to Administrator?`)) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
+                                                    if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                    if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
                                                 }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
                                             )}
                                         </div>

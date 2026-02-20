@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Recipe } from '../types';
-import { CATEGORY_IMAGES } from '../constants';
+import { buildRecipeSchema } from '../utils/recipeSchema';
+import { siteConfig } from '../config/site';
+import { useUI } from '../context/UIContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -20,9 +23,15 @@ interface RecipeModalProps {
 }
 
 export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => {
+    const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const hasAffiliatedImage = !!recipe?.image && recipe.image.startsWith('/recipe-images/');
+    const isAIGenerated = recipe?.imageSource === 'imagen';
+
+    useFocusTrap(true, modalRef);
 
     useEffect(() => {
         closeButtonRef.current?.focus();
@@ -48,8 +57,43 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
 
     if (!recipe) return null;
 
+    const shareUrl = `${siteConfig.baseUrl}/#recipe/${recipe.id}`;
+
+    const handleShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: recipe.title,
+                    text: `${recipe.title} from ${recipe.contributor}`,
+                    url: shareUrl,
+                });
+                toast('Recipe shared', 'success');
+            } catch (err) {
+                if ((err as Error).name !== 'AbortError') {
+                    await copyToClipboard(shareUrl);
+                    toast('Link copied to clipboard', 'success');
+                }
+            }
+        } else {
+            await copyToClipboard(shareUrl);
+            toast('Link copied to clipboard', 'success');
+        }
+    };
+
+    const copyToClipboard = async (text: string) => {
+        await navigator.clipboard.writeText(text);
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(buildRecipeSchema(recipe)) }}
+            />
             {lightboxOpen && (
                 <div
                     role="dialog"
@@ -77,30 +121,35 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                 </div>
             )}
 
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8" role="dialog" aria-modal="true" aria-label="Recipe details">
+            <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
-                <div className="bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
-                    <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
-                        <button ref={closeButtonRef} onClick={onClose} className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe">
+                <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
+                    <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2 print:hidden">
+                        <button onClick={handleShare} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
+                            <span className="text-xl">⎘</span>
+                        </button>
+                        <button onClick={handlePrint} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
+                            <span className="text-xl">🖨</span>
+                        </button>
+                        <button ref={closeButtonRef} onClick={onClose} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
                             <span className="text-xl font-light">✕</span>
                         </button>
                     </div>
 
                     <div
                         className="w-full md:w-1/2 h-64 md:h-auto relative cursor-zoom-in group"
-                        onClick={() => recipe.image && setLightboxOpen(true)}
+                        onClick={() => hasAffiliatedImage && setLightboxOpen(true)}
                     >
-                        {recipe.image ? (
-                            <img src={recipe.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={recipe.title} />
+                        {hasAffiliatedImage ? (
+                            <>
+                                <img src={recipe.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={recipe.title} />
+                                {isAIGenerated && (
+                                    <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/50 text-white text-[9px] font-bold uppercase tracking-wider" title="AI-generated from recipe ingredients">✨ AI</span>
+                                )}
+                            </>
                         ) : (
                             <div className="w-full h-full relative overflow-hidden">
-                                {/* Category-specific background image */}
-                                <img
-                                    src={CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic}
-                                    className="w-full h-full object-cover opacity-40"
-                                    alt={recipe.category}
-                                />
-                                {/* Overlay gradient */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-stone-300" />
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/80 via-[#2D4635]/60 to-[#A0522D]/70" />
 
                                 {/* Centered content */}
@@ -110,7 +159,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                                     </span>
                                     <span className="text-sm font-serif italic opacity-80">{recipe.category}</span>
                                     <div className="mt-6 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
-                                        <span className="text-[9px] font-black uppercase tracking-widest">📷 Heritage Photo Coming Soon</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">📝 Recipe Coming</span>
                                     </div>
                                 </div>
                             </div>
@@ -118,7 +167,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent md:hidden" />
 
                         {/* Interactive Overlay - only show if image exists */}
-                        {recipe.image && (
+                        {hasAffiliatedImage && (
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center gap-2">
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 text-stone-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg pointer-events-none">
                                     🔍 Enlarge
@@ -131,13 +180,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         {/* Header Section */}
                         <div className="space-y-3">
                             <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
-                            <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
+                            <h2 id="recipe-modal-title" className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
                             <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-[#A0522D]">👤</span>
                                     <span>By {recipe.contributor}</span>
                                 </span>
-                                {(recipe.prepTime || recipe.cookTime || recipe.calories) && (
+                                {(recipe.prepTime || recipe.cookTime || recipe.calories || recipe.servings) && (
                                     <>
                                         {recipe.prepTime && (
                                             <span className="flex items-center gap-1.5 text-[#A0522D]">
@@ -149,6 +198,12 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                                             <span className="flex items-center gap-1.5 text-[#A0522D]">
                                                 <span>🔥</span>
                                                 <span>Cook: {recipe.cookTime}</span>
+                                            </span>
+                                        )}
+                                        {recipe.servings !== undefined && recipe.servings !== null && (
+                                            <span className="flex items-center gap-1.5 text-[#A0522D]">
+                                                <span>🥣</span>
+                                                <span>Servings: {typeof recipe.servings === 'number' ? recipe.servings : recipe.servings}</span>
                                             </span>
                                         )}
                                         {recipe.calories && (
