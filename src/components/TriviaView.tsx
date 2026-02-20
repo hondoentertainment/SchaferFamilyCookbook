@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trivia, UserProfile } from '../types';
 
 interface TriviaViewProps {
@@ -8,13 +8,14 @@ interface TriviaViewProps {
     onDeleteTrivia: (id: string) => void;
 }
 
-export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) => {
+export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _currentUser }) => {
     const [quizStarted, setQuizStarted] = useState(false);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [showResults, setShowResults] = useState(false);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
+    const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     const questions = trivia;
 
@@ -45,6 +46,26 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
             setShowResults(true);
         }
     };
+
+    // Keyboard navigation: 1-4 to select option, Enter to advance
+    useEffect(() => {
+        const currentQuestion = questions[currentQuestionIndex];
+        if (!currentQuestion || !quizStarted || showResults) return;
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            if (isAnswered) {
+                if (e.key === 'Enter') nextQuestion();
+            } else {
+                const num = parseInt(e.key, 10);
+                if (num >= 1 && num <= 4 && num <= currentQuestion.options.length) {
+                    handleOptionSelect(currentQuestion.options[num - 1]);
+                }
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [currentQuestionIndex, isAnswered, quizStarted, showResults, questions]);
 
     if (questions.length === 0) {
         return (
@@ -140,12 +161,45 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
                     {currentQuestion.question}
                 </h3>
 
-                <div className="grid gap-3 md:gap-4">
+                {/* Correct/Incorrect feedback banner */}
+                {isAnswered && (
+                    <div
+                        className={`mb-8 p-6 rounded-2xl border-2 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                            selectedOption === currentQuestion.answer
+                                ? 'bg-emerald-50 border-emerald-200'
+                                : 'bg-red-50 border-red-200'
+                        }`}
+                        role="alert"
+                        aria-live="polite"
+                    >
+                        {selectedOption === currentQuestion.answer ? (
+                            <div className="flex items-center gap-4">
+                                <span className="text-4xl">✓</span>
+                                <div>
+                                    <span className="text-lg font-serif italic font-bold text-emerald-800">Correct!</span>
+                                    <p className="text-sm text-emerald-700 mt-1">You know your family legacy well.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-4">
+                                <span className="text-4xl">✗</span>
+                                <div className="flex-1">
+                                    <span className="text-lg font-serif italic font-bold text-red-800">Incorrect</span>
+                                    <p className="text-sm text-red-700 mt-1">
+                                        The correct answer was: <strong>{currentQuestion.answer}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <div className="grid gap-3 md:gap-4" role="list" aria-label="Answer options">
                     {currentQuestion.options.map((opt, i) => {
                         const isCorrect = opt === currentQuestion.answer;
                         const isSelected = selectedOption === opt;
 
-                        let buttonStyles = "bg-stone-50 hover:bg-stone-100 text-stone-700";
+                        let buttonStyles = "bg-stone-50 hover:bg-stone-100 text-stone-700 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2";
                         if (isAnswered) {
                             if (isCorrect) buttonStyles = "bg-emerald-500 text-white shadow-lg ring-4 ring-emerald-100";
                             else if (isSelected) buttonStyles = "bg-red-500 text-white opacity-90 scale-95";
@@ -155,11 +209,21 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
                         return (
                             <button
                                 key={i}
+                                ref={el => { optionRefs.current[i] = el; }}
                                 disabled={isAnswered}
                                 onClick={() => handleOptionSelect(opt)}
                                 className={`p-4 md:p-6 text-left rounded-2xl md:rounded-3xl transition-all font-serif text-base md:text-lg flex justify-between items-center group/btn relative overflow-hidden ${buttonStyles}`}
+                                role="listitem"
+                                aria-pressed={isSelected}
+                                aria-disabled={isAnswered}
+                                aria-label={`${String.fromCharCode(65 + i)}: ${opt}${isAnswered ? (isCorrect ? ' (Correct answer)' : isSelected ? ' (Your answer - incorrect)' : '') : ''}`}
                             >
-                                <span className="relative z-10">{opt}</span>
+                                <span className="relative z-10 flex items-center gap-3">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 shrink-0 w-6">
+                                        {i + 1}.
+                                    </span>
+                                    {opt}
+                                </span>
                                 {isAnswered && isCorrect && <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Correct</span>}
                                 {isAnswered && isSelected && !isCorrect && <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Incorrect</span>}
                             </button>
@@ -169,6 +233,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
 
                 {isAnswered && (
                     <div className="mt-12 pt-10 border-t border-stone-50 animate-in fade-in slide-in-from-top-4 duration-500 text-center space-y-8">
+                        <p className="text-[10px] text-stone-400 uppercase tracking-widest">Press Enter to continue</p>
                         {currentQuestion.explanation && (
                             <div className="p-6 bg-orange-50/50 rounded-[2rem] text-sm italic text-[#A0522D] font-serif leading-relaxed">
                                 {currentQuestion.explanation}
@@ -176,7 +241,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser }) =
                         )}
                         <button
                             onClick={nextQuestion}
-                            className="px-12 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all"
+                            className="px-12 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
                         >
                             {currentQuestionIndex === questions.length - 1 ? "Finish Archive Challenge" : "Next Archival Record"}
                         </button>

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { screen, fireEvent, render } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import App from './App';
-import { setupLocalStorage, createMockRecipe } from './test/utils';
+import { setupLocalStorage, createMockRecipe, renderWithProviders } from './test/utils';
 
 describe('App', () => {
     beforeEach(() => {
@@ -9,15 +9,15 @@ describe('App', () => {
         localStorage.clear();
     });
 
-    it('should show login form when not authenticated', () => {
-        render(<App />);
-        expect(screen.getByText('Identify Yourself')).toBeInTheDocument();
+    it('should show login form when not authenticated', async () => {
+        renderWithProviders(<App />);
+        expect(await screen.findByText('Identify Yourself')).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/e.g. Grandma Joan/)).toBeInTheDocument();
     });
 
     it('should login and show Recipes tab when name is submitted', async () => {
         localStorage.setItem('schafer_db_recipes', JSON.stringify([createMockRecipe()]));
-        render(<App />);
+        renderWithProviders(<App />);
         const input = screen.getByPlaceholderText(/e.g. Grandma Joan/);
         fireEvent.change(input, { target: { value: 'Alice' } });
         fireEvent.click(screen.getByText('Enter The Archive'));

@@ -98,7 +98,7 @@ export const CloudArchive = {
 
     // Bulk upload multiple files
     async uploadFiles(files: File[], folder: string): Promise<{ url: string; name: string; size: number }[]> {
-        const provider = this.getProvider();
+        const _provider = this.getProvider();
         const results: { url: string; name: string; size: number }[] = [];
 
         for (const file of files) {

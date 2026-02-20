@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProfileView } from './ProfileView';
 import { renderWithProviders, createMockRecipe, createMockHistoryEntry, createMockContributor } from '../test/utils';
 
@@ -80,7 +80,10 @@ describe('ProfileView', () => {
     it('should call onUpdateProfile when Save Profile is clicked', async () => {
         mockOnUpdateProfile.mockResolvedValue(undefined);
         renderWithProviders(<ProfileView {...defaultProps} />);
-        fireEvent.click(screen.getByText('Save Profile'));
-        expect(mockOnUpdateProfile).toHaveBeenCalled();
+        const saveBtn = screen.getByText('Save Profile');
+        fireEvent.click(saveBtn);
+        await waitFor(() => {
+            expect(mockOnUpdateProfile).toHaveBeenCalled();
+        });
     });
 });

@@ -11,7 +11,7 @@ interface HeaderProps {
     onLogout: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
     return (
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100">
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">

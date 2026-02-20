@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
@@ -14,6 +14,27 @@ const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ def
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-400">
         <span className="animate-pulse font-serif italic">Loading…</span>
+    </div>
+);
+
+const RecipeGridSkeleton: React.FC = () => (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        {Array.from({ length: 15 }).map((_, i) => (
+            <div key={i} className="aspect-[3/4] rounded-[2rem] bg-stone-200 animate-pulse" />
+        ))}
+    </div>
+);
+
+const ContributorsSkeleton: React.FC = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+        {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-[3rem] p-10 border border-stone-100">
+                <div className="w-28 h-28 rounded-full bg-stone-200 animate-pulse mx-auto mb-8" />
+                <div className="h-8 bg-stone-200 rounded animate-pulse w-3/4 mx-auto mb-4" />
+                <div className="h-4 bg-stone-100 rounded animate-pulse w-1/2 mx-auto" />
+                <div className="h-10 bg-stone-100 rounded-full mt-6 animate-pulse" />
+            </div>
+        ))}
     </div>
 );
 
@@ -41,10 +62,41 @@ const GalleryImage: React.FC<{ url: string; caption: string }> = ({ url, caption
 
 import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
-import { CATEGORY_IMAGES } from './constants';
+import defaultRecipes from './data/recipes.json';
+
+const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
+    const [broken, setBroken] = useState(false);
+    const hasAffiliatedImage = !!recipe.image && recipe.image.startsWith('/recipe-images/') && !broken;
+
+    if (hasAffiliatedImage) {
+        return (
+            <img
+                src={recipe.image}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                loading="lazy"
+                alt={recipe.title}
+                onError={() => setBroken(true)}
+            />
+        );
+    }
+
+    return (
+        <>
+            <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-stone-300" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#2D4635]/80 to-transparent" />
+            <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg z-10">
+                <span className="text-xs">📝</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Recipe coming</span>
+            </div>
+        </>
+    );
+};
+
+const RECIPE_HASH_REGEX = /^#recipe\/(.+)$/;
 
 const App: React.FC = () => {
     const [tab, setTab] = useState('Recipes');
+    const [isDataLoading, setIsDataLoading] = useState(true);
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [gallery, setGallery] = useState<GalleryItem[]>([]);
     const [trivia, setTrivia] = useState<Trivia[]>([]);
@@ -65,7 +117,7 @@ const App: React.FC = () => {
             }
             localStorage.setItem('schafer_user', JSON.stringify(u));
             return u;
-        } catch (e) {
+        } catch {
             return null;
         }
     });
@@ -86,29 +138,15 @@ const App: React.FC = () => {
 
     const [loginName, setLoginName] = useState('');
 
-    // Upload State
-    const [uploadTarget, setUploadTarget] = useState<Recipe | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const triggerUpload = (recipe: Recipe) => {
-        setUploadTarget(recipe);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Reset
-            fileInputRef.current.click();
-        }
-    };
-
-    const handleGlobalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (uploadTarget && e.target.files?.[0]) {
-            handleRecipeUpdate(uploadTarget, e.target.files[0]);
-        }
-        setUploadTarget(null);
-    };
-
     // Filters
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
+
+    const defaultRecipeIds = useMemo(
+        () => new Set((defaultRecipes as Recipe[]).map(r => r.id)),
+        []
+    );
 
     const refreshLocalState = async () => {
         const provider = CloudArchive.getProvider();
@@ -132,27 +170,47 @@ const App: React.FC = () => {
     useEffect(() => {
         const provider = CloudArchive.getProvider();
         if (provider !== 'firebase' || !CloudArchive.getFirebase()) {
-            refreshLocalState().then(() => {
-                // Auto-seed trivia if empty in local mode
-                if (provider === 'local') {
-                    CloudArchive.getTrivia().then(current => {
-                        if (current.length === 0) {
-                            Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as any)))
-                                .then(refreshLocalState);
-                        }
-                    });
-                }
-            });
+            refreshLocalState().then(() => setIsDataLoading(false));
+            // Auto-seed trivia if empty in local mode
+            if (provider === 'local') {
+                CloudArchive.getTrivia().then(current => {
+                    if (current.length === 0) {
+                        Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as any)))
+                            .then(refreshLocalState);
+                    }
+                });
+            }
             return;
         }
 
-        const unsubR = CloudArchive.subscribeRecipes(setRecipes);
+        const unsubR = CloudArchive.subscribeRecipes(r => {
+            setRecipes(r);
+            setIsDataLoading(false);
+        });
         const unsubT = CloudArchive.subscribeTrivia(setTrivia);
         const unsubG = CloudArchive.subscribeGallery(setGallery);
         const unsubC = CloudArchive.subscribeContributors(setContributors);
         const unsubH = CloudArchive.subscribeHistory(setHistory);
         return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); };
     }, []);
+
+    // Deep-link handling: open recipe from #recipe/{id}
+    useEffect(() => {
+        const applyHash = () => {
+            const match = window.location.hash.match(RECIPE_HASH_REGEX);
+            if (match) {
+                const id = decodeURIComponent(match[1]);
+                const recipe = recipes.find(r => r.id === id);
+                if (recipe) {
+                    setTab('Recipes');
+                    setSelectedRecipe(recipe);
+                }
+            }
+        };
+        applyHash();
+        window.addEventListener('hashchange', applyHash);
+        return () => window.removeEventListener('hashchange', applyHash);
+    }, [recipes]);
 
     useEffect(() => {
         setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
@@ -196,21 +254,16 @@ const App: React.FC = () => {
         });
     }, [recipes, search, category, contributor]);
 
-    const handleRecipeUpdate = async (recipe: Recipe, file?: File) => {
-        if (!currentUser) return;
-        let url = recipe.image;
-        if (file) {
-            url = await CloudArchive.uploadFile(file, 'recipes') || url;
-        }
-        await CloudArchive.upsertRecipe({ ...recipe, image: url }, currentUser.name);
-        await refreshLocalState();
-        if (selectedRecipe && selectedRecipe.id === recipe.id) {
-            setSelectedRecipe({ ...recipe, image: url });
-        }
+    const handleRecipeClick = (recipe: Recipe) => {
+        setSelectedRecipe(recipe);
+        window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
     };
 
-    const handleRecipeClick = async (recipe: Recipe) => {
-        setSelectedRecipe(recipe);
+    const handleRecipeClose = () => {
+        setSelectedRecipe(null);
+        if (window.location.hash.match(RECIPE_HASH_REGEX)) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
     };
 
     if (!currentUser) {
@@ -298,8 +351,14 @@ const App: React.FC = () => {
                                             className="w-full"
                                             controls
                                             muted
+                                            playsInline
                                             onMouseOver={e => (e.target as HTMLVideoElement).play()}
                                             onMouseOut={e => (e.target as HTMLVideoElement).pause()}
+                                            onTouchStart={e => {
+                                                const el = e.target as HTMLVideoElement;
+                                                if (el.paused) el.play();
+                                                else el.pause();
+                                            }}
                                         />
                                     </div>
                                 ) : (
@@ -312,7 +371,7 @@ const App: React.FC = () => {
                                         <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
                                     </div>
                                     {currentUser?.role === 'admin' && (
-                                        <button onClick={() => CloudArchive.deleteGalleryItem(item.id)} className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" title="Remove from gallery">✕</button>
+                                        <button onClick={() => CloudArchive.deleteGalleryItem(item.id)} className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" aria-label="Remove from gallery" title="Remove from gallery">✕</button>
                                     )}
                                 </div>
                             </div>
@@ -353,7 +412,7 @@ const App: React.FC = () => {
             {selectedRecipe && (
                 <RecipeModal
                     recipe={selectedRecipe}
-                    onClose={() => setSelectedRecipe(null)}
+                    onClose={handleRecipeClose}
                 />
             )}
 
@@ -403,44 +462,27 @@ const App: React.FC = () => {
                     </div>
 
 
+                    {isDataLoading ? (
+                        <RecipeGridSkeleton />
+                    ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                         {filteredRecipes.map(recipe => (
                             <div
                                 key={recipe.id}
                                 onClick={() => handleRecipeClick(recipe)}
-                                className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleRecipeClick(recipe);
+                                    }
+                                }}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`View recipe: ${recipe.title}`}
+                                className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
                             >
-                                {/* Image or Category Fallback */}
-                                {recipe.image ? (
-                                    <img
-                                        src={recipe.image}
-                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                        loading="lazy"
-                                        alt={recipe.title}
-                                        onError={(e) => {
-                                            // Fallback to category image if primary fails
-                                            const fallbackUrl = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
-                                            if (e.currentTarget.src !== fallbackUrl) {
-                                                e.currentTarget.src = fallbackUrl;
-                                            }
-                                        }}
-                                    />
-                                ) : (
-                                    <>
-                                        <img
-                                            src={CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic}
-                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60"
-                                            loading="lazy"
-                                            alt={recipe.title}
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#2D4635]/80 to-transparent" />
-                                        {/* "Needs Photo" indicator */}
-                                        <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg z-10">
-                                            <span className="text-xs">📷</span>
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Needs Photo</span>
-                                        </div>
-                                    </>
-                                )}
+                                {/* Affiliated recipe image or placeholder */}
+                                <RecipeCardImage recipe={recipe} />
 
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
 
@@ -449,10 +491,6 @@ const App: React.FC = () => {
                                     <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                         <div className="flex justify-between items-center mb-2 opacity-80">
                                             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
-                                            {/* AI Generated Badge */}
-                                            {(recipe.image?.includes('pollinations.ai') || recipe.image?.startsWith('/recipe-images/')) && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-purple-300 bg-purple-900/50 px-2 py-0.5 rounded-full backdrop-blur-sm animate-pulse">✨ AI</span>
-                                            )}
                                         </div>
                                         <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
                                         <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
@@ -479,8 +517,9 @@ const App: React.FC = () => {
                             </div>
                         ))}
                     </div>
+                    )}
 
-                    {filteredRecipes.length === 0 && (
+                    {!isDataLoading && filteredRecipes.length === 0 && (
                         <div className="py-20 text-center space-y-4 opacity-50">
                             <span className="text-4xl">🍂</span>
                             <p className="font-serif italic text-stone-400">No recipes found in the archive.</p>
@@ -503,7 +542,14 @@ const App: React.FC = () => {
 
             {tab === 'Contributors' && (
                 <Suspense fallback={<TabFallback />}>
-                    <ContributorsView recipes={recipes} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
+                    {isDataLoading ? (
+                        <div className="max-w-7xl mx-auto py-12 px-6">
+                            <h2 className="text-4xl font-serif italic text-[#2D4635] mb-12">The Contributors</h2>
+                            <ContributorsSkeleton />
+                        </div>
+                    ) : (
+                        <ContributorsView recipes={recipes} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
+                    )}
                 </Suspense>
             )}
 
@@ -513,6 +559,7 @@ const App: React.FC = () => {
                     editingRecipe={editingRecipe}
                     clearEditing={() => setEditingRecipe(null)}
                     recipes={recipes}
+                    defaultRecipeIds={Array.from(defaultRecipeIds)}
                     trivia={trivia}
                     contributors={contributors}
                     currentUser={currentUser}
@@ -591,7 +638,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<TabFallback />}>
                 <ProfileView
                     currentUser={currentUser}
-                    userRecipes={recipes.filter(r => r.contributor === currentUser.name)}
+                    userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
                     userHistory={history.filter(h => h.contributor === currentUser.name)}
                     onUpdateProfile={async (name, avatar) => {
                         const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());

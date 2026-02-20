@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { CloudArchive } from './db';
 import { createMockRecipe, createMockTrivia, createMockGalleryItem, setupLocalStorage } from '../test/utils';
 
