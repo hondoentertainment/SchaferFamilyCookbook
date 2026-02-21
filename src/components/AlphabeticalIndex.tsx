@@ -23,16 +23,45 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
     const letters = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
     const activeLetters = Object.keys(grouped);
 
+    const scrollToLetter = (letter: string) => {
+        const el = document.getElementById(`idx-${letter}`);
+        if (el) window.scrollTo({ top: el.offsetTop - 120, behavior: 'smooth' });
+    };
+
+    const letterButtonClass = (active: boolean) =>
+        `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 ${active ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white' : 'text-stone-200'}`;
+
     return (
         <div className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
+            {/* Mobile: compact horizontal scrollable letter strip */}
+            <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 backdrop-blur-sm pb-2 border-b border-stone-100">
+                <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="flex flex-nowrap gap-1.5 justify-start py-2 min-w-max">
+                        {letters.map(l => (
+                            <button
+                                key={l}
+                                onClick={() => scrollToLetter(l)}
+                                disabled={!activeLetters.includes(l)}
+                                className={`${letterButtonClass(activeLetters.includes(l))} w-8 h-8 min-w-[2rem] min-h-[2rem]`}
+                                aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}` : `No recipes starting with ${l}`}
+                            >
+                                {l}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop: sticky vertical letter nav */}
             <div className="hidden md:block w-20 sticky top-32 self-start">
                 <div className="flex flex-col gap-1.5 items-center">
                     {letters.map(l => (
                         <button
                             key={l}
-                            onClick={() => { const el = document.getElementById(`idx-${l}`); if (el) window.scrollTo({ top: el.offsetTop - 120, behavior: 'smooth' }); }}
+                            onClick={() => scrollToLetter(l)}
                             disabled={!activeLetters.includes(l)}
-                            className={`text-[11px] font-black w-9 h-9 rounded-full flex items-center justify-center transition-all ${activeLetters.includes(l) ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white' : 'text-stone-200'}`}
+                            className={`${letterButtonClass(activeLetters.includes(l))} w-9 h-9 min-w-[2.25rem] min-h-[2.25rem]`}
+                            aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}` : `No recipes starting with ${l}`}
                         >
                             {l}
                         </button>

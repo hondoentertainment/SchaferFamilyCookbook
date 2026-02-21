@@ -1,10 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { AlphabeticalIndex } from './AlphabeticalIndex';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
 describe('AlphabeticalIndex', () => {
     const mockOnSelect = vi.fn();
+    let scrollToSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        scrollToSpy = vi.fn();
+        Object.defineProperty(window, 'scrollTo', { value: scrollToSpy, writable: true });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
 
     it('should render empty state when no recipes', () => {
         renderWithProviders(<AlphabeticalIndex recipes={[]} onSelect={mockOnSelect} />);
@@ -45,5 +55,31 @@ describe('AlphabeticalIndex', () => {
         renderWithProviders(<AlphabeticalIndex recipes={[recipe]} onSelect={mockOnSelect} />);
         expect(screen.getByText(/By Jane/)).toBeInTheDocument();
         expect(screen.getByText(/Dessert/)).toBeInTheDocument();
+    });
+
+    it('should render letter strip with all A–Z letters plus #', () => {
+        const recipes = [
+            createMockRecipe({ id: '1', title: 'Apple Pie' }),
+            createMockRecipe({ id: '2', title: 'Zucchini Bread' }),
+        ];
+        renderWithProviders(<AlphabeticalIndex recipes={recipes} onSelect={mockOnSelect} />);
+        const letterButtons = screen.getAllByRole('button', { name: /Jump to recipes starting with|No recipes starting with/ });
+        expect(letterButtons.length).toBeGreaterThanOrEqual(27);
+    });
+
+    it('should scroll to section when letter is clicked', () => {
+        const recipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+        renderWithProviders(<AlphabeticalIndex recipes={[recipe]} onSelect={mockOnSelect} />);
+        const aButtons = screen.getAllByRole('button', { name: 'Jump to recipes starting with A' });
+        fireEvent.click(aButtons[0]);
+        expect(scrollToSpy).toHaveBeenCalledWith({ top: expect.any(Number), behavior: 'smooth' });
+    });
+
+    it('should disable letter buttons for inactive letters', () => {
+        const recipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+        renderWithProviders(<AlphabeticalIndex recipes={[recipe]} onSelect={mockOnSelect} />);
+        const zButtons = screen.getAllByRole('button', { name: 'No recipes starting with Z' });
+        expect(zButtons.length).toBeGreaterThan(0);
+        zButtons.forEach(btn => expect(btn).toBeDisabled());
     });
 });

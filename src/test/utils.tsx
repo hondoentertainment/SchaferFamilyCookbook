@@ -1,6 +1,7 @@
 import { render, RenderOptions } from '@testing-library/react';
 import { ReactElement } from 'react';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
+import { UIProvider } from '../context/UIContext';
 
 // Test data factories
 export const createMockRecipe = (overrides?: Partial<Recipe>): Recipe => ({
@@ -79,12 +80,15 @@ export const setupLocalStorage = () => {
     };
 };
 
-// Custom render with providers if needed
+// Custom render with providers (UIProvider for toast/confirm)
 export const renderWithProviders = (
     ui: ReactElement,
     options?: Omit<RenderOptions, 'wrapper'>
 ) => {
-    return render(ui, { ...options });
+    return render(
+        <UIProvider>{ui}</UIProvider>,
+        { ...options }
+    );
 };
 
 export * from '@testing-library/react';

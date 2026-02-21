@@ -80,7 +80,10 @@ describe('TriviaView', () => {
 
         fireEvent.click(screen.getByText('Sugar'));
 
-        expect(screen.getByText('Incorrect')).toBeInTheDocument();
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('Incorrect');
+        expect(alert).toHaveTextContent('The correct answer was:');
+        expect(alert).toHaveTextContent('Love');
         expect(screen.getByText('Score: 0')).toBeInTheDocument();
     });
 

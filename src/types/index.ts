@@ -12,6 +12,8 @@ export interface Recipe {
   prepTime?: string;
   cookTime?: string;
   calories?: number;
+  /** Number of servings (e.g. 4) or yield description (e.g. "2 dozen cookies") */
+  servings?: string | number;
   created_at?: string;
 }
 

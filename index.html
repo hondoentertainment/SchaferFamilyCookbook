@@ -4,7 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Schafer Family Cookbook</title>
+  <meta name="description" content="A digital archive of heirloom recipes, family photos, and culinary history.">
+  <meta name="theme-color" content="#2D4635">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Schafer Cookbook">
+  <title>Schafer Family Cookbook</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,6 +58,29 @@
       background: linear-gradient(180deg, #B8652F 0%, #3A5A44 100%);
     }
 
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Keyboard focus - visible outline for accessibility */
+    *:focus-visible {
+      outline: 2px solid #2D4635;
+      outline-offset: 2px;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 2px solid #2D4635;
+      outline-offset: 2px;
+    }
+
     /* Mobile Touch Targets & Scrolling */
     @media (max-width: 768px) {
       .custom-scrollbar {
@@ -64,6 +92,14 @@
         min-height: 44px;
         min-width: 44px;
       }
+    }
+
+    /* Print: show only recipe modal content */
+    @media print {
+      body * { visibility: hidden; }
+      .print-recipe-content,
+      .print-recipe-content * { visibility: visible; }
+      .print-recipe-content { position: absolute; left: 0; top: 0; width: 100%; }
     }
   </style>
   <script type="importmap">

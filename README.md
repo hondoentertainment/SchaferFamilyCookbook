@@ -11,6 +11,16 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
    - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
 3. Run: `npm run dev`
 
+### AI Features in Local Dev
+
+Magic Import and Imagen (image generation) require the Gemini API. In local development:
+
+- **Option A (recommended):** Deploy to Vercel and set `GEMINI_API_KEY` in the Vercel dashboard. AI features work against your deployed `/api/gemini` proxy.
+- **Option B:** Run `vercel dev` instead of `npm run dev` so the `/api/gemini` serverless route runs locally. Add `GEMINI_API_KEY` to `.env.local`.
+- **Option C:** Set `GEMINI_API_KEY` in `.env.local` and use `npm run dev`. This only works if your Vite setup proxies API requests; otherwise the client may hit a non-existent `/api/gemini` endpoint.
+
+Without a valid key or working proxy, AI buttons will fail with network/API errors. Non-AI features (browse recipes, gallery, trivia) work without the key.
+
 ## Deploy (Vercel)
 
 1. Connect the repo to Vercel.
@@ -18,6 +28,16 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
    - `GEMINI_API_KEY` – required for AI features.
    - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook and Firebase Admin.
 3. Deploy.
+
+## Deploy (GitHub Pages)
+
+1. Push to GitHub.
+2. In **Settings → Pages**, set *Source* to **GitHub Actions**.
+3. Push to `main` triggers the workflow: lint, type-check, tests, build, then deploy.
+
+Site URL: `https://<username>.github.io/<repo-name>/`
+
+**Note:** GitHub Pages is static-only. `/api/gemini` and `/api/webhook` do not run on Pages. Browsing recipes, gallery, trivia (Firebase-backed) works. For Admin AI features (Magic Import, Imagen) and MMS webhook, use Vercel.
 
 ## Image Generation Scripts
 

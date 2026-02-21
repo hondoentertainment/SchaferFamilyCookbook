@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserProfile, Recipe, HistoryEntry } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
+import { useUI } from '../context/UIContext';
 
 interface ProfileViewProps {
     currentUser: UserProfile;
@@ -13,19 +14,27 @@ interface ProfileViewProps {
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const { currentUser, userRecipes, userHistory, onUpdateProfile, onEditRecipe } = props;
+    const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
     const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [showPicker, setShowPicker] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
         setSaveSuccess(false);
+        setSaveError(null);
         try {
             await onUpdateProfile(name, avatar);
             setSaveSuccess(true);
+            setSaveError(null);
             setTimeout(() => setSaveSuccess(false), 3000);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to save profile';
+            setSaveError(message);
+            toast(message, 'error');
         } finally {
             setIsSaving(false);
         }
@@ -62,10 +71,18 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="px-12 py-5 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                                className="px-12 py-5 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
+                                aria-busy={isSaving}
+                                aria-live="polite"
                             >
-                                {isSaving ? 'Updating...' : 'Save Profile'}
+                                {isSaving ? 'Saving...' : 'Save Profile'}
                             </button>
+                            {saveError && (
+                                <div className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-700 rounded-full border border-red-200 animate-in fade-in slide-in-from-left-4 duration-300">
+                                    <span className="text-lg">⚠</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{saveError}</span>
+                                </div>
+                            )}
                             {saveSuccess && (
                                 <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 animate-in fade-in slide-in-from-left-4 duration-300">
                                     <span className="text-lg">✓</span>

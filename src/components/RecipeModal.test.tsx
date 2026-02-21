@@ -18,7 +18,7 @@ describe('RecipeModal', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
 
         expect(screen.getByText('Test Recipe')).toBeInTheDocument();
-        expect(screen.getByText('Main')).toBeInTheDocument();
+        expect(screen.getAllByText('Main').length).toBeGreaterThan(0);
         expect(screen.getByText(/By Test User/i)).toBeInTheDocument();
     });
 
@@ -82,26 +82,28 @@ describe('RecipeModal', () => {
     });
 
     it('should render recipe image with correct src and alt', () => {
-        renderWithProviders(<RecipeModal {...defaultProps} />);
+        const recipeWithLocalImage = createMockRecipe({ image: '/recipe-images/test-recipe.jpg' });
+        renderWithProviders(<RecipeModal {...defaultProps} recipe={recipeWithLocalImage} />);
 
         const image = screen.getByAltText('Test Recipe');
         expect(image).toBeInTheDocument();
-        expect(image).toHaveAttribute('src', 'https://example.com/recipe.jpg');
+        expect(image).toHaveAttribute('src', '/recipe-images/test-recipe.jpg');
     });
 
     it('should return null when recipe is null', () => {
-        const { container } = renderWithProviders(
+        renderWithProviders(
             <RecipeModal {...defaultProps} recipe={null as any} />
         );
 
-        expect(container.firstChild).toBeNull();
+        expect(screen.queryByText('Test Recipe')).not.toBeInTheDocument();
     });
 
     it('should display category badge', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
 
-        const categoryBadge = screen.getByText('Main');
-        expect(categoryBadge).toHaveClass('uppercase');
+        const categoryBadges = screen.getAllByText('Main');
+        const badge = categoryBadges.find(el => el.classList.contains('uppercase'));
+        expect(badge).toBeInTheDocument();
     });
 
     it('should number instructions correctly', () => {
@@ -113,14 +115,16 @@ describe('RecipeModal', () => {
     });
 
     it('should open lightbox when image is clicked', () => {
-        renderWithProviders(<RecipeModal {...defaultProps} />);
+        const recipeWithLocalImage = createMockRecipe({ image: '/recipe-images/test-recipe.jpg' });
+        renderWithProviders(<RecipeModal {...defaultProps} recipe={recipeWithLocalImage} />);
         const image = screen.getByAltText('Test Recipe');
         fireEvent.click(image);
         expect(screen.getByText('Click anywhere to close')).toBeInTheDocument();
     });
 
     it('should close lightbox when close button is clicked', () => {
-        renderWithProviders(<RecipeModal {...defaultProps} />);
+        const recipeWithLocalImage = createMockRecipe({ image: '/recipe-images/test-recipe.jpg' });
+        renderWithProviders(<RecipeModal {...defaultProps} recipe={recipeWithLocalImage} />);
         fireEvent.click(screen.getByAltText('Test Recipe'));
         expect(screen.getByText('Click anywhere to close')).toBeInTheDocument();
         const lightboxClose = screen.getByRole('button', { name: /close enlarged image/i });

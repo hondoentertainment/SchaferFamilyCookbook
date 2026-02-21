@@ -42,7 +42,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({ recipes, con
                             <div className="flex flex-wrap justify-center gap-2 mb-8">
                                 {Array.from(stat.cats).slice(0, 3).map(cat => <span key={cat} className="text-[8px] font-black uppercase bg-stone-50 text-stone-500 px-3 py-1 rounded-full">{cat}</span>)}
                             </div>
-                            <button onClick={() => onSelectContributor(name)} className="w-full py-4 bg-stone-50 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-all">Explore Collection ({stat.count})</button>
+                            <button onClick={() => onSelectContributor(name)} className="w-full py-4 bg-stone-50 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-all min-h-[2.75rem]" aria-label={`Explore ${name}'s collection of ${stat.count} recipes`}>Explore Collection ({stat.count})</button>
                         </div>
                     ))}
                 </div>
