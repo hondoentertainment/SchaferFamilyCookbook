@@ -16,7 +16,28 @@ export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser }
             role="contentinfo"
             aria-label="Footer"
         >
-            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-center">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-center gap-3">
+                <button
+                    onClick={() => setTab('Profile')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[2.75rem] ${
+                        activeTab === 'Profile'
+                            ? 'bg-[#2D4635] text-white shadow-lg'
+                            : 'text-stone-400 hover:bg-stone-50 hover:text-stone-600'
+                    }`}
+                    aria-current={activeTab === 'Profile' ? 'page' : undefined}
+                    aria-label={`${currentUser.name}, view profile`}
+                    title="Your profile"
+                >
+                    <img
+                        src={currentUser.picture}
+                        alt=""
+                        aria-hidden
+                        className={`w-7 h-7 rounded-full border-2 object-cover ${
+                            activeTab === 'Profile' ? 'border-white/80' : 'border-stone-200'
+                        }`}
+                    />
+                    <span className="hidden sm:inline">Profile</span>
+                </button>
                 <button
                     onClick={() => setTab('Admin')}
                     className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[2.75rem] flex items-center gap-2 ${

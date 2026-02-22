@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
+import { PLACEHOLDER_AVATAR } from './constants';
 import { Footer } from './components/Footer';
 import { RecipeModal } from './components/RecipeModal';
 
@@ -322,7 +323,7 @@ const App: React.FC = () => {
         const u: UserProfile = {
             id: existing?.id || 'u' + Date.now(),
             name: existing?.name || name,
-            picture: existing?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+            picture: existing?.avatar ?? PLACEHOLDER_AVATAR,
             role: isSuper ? 'admin' : ((existing?.role as any) || (name.toLowerCase() === 'admin' ? 'admin' : 'user')),
             email: email
         };
@@ -368,7 +369,7 @@ const App: React.FC = () => {
                         <div className="w-24 h-24 bg-stone-100 rounded-full mx-auto relative overflow-hidden border-4 border-white shadow-2xl group transition-all">
                             {loginName ? (
                                 <img
-                                    src={getAvatar(loginName)}
+                                    src={contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase())?.avatar ?? PLACEHOLDER_AVATAR}
                                     className="w-full h-full object-cover animate-in fade-in zoom-in"
                                     alt="Identity"
                                 />

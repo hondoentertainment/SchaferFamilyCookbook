@@ -49,4 +49,17 @@ describe('Footer', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Admin tools' }));
         expect(mockSetTab).toHaveBeenCalledWith('Admin');
     });
+
+    it('should show profile button with avatar when logged in', () => {
+        renderWithProviders(<Footer {...defaultProps} />);
+        const profileBtn = screen.getByRole('button', { name: /view profile/i });
+        expect(profileBtn).toBeInTheDocument();
+        expect(profileBtn.querySelector('img')).toBeInTheDocument();
+    });
+
+    it('should call setTab with Profile when profile button clicked', () => {
+        renderWithProviders(<Footer {...defaultProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /view profile/i }));
+        expect(mockSetTab).toHaveBeenCalledWith('Profile');
+    });
 });
