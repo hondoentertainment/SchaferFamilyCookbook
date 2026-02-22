@@ -1,0 +1,53 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "Go to Recipes" [ref=e7] [cursor=pointer]:
+            - generic [ref=e8]: Archive
+          - navigation [ref=e9]:
+            - button "Recipes" [ref=e10] [cursor=pointer]
+            - button "Index" [ref=e11] [cursor=pointer]
+            - button "Gallery" [ref=e12] [cursor=pointer]
+            - button "Trivia" [ref=e13] [cursor=pointer]
+            - button "Family Story" [ref=e14] [cursor=pointer]
+            - button "Contributors" [ref=e15] [cursor=pointer]
+            - button "Profile" [active] [ref=e16] [cursor=pointer]
+            - button "🔒 Admin" [ref=e17] [cursor=pointer]
+        - generic [ref=e19]:
+          - button "Alice, view profile" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - paragraph [ref=e22]: Alice
+              - paragraph [ref=e23]: View Identity
+            - img "Alice" [ref=e24]
+          - button "Log out" [ref=e25] [cursor=pointer]
+    - generic [ref=e26]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - img "Alice" [ref=e31]
+          - button "🎭" [ref=e32] [cursor=pointer]
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - text: Display Identity
+            - textbox "Display Identity" [ref=e35]: Alice
+          - generic [ref=e36]:
+            - button "Save Profile" [ref=e37] [cursor=pointer]
+            - generic [ref=e38]:
+              - generic [ref=e39]: "Status:"
+              - generic [ref=e40]: 👤 Family Member
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - heading "📖 My Shared Recipes" [level=3] [ref=e43]:
+            - generic [ref=e44]: 📖
+            - text: My Shared Recipes
+          - paragraph [ref=e47]: No recipes shared yet.
+        - generic [ref=e48]:
+          - heading "⏲️ My Contribution Log" [level=3] [ref=e49]:
+            - generic [ref=e50]: ⏲️
+            - text: My Contribution Log
+          - paragraph [ref=e53]: Your activity will appear here.
+  - status
+```

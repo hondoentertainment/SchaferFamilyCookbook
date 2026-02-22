@@ -1,0 +1,575 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "Go to Recipes" [ref=e7] [cursor=pointer]:
+            - generic [ref=e8]: Archive
+          - navigation [ref=e9]:
+            - button "Recipes" [ref=e10] [cursor=pointer]
+            - button "Index" [ref=e11] [cursor=pointer]
+            - button "Gallery" [ref=e12] [cursor=pointer]
+            - button "Trivia" [ref=e13] [cursor=pointer]
+            - button "Family Story" [ref=e14] [cursor=pointer]
+            - button "Contributors" [ref=e15] [cursor=pointer]
+            - button "Profile" [ref=e16] [cursor=pointer]
+            - button "🔒 Admin" [ref=e17] [cursor=pointer]
+        - generic [ref=e19]:
+          - button "Alice, view profile" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - paragraph [ref=e22]: Alice
+              - paragraph [ref=e23]: View Identity
+            - img "Alice" [ref=e24]
+          - button "Log out" [ref=e25] [cursor=pointer]
+    - main [ref=e26]:
+      - generic [ref=e28]:
+        - generic [ref=e29]: Est. 2024 • The Schafer Collection
+        - heading "Preserving the flavor of our family history." [level=1] [ref=e30]
+        - paragraph [ref=e33]: 67 Recipes Archived
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]: 🔍
+          - textbox "Search by title..." [ref=e39]
+        - combobox [ref=e40] [cursor=pointer]:
+          - option "All Categories" [selected]
+          - option "Breakfast"
+          - option "Main"
+          - option "Dessert"
+          - option "Side"
+          - option "Appetizer"
+          - option "Bread"
+          - option "Dip/Sauce"
+          - option "Snack"
+        - combobox [ref=e41] [cursor=pointer]:
+          - option "All Contributors" [selected]
+          - option "Megan"
+          - option "Wren"
+          - option "Mark"
+          - option "Robin"
+          - option "Julie"
+          - option "Harriet (Oehler) Schafer"
+          - option "Robin Henderson"
+          - option "Spring"
+          - option "Dawn"
+          - option "Dawn (Schafer) Tessmer"
+          - option "Emily"
+          - option "Jana"
+          - option "Jana Schafer"
+          - option "Regional Specialty"
+          - option "Shelby"
+          - option "Heritage Recipe"
+          - option "Family Favorite"
+          - option "Kyle"
+          - option "Lex"
+      - generic [ref=e42]:
+        - 'button "View recipe: Festive Apple Dip" [ref=e43] [cursor=pointer]':
+          - img "Festive Apple Dip" [ref=e44]
+          - generic [ref=e47]:
+            - generic [ref=e49]: Dip/Sauce
+            - heading "Festive Apple Dip" [level=3] [ref=e50]
+            - paragraph [ref=e51]: By Megan
+        - 'button "View recipe: Feyereisen Chocolate Chip Cookies" [ref=e52] [cursor=pointer]':
+          - img "Feyereisen Chocolate Chip Cookies" [ref=e53]
+          - generic [ref=e56]:
+            - generic [ref=e58]: Dessert
+            - heading "Feyereisen Chocolate Chip Cookies" [level=3] [ref=e59]
+            - paragraph [ref=e60]: By Wren
+        - 'button "View recipe: Mark’s Fudge" [ref=e61] [cursor=pointer]':
+          - generic [ref=e64]:
+            - generic [ref=e65]: 📝
+            - generic [ref=e66]: Recipe coming
+          - generic [ref=e69]:
+            - generic [ref=e71]: Dessert
+            - heading "Mark’s Fudge" [level=3] [ref=e72]
+            - paragraph [ref=e73]: By Mark
+        - 'button "View recipe: Quiche" [ref=e74] [cursor=pointer]':
+          - img "Quiche" [ref=e75]
+          - generic [ref=e78]:
+            - generic [ref=e80]: Main
+            - heading "Quiche" [level=3] [ref=e81]
+            - paragraph [ref=e82]: By Wren
+        - 'button "View recipe: Puppy Chow" [ref=e83] [cursor=pointer]':
+          - generic [ref=e86]:
+            - generic [ref=e87]: 📝
+            - generic [ref=e88]: Recipe coming
+          - generic [ref=e91]:
+            - generic [ref=e93]: Dessert
+            - heading "Puppy Chow" [level=3] [ref=e94]
+            - paragraph [ref=e95]: By Wren
+        - 'button "View recipe: Hot Chicken Salad" [ref=e96] [cursor=pointer]':
+          - generic [ref=e99]:
+            - generic [ref=e100]: 📝
+            - generic [ref=e101]: Recipe coming
+          - generic [ref=e104]:
+            - generic [ref=e106]: Main
+            - heading "Hot Chicken Salad" [level=3] [ref=e107]
+            - paragraph [ref=e108]: By Wren
+        - 'button "View recipe: Wild Rice Hot Dish (Robin’s)" [ref=e109] [cursor=pointer]':
+          - img "Wild Rice Hot Dish (Robin’s)" [ref=e110]
+          - generic [ref=e113]:
+            - generic [ref=e115]: Main
+            - heading "Wild Rice Hot Dish (Robin’s)" [level=3] [ref=e116]
+            - paragraph [ref=e117]: By Robin
+        - 'button "View recipe: Mark’s Chow Mein" [ref=e118] [cursor=pointer]':
+          - generic [ref=e121]:
+            - generic [ref=e122]: 📝
+            - generic [ref=e123]: Recipe coming
+          - generic [ref=e126]:
+            - generic [ref=e128]: Dessert
+            - heading "Mark’s Chow Mein" [level=3] [ref=e129]
+            - paragraph [ref=e130]: By Wren
+        - 'button "View recipe: Mark’s Meatloaf" [ref=e131] [cursor=pointer]':
+          - img "Mark’s Meatloaf" [ref=e132]
+          - generic [ref=e135]:
+            - generic [ref=e137]: Main
+            - heading "Mark’s Meatloaf" [level=3] [ref=e138]
+            - paragraph [ref=e139]: By Wren
+        - 'button "View recipe: Wren’s Bagel Dip" [ref=e140] [cursor=pointer]':
+          - generic [ref=e143]:
+            - generic [ref=e144]: 📝
+            - generic [ref=e145]: Recipe coming
+          - generic [ref=e148]:
+            - generic [ref=e150]: Dip/Sauce
+            - heading "Wren’s Bagel Dip" [level=3] [ref=e151]
+            - paragraph [ref=e152]: By Wren
+        - 'button "View recipe: Wren’s Cuban Toasties" [ref=e153] [cursor=pointer]':
+          - img "Wren’s Cuban Toasties" [ref=e154]
+          - generic [ref=e157]:
+            - generic [ref=e159]: Main
+            - heading "Wren’s Cuban Toasties" [level=3] [ref=e160]
+            - paragraph [ref=e161]: By Wren
+        - 'button "View recipe: Wren’s Salsa" [ref=e162] [cursor=pointer]':
+          - img "Wren’s Salsa" [ref=e163]
+          - generic [ref=e166]:
+            - generic [ref=e168]: Dip/Sauce
+            - heading "Wren’s Salsa" [level=3] [ref=e169]
+            - paragraph [ref=e170]: By Wren
+        - 'button "View recipe: Wren’s Taco Dip" [ref=e171] [cursor=pointer]':
+          - generic [ref=e174]:
+            - generic [ref=e175]: 📝
+            - generic [ref=e176]: Recipe coming
+          - generic [ref=e179]:
+            - generic [ref=e181]: Dip/Sauce
+            - heading "Wren’s Taco Dip" [level=3] [ref=e182]
+            - paragraph [ref=e183]: By Wren
+        - 'button "View recipe: Mark’s Monster Bars" [ref=e184] [cursor=pointer]':
+          - generic [ref=e187]:
+            - generic [ref=e188]: 📝
+            - generic [ref=e189]: Recipe coming
+          - generic [ref=e192]:
+            - generic [ref=e194]: Dessert
+            - heading "Mark’s Monster Bars" [level=3] [ref=e195]
+            - paragraph [ref=e196]: By Wren
+        - 'button "View recipe: Wren’s Fruit Pizza" [ref=e197] [cursor=pointer]':
+          - img "Wren’s Fruit Pizza" [ref=e198]
+          - generic [ref=e201]:
+            - generic [ref=e203]: Main
+            - heading "Wren’s Fruit Pizza" [level=3] [ref=e204]
+            - paragraph [ref=e205]: By Wren
+        - 'button "View recipe: Quick & Easy Fudgy Brownies" [ref=e206] [cursor=pointer]':
+          - generic [ref=e209]:
+            - generic [ref=e210]: 📝
+            - generic [ref=e211]: Recipe coming
+          - generic [ref=e214]:
+            - generic [ref=e216]: Dessert
+            - heading "Quick & Easy Fudgy Brownies" [level=3] [ref=e217]
+            - paragraph [ref=e218]: By Julie
+        - 'button "View recipe: Raisin Cookies" [ref=e219] [cursor=pointer]':
+          - generic [ref=e222]:
+            - generic [ref=e223]: 📝
+            - generic [ref=e224]: Recipe coming
+          - generic [ref=e227]:
+            - generic [ref=e229]: Dessert
+            - heading "Raisin Cookies" [level=3] [ref=e230]
+            - paragraph [ref=e231]: By Harriet (Oehler) Schafer
+        - 'button "View recipe: Chicken Wild Rice Soup" [ref=e232] [cursor=pointer]':
+          - img "Chicken Wild Rice Soup" [ref=e233]
+          - generic [ref=e236]:
+            - generic [ref=e238]: Main
+            - heading "Chicken Wild Rice Soup" [level=3] [ref=e239]
+            - paragraph [ref=e240]: By Robin Henderson
+        - 'button "View recipe: Sausage Skillet Supper" [ref=e241] [cursor=pointer]':
+          - generic [ref=e244]:
+            - generic [ref=e245]: 📝
+            - generic [ref=e246]: Recipe coming
+          - generic [ref=e249]:
+            - generic [ref=e251]: Main
+            - heading "Sausage Skillet Supper" [level=3] [ref=e252]
+            - paragraph [ref=e253]: By Spring
+        - 'button "View recipe: Savory Chicken Squares" [ref=e254] [cursor=pointer]':
+          - generic [ref=e257]:
+            - generic [ref=e258]: 📝
+            - generic [ref=e259]: Recipe coming
+          - generic [ref=e262]:
+            - generic [ref=e264]: Main
+            - heading "Savory Chicken Squares" [level=3] [ref=e265]
+            - paragraph [ref=e266]: By Spring
+        - 'button "View recipe: Stuffed Pepper Soup" [ref=e267] [cursor=pointer]':
+          - generic [ref=e270]:
+            - generic [ref=e271]: 📝
+            - generic [ref=e272]: Recipe coming
+          - generic [ref=e275]:
+            - generic [ref=e277]: Main
+            - heading "Stuffed Pepper Soup" [level=3] [ref=e278]
+            - paragraph [ref=e279]: By Dawn
+        - 'button "View recipe: Spinach Dip" [ref=e280] [cursor=pointer]':
+          - generic [ref=e283]:
+            - generic [ref=e284]: 📝
+            - generic [ref=e285]: Recipe coming
+          - generic [ref=e288]:
+            - generic [ref=e290]: Dip/Sauce
+            - heading "Spinach Dip" [level=3] [ref=e291]
+            - paragraph [ref=e292]: By Dawn (Schafer) Tessmer
+        - 'button "View recipe: Broccoli Salad" [ref=e293] [cursor=pointer]':
+          - generic [ref=e296]:
+            - generic [ref=e297]: 📝
+            - generic [ref=e298]: Recipe coming
+          - generic [ref=e301]:
+            - generic [ref=e303]: Side
+            - heading "Broccoli Salad" [level=3] [ref=e304]
+            - paragraph [ref=e305]: By Robin
+        - 'button "View recipe: Cowboy Caviar" [ref=e306] [cursor=pointer]':
+          - generic [ref=e309]:
+            - generic [ref=e310]: 📝
+            - generic [ref=e311]: Recipe coming
+          - generic [ref=e314]:
+            - generic [ref=e316]: Main
+            - heading "Cowboy Caviar" [level=3] [ref=e317]
+            - paragraph [ref=e318]: By Robin
+        - 'button "View recipe: Pretzel Salad" [ref=e319] [cursor=pointer]':
+          - generic [ref=e322]:
+            - generic [ref=e323]: 📝
+            - generic [ref=e324]: Recipe coming
+          - generic [ref=e327]:
+            - generic [ref=e329]: Side
+            - heading "Pretzel Salad" [level=3] [ref=e330]
+            - paragraph [ref=e331]: By Spring
+        - 'button "View recipe: Biscuits & Gravy" [ref=e332] [cursor=pointer]':
+          - img "Biscuits & Gravy" [ref=e333]
+          - generic [ref=e336]:
+            - generic [ref=e338]: Main
+            - heading "Biscuits & Gravy" [level=3] [ref=e339]
+            - paragraph [ref=e340]: By Spring
+        - 'button "View recipe: Skinny Pancakes" [ref=e341] [cursor=pointer]':
+          - generic [ref=e344]:
+            - generic [ref=e345]: 📝
+            - generic [ref=e346]: Recipe coming
+          - generic [ref=e349]:
+            - generic [ref=e351]: Dessert
+            - heading "Skinny Pancakes" [level=3] [ref=e352]
+            - paragraph [ref=e353]: By Emily
+        - 'button "View recipe: Egg Kaka" [ref=e354] [cursor=pointer]':
+          - generic [ref=e357]:
+            - generic [ref=e358]: 📝
+            - generic [ref=e359]: Recipe coming
+          - generic [ref=e362]:
+            - generic [ref=e364]: Breakfast
+            - heading "Egg Kaka" [level=3] [ref=e365]
+            - paragraph [ref=e366]: By Julie
+        - 'button "View recipe: Sausage Egg & Cheese Breakfast Bake" [ref=e367] [cursor=pointer]':
+          - generic [ref=e370]:
+            - generic [ref=e371]: 📝
+            - generic [ref=e372]: Recipe coming
+          - generic [ref=e375]:
+            - generic [ref=e377]: Breakfast
+            - heading "Sausage Egg & Cheese Breakfast Bake" [level=3] [ref=e378]
+            - paragraph [ref=e379]: By Dawn
+        - 'button "View recipe: Cinnamon Rolls" [ref=e380] [cursor=pointer]':
+          - generic [ref=e383]:
+            - generic [ref=e384]: 📝
+            - generic [ref=e385]: Recipe coming
+          - generic [ref=e388]:
+            - generic [ref=e390]: Main
+            - heading "Cinnamon Rolls" [level=3] [ref=e391]
+            - paragraph [ref=e392]: By Dawn (Schafer) Tessmer
+        - 'button "View recipe: Poppy Seed Bread" [ref=e393] [cursor=pointer]':
+          - generic [ref=e396]:
+            - generic [ref=e397]: 📝
+            - generic [ref=e398]: Recipe coming
+          - generic [ref=e401]:
+            - generic [ref=e403]: Bread
+            - heading "Poppy Seed Bread" [level=3] [ref=e404]
+            - paragraph [ref=e405]: By Dawn (Schafer) Tessmer
+        - 'button "View recipe: Banana Nut Bread" [ref=e406] [cursor=pointer]':
+          - generic [ref=e409]:
+            - generic [ref=e410]: 📝
+            - generic [ref=e411]: Recipe coming
+          - generic [ref=e414]:
+            - generic [ref=e416]: Bread
+            - heading "Banana Nut Bread" [level=3] [ref=e417]
+            - paragraph [ref=e418]: By Jana
+        - 'button "View recipe: Popovers" [ref=e419] [cursor=pointer]':
+          - img "Popovers" [ref=e420]
+          - generic [ref=e423]:
+            - generic [ref=e425]: Main
+            - heading "Popovers" [level=3] [ref=e426]
+            - paragraph [ref=e427]: By Jana
+        - 'button "View recipe: Chocolate Chip Cookies" [ref=e428] [cursor=pointer]':
+          - generic [ref=e431]:
+            - generic [ref=e432]: 📝
+            - generic [ref=e433]: Recipe coming
+          - generic [ref=e436]:
+            - generic [ref=e438]: Dessert
+            - heading "Chocolate Chip Cookies" [level=3] [ref=e439]
+            - paragraph [ref=e440]: By Jana
+        - 'button "View recipe: Congo Bars" [ref=e441] [cursor=pointer]':
+          - generic [ref=e444]:
+            - generic [ref=e445]: 📝
+            - generic [ref=e446]: Recipe coming
+          - generic [ref=e449]:
+            - generic [ref=e451]: Dessert
+            - heading "Congo Bars" [level=3] [ref=e452]
+            - paragraph [ref=e453]: By Jana
+        - 'button "View recipe: Monster Cookies" [ref=e454] [cursor=pointer]':
+          - generic [ref=e457]:
+            - generic [ref=e458]: 📝
+            - generic [ref=e459]: Recipe coming
+          - generic [ref=e462]:
+            - generic [ref=e464]: Dessert
+            - heading "Monster Cookies" [level=3] [ref=e465]
+            - paragraph [ref=e466]: By Jana
+        - 'button "View recipe: Peanut Butter Cookies" [ref=e467] [cursor=pointer]':
+          - generic [ref=e470]:
+            - generic [ref=e471]: 📝
+            - generic [ref=e472]: Recipe coming
+          - generic [ref=e475]:
+            - generic [ref=e477]: Dessert
+            - heading "Peanut Butter Cookies" [level=3] [ref=e478]
+            - paragraph [ref=e479]: By Jana
+        - 'button "View recipe: Cranberry Cake" [ref=e480] [cursor=pointer]':
+          - generic [ref=e483]:
+            - generic [ref=e484]: 📝
+            - generic [ref=e485]: Recipe coming
+          - generic [ref=e488]:
+            - generic [ref=e490]: Dessert
+            - heading "Cranberry Cake" [level=3] [ref=e491]
+            - paragraph [ref=e492]: By Robin
+        - 'button "View recipe: Rhubarb Crunch" [ref=e493] [cursor=pointer]':
+          - generic [ref=e496]:
+            - generic [ref=e497]: 📝
+            - generic [ref=e498]: Recipe coming
+          - generic [ref=e501]:
+            - generic [ref=e503]: Dessert
+            - heading "Rhubarb Crunch" [level=3] [ref=e504]
+            - paragraph [ref=e505]: By Robin
+        - 'button "View recipe: Sour Cream Rhubarb Dessert" [ref=e506] [cursor=pointer]':
+          - img "Sour Cream Rhubarb Dessert" [ref=e507]
+          - generic [ref=e510]:
+            - generic [ref=e512]: Dessert
+            - heading "Sour Cream Rhubarb Dessert" [level=3] [ref=e513]
+            - paragraph [ref=e514]: By Julie
+        - 'button "View recipe: Pumpkin Pie" [ref=e515] [cursor=pointer]':
+          - generic [ref=e518]:
+            - generic [ref=e519]: 📝
+            - generic [ref=e520]: Recipe coming
+          - generic [ref=e523]:
+            - generic [ref=e525]: Dessert
+            - heading "Pumpkin Pie" [level=3] [ref=e526]
+            - paragraph [ref=e527]: By Jana Schafer
+        - 'button "View recipe: Barb’s Wild Rice Hotdish" [ref=e528] [cursor=pointer]':
+          - generic [ref=e531]:
+            - generic [ref=e532]: 📝
+            - generic [ref=e533]: Recipe coming
+          - generic [ref=e536]:
+            - generic [ref=e538]: Dessert
+            - heading "Barb’s Wild Rice Hotdish" [level=3] [ref=e539]
+            - paragraph [ref=e540]: By Robin
+        - 'button "View recipe: Gladys Hotdish" [ref=e541] [cursor=pointer]':
+          - generic [ref=e544]:
+            - generic [ref=e545]: 📝
+            - generic [ref=e546]: Recipe coming
+          - generic [ref=e549]:
+            - generic [ref=e551]: Main
+            - heading "Gladys Hotdish" [level=3] [ref=e552]
+            - paragraph [ref=e553]: By Emily
+        - 'button "View recipe: Hearty Beef ’N’ Potato Casserole" [ref=e554] [cursor=pointer]':
+          - generic [ref=e557]:
+            - generic [ref=e558]: 📝
+            - generic [ref=e559]: Recipe coming
+          - generic [ref=e562]:
+            - generic [ref=e564]: Main
+            - heading "Hearty Beef ’N’ Potato Casserole" [level=3] [ref=e565]
+            - paragraph [ref=e566]: By Spring
+        - 'button "View recipe: Tator Tot Hotdish" [ref=e567] [cursor=pointer]':
+          - generic [ref=e570]:
+            - generic [ref=e571]: 📝
+            - generic [ref=e572]: Recipe coming
+          - generic [ref=e575]:
+            - generic [ref=e577]: Main
+            - heading "Tator Tot Hotdish" [level=3] [ref=e578]
+            - paragraph [ref=e579]: By Regional Specialty
+        - 'button "View recipe: Chicken Spaghetti" [ref=e580] [cursor=pointer]':
+          - generic [ref=e583]:
+            - generic [ref=e584]: 📝
+            - generic [ref=e585]: Recipe coming
+          - generic [ref=e588]:
+            - generic [ref=e590]: Main
+            - heading "Chicken Spaghetti" [level=3] [ref=e591]
+            - paragraph [ref=e592]: By Spring
+        - 'button "View recipe: Easy Stew" [ref=e593] [cursor=pointer]':
+          - generic [ref=e596]:
+            - generic [ref=e597]: 📝
+            - generic [ref=e598]: Recipe coming
+          - generic [ref=e601]:
+            - generic [ref=e603]: Main
+            - heading "Easy Stew" [level=3] [ref=e604]
+            - paragraph [ref=e605]: By Jana
+        - 'button "View recipe: Mock Chili" [ref=e606] [cursor=pointer]':
+          - img "Mock Chili" [ref=e607]
+          - generic [ref=e610]:
+            - generic [ref=e612]: Main
+            - heading "Mock Chili" [level=3] [ref=e613]
+            - paragraph [ref=e614]: By Dawn (Schafer) Tessmer
+        - 'button "View recipe: Jalapeño Popper Dip" [ref=e615] [cursor=pointer]':
+          - generic [ref=e618]:
+            - generic [ref=e619]: 📝
+            - generic [ref=e620]: Recipe coming
+          - generic [ref=e623]:
+            - generic [ref=e625]: Dip/Sauce
+            - heading "Jalapeño Popper Dip" [level=3] [ref=e626]
+            - paragraph [ref=e627]: By Shelby
+        - 'button "View recipe: Pizza Dip" [ref=e628] [cursor=pointer]':
+          - generic [ref=e631]:
+            - generic [ref=e632]: 📝
+            - generic [ref=e633]: Recipe coming
+          - generic [ref=e636]:
+            - generic [ref=e638]: Dip/Sauce
+            - heading "Pizza Dip" [level=3] [ref=e639]
+            - paragraph [ref=e640]: By Spring
+        - 'button "View recipe: Shrimp Dip" [ref=e641] [cursor=pointer]':
+          - generic [ref=e644]:
+            - generic [ref=e645]: 📝
+            - generic [ref=e646]: Recipe coming
+          - generic [ref=e649]:
+            - generic [ref=e651]: Dip/Sauce
+            - heading "Shrimp Dip" [level=3] [ref=e652]
+            - paragraph [ref=e653]: By Spring
+        - 'button "View recipe: Coleslaw Dressing" [ref=e654] [cursor=pointer]':
+          - generic [ref=e657]:
+            - generic [ref=e658]: 📝
+            - generic [ref=e659]: Recipe coming
+          - generic [ref=e662]:
+            - generic [ref=e664]: Main
+            - heading "Coleslaw Dressing" [level=3] [ref=e665]
+            - paragraph [ref=e666]: By Jana
+        - 'button "View recipe: Julie Tartar Sauce" [ref=e667] [cursor=pointer]':
+          - generic [ref=e670]:
+            - generic [ref=e671]: 📝
+            - generic [ref=e672]: Recipe coming
+          - generic [ref=e675]:
+            - generic [ref=e677]: Main
+            - heading "Julie Tartar Sauce" [level=3] [ref=e678]
+            - paragraph [ref=e679]: By Julie
+        - 'button "View recipe: The World’s Best Hot Fudge Sauce" [ref=e680] [cursor=pointer]':
+          - generic [ref=e683]:
+            - generic [ref=e684]: 📝
+            - generic [ref=e685]: Recipe coming
+          - generic [ref=e688]:
+            - generic [ref=e690]: Dessert
+            - heading "The World’s Best Hot Fudge Sauce" [level=3] [ref=e691]
+            - paragraph [ref=e692]: By Julie
+        - 'button "View recipe: Glaze for Cinnamon Rolls" [ref=e693] [cursor=pointer]':
+          - img "Glaze for Cinnamon Rolls" [ref=e694]
+          - generic [ref=e697]:
+            - generic [ref=e699]: Main
+            - heading "Glaze for Cinnamon Rolls" [level=3] [ref=e700]
+            - paragraph [ref=e701]: By Harriet (Oehler) Schafer
+        - 'button "View recipe: Refrigerator Pickles" [ref=e702] [cursor=pointer]':
+          - generic [ref=e705]:
+            - generic [ref=e706]: 📝
+            - generic [ref=e707]: Recipe coming
+          - generic [ref=e710]:
+            - generic [ref=e712]: Main
+            - heading "Refrigerator Pickles" [level=3] [ref=e713]
+            - paragraph [ref=e714]: By Jana
+        - 'button "View recipe: Zucchini Jam" [ref=e715] [cursor=pointer]':
+          - generic [ref=e718]:
+            - generic [ref=e719]: 📝
+            - generic [ref=e720]: Recipe coming
+          - generic [ref=e723]:
+            - generic [ref=e725]: Main
+            - heading "Zucchini Jam" [level=3] [ref=e726]
+            - paragraph [ref=e727]: By Jana
+        - 'button "View recipe: Glazed “Green Chunk” Pickles" [ref=e728] [cursor=pointer]':
+          - generic [ref=e731]:
+            - generic [ref=e732]: 📝
+            - generic [ref=e733]: Recipe coming
+          - generic [ref=e736]:
+            - generic [ref=e738]: Main
+            - heading "Glazed “Green Chunk” Pickles" [level=3] [ref=e739]
+            - paragraph [ref=e740]: By Heritage Recipe
+        - 'button "View recipe: Crockpot Apple Butter" [ref=e741] [cursor=pointer]':
+          - generic [ref=e744]:
+            - generic [ref=e745]: 📝
+            - generic [ref=e746]: Recipe coming
+          - generic [ref=e749]:
+            - generic [ref=e751]: Main
+            - heading "Crockpot Apple Butter" [level=3] [ref=e752]
+            - paragraph [ref=e753]: By Jana
+        - 'button "View recipe: Fish Fry (Grandma & Grandpa’s)" [ref=e754] [cursor=pointer]':
+          - generic [ref=e757]:
+            - generic [ref=e758]: 📝
+            - generic [ref=e759]: Recipe coming
+          - generic [ref=e762]:
+            - generic [ref=e764]: Main
+            - heading "Fish Fry (Grandma & Grandpa’s)" [level=3] [ref=e765]
+            - paragraph [ref=e766]: By Family Favorite
+        - 'button "View recipe: Mustard Marinated Steak" [ref=e767] [cursor=pointer]':
+          - generic [ref=e770]:
+            - generic [ref=e771]: 📝
+            - generic [ref=e772]: Recipe coming
+          - generic [ref=e775]:
+            - generic [ref=e777]: Main
+            - heading "Mustard Marinated Steak" [level=3] [ref=e778]
+            - paragraph [ref=e779]: By Wren
+        - 'button "View recipe: Soy Chicken Wings" [ref=e780] [cursor=pointer]':
+          - img "Soy Chicken Wings" [ref=e781]
+          - generic [ref=e784]:
+            - generic [ref=e786]: Main
+            - heading "Soy Chicken Wings" [level=3] [ref=e787]
+            - paragraph [ref=e788]: By Wren
+        - 'button "View recipe: Orange Jello" [ref=e789] [cursor=pointer]':
+          - generic [ref=e792]:
+            - generic [ref=e793]: 📝
+            - generic [ref=e794]: Recipe coming
+          - generic [ref=e797]:
+            - generic [ref=e799]: Main
+            - heading "Orange Jello" [level=3] [ref=e800]
+            - paragraph [ref=e801]: By Kyle
+        - 'button "View recipe: Jello Salad" [ref=e802] [cursor=pointer]':
+          - generic [ref=e805]:
+            - generic [ref=e806]: 📝
+            - generic [ref=e807]: Recipe coming
+          - generic [ref=e810]:
+            - generic [ref=e812]: Side
+            - heading "Jello Salad" [level=3] [ref=e813]
+            - paragraph [ref=e814]: By Jana
+        - 'button "View recipe: Winter Salad" [ref=e815] [cursor=pointer]':
+          - generic [ref=e818]:
+            - generic [ref=e819]: 📝
+            - generic [ref=e820]: Recipe coming
+          - generic [ref=e823]:
+            - generic [ref=e825]: Side
+            - heading "Winter Salad" [level=3] [ref=e826]
+            - paragraph [ref=e827]: By Robin
+        - 'button "View recipe: Chocolate Martini" [ref=e828] [cursor=pointer]':
+          - generic [ref=e831]:
+            - generic [ref=e832]: 📝
+            - generic [ref=e833]: Recipe coming
+          - generic [ref=e836]:
+            - generic [ref=e838]: Main
+            - heading "Chocolate Martini" [level=3] [ref=e839]
+            - paragraph [ref=e840]: By Wren
+        - 'button "View recipe: White Russian Pudding Shots" [ref=e841] [cursor=pointer]':
+          - generic [ref=e844]:
+            - generic [ref=e845]: 📝
+            - generic [ref=e846]: Recipe coming
+          - generic [ref=e849]:
+            - generic [ref=e851]: Main
+            - heading "White Russian Pudding Shots" [level=3] [ref=e852]
+            - paragraph [ref=e853]: By Lex
+  - status
+```

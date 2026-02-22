@@ -74,27 +74,6 @@ describe('Header', () => {
         expect(mockSetTab).toHaveBeenCalledWith('Profile');
     });
 
-    it('should show lock on Admin tab if user is not admin', () => {
-        const nonAdminProps = {
-            ...defaultProps,
-            currentUser: { ...defaultProps.currentUser!, role: 'user' as const }
-        };
-        renderWithProviders(<Header {...nonAdminProps} />);
-
-        expect(screen.getByText('🔒 Admin')).toBeInTheDocument();
-    });
-
-    it('should not show lock on Admin tab if user is admin', () => {
-        const adminProps = {
-            ...defaultProps,
-            currentUser: { ...defaultProps.currentUser!, role: 'admin' as const }
-        };
-        renderWithProviders(<Header {...adminProps} />);
-
-        expect(screen.getByText('Admin')).toBeInTheDocument();
-        expect(screen.queryByText('🔒 Admin')).not.toBeInTheDocument();
-    });
-
     it('should call onLogout when Log out is clicked', () => {
         renderWithProviders(<Header {...defaultProps} />);
 

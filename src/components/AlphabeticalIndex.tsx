@@ -105,7 +105,8 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                 {activeLetters.length === 0 && <div className="text-center py-32 bg-stone-50 rounded-[3rem] border border-stone-100"><p className="text-stone-400 font-serif">Index is empty.</p></div>}
                 {letters.filter(l => activeLetters.includes(l)).map(l => (
                     <div key={l} id={`idx-${l}`} className="space-y-8 animate-in fade-in">
-                        <h3 className="text-6xl font-serif italic text-[#A0522D]/10 border-b border-stone-100 pb-4 flex items-center gap-6">{l}</h3>
+                        {/* Added sticky positioning to the h3 header */}
+                        <h3 className="text-6xl font-serif italic text-[#A0522D]/10 border-b border-stone-100 pb-4 flex items-center gap-6 sticky top-[120px] bg-white z-10">{l}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {grouped[l].map(r => (
                                 <button key={r.id} onClick={() => onSelect(r)} className="group flex items-center justify-between p-6 bg-white rounded-[2rem] border border-stone-100 hover:shadow-xl transition-all text-left">

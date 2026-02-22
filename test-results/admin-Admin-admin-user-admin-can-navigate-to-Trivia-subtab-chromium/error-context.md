@@ -1,0 +1,177 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "Go to Recipes" [ref=e7] [cursor=pointer]:
+            - generic [ref=e8]: Archive
+          - navigation [ref=e9]:
+            - button "Recipes" [ref=e10] [cursor=pointer]
+            - button "Index" [ref=e11] [cursor=pointer]
+            - button "Gallery" [ref=e12] [cursor=pointer]
+            - button "Trivia" [ref=e13] [cursor=pointer]
+            - button "Family Story" [ref=e14] [cursor=pointer]
+            - button "Contributors" [ref=e15] [cursor=pointer]
+            - button "Profile" [ref=e16] [cursor=pointer]
+            - button "Admin" [ref=e17] [cursor=pointer]
+        - generic [ref=e19]:
+          - button "Kyle, view profile" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - paragraph [ref=e22]: Kyle
+              - paragraph [ref=e23]: View Identity
+            - img "Kyle" [ref=e24]
+          - button "Log out" [ref=e25] [cursor=pointer]
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - button "📖 Record" [ref=e29] [cursor=pointer]
+        - button "🖼️ Gallery" [ref=e30] [cursor=pointer]
+        - button "💡 Trivia" [active] [ref=e31] [cursor=pointer]
+        - button "👥 Directory" [ref=e32] [cursor=pointer]
+        - button "🔐 Admins" [ref=e33] [cursor=pointer]
+      - generic [ref=e34]:
+        - heading "Family Trivia" [level=2] [ref=e36]
+        - generic [ref=e38]:
+          - heading "💡 Family Trivia" [level=3] [ref=e39]:
+            - generic [ref=e40]: 💡
+            - text: Family Trivia
+          - generic [ref=e41]:
+            - textbox "The Question" [ref=e42]
+            - generic [ref=e43]:
+              - textbox "Opt 1" [ref=e44]
+              - textbox "Opt 2" [ref=e45]
+              - textbox "Opt 3" [ref=e46]
+              - textbox "Opt 4" [ref=e47]
+            - textbox "Correct Answer" [ref=e48]
+            - button "Add Question" [ref=e50] [cursor=pointer]
+          - generic [ref=e51]:
+            - heading "Current Questions" [level=4] [ref=e52]
+            - generic [ref=e53]:
+              - generic [ref=e54] [cursor=pointer]:
+                - generic [ref=e55]: What does the name 'Oehler' originally mean in German?
+                - generic [ref=e56]: Click to edit
+              - button "✕" [ref=e57] [cursor=pointer]
+            - generic [ref=e58]:
+              - generic [ref=e59] [cursor=pointer]:
+                - generic [ref=e60]: Where did the Oehler family originally come from before arriving in the US?
+                - generic [ref=e61]: Click to edit
+              - button "✕" [ref=e62] [cursor=pointer]
+            - generic [ref=e63]:
+              - generic [ref=e64] [cursor=pointer]:
+                - generic [ref=e65]: What special fruit was considered a 'special' Christmas gift for Harriet as a child?
+                - generic [ref=e66]: Click to edit
+              - button "✕" [ref=e67] [cursor=pointer]
+            - generic [ref=e68]:
+              - generic [ref=e69] [cursor=pointer]:
+                - generic [ref=e70]: What meal was traditionally served as a 'special Christmas meal' in the Oehler home?
+                - generic [ref=e71]: Click to edit
+              - button "✕" [ref=e72] [cursor=pointer]
+            - generic [ref=e73]:
+              - generic [ref=e74] [cursor=pointer]:
+                - generic [ref=e75]: Edward Oehler had a peculiar health habit. What did he drink because he believed it made him strong?
+                - generic [ref=e76]: Click to edit
+              - button "✕" [ref=e77] [cursor=pointer]
+            - generic [ref=e78]:
+              - generic [ref=e79] [cursor=pointer]:
+                - generic [ref=e80]: What does the name 'Schafer' mean in German?
+                - generic [ref=e81]: Click to edit
+              - button "✕" [ref=e82] [cursor=pointer]
+            - generic [ref=e83]:
+              - generic [ref=e84] [cursor=pointer]:
+                - generic [ref=e85]: Oliver Schafer was one of how many children born to JD and Dora?
+                - generic [ref=e86]: Click to edit
+              - button "✕" [ref=e87] [cursor=pointer]
+            - generic [ref=e88]:
+              - generic [ref=e89] [cursor=pointer]:
+                - generic [ref=e90]: Which of these were Oliver's favorite horses to work the fields with?
+                - generic [ref=e91]: Click to edit
+              - button "✕" [ref=e92] [cursor=pointer]
+            - generic [ref=e93]:
+              - generic [ref=e94] [cursor=pointer]:
+                - generic [ref=e95]: How did Oliver's sisters dry plums on the Schafer farm?
+                - generic [ref=e96]: Click to edit
+              - button "✕" [ref=e97] [cursor=pointer]
+            - generic [ref=e98]:
+              - generic [ref=e99] [cursor=pointer]:
+                - generic [ref=e100]: What was a frequent breakfast staple on the Schafer farm that Oliver enjoyed?
+                - generic [ref=e101]: Click to edit
+              - button "✕" [ref=e102] [cursor=pointer]
+            - generic [ref=e103]:
+              - generic [ref=e104] [cursor=pointer]:
+                - generic [ref=e105]: Harriet ran a 'serious' chicken operation. At times, how many Leghorns did she keep?
+                - generic [ref=e106]: Click to edit
+              - button "✕" [ref=e107] [cursor=pointer]
+            - generic [ref=e108]:
+              - generic [ref=e109] [cursor=pointer]:
+                - generic [ref=e110]: How many eggs were in a 'gross' that Harriet and her children used to pack into boxes?
+                - generic [ref=e111]: Click to edit
+              - button "✕" [ref=e112] [cursor=pointer]
+            - generic [ref=e113]:
+              - generic [ref=e114] [cursor=pointer]:
+                - generic [ref=e115]: Where did Harriet go to deliver her eggs and pick up new chicks?
+                - generic [ref=e116]: Click to edit
+              - button "✕" [ref=e117] [cursor=pointer]
+            - generic [ref=e118]:
+              - generic [ref=e119] [cursor=pointer]:
+                - generic [ref=e120]: What did Harriet usually use her 'egg money' for?
+                - generic [ref=e121]: Click to edit
+              - button "✕" [ref=e122] [cursor=pointer]
+            - generic [ref=e123]:
+              - generic [ref=e124] [cursor=pointer]:
+                - generic [ref=e125]: What 'centrifugal force' experiment led to a basket of broken eggs and big trouble for Ruthann?
+                - generic [ref=e126]: Click to edit
+              - button "✕" [ref=e127] [cursor=pointer]
+            - generic [ref=e128]:
+              - generic [ref=e129] [cursor=pointer]:
+                - generic [ref=e130]: In the 'Wren's Bagel Dip' recipe, which ingredient is often doubled for gatherings?
+                - generic [ref=e131]: Click to edit
+              - button "✕" [ref=e132] [cursor=pointer]
+            - generic [ref=e133]:
+              - generic [ref=e134] [cursor=pointer]:
+                - generic [ref=e135]: Which Schafer family member is credited with the recipe for 'Mark’s Fudge'?
+                - generic [ref=e136]: Click to edit
+              - button "✕" [ref=e137] [cursor=pointer]
+            - generic [ref=e138]:
+              - generic [ref=e139] [cursor=pointer]:
+                - generic [ref=e140]: How long should Mark’s Meatloaf bake to reach perfection?
+                - generic [ref=e141]: Click to edit
+              - button "✕" [ref=e142] [cursor=pointer]
+            - generic [ref=e143]:
+              - generic [ref=e144] [cursor=pointer]:
+                - generic [ref=e145]: What temperature should the oven be preheated to for Feyereisen Chocolate Chip Cookies?
+                - generic [ref=e146]: Click to edit
+              - button "✕" [ref=e147] [cursor=pointer]
+            - generic [ref=e148]:
+              - generic [ref=e149] [cursor=pointer]:
+                - generic [ref=e150]: Megan's 'Festive Apple Dip' is best served with which accompaniment?
+                - generic [ref=e151]: Click to edit
+              - button "✕" [ref=e152] [cursor=pointer]
+            - generic [ref=e153]:
+              - generic [ref=e154] [cursor=pointer]:
+                - generic [ref=e155]: Which recipe in the archive is also known by the name 'Muddy Buddies'?
+                - generic [ref=e156]: Click to edit
+              - button "✕" [ref=e157] [cursor=pointer]
+            - generic [ref=e158]:
+              - generic [ref=e159] [cursor=pointer]:
+                - generic [ref=e160]: What type of sausage is used in 'Mark's Meatloaf'?
+                - generic [ref=e161]: Click to edit
+              - button "✕" [ref=e162] [cursor=pointer]
+            - generic [ref=e163]:
+              - generic [ref=e164] [cursor=pointer]:
+                - generic [ref=e165]: How long is the 'Hot Chicken Salad' baked until it becomes bubbly?
+                - generic [ref=e166]: Click to edit
+              - button "✕" [ref=e167] [cursor=pointer]
+            - generic [ref=e168]:
+              - generic [ref=e169] [cursor=pointer]:
+                - generic [ref=e170]: In Harriet's 'Raisin Cookies' recipe, which ingredient is creamed with the butter?
+                - generic [ref=e171]: Click to edit
+              - button "✕" [ref=e172] [cursor=pointer]
+            - generic [ref=e173]:
+              - generic [ref=e174] [cursor=pointer]:
+                - generic [ref=e175]: Which recipe is described as a 'simple family breakfast staple'?
+                - generic [ref=e176]: Click to edit
+              - button "✕" [ref=e177] [cursor=pointer]
+  - status
+```

@@ -1,0 +1,96 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "Go to Recipes" [ref=e7] [cursor=pointer]:
+            - generic [ref=e8]: Archive
+          - navigation [ref=e9]:
+            - button "Recipes" [ref=e10] [cursor=pointer]
+            - button "Index" [ref=e11] [cursor=pointer]
+            - button "Gallery" [ref=e12] [cursor=pointer]
+            - button "Trivia" [ref=e13] [cursor=pointer]
+            - button "Family Story" [ref=e14] [cursor=pointer]
+            - button "Contributors" [ref=e15] [cursor=pointer]
+            - button "Profile" [ref=e16] [cursor=pointer]
+            - button "Admin" [active] [ref=e17] [cursor=pointer]
+        - generic [ref=e19]:
+          - button "Kyle, view profile" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - paragraph [ref=e22]: Kyle
+              - paragraph [ref=e23]: View Identity
+            - img "Kyle" [ref=e24]
+          - button "Log out" [ref=e25] [cursor=pointer]
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - button "📖 Record" [ref=e29] [cursor=pointer]
+        - button "🖼️ Gallery" [ref=e30] [cursor=pointer]
+        - button "💡 Trivia" [ref=e31] [cursor=pointer]
+        - button "👥 Directory" [ref=e32] [cursor=pointer]
+        - button "🔐 Admins" [ref=e33] [cursor=pointer]
+      - generic [ref=e34]:
+        - heading "New Heritage Record" [level=2] [ref=e36]
+        - generic [ref=e38]:
+          - heading "📖 New Heritage Record" [level=3] [ref=e39]:
+            - generic [ref=e40]: 📖
+            - text: New Heritage Record
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - heading "Manage Existing Records (0)" [level=4] [ref=e43]
+              - generic [ref=e44]:
+                - generic [ref=e45]: Search recipes
+                - searchbox "Search recipes" [ref=e46]
+                - generic [ref=e47]: 🔍
+            - generic [ref=e49]:
+              - generic [ref=e50]: 🔍
+              - generic [ref=e51]: No recipes match ""
+          - generic [ref=e52]:
+            - textbox "Paste raw recipe text here..." [ref=e53]
+            - generic [ref=e54]:
+              - button "✨ Organize with AI" [ref=e55] [cursor=pointer]
+              - button "🖼️ Fill Missing (Imagen)" [ref=e56] [cursor=pointer]
+              - button "🔄 Regenerate All (Imagen)" [ref=e57] [cursor=pointer]
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - text: Archival Image
+              - paragraph [ref=e61]: Recipe image to be added
+              - generic [ref=e62]:
+                - button "Choose File" [ref=e63] [cursor=pointer]
+                - generic [ref=e64]:
+                  - generic [ref=e65]: 📁
+                  - generic [ref=e66]: Upload Heritage Photo
+              - generic [ref=e67]:
+                - button "✨ Generate Photo (Imagen)" [disabled] [ref=e68]
+                - button "🖼️ Use Default Image" [ref=e69] [cursor=pointer]
+            - generic [ref=e70]:
+              - generic [ref=e71]: Recipe Title
+              - textbox "Recipe Title" [ref=e72]
+            - generic [ref=e73]:
+              - text: Contributed By
+              - combobox "Contributed By" [ref=e74]:
+                - option "Kyle (you)" [selected]
+            - generic [ref=e75]:
+              - combobox [ref=e76]:
+                - option "Breakfast"
+                - option "Main" [selected]
+                - option "Dessert"
+                - option "Side"
+                - option "Appetizer"
+                - option "Bread"
+                - option "Dip/Sauce"
+                - option "Snack"
+              - textbox "Prep Time (e.g. 15 min)" [ref=e77]
+              - textbox "Cook Time (e.g. 30 min)" [ref=e78]
+              - spinbutton [ref=e79]
+            - textbox "Ingredients (one per line)" [ref=e80]
+            - textbox "Instructions (one per line)" [ref=e81]
+            - generic [ref=e82]:
+              - text: Heirloom Notes (optional)
+              - textbox "Heirloom Notes (optional)" [ref=e83]:
+                - /placeholder: Add any special memories, tips, or history about this recipe...
+            - button "Commit to Archive" [ref=e85] [cursor=pointer]
+  - status
+```

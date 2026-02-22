@@ -567,7 +567,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <div key={r.id} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-stone-100 hover:shadow-md transition-all group">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden">
-                                                                {r.image && <img src={r.image} className="w-full h-full object-cover" alt="" />}
+                                                                {r.image && <img src={r.image} className="w-full h-full object-cover" alt={r.title} />}
                                                             </div>
                                                             <div>
                                                                 <h5 className="text-sm font-serif font-bold text-[#2D4635]">{r.title}</h5>
@@ -673,11 +673,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <label htmlFor="admin-recipe-image-upload" className="block cursor-pointer">
                                                     <input id="admin-recipe-image-upload" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Upload recipe image" />
                                                     <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
-                                                    <span className="text-lg">📁</span>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">
-                                                        {recipeFile ? recipeFile.name : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
-                                                    </span>
-                                                </div>
+                                                        <span className="text-lg">📁</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">
+                                                            {recipeFile ? recipeFile.name : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
+                                                        </span>
+                                                    </div>
                                                 </label>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
@@ -712,8 +712,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
-                                                <label htmlFor="admin-recipe-category" className="sr-only">Category</label>
-                                                <select id="admin-recipe-category" aria-label="Recipe category" className="p-4 border border-stone-200 rounded-2xl text-sm bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
+                                                <label htmlFor="admin-recipe-category" className="sr-only">Recipe Category</label>
+                                                <select id="admin-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-sm bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
                                                     {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
                                                 </select>
                                             </div>
@@ -722,8 +722,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <input id="admin-recipe-preptime" placeholder="Prep Time (e.g. 15 min)" aria-label="Prep time" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
                                             </div>
                                             <div>
-                                                <label htmlFor="admin-recipe-cooktime" className="sr-only">Cook time</label>
-                                                <input id="admin-recipe-cooktime" placeholder="Cook Time (e.g. 30 min)" aria-label="Cook time" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
+                                                <label htmlFor="admin-recipe-cooktime" className="sr-only">Cook Time</label>
+                                                <input id="admin-recipe-cooktime" placeholder="Cook Time (e.g. 30 min)" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label htmlFor="admin-recipe-calories" className="sr-only">Estimated calories</label>
@@ -798,13 +798,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <input id="admin-gallery-file" type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Choose family photo or video to upload" />
                                                 <div className="w-full h-32 border-2 border-dashed border-stone-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-stone-300 group-hover:border-[#A0522D] group-hover:text-[#A0522D] transition-all">
                                                     <span className="text-3xl" aria-hidden="true">🏞️</span>
-                                                    <span className="text-[9px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Photo or Video'}</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Memory'}</span>
                                                 </div>
                                             </label>
                                         </div>
                                         <div>
-                                            <label htmlFor="admin-gallery-caption" className="sr-only">Caption for gallery item</label>
-                                            <input id="admin-gallery-caption" placeholder="Short caption..." aria-label="Caption for gallery item" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
+                                            <label htmlFor="admin-gallery-caption" className="sr-only">Gallery Caption</label>
+                                            <input id="admin-gallery-caption" placeholder="Caption (e.g. Summer BBQ 1985)" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20 text-base" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
                                         </div>
                                         <button type="submit" disabled={!galleryFile || isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
                                             {isSubmitting ? 'Uploading...' : 'Upload Memory'}
@@ -958,121 +958,125 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 </section>
                             )}
                         </div>
-                    </div>
+                    </div >
                 )}
 
-                {activeSubtab === 'directory' && (
-                    <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl animate-in fade-in slide-in-from-bottom-4">
-                        <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
-                            <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">👥</span>
-                            Family Directory & Avatars
-                        </h2>
+                {
+                    activeSubtab === 'directory' && (
+                        <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl animate-in fade-in slide-in-from-bottom-4">
+                            <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
+                                <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">👥</span>
+                                Family Directory & Avatars
+                            </h2>
 
-                        {/* Merge Contributors Tool */}
-                        {isSuperAdmin && (
-                            <div className="mb-10 p-6 bg-orange-50/50 rounded-3xl border border-orange-100">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D] mb-4 flex items-center gap-2">
-                                    <span>🔀</span> Merge Contributors
-                                </h4>
-                                <p className="text-xs text-stone-500 mb-4">Combine two contributor accounts by moving all recipes from one contributor to another.</p>
-                                <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
-                                    <div className="flex-1 w-full">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Merge From (will be removed)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Dawn Schafer Tessmer"
-                                            value={mergeFrom}
-                                            onChange={e => setMergeFrom(e.target.value)}
-                                            className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
-                                        />
-                                    </div>
-                                    <span className="text-stone-300 text-xl hidden md:block">→</span>
-                                    <div className="flex-1 w-full">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Merge Into (will keep)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Dawn"
-                                            value={mergeTo}
-                                            onChange={e => setMergeTo(e.target.value)}
-                                            className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleMergeContributors}
-                                        disabled={isMerging || !mergeFrom.trim() || !mergeTo.trim()}
-                                        className="px-6 py-3 bg-[#A0522D] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                    >
-                                        {isMerging ? 'Merging...' : '🔀 Merge'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                            {Array.from(new Set([
-                                ...(props.recipes || []).map(r => r.contributor),
-                                ...(props.trivia || []).map(t => t.contributor),
-                                ...(props.contributors || []).map(c => c.name)
-                            ].filter(Boolean))).sort().map(name => {
-                                const profile = contributors.find(c => c.name === name);
-                                const avatar = profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
-                                const role = profile?.role || 'user';
-                                return (
-                                    <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-3xl border border-stone-100 hover:shadow-lg transition-all cursor-pointer group relative">
-                                        <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
-                                        <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
-                                        <div className="flex gap-2">
-                                            <span onClick={(e) => {
-                                                e.stopPropagation();
-                                                const phone = prompt(`Enter phone number for ${name} (e.g. +1234567890):`, profile?.phone || '');
-                                                if (phone !== null) {
-                                                    const updatedProfile = profile ? { ...profile, phone } : { id: 'c_' + Date.now(), name, avatar, role: 'user', phone };
-                                                    onUpdateContributor(updatedProfile as any);
-                                                }
-                                            }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Phone</span>
-                                            <span onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (isSuperAdmin) {
-                                                    setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
-                                                } else {
-                                                    const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
-                                                    if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
-                                                }
-                                            }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
-                                            {role === 'admin' ? (
-                                                <span onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
-                                                    if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
-                                                }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
-                                            ) : (
-                                                <span onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
-                                                    if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
-                                                }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
-                                            )}
+                            {/* Merge Contributors Tool */}
+                            {isSuperAdmin && (
+                                <div className="mb-10 p-6 bg-orange-50/50 rounded-3xl border border-orange-100">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D] mb-4 flex items-center gap-2">
+                                        <span>🔀</span> Merge Contributors
+                                    </h4>
+                                    <p className="text-xs text-stone-500 mb-4">Combine two contributor accounts by moving all recipes from one contributor to another.</p>
+                                    <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
+                                        <div className="flex-1 w-full">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Merge From (will be removed)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Dawn Schafer Tessmer"
+                                                value={mergeFrom}
+                                                onChange={e => setMergeFrom(e.target.value)}
+                                                className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
+                                            />
                                         </div>
+                                        <span className="text-stone-300 text-xl hidden md:block">→</span>
+                                        <div className="flex-1 w-full">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Merge Into (will keep)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Dawn"
+                                                value={mergeTo}
+                                                onChange={e => setMergeTo(e.target.value)}
+                                                className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={handleMergeContributors}
+                                            disabled={isMerging || !mergeFrom.trim() || !mergeTo.trim()}
+                                            className="px-6 py-3 bg-[#A0522D] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                        >
+                                            {isMerging ? 'Merging...' : '🔀 Merge'}
+                                        </button>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </section>
-                )}
+                                </div>
+                            )}
 
-                {pickerTarget && isSuperAdmin && (
-                    <AvatarPicker
-                        currentAvatar={pickerTarget.avatar}
-                        onSelect={(url) => {
-                            onUpdateContributor({
-                                ...pickerTarget,
-                                avatar: url
-                            });
-                        }}
-                        onClose={() => setPickerTarget(null)}
-                    />
-                )}
-            </div>
-        </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                                {Array.from(new Set([
+                                    ...(props.recipes || []).map(r => r.contributor),
+                                    ...(props.trivia || []).map(t => t.contributor),
+                                    ...(props.contributors || []).map(c => c.name)
+                                ].filter(Boolean))).sort().map(name => {
+                                    const profile = contributors.find(c => c.name === name);
+                                    const avatar = profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+                                    const role = profile?.role || 'user';
+                                    return (
+                                        <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-3xl border border-stone-100 hover:shadow-lg transition-all cursor-pointer group relative">
+                                            <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
+                                            <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
+                                            <div className="flex gap-2">
+                                                <span onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const phone = prompt(`Enter phone number for ${name} (e.g. +1234567890):`, profile?.phone || '');
+                                                    if (phone !== null) {
+                                                        const updatedProfile = profile ? { ...profile, phone } : { id: 'c_' + Date.now(), name, avatar, role: 'user', phone };
+                                                        onUpdateContributor(updatedProfile as any);
+                                                    }
+                                                }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Phone</span>
+                                                <span onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (isSuperAdmin) {
+                                                        setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
+                                                    } else {
+                                                        const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
+                                                        if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
+                                                    }
+                                                }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
+                                                {role === 'admin' ? (
+                                                    <span onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                        if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
+                                                    }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
+                                                ) : (
+                                                    <span onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                        if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
+                                                    }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    )
+                }
+
+                {
+                    pickerTarget && isSuperAdmin && (
+                        <AvatarPicker
+                            currentAvatar={pickerTarget.avatar}
+                            onSelect={(url) => {
+                                onUpdateContributor({
+                                    ...pickerTarget,
+                                    avatar: url
+                                });
+                            }}
+                            onClose={() => setPickerTarget(null)}
+                        />
+                    )
+                }
+            </div >
+        </div >
     );
 };

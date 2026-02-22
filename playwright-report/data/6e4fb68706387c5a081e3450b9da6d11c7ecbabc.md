@@ -1,0 +1,44 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "Go to Recipes" [ref=e7] [cursor=pointer]:
+            - generic [ref=e8]: Archive
+          - navigation [ref=e9]:
+            - button "Recipes" [ref=e10] [cursor=pointer]
+            - button "Index" [ref=e11] [cursor=pointer]
+            - button "Gallery" [active] [ref=e12] [cursor=pointer]
+            - button "Trivia" [ref=e13] [cursor=pointer]
+            - button "Family Story" [ref=e14] [cursor=pointer]
+            - button "Contributors" [ref=e15] [cursor=pointer]
+            - button "Profile" [ref=e16] [cursor=pointer]
+            - button "🔒 Admin" [ref=e17] [cursor=pointer]
+        - generic [ref=e19]:
+          - button "Alice, view profile" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - paragraph [ref=e22]: Alice
+              - paragraph [ref=e23]: View Identity
+            - img "Alice" [ref=e24]
+          - button "Log out" [ref=e25] [cursor=pointer]
+    - main "Family Gallery" [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - heading "Family Gallery" [level=2] [ref=e29]
+          - paragraph [ref=e30]: Captured moments across the generations.
+        - region "How to add photos" [ref=e31]:
+          - generic [ref=e32]: 📷
+          - generic [ref=e33]:
+            - heading "Want to add photos?" [level=4] [ref=e34]
+            - paragraph [ref=e35]: Admins can enable text-to-archive in Admin → Gallery. Or ask an administrator to add your memories.
+      - status [ref=e36]:
+        - generic [ref=e37]: 🖼️
+        - generic [ref=e38]:
+          - heading "The gallery awaits your memories" [level=3] [ref=e39]
+          - paragraph [ref=e40]: Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.
+        - paragraph [ref=e41]: Share the moments that matter
+  - status
+```

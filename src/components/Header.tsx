@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTab('Recipes'); } }}
                         aria-label="Go to Recipes"
                     >
-                        <img src={LOGO_URL} className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover" alt="" />
+                        <img src={LOGO_URL} className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover" alt="Schafer Family Cookbook Logo" />
                         <span className="font-serif italic text-lg md:text-xl text-[#2D4635] hidden sm:block">Archive</span>
                     </div>
                     <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth">
@@ -35,8 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             { id: 'Trivia', title: 'Family trivia quiz' },
                             { id: 'Family Story', title: 'Family food history narrative' },
                             { id: 'Contributors', title: 'Contributor directory' },
-                            { id: 'Profile', title: 'Your profile and contributions' },
-                            { id: 'Admin', title: 'Admin tools' }
+                            { id: 'Profile', title: 'Your profile and contributions' }
                         ]
                             .filter(({ id }) => id !== 'Profile' || currentUser)
                             .map(({ id, title }) => (
@@ -52,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                     className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
                                         }`}
                                 >
-                                    {id === 'Admin' && currentUser?.role !== 'admin' ? '🔒 Admin' : id}
+                                    {id}
                                 </button>
                             ))}
                     </nav>

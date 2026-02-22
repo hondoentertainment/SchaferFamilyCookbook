@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { RecipeModal } from './components/RecipeModal';
 
 const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
@@ -429,7 +430,17 @@ const App: React.FC = () => {
                                 <span className="text-3xl" aria-hidden="true">📱</span>
                                 <div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">Text your memories</h4>
-                                    <p className="text-sm text-emerald-700 font-serif italic">Photo/Video to: <span className="font-bold not-italic">{archivePhone}</span></p>
+                                    <p className="text-sm text-emerald-700 font-serif italic">
+                                        Photo/Video to:{' '}
+                                        <a
+                                            href={`sms:${archivePhone.replace(/\s/g, '')}`}
+                                            className="font-bold not-italic underline decoration-emerald-600/50 hover:decoration-emerald-700 underline-offset-2 hover:text-emerald-800 transition-colors"
+                                            aria-label={`Text photos or videos to ${archivePhone}`}
+                                        >
+                                            {archivePhone}
+                                        </a>
+                                    </p>
+                                    <p className="text-[10px] text-emerald-600/80 mt-1">Tap the number to open your messaging app</p>
                                 </div>
                             </div>
                         ) : (
@@ -498,7 +509,7 @@ const App: React.FC = () => {
                                         <p className="font-serif italic text-stone-800 text-lg px-2">{item.caption}</p>
                                         <div className="flex justify-between items-center mt-4 px-2">
                                             <div className="flex items-center gap-2">
-                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full" alt="" />
+                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full" alt={item.contributor} />
                                                 <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
                                             </div>
                                             {currentUser?.role === 'admin' && (
@@ -526,6 +537,7 @@ const App: React.FC = () => {
                         </>
                     )}
                 </main>
+                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} />
             </div>
         );
     }
@@ -533,7 +545,7 @@ const App: React.FC = () => {
     // Trivia View
     if (tab === 'Trivia') {
         return (
-            <div className="min-h-screen bg-[#FDFBF7]">
+            <div className="min-h-screen bg-[#FDFBF7] pb-20">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
@@ -549,6 +561,7 @@ const App: React.FC = () => {
                         }}
                     />
                 </Suspense>
+                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} />
             </div>
         );
     }
@@ -618,59 +631,59 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                        {filteredRecipes.map(recipe => (
-                            <div
-                                key={recipe.id}
-                                onClick={() => handleRecipeClick(recipe)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        handleRecipeClick(recipe);
-                                    }
-                                }}
-                                tabIndex={0}
-                                role="button"
-                                aria-label={`View recipe: ${recipe.title}`}
-                                className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
-                            >
-                                {/* Affiliated recipe image or placeholder */}
-                                <RecipeCardImage recipe={recipe} />
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            {filteredRecipes.map(recipe => (
+                                <div
+                                    key={recipe.id}
+                                    onClick={() => handleRecipeClick(recipe)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            handleRecipeClick(recipe);
+                                        }
+                                    }}
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label={`View recipe: ${recipe.title}`}
+                                    className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
+                                >
+                                    {/* Affiliated recipe image or placeholder */}
+                                    <RecipeCardImage recipe={recipe} />
 
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
 
-                                {/* Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end">
-                                    <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                        <div className="flex justify-between items-center mb-2 opacity-80">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
+                                    {/* Overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end">
+                                        <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                            <div className="flex justify-between items-center mb-2 opacity-80">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
+                                            </div>
+                                            <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
+                                            <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
+                                                By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block" alt={recipe.contributor} /> {recipe.contributor}
+                                            </p>
                                         </div>
-                                        <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
-                                        <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
-                                            By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block" alt="" /> {recipe.contributor}
-                                        </p>
                                     </div>
-                                </div>
 
-                                {/* Admin Quick-Action Button */}
-                                {currentUser?.role === 'admin' && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingRecipe(recipe);
-                                            setTab('Admin');
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }}
-                                        className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
-                                        title="Edit with AI"
-                                        aria-label={`Edit ${recipe.title} with AI`}
-                                    >
-                                        ✨
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                                    {/* Admin Quick-Action Button */}
+                                    {currentUser?.role === 'admin' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingRecipe(recipe);
+                                                setTab('Admin');
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}
+                                            className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
+                                            title="Edit with AI"
+                                            aria-label={`Edit ${recipe.title} with AI`}
+                                        >
+                                            ✨
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     )}
 
                     {!isDataLoading && filteredRecipes.length === 0 && (
@@ -709,53 +722,53 @@ const App: React.FC = () => {
 
             {tab === 'Admin' && currentUser.role === 'admin' && (
                 <Suspense fallback={<TabFallback />}>
-                <AdminView
-                    editingRecipe={editingRecipe}
-                    clearEditing={() => setEditingRecipe(null)}
-                    recipes={recipes}
-                    defaultRecipeIds={Array.from(defaultRecipeIds)}
-                    trivia={trivia}
-                    contributors={contributors}
-                    currentUser={currentUser}
-                    dbStats={{ ...dbStats, archivePhone }}
-                    onAddRecipe={async (r, f) => {
-                        const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
-                        await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
-                        await refreshLocalState();
-                    }}
-                    onAddGallery={async (g, f) => {
-                        const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
-                        await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
-                        await refreshLocalState();
-                    }}
-                    onAddTrivia={async (t) => {
-                        await CloudArchive.upsertTrivia(t);
-                        await refreshLocalState();
-                    }}
-                    onDeleteTrivia={async (id) => {
-                        await CloudArchive.deleteTrivia(id);
-                        await refreshLocalState();
-                    }}
-                    onDeleteRecipe={async (id) => {
-                        await CloudArchive.deleteRecipe(id);
-                        await refreshLocalState();
-                    }}
-                    onUpdateContributor={async (p) => {
-                        await CloudArchive.upsertContributor(p);
-                        // Sync with current user if they just updated themselves
-                        if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
-                            const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
-                            setCurrentUser(updatedUser);
-                            localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
-                        }
-                        await refreshLocalState();
-                    }}
-                    onUpdateArchivePhone={async (p) => {
-                        await CloudArchive.setArchivePhone(p);
-                        setArchivePhone(p);
-                    }}
-                    onEditRecipe={setEditingRecipe}
-                />
+                    <AdminView
+                        editingRecipe={editingRecipe}
+                        clearEditing={() => setEditingRecipe(null)}
+                        recipes={recipes}
+                        defaultRecipeIds={Array.from(defaultRecipeIds)}
+                        trivia={trivia}
+                        contributors={contributors}
+                        currentUser={currentUser}
+                        dbStats={{ ...dbStats, archivePhone }}
+                        onAddRecipe={async (r, f) => {
+                            const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
+                            await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
+                            await refreshLocalState();
+                        }}
+                        onAddGallery={async (g, f) => {
+                            const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
+                            await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
+                            await refreshLocalState();
+                        }}
+                        onAddTrivia={async (t) => {
+                            await CloudArchive.upsertTrivia(t);
+                            await refreshLocalState();
+                        }}
+                        onDeleteTrivia={async (id) => {
+                            await CloudArchive.deleteTrivia(id);
+                            await refreshLocalState();
+                        }}
+                        onDeleteRecipe={async (id) => {
+                            await CloudArchive.deleteRecipe(id);
+                            await refreshLocalState();
+                        }}
+                        onUpdateContributor={async (p) => {
+                            await CloudArchive.upsertContributor(p);
+                            // Sync with current user if they just updated themselves
+                            if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
+                                const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
+                                setCurrentUser(updatedUser);
+                                localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                            }
+                            await refreshLocalState();
+                        }}
+                        onUpdateArchivePhone={async (p) => {
+                            await CloudArchive.setArchivePhone(p);
+                            setArchivePhone(p);
+                        }}
+                        onEditRecipe={setEditingRecipe}
+                    />
                 </Suspense>
             )}
             {tab === 'Admin' && currentUser.role !== 'admin' && (
@@ -790,36 +803,37 @@ const App: React.FC = () => {
 
             {tab === 'Profile' && currentUser && (
                 <Suspense fallback={<TabFallback />}>
-                <ProfileView
-                    currentUser={currentUser}
-                    userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
-                    userHistory={history.filter(h => h.contributor === currentUser.name)}
-                    onUpdateProfile={async (name, avatar) => {
-                        const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
-                        const profileToUpdate = {
-                            id: existing?.id || currentUser.id,
-                            name,
-                            avatar,
-                            role: currentUser.role,
-                            email: currentUser.email
-                        };
+                    <ProfileView
+                        currentUser={currentUser}
+                        userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
+                        userHistory={history.filter(h => h.contributor === currentUser.name)}
+                        onUpdateProfile={async (name, avatar) => {
+                            const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
+                            const profileToUpdate = {
+                                id: existing?.id || currentUser.id,
+                                name,
+                                avatar,
+                                role: currentUser.role,
+                                email: currentUser.email
+                            };
 
-                        await CloudArchive.upsertContributor(profileToUpdate);
+                            await CloudArchive.upsertContributor(profileToUpdate);
 
-                        // Local sync
-                        const updatedUser = { ...currentUser, name, picture: avatar };
-                        setCurrentUser(updatedUser);
-                        localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                            // Local sync
+                            const updatedUser = { ...currentUser, name, picture: avatar };
+                            setCurrentUser(updatedUser);
+                            localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
 
-                        await refreshLocalState();
-                    }}
-                    onEditRecipe={(recipe) => {
-                        setEditingRecipe(recipe);
-                        setTab('Admin');
-                    }}
-                />
+                            await refreshLocalState();
+                        }}
+                        onEditRecipe={(recipe) => {
+                            setEditingRecipe(recipe);
+                            setTab('Admin');
+                        }}
+                    />
                 </Suspense>
             )}
+            <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} />
         </div>
     );
 };
