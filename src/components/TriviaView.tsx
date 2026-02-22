@@ -15,6 +15,9 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
     const [showResults, setShowResults] = useState(false);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
+    const [reviewMode, setReviewMode] = useState(false);
+    const [reviewIndex, setReviewIndex] = useState(0);
+    const [answerLog, setAnswerLog] = useState<Array<{ selectedOption: string; isCorrect: boolean }>>([]);
     const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     const questions = trivia;
@@ -26,18 +29,38 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
         setShowResults(false);
         setSelectedOption(null);
         setIsAnswered(false);
+        setReviewMode(false);
+        setReviewIndex(0);
+        setAnswerLog([]);
+    };
+
+    const goBackToResults = () => {
+        setReviewMode(false);
+        setReviewIndex(0);
     };
 
     const handleOptionSelect = (option: string) => {
         if (isAnswered) return;
         setSelectedOption(option);
         setIsAnswered(true);
-        if (option === questions[currentQuestionIndex].answer) {
+        const isCorrect = option === questions[currentQuestionIndex].answer;
+        if (isCorrect) {
             setScore(prev => prev + 1);
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+        } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate([50, 50, 50]);
         }
     };
 
     const nextQuestion = () => {
+        if (selectedOption !== null) {
+            setAnswerLog(prev => [...prev, {
+                selectedOption,
+                isCorrect: selectedOption === questions[currentQuestionIndex].answer,
+            }]);
+        }
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
             setSelectedOption(null);
@@ -98,6 +121,67 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
         );
     }
 
+    if (showResults && reviewMode) {
+        const q = questions[reviewIndex];
+        const log = answerLog[reviewIndex];
+        return (
+            <div className="max-w-3xl mx-auto py-20 px-6 space-y-10 animate-in slide-in-from-bottom-8 duration-500">
+                <div className="flex justify-between items-center">
+                    <button
+                        onClick={goBackToResults}
+                        className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-[#2D4635] transition-colors"
+                    >
+                        ← Back to results
+                    </button>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">
+                        Review {reviewIndex + 1} of {questions.length}
+                    </span>
+                </div>
+
+                <div className="bg-white rounded-[3rem] p-6 md:p-12 border border-stone-100 shadow-2xl space-y-6">
+                    <h3 className="text-2xl font-serif text-[#2D4635] leading-snug">{q.question}</h3>
+                    {log && (
+                        <div className="space-y-4">
+                            <div className={log.isCorrect ? 'p-4 rounded-2xl bg-emerald-50 border border-emerald-200' : 'p-4 rounded-2xl bg-red-50 border border-red-200'}>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Your answer</p>
+                                <p className="font-serif">{log.selectedOption}</p>
+                                {log.isCorrect ? <p className="text-sm text-emerald-700 mt-2">✓ Correct</p> : null}
+                            </div>
+                            {!log.isCorrect && (
+                                <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Correct answer</p>
+                                    <p className="font-serif text-emerald-800 font-medium">{q.answer}</p>
+                                </div>
+                            )}
+                            {q.explanation && (
+                                <div className="p-4 bg-orange-50/50 rounded-2xl text-sm italic text-[#A0522D] font-serif">
+                                    {q.explanation}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-between items-center">
+                    <button
+                        onClick={() => setReviewIndex(i => Math.max(0, i - 1))}
+                        disabled={reviewIndex === 0}
+                        className="px-6 py-3 bg-stone-100 text-stone-600 rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-200 transition-all"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        onClick={() => setReviewIndex(i => Math.min(questions.length - 1, i + 1))}
+                        disabled={reviewIndex === questions.length - 1}
+                        className="px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#3d5745] transition-all"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (showResults) {
         const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
         return (
@@ -122,12 +206,20 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
                 </div>
 
                 <div className="flex flex-col items-center gap-6">
-                    <button
-                        onClick={startQuiz}
-                        className="px-10 py-4 bg-stone-100 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-all shadow-md"
-                    >
-                        Try Again
-                    </button>
+                    <div className="flex flex-wrap justify-center gap-4">
+                        <button
+                            onClick={startQuiz}
+                            className="px-10 py-4 bg-stone-100 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-all shadow-md"
+                        >
+                            Try Again
+                        </button>
+                        <button
+                            onClick={() => setReviewMode(true)}
+                            className="px-10 py-4 bg-white border-2 border-[#2D4635] text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-all shadow-md"
+                        >
+                            Review answers
+                        </button>
+                    </div>
                     <p className="text-[10px] text-stone-300 italic">Total completion tracked for your current session.</p>
                 </div>
             </div>
@@ -140,7 +232,9 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
         <div className="max-w-3xl mx-auto py-20 px-6 space-y-12 animate-in slide-in-from-bottom-8 duration-500">
             <div className="flex justify-between items-end">
                 <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Question {currentQuestionIndex + 1} of {questions.length}</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-[#A0522D]" role="status" aria-live="polite">
+                        Question {currentQuestionIndex + 1} of {questions.length}
+                    </span>
                     <h2 className="text-sm font-serif italic text-stone-400">Archival Verification In Progress...</h2>
                 </div>
                 <div className="text-xs font-black text-stone-300">Score: {score}</div>
@@ -194,7 +288,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
                     </div>
                 )}
 
-                <div className="grid gap-3 md:gap-4" role="list" aria-label="Answer options">
+                <div className="grid gap-3 md:gap-4" role="group" aria-label="Answer options">
                     {currentQuestion.options.map((opt, i) => {
                         const isCorrect = opt === currentQuestion.answer;
                         const isSelected = selectedOption === opt;
@@ -213,9 +307,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
                                 disabled={isAnswered}
                                 onClick={() => handleOptionSelect(opt)}
                                 className={`p-4 md:p-6 text-left rounded-2xl md:rounded-3xl transition-all font-serif text-base md:text-lg flex justify-between items-center group/btn relative overflow-hidden ${buttonStyles}`}
-                                role="listitem"
                                 aria-pressed={isSelected}
-                                aria-disabled={isAnswered}
                                 aria-label={`${String.fromCharCode(65 + i)}: ${opt}${isAnswered ? (isCorrect ? ' (Correct answer)' : isSelected ? ' (Your answer - incorrect)' : '') : ''}`}
                             >
                                 <span className="relative z-10 flex items-center gap-3">

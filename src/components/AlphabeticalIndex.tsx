@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Recipe } from '../types';
 
 interface AlphabeticalIndexProps {
@@ -6,7 +6,11 @@ interface AlphabeticalIndexProps {
     onSelect: (r: Recipe) => void;
 }
 
+const LETTERS = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
+
 export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, onSelect }) => {
+    const [activeLetter, setActiveLetter] = useState<string>(LETTERS[0]);
+
     const grouped = useMemo(() => {
         const groups: Record<string, Recipe[]> = {};
         [...recipes]
@@ -20,7 +24,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
         return groups;
     }, [recipes]);
 
-    const letters = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
+    const letters = LETTERS;
     const activeLetters = Object.keys(grouped);
 
     const scrollToLetter = (letter: string) => {
@@ -28,11 +32,36 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
         if (el) window.scrollTo({ top: el.offsetTop - 120, behavior: 'smooth' });
     };
 
-    const letterButtonClass = (active: boolean) =>
-        `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 ${active ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white' : 'text-stone-200'}`;
+    // Scroll spy: track which letter section is in view
+    useEffect(() => {
+        const container = document.getElementById('alphabetical-index-container');
+        if (!container) return;
+
+        const sections = activeLetters.map(l => ({ letter: l, el: document.getElementById(`idx-${l}`) })).filter(
+            (s): s is { letter: string; el: HTMLElement } => !!s.el
+        );
+
+        const onScroll = () => {
+            const scrollTop = window.scrollY + 140;
+            for (let i = sections.length - 1; i >= 0; i--) {
+                const top = sections[i].el.getBoundingClientRect().top + window.scrollY;
+                if (scrollTop >= top) {
+                    setActiveLetter(sections[i].letter);
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+        return () => window.removeEventListener('scroll', onScroll);
+    }, [activeLetters.join(',')]);
+
+    const letterButtonClass = (active: boolean, inView: boolean) =>
+        `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 min-w-[2.75rem] min-h-[2.75rem] ${active ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white' : 'text-stone-200'} ${inView ? 'ring-2 ring-[#2D4635] ring-offset-2 ring-offset-white' : ''}`;
 
     return (
-        <div className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
+        <div id="alphabetical-index-container" className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
             {/* Mobile: compact horizontal scrollable letter strip */}
             <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 backdrop-blur-sm pb-2 border-b border-stone-100">
                 <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -42,8 +71,9 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                                 key={l}
                                 onClick={() => scrollToLetter(l)}
                                 disabled={!activeLetters.includes(l)}
-                                className={`${letterButtonClass(activeLetters.includes(l))} w-8 h-8 min-w-[2rem] min-h-[2rem]`}
-                                aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}` : `No recipes starting with ${l}`}
+                                aria-current={activeLetters.includes(l) && activeLetter === l ? 'true' : undefined}
+                                className={`${letterButtonClass(activeLetters.includes(l), activeLetters.includes(l) && activeLetter === l)} w-8 h-8 md:w-9 md:h-9`}
+                                aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}${activeLetter === l ? ' (current section)' : ''}` : `No recipes starting with ${l}`}
                             >
                                 {l}
                             </button>
@@ -60,8 +90,9 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                             key={l}
                             onClick={() => scrollToLetter(l)}
                             disabled={!activeLetters.includes(l)}
-                            className={`${letterButtonClass(activeLetters.includes(l))} w-9 h-9 min-w-[2.25rem] min-h-[2.25rem]`}
-                            aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}` : `No recipes starting with ${l}`}
+                            aria-current={activeLetters.includes(l) && activeLetter === l ? 'true' : undefined}
+                            className={`${letterButtonClass(activeLetters.includes(l), activeLetters.includes(l) && activeLetter === l)}`}
+                            aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}${activeLetter === l ? ' (current section)' : ''}` : `No recipes starting with ${l}`}
                         >
                             {l}
                         </button>

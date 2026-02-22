@@ -70,7 +70,7 @@ describe('AlphabeticalIndex', () => {
     it('should scroll to section when letter is clicked', () => {
         const recipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
         renderWithProviders(<AlphabeticalIndex recipes={[recipe]} onSelect={mockOnSelect} />);
-        const aButtons = screen.getAllByRole('button', { name: 'Jump to recipes starting with A' });
+        const aButtons = screen.getAllByRole('button', { name: /Jump to recipes starting with A/ });
         fireEvent.click(aButtons[0]);
         expect(scrollToSpy).toHaveBeenCalledWith({ top: expect.any(Number), behavior: 'smooth' });
     });

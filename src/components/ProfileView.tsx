@@ -58,34 +58,35 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
                     <div className="flex-1 space-y-8 w-full">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Display Identity</label>
+                            <label htmlFor="profile-display-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Display Identity</label>
                             <input
+                                id="profile-display-name"
                                 type="text"
-                                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-3xl font-serif italic text-[#2D4635] outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner"
+                                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-3xl font-serif italic text-[#2D4635] outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner text-base"
                                 value={name}
                                 onChange={e => setName(e.target.value)}
+                                aria-busy={isSaving}
                             />
                         </div>
 
-                        <div className="flex flex-wrap gap-4">
+                        <div className="flex flex-wrap gap-4" role="status" aria-live="polite" aria-atomic="true">
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="px-12 py-5 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
+                                className="px-12 py-5 min-h-[2.75rem] bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
                                 aria-busy={isSaving}
-                                aria-live="polite"
                             >
                                 {isSaving ? 'Saving...' : 'Save Profile'}
                             </button>
                             {saveError && (
                                 <div className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-700 rounded-full border border-red-200 animate-in fade-in slide-in-from-left-4 duration-300">
-                                    <span className="text-lg">⚠</span>
+                                    <span className="text-lg" aria-hidden="true">⚠</span>
                                     <span className="text-[10px] font-black uppercase tracking-widest">{saveError}</span>
                                 </div>
                             )}
                             {saveSuccess && (
                                 <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 animate-in fade-in slide-in-from-left-4 duration-300">
-                                    <span className="text-lg">✓</span>
+                                    <span className="text-lg" aria-hidden="true">✓</span>
                                     <span className="text-[10px] font-black uppercase tracking-widest">Profile Updated</span>
                                 </div>
                             )}

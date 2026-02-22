@@ -22,12 +22,16 @@ interface RecipeModalProps {
     onClose: () => void;
 }
 
+const SCROLL_THRESHOLD = 200;
+
 export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [showScrollToTop, setShowScrollToTop] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const hasAffiliatedImage = !!recipe?.image && recipe.image.startsWith('/recipe-images/');
     const isAIGenerated = recipe?.imageSource === 'imagen';
 
@@ -37,6 +41,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
         closeButtonRef.current?.focus();
     }, []);
 
+    // Esc: close lightbox first when open, otherwise close modal
     useEffect(() => {
         if (!lightboxOpen) return;
         lightboxCloseRef.current?.focus();
@@ -48,16 +53,54 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
     }, [lightboxOpen]);
 
     useEffect(() => {
+        if (lightboxOpen) return;
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [onClose]);
+    }, [lightboxOpen, onClose]);
+
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        const onScroll = () => setShowScrollToTop(el.scrollTop > SCROLL_THRESHOLD);
+        el.addEventListener('scroll', onScroll, { passive: true });
+        return () => el.removeEventListener('scroll', onScroll);
+    }, []);
 
     if (!recipe) return null;
 
     const shareUrl = `${siteConfig.baseUrl}/#recipe/${recipe.id}`;
+    const hasWebShare = typeof navigator !== 'undefined' && navigator.share;
+
+    const buildEmailBody = () => {
+        const lines: string[] = [
+            recipe.title,
+            `From ${siteConfig.siteName}`,
+            `By ${recipe.contributor}`,
+            '',
+            recipe.category,
+            ...(recipe.prepTime || recipe.cookTime || recipe.servings
+                ? [
+                      [recipe.prepTime && `Prep: ${recipe.prepTime}`, recipe.cookTime && `Cook: ${recipe.cookTime}`, recipe.servings != null && `Servings: ${recipe.servings}`]
+                          .filter(Boolean)
+                          .join(' | '),
+                      '',
+                  ]
+                : []),
+            'INGREDIENTS',
+            ...recipe.ingredients.map((i) => `• ${i}`),
+            '',
+            'INSTRUCTIONS',
+            ...recipe.instructions.map((s, i) => `${i + 1}. ${s}`),
+        ];
+        if (recipe.notes) lines.push('', 'NOTES', recipe.notes);
+        lines.push('', `View online: ${shareUrl}`);
+        return lines.join('\n');
+    };
+
+    const emailRecipeUrl = `mailto:?subject=${encodeURIComponent(`${recipe.title} from ${siteConfig.siteName}`)}&body=${encodeURIComponent(buildEmailBody())}`;
 
     const handleShare = async () => {
         if (navigator.share) {
@@ -128,6 +171,16 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         <button onClick={handleShare} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
                             <span className="text-xl">⎘</span>
                         </button>
+                        {!hasWebShare && (
+                            <a
+                                href={emailRecipeUrl}
+                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110 no-underline"
+                                aria-label="Email recipe"
+                                title="Email recipe"
+                            >
+                                <span className="text-xl">✉</span>
+                            </a>
+                        )}
                         <button onClick={handlePrint} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
                             <span className="text-xl">🖨</span>
                         </button>
@@ -176,7 +229,10 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 space-y-8 pb-12">
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 space-y-8 pb-12"
+                    >
                         {/* Header Section */}
                         <div className="space-y-3">
                             <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
@@ -218,7 +274,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         </div>
 
                         {/* Ingredients Section */}
-                        <div className="space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50">
+                        <div className="print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50">
                             <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
                                 <span className="text-2xl">🥘</span>
                                 <span>Ingredients</span>
@@ -255,7 +311,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
 
                         {/* Notes Section */}
                         {recipe.notes && (
-                            <div className="bg-gradient-to-br from-[#2D4635]/5 to-[#A0522D]/5 p-6 md:p-8 rounded-3xl border border-[#2D4635]/10 shadow-inner">
+                            <div className="print-simplify bg-gradient-to-br from-[#2D4635]/5 to-[#A0522D]/5 p-6 md:p-8 rounded-3xl border border-[#2D4635]/10 shadow-inner">
                                 <div className="flex items-start gap-3 mb-3">
                                     <span className="text-2xl">💭</span>
                                     <span className="font-serif text-lg italic text-[#2D4635]">Heirloom Notes</span>
@@ -266,6 +322,16 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                             </div>
                         )}
                     </div>
+                    {showScrollToTop && (
+                        <button
+                            type="button"
+                            onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-4 py-2 bg-[#2D4635] text-white text-sm font-medium rounded-full shadow-lg hover:bg-[#2D4635]/90 transition-colors print:hidden"
+                            aria-label="Scroll to top"
+                        >
+                            ↑ Scroll to top
+                        </button>
+                    )}
                 </div>
             </div>
         </>

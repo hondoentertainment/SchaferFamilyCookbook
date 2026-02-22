@@ -38,7 +38,7 @@ describe('Header', () => {
     it('should render logical logo and navigation', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        expect(screen.getByAltText('Schafer Logo')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Go to Recipes' })).toBeInTheDocument();
         expect(screen.getByText('Archive')).toBeInTheDocument();
         expect(screen.getByText('Recipes')).toBeInTheDocument();
         expect(screen.getByText('Index')).toBeInTheDocument();

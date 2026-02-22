@@ -74,6 +74,27 @@ export const CloudArchive = {
         });
     },
 
+    /** Archive phone for Twilio MMS – synced via Firestore when Firebase is active. */
+    subscribeArchivePhone(callback: (phone: string) => void) {
+        const fb = this.getFirebase();
+        if (!fb) return () => { };
+        return onSnapshot(doc(fb.db, "config", "settings"), (snapshot) => {
+            const data = snapshot.data();
+            callback(data?.archivePhone || localStorage.getItem('schafer_archive_phone') || '');
+        });
+    },
+
+    async setArchivePhone(phone: string): Promise<void> {
+        localStorage.setItem('schafer_archive_phone', phone);
+        const provider = this.getProvider();
+        if (provider === 'firebase') {
+            const fb = this.getFirebase();
+            if (fb) {
+                await setDoc(doc(fb.db, "config", "settings"), { archivePhone: phone }, { merge: true });
+            }
+        }
+    },
+
     async uploadFile(file: File, folder: string): Promise<string | null> {
         const provider = this.getProvider();
 

@@ -13,11 +13,18 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
     return (
-        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100">
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100 pt-[env(safe-area-inset-top)]">
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 md:gap-8 min-w-0">
-                    <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setTab('Recipes')}>
-                        <img src={LOGO_URL} className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover" alt="Schafer Logo" />
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        className="flex items-center gap-3 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:rounded-lg"
+                        onClick={() => setTab('Recipes')}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTab('Recipes'); } }}
+                        aria-label="Go to Recipes"
+                    >
+                        <img src={LOGO_URL} className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover" alt="" />
                         <span className="font-serif italic text-lg md:text-xl text-[#2D4635] hidden sm:block">Archive</span>
                     </div>
                     <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth">
@@ -41,7 +48,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                         document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                                     }}
                                     title={title}
-                                    className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
+                                    aria-current={activeTab === id ? 'page' : undefined}
+                                    className={`px-3 md:px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'
                                         }`}
                                 >
                                     {id === 'Admin' && currentUser?.role !== 'admin' ? '🔒 Admin' : id}
@@ -53,8 +61,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     {currentUser && (
                         <div className="flex items-center gap-3 md:gap-4">
                             <div
-                                className={`flex items-center gap-3 cursor-pointer group px-2 py-1 rounded-full transition-all ${activeTab === 'Profile' ? 'bg-stone-50' : 'hover:bg-stone-50/50'}`}
+                                role="button"
+                                tabIndex={0}
+                                className={`flex items-center gap-3 cursor-pointer group px-2 py-1 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 ${activeTab === 'Profile' ? 'bg-stone-50' : 'hover:bg-stone-50/50'}`}
                                 onClick={() => setTab('Profile')}
+                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTab('Profile'); } }}
+                                aria-label={`${currentUser.name}, view profile`}
                             >
                                 <div className="text-right hidden md:block">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] leading-none mb-1">{currentUser.name}</p>
@@ -64,8 +76,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-all"
+                                className="px-4 py-3 min-w-[2.75rem] min-h-[2.75rem] text-[9px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-all flex items-center justify-center"
                                 title="Switch identity"
+                                aria-label="Log out and switch identity"
                             >
                                 Log out
                             </button>

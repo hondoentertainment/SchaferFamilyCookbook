@@ -94,12 +94,78 @@
       }
     }
 
-    /* Print: show only recipe modal content */
+    /* Print: show only recipe modal content with print-friendly styles */
     @media print {
       body * { visibility: hidden; }
       .print-recipe-content,
       .print-recipe-content * { visibility: visible; }
-      .print-recipe-content { position: absolute; left: 0; top: 0; width: 100%; }
+      .print-recipe-content {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        height: auto !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-recipe-content img { max-height: 280px; object-fit: contain; }
+      .print-recipe-content .print-simplify { background: #fff !important; border: 1px solid #e5e7eb !important; box-shadow: none !important; }
+      @page { margin: 0.75in; }
+    }
+
+    /* Print: Family Story – show history content when body.print-history */
+    @media print {
+      body.print-history * { visibility: hidden; }
+      body.print-history .print-history-content,
+      body.print-history .print-history-content * { visibility: visible; }
+      body.print-history .print-history-content {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      body.print-history .print-history-content section {
+        break-inside: avoid;
+      }
+    }
+
+    /* Screen-reader only utility (Tailwind CDN may not include sr-only) */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .sr-only:focus {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 100;
+      width: auto;
+      height: auto;
+      padding: 0.75rem 1.5rem;
+      margin: 0;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+      background: #2D4635;
+      color: white;
+      border-radius: 9999px;
+      outline: 2px solid #A0522D;
+      outline-offset: 2px;
     }
   </style>
   <script type="importmap">

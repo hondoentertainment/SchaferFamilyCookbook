@@ -13,9 +13,31 @@ if (!admin.apps.length) {
     }
 }
 
+/** Build the full webhook URL Twilio is calling (must match exactly for signature validation). */
+function getWebhookUrl(req: VercelRequest): string {
+    const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.VERCEL_URL || 'localhost:3000';
+    const proto = req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    return `${proto}://${host}/api/webhook`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    // Validate Twilio signature when TWILIO_AUTH_TOKEN is set (production)
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    if (authToken) {
+        const signature = req.headers['x-twilio-signature'] as string | undefined;
+        const url = getWebhookUrl(req);
+        const params = (req.body || {}) as Record<string, string>;
+        const isValid = twilio.validateRequest(authToken, signature || '', url, params);
+        if (!isValid) {
+            console.warn('Twilio webhook: invalid signature');
+            return res.status(403).json({ error: 'Invalid signature' });
+        }
+    } else if (process.env.NODE_ENV === 'production') {
+        console.warn('Twilio webhook: TWILIO_AUTH_TOKEN not set; requests are not validated');
     }
 
     const { Body, From, MediaUrl0, NumMedia } = req.body;

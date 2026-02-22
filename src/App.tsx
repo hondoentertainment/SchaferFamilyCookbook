@@ -38,7 +38,22 @@ const ContributorsSkeleton: React.FC = () => (
     </div>
 );
 
-const GalleryImage: React.FC<{ url: string; caption: string }> = ({ url, caption }) => {
+const GallerySkeleton: React.FC = () => (
+    <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+        {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md">
+                <div className="w-full aspect-video rounded-2xl mb-4 bg-stone-200 animate-pulse" />
+                <div className="h-5 bg-stone-200 rounded animate-pulse w-3/4 mb-4" />
+                <div className="flex justify-between items-center">
+                    <div className="w-4 h-4 rounded-full bg-stone-200 animate-pulse" />
+                    <div className="h-3 bg-stone-100 rounded animate-pulse w-24" />
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
+const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => void }> = ({ url, caption, onClick }) => {
     const [broken, setBroken] = useState(false);
     if (!url || broken) {
         return (
@@ -49,14 +64,84 @@ const GalleryImage: React.FC<{ url: string; caption: string }> = ({ url, caption
             </div>
         );
     }
-    return (
+    const imgEl = (
         <img
             src={url}
-            className="w-full rounded-2xl mb-4"
+            className={`w-full rounded-2xl mb-4 object-cover ${onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''}`}
             alt={caption || 'Gallery photo'}
             onError={() => setBroken(true)}
             loading="lazy"
         />
+    );
+    if (onClick) {
+        return (
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onClick(); }}
+                className="w-full text-left rounded-2xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                aria-label={`View full size: ${caption || 'Gallery photo'}`}
+            >
+                {imgEl}
+            </button>
+        );
+    }
+    return <div>{imgEl}</div>;
+};
+
+const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({ item, onClose }) => {
+    const closeRef = React.useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        closeRef.current?.focus();
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
+
+    const isVideo = item.type === 'video';
+
+    return (
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={isVideo ? 'Fullscreen gallery video' : 'Enlarged gallery image'}
+            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 cursor-zoom-out"
+            onClick={onClose}
+        >
+            <button
+                ref={closeRef}
+                onClick={onClose}
+                className="absolute top-6 right-6 w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label="Close"
+            >
+                ✕
+            </button>
+            {isVideo ? (
+                <video
+                    src={item.url}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500"
+                    onClick={(e) => e.stopPropagation()}
+                    title={item.caption || 'Family video'}
+                    aria-label={`Video: ${item.caption || 'Family memory'}`}
+                />
+            ) : (
+                <img
+                    src={item.url}
+                    loading="lazy"
+                    className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500 pointer-events-none"
+                    alt={item.caption || 'Gallery photo'}
+                    onClick={(e) => e.stopPropagation()}
+                />
+            )}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-xs uppercase tracking-widest text-center">
+                {item.caption}
+                <br />
+                <span className="text-[10px]">Click anywhere or press Escape to close</span>
+            </div>
+        </div>
     );
 };
 
@@ -104,6 +189,7 @@ const App: React.FC = () => {
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+    const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
     const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
         const s = localStorage.getItem('schafer_user');
         if (!s) return null;
@@ -137,6 +223,7 @@ const App: React.FC = () => {
     const [archivePhone, setArchivePhone] = useState(() => localStorage.getItem('schafer_archive_phone') || '');
 
     const [loginName, setLoginName] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     // Filters
     const [search, setSearch] = useState('');
@@ -191,7 +278,8 @@ const App: React.FC = () => {
         const unsubG = CloudArchive.subscribeGallery(setGallery);
         const unsubC = CloudArchive.subscribeContributors(setContributors);
         const unsubH = CloudArchive.subscribeHistory(setHistory);
-        return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); };
+        const unsubPhone = CloudArchive.subscribeArchivePhone(setArchivePhone);
+        return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); unsubPhone(); };
     }, []);
 
     // Deep-link handling: open recipe from #recipe/{id}
@@ -218,7 +306,9 @@ const App: React.FC = () => {
 
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!loginName.trim()) return;
+        if (!loginName.trim() || isLoggingIn) return;
+
+        setIsLoggingIn(true);
 
         // Check if we have a stored profile for this person
         const name = loginName.trim();
@@ -237,6 +327,7 @@ const App: React.FC = () => {
         };
         localStorage.setItem('schafer_user', JSON.stringify(u));
         setCurrentUser(u);
+        setIsLoggingIn(false);
     };
 
     // Helper to get avatar
@@ -292,20 +383,30 @@ const App: React.FC = () => {
 
                     <form onSubmit={handleLoginSubmit} className="space-y-8 relative z-10">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Legacy Contributor Name</label>
+                            <label htmlFor="login-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Legacy Contributor Name</label>
                             <input
-                                autoFocus
+                                id="login-name"
                                 type="text"
                                 placeholder="e.g. Grandma Joan"
-                                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner"
+                                autoComplete="name"
+                                disabled={isLoggingIn}
+                                aria-busy={isLoggingIn}
+                                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner text-base disabled:opacity-70 disabled:cursor-not-allowed"
                                 value={loginName}
                                 onChange={e => setLoginName(e.target.value)}
                             />
                         </div>
-                        <button type="submit" className="w-full py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-                            Enter The Archive
+                        <button
+                            type="submit"
+                            disabled={isLoggingIn}
+                            aria-busy={isLoggingIn}
+                            className="w-full py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                            {isLoggingIn ? 'Entering…' : 'Enter The Archive'}
                         </button>
-                        <p className="text-stone-400 text-xs italic pt-4">Need access? Contact an administrator.</p>
+                        <p className="text-stone-400 text-xs italic pt-4">
+                            <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="underline hover:text-[#2D4635] focus:outline-none focus:ring-2 focus:ring-[#2D4635] focus:ring-offset-2 rounded">Need access? Contact an administrator.</a>
+                        </p>
                     </form>
                 </div>
             </div>
@@ -317,67 +418,114 @@ const App: React.FC = () => {
         return (
             <div className="min-h-screen bg-[#FDFBF7]">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <div className="max-w-7xl mx-auto py-12 px-6">
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
+                <main className="max-w-7xl mx-auto py-12 px-6" role="main" aria-label="Family Gallery">
+                    <section className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                         <div>
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
                             <p className="text-stone-400 font-serif italic mt-2">Captured moments across the generations.</p>
                         </div>
                         {archivePhone ? (
-                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700">
-                                <span className="text-3xl">📱</span>
+                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
+                                <span className="text-3xl" aria-hidden="true">📱</span>
                                 <div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">Text your memories</h4>
                                     <p className="text-sm text-emerald-700 font-serif italic">Photo/Video to: <span className="font-bold not-italic">{archivePhone}</span></p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-stone-50 rounded-[2rem] p-6 border border-stone-100 flex items-center gap-6 max-w-md">
-                                <span className="text-2xl">📷</span>
+                            <div className="bg-stone-50 rounded-[2rem] p-6 border border-stone-100 flex items-center gap-6 max-w-md" role="region" aria-label="How to add photos">
+                                <span className="text-2xl" aria-hidden="true">📷</span>
                                 <div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Want to add photos?</h4>
                                     <p className="text-sm text-stone-500 font-serif italic">Admins can enable text-to-archive in Admin → Gallery. Or ask an administrator to add your memories.</p>
                                 </div>
                             </div>
                         )}
-                    </div>
-                    <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-                        {gallery.map(item => (
-                            <div key={item.id} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md group hover:shadow-2xl transition-all">
-                                {item.type === 'video' ? (
-                                    <div className="relative rounded-2xl overflow-hidden mb-4 bg-black">
-                                        <video
-                                            src={item.url}
-                                            className="w-full"
-                                            controls
-                                            muted
-                                            playsInline
-                                            onMouseOver={e => (e.target as HTMLVideoElement).play()}
-                                            onMouseOut={e => (e.target as HTMLVideoElement).pause()}
-                                            onTouchStart={e => {
-                                                const el = e.target as HTMLVideoElement;
-                                                if (el.paused) el.play();
-                                                else el.pause();
-                                            }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <GalleryImage url={item.url} caption={item.caption} />
-                                )}
-                                <p className="font-serif italic text-stone-800 text-lg px-2">{item.caption}</p>
-                                <div className="flex justify-between items-center mt-4 px-2">
-                                    <div className="flex items-center gap-2">
-                                        <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full" alt="" />
-                                        <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
-                                    </div>
-                                    {currentUser?.role === 'admin' && (
-                                        <button onClick={() => CloudArchive.deleteGalleryItem(item.id)} className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" aria-label="Remove from gallery" title="Remove from gallery">✕</button>
-                                    )}
-                                </div>
+                    </section>
+
+                    {isDataLoading ? (
+                        <GallerySkeleton />
+                    ) : gallery.length === 0 ? (
+                        <div className="py-24 text-center space-y-8 animate-in fade-in duration-500" role="status">
+                            <div className="w-32 h-32 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-5xl border-2 border-dashed border-stone-200">🖼️</div>
+                            <div className="space-y-3">
+                                <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
+                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.</p>
                             </div>
-                        ))}
-                    </div>
-                </div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Share the moments that matter</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
+                                {gallery.map(item => (
+                                    <article key={item.id} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl" role="listitem">
+                                        {item.type === 'video' ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedGalleryItem(item)}
+                                                className="w-full text-left rounded-2xl overflow-hidden mb-4 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                                                aria-label={`View full size: ${item.caption || 'Family video'}`}
+                                            >
+                                                <video
+                                                    src={item.url}
+                                                    className="w-full pointer-events-none"
+                                                    muted
+                                                    playsInline
+                                                    preload="metadata"
+                                                    title={item.caption || 'Family video'}
+                                                    aria-hidden
+                                                    onMouseOver={e => (e.target as HTMLVideoElement).play()}
+                                                    onMouseOut={e => (e.target as HTMLVideoElement).pause()}
+                                                    onFocus={e => (e.target as HTMLVideoElement).play()}
+                                                    onBlur={e => (e.target as HTMLVideoElement).pause()}
+                                                    onTouchStart={e => {
+                                                        const el = e.target as HTMLVideoElement;
+                                                        if (el.paused) el.play();
+                                                        else el.pause();
+                                                    }}
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity bg-black/30 pointer-events-none">
+                                                    <span className="bg-white/90 text-stone-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">▶ Fullscreen</span>
+                                                </div>
+                                            </button>
+                                        ) : (
+                                            <GalleryImage
+                                                url={item.url}
+                                                caption={item.caption}
+                                                onClick={() => setSelectedGalleryItem(item)}
+                                            />
+                                        )}
+                                        <p className="font-serif italic text-stone-800 text-lg px-2">{item.caption}</p>
+                                        <div className="flex justify-between items-center mt-4 px-2">
+                                            <div className="flex items-center gap-2">
+                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full" alt="" />
+                                                <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
+                                            </div>
+                                            {currentUser?.role === 'admin' && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); CloudArchive.deleteGalleryItem(item.id); }}
+                                                    className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
+                                                    aria-label={`Remove "${item.caption}" from gallery`}
+                                                    title="Remove from gallery"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+
+                            {/* Gallery Lightbox (images and videos) */}
+                            {selectedGalleryItem && (
+                                <GalleryLightbox
+                                    item={selectedGalleryItem}
+                                    onClose={() => setSelectedGalleryItem(null)}
+                                />
+                            )}
+                        </>
+                    )}
+                </main>
             </div>
         );
     }
@@ -442,20 +590,25 @@ const App: React.FC = () => {
 
                     <div className="flex flex-col md:flex-row gap-6 sticky top-24 z-30">
                         <div className="relative flex-1">
-                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400">🔍</span>
+                            <label htmlFor="recipe-search" className="sr-only">Search recipes by title</label>
+                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
                             <input
+                                id="recipe-search"
                                 type="text"
                                 placeholder="Search by title..."
+                                aria-label="Search recipes by title"
                                 className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
                         </div>
-                        <select className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-sm font-bold text-stone-600 cursor-pointer hover:bg-white" value={category} onChange={e => setCategory(e.target.value)}>
+                        <label htmlFor="recipe-category" className="sr-only">Filter by category</label>
+                        <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-sm font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
                             <option value="All">All Categories</option>
                             {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
-                        <select className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-sm font-bold text-stone-600 cursor-pointer hover:bg-white" value={contributor} onChange={e => setContributor(e.target.value)}>
+                        <label htmlFor="recipe-contributor" className="sr-only">Filter by contributor</label>
+                        <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-sm font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
                             <option value="All">All Contributors</option>
                             {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
@@ -508,8 +661,9 @@ const App: React.FC = () => {
                                             setTab('Admin');
                                             window.scrollTo({ top: 0, behavior: 'smooth' });
                                         }}
-                                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
+                                        className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
                                         title="Edit with AI"
+                                        aria-label={`Edit ${recipe.title} with AI`}
                                     >
                                         ✨
                                     </button>
@@ -548,7 +702,7 @@ const App: React.FC = () => {
                             <ContributorsSkeleton />
                         </div>
                     ) : (
-                        <ContributorsView recipes={recipes} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
+                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
                     )}
                 </Suspense>
             )}
@@ -596,9 +750,9 @@ const App: React.FC = () => {
                         }
                         await refreshLocalState();
                     }}
-                    onUpdateArchivePhone={(p) => {
+                    onUpdateArchivePhone={async (p) => {
+                        await CloudArchive.setArchivePhone(p);
                         setArchivePhone(p);
-                        localStorage.setItem('schafer_archive_phone', p);
                     }}
                     onEditRecipe={setEditingRecipe}
                 />

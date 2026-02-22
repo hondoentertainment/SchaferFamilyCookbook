@@ -8,7 +8,7 @@ describe('ContributorsView', () => {
 
     it('should render empty state when no contributors', () => {
         renderWithProviders(
-            <ContributorsView recipes={[]} contributors={[]} onSelectContributor={mockOnSelect} />
+            <ContributorsView recipes={[]} gallery={[]} trivia={[]} contributors={[]} onSelectContributor={mockOnSelect} />
         );
         expect(screen.getByText('No contributors yet.')).toBeInTheDocument();
     });
@@ -35,9 +35,32 @@ describe('ContributorsView', () => {
     it('should call onSelectContributor when Explore is clicked', () => {
         const recipes = [createMockRecipe({ contributor: 'Carol' })];
         renderWithProviders(
-            <ContributorsView recipes={recipes} contributors={[]} onSelectContributor={mockOnSelect} />
+            <ContributorsView recipes={recipes} gallery={[]} trivia={[]} contributors={[]} onSelectContributor={mockOnSelect} />
         );
         fireEvent.click(screen.getByText('Explore Collection (1)'));
         expect(mockOnSelect).toHaveBeenCalledWith('Carol');
+    });
+
+    it('should include gallery and trivia contributions in totals', () => {
+        const recipes = [createMockRecipe({ contributor: 'Alice' })];
+        const gallery = [{ id: 'g1', type: 'image' as const, url: 'x', caption: 'x', contributor: 'Alice' }];
+        const trivia = [{ id: 't1', question: 'Q', options: ['A'], answer: 'A', contributor: 'Alice' }];
+        renderWithProviders(
+            <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={[]} onSelectContributor={mockOnSelect} />
+        );
+        expect(screen.getByText('Explore Collection (3)')).toBeInTheDocument();
+    });
+
+    it('should filter contributors by search', () => {
+        const recipes = [
+            createMockRecipe({ contributor: 'Alice' }),
+            createMockRecipe({ contributor: 'Bob' }),
+        ];
+        renderWithProviders(
+            <ContributorsView recipes={recipes} gallery={[]} trivia={[]} contributors={[]} onSelectContributor={mockOnSelect} />
+        );
+        fireEvent.change(screen.getByPlaceholderText('Search contributors…'), { target: { value: 'alice' } });
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.queryByText('Bob')).not.toBeInTheDocument();
     });
 });

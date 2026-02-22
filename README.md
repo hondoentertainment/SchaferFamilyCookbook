@@ -27,6 +27,7 @@ Without a valid key or working proxy, AI buttons will fail with network/API erro
 2. Set environment variables:
    - `GEMINI_API_KEY` – required for AI features.
    - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook and Firebase Admin.
+   - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
 3. Deploy.
 
 ## Deploy (GitHub Pages)
@@ -38,6 +39,10 @@ Without a valid key or working proxy, AI buttons will fail with network/API erro
 Site URL: `https://<username>.github.io/<repo-name>/`
 
 **Note:** GitHub Pages is static-only. `/api/gemini` and `/api/webhook` do not run on Pages. Browsing recipes, gallery, trivia (Firebase-backed) works. For Admin AI features (Magic Import, Imagen) and MMS webhook, use Vercel.
+
+## Twilio MMS to Gallery
+
+Family members can text photos and videos to a Twilio number; they appear in the Family Gallery. See **[TWILIO_SETUP.md](TWILIO_SETUP.md)** for setup.
 
 ## Image Generation Scripts
 

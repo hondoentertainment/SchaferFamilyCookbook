@@ -38,6 +38,17 @@ node test-agent.js 3    # Open UI mode
 ## 📁 Test Structure
 
 ```
+e2e/                        # Playwright E2E tests
+├── fixtures.ts             # Login helpers (loginAs, loginAsAdmin)
+├── auth.spec.ts            # Login flow
+├── navigation.spec.ts      # Tab navigation
+├── recipes.spec.ts         # Recipe filters, search
+├── recipe-modal.spec.ts    # Recipe modal, deep link, share, print
+├── gallery.spec.ts         # Gallery, text-to-archive, lightbox
+├── trivia.spec.ts          # Trivia quiz flow
+├── profile.spec.ts         # Profile edit
+└── admin.spec.ts           # Admin panel, Twilio config
+
 src/
 ├── test/
 │   ├── setup.ts          # Global test configuration
@@ -63,6 +74,9 @@ src/
 | `npm run test:run` | Single test run (CI/CD friendly) |
 | `npm run test:ui` | Interactive browser UI |
 | `npm run test:coverage` | Generate coverage report |
+| `npm run test:e2e` | Playwright E2E tests (Chromium + Firefox) |
+| `npm run test:e2e:ui` | Playwright E2E with interactive UI |
+| `npm run test:e2e:desktop` | E2E Chromium only |
 
 ## 📝 Writing Tests
 
