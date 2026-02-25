@@ -3,12 +3,15 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="A digital archive of heirloom recipes, family photos, and culinary history.">
   <meta name="theme-color" content="#2D4635">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Schafer Cookbook">
+  <link rel="apple-touch-startup-image" href="https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=1170&h=2532" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=1125&h=2436" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=750&h=1334" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
   <title>Schafer Family Cookbook</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +26,19 @@
       background-color: #FDFBF7;
       scroll-behavior: smooth;
       -webkit-font-smoothing: antialiased;
-      overscroll-behavior-y: none;
+      overscroll-behavior-y: auto;
+    }
+
+    /* Mobile: reduce tap highlight, improve touch responsiveness */
+    @media (hover: none) and (pointer: coarse) {
+      button, a, [role="button"] {
+        -webkit-tap-highlight-color: transparent;
+        tap-highlight-color: transparent;
+      }
+    }
+
+    input, textarea, select {
+      font-size: 1rem;
     }
 
     h1,

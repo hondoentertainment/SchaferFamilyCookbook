@@ -55,7 +55,7 @@ const defaultConfig: SiteConfig = {
   siteName: 'Schafer Family Cookbook',
   tagline: 'The Schafer Collection',
   description: 'A digital archive of heirloom recipes, family photos, and culinary history.',
-  baseUrl: 'https://schafer-cookbook.vercel.app',
+  baseUrl: 'https://schafer-family-cookbook.vercel.app',
   logoUrl: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=1000',
   primary: '#2D4635',
   accent: '#A0522D',

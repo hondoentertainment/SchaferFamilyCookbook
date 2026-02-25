@@ -1,14 +1,61 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trivia, UserProfile } from '../types';
+import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
+import { hapticSuccess, hapticError } from '../utils/haptics';
+import type { TriviaScore } from '../types';
 
 interface TriviaViewProps {
     trivia: Trivia[];
     currentUser: UserProfile;
+    isDataLoading?: boolean;
     onAddTrivia: (t: Trivia) => void;
     onDeleteTrivia: (id: string) => void;
 }
 
-export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _currentUser }) => {
+function Scoreboard({ scores, highlightId }: { scores: TriviaScore[]; highlightId?: string }) {
+    if (scores.length === 0) return null;
+    return (
+        <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] p-6 border border-stone-100 shadow-lg">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-4">🏆 Legacy Scoreboard</h4>
+            <ol className="space-y-2 max-h-48 overflow-y-auto">
+                {scores.map((s, i) => (
+                    <li
+                        key={s.id}
+                        className={`flex justify-between items-center py-2 px-3 rounded-xl text-sm ${
+                            s.id === highlightId ? 'bg-[#2D4635]/10 border border-[#2D4635]/30 font-medium' : ''
+                        }`}
+                    >
+                        <span className="flex items-center gap-3">
+                            <span className="text-stone-400 w-6 text-right font-mono">{i + 1}.</span>
+                            <span className="font-serif">{s.playerName}</span>
+                            {s.id === highlightId && (
+                                <span className="text-[10px] uppercase tracking-widest text-[#A0522D]">(You)</span>
+                            )}
+                        </span>
+                        <span className="font-mono font-bold text-[#2D4635]">{s.percentage}%</span>
+                    </li>
+                ))}
+            </ol>
+        </div>
+    );
+}
+
+const TriviaSkeleton: React.FC = () => (
+    <div className="max-w-3xl mx-auto py-20 px-6 space-y-12 animate-pulse">
+        <div className="h-4 bg-stone-200 rounded w-1/3" />
+        <div className="h-1.5 bg-stone-100 rounded-full" />
+        <div className="bg-white rounded-[3rem] p-8 md:p-16 border border-stone-100 space-y-6">
+            <div className="h-8 bg-stone-200 rounded w-4/5" />
+            <div className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-16 bg-stone-100 rounded-2xl" />
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isDataLoading }) => {
     const [quizStarted, setQuizStarted] = useState(false);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
@@ -18,6 +65,8 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
     const [reviewMode, setReviewMode] = useState(false);
     const [reviewIndex, setReviewIndex] = useState(0);
     const [answerLog, setAnswerLog] = useState<Array<{ selectedOption: string; isCorrect: boolean }>>([]);
+    const [scoreboard, setScoreboard] = useState<TriviaScore[]>(() => getTriviaScores());
+    const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
     const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     const questions = trivia;
@@ -32,6 +81,8 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
         setReviewMode(false);
         setReviewIndex(0);
         setAnswerLog([]);
+        setLastSavedScoreId(undefined);
+        setScoreboard(getTriviaScores());
     };
 
     const goBackToResults = () => {
@@ -46,11 +97,9 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
         const isCorrect = option === questions[currentQuestionIndex].answer;
         if (isCorrect) {
             setScore(prev => prev + 1);
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                navigator.vibrate(100);
-            }
-        } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate([50, 50, 50]);
+            hapticSuccess();
+        } else {
+            hapticError();
         }
     };
 
@@ -66,6 +115,17 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
             setSelectedOption(null);
             setIsAnswered(false);
         } else {
+            const finalScore = score;
+            const percentage = questions.length > 0 ? Math.round((finalScore / questions.length) * 100) : 0;
+            const { scores: updated, newId } = addTriviaScore({
+                playerName: currentUser.name,
+                score: finalScore,
+                totalQuestions: questions.length,
+                percentage,
+                timestamp: new Date().toISOString(),
+            });
+            setScoreboard(updated);
+            setLastSavedScoreId(newId);
             setShowResults(true);
         }
     };
@@ -89,6 +149,10 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [currentQuestionIndex, isAnswered, quizStarted, showResults, questions]);
+
+    if (isDataLoading && questions.length === 0) {
+        return <TriviaSkeleton />;
+    }
 
     if (questions.length === 0) {
         return (
@@ -116,6 +180,9 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
                         Begin The Challenge
                     </button>
                     <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-8">Prove your status as a legacy keeper</p>
+                </div>
+                <div className="mt-12 max-w-md mx-auto">
+                    <Scoreboard scores={scoreboard} />
                 </div>
             </div>
         );
@@ -205,6 +272,10 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
                     </p>
                 </div>
 
+                <div className="max-w-md mx-auto">
+                    <Scoreboard scores={scoreboard} highlightId={lastSavedScoreId} />
+                </div>
+
                 <div className="flex flex-col items-center gap-6">
                     <div className="flex flex-wrap justify-center gap-4">
                         <button
@@ -220,7 +291,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser: _cu
                             Review answers
                         </button>
                     </div>
-                    <p className="text-[10px] text-stone-300 italic">Total completion tracked for your current session.</p>
+                    <p className="text-[10px] text-stone-300 italic">Scores saved to the family scoreboard.</p>
                 </div>
             </div>
         );

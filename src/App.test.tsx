@@ -3,7 +3,7 @@ import { screen, fireEvent, within } from '@testing-library/react';
 import App from './App';
 import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithProviders } from './test/utils';
 
-function loginAndNavigateToGallery(initialTab = 'Recipes') {
+function loginAndNavigateToGallery(_initialTab = 'Recipes') {
     const recipes = [createMockRecipe()];
     localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
     renderWithProviders(<App />);
@@ -11,7 +11,8 @@ function loginAndNavigateToGallery(initialTab = 'Recipes') {
     fireEvent.change(input, { target: { value: 'Alice' } });
     fireEvent.click(screen.getByText('Enter The Archive'));
     return screen.findByText('Test Recipe', {}, { timeout: 3000 }).then(() => {
-        fireEvent.click(screen.getByText('Gallery'));
+        const galleryBtns = screen.getAllByRole('button', { name: /^Gallery$/i });
+        fireEvent.click(galleryBtns[0]);
     });
 }
 
@@ -34,7 +35,7 @@ describe('App', () => {
         fireEvent.change(input, { target: { value: 'Alice' } });
         fireEvent.click(screen.getByText('Enter The Archive'));
         await screen.findByText('Test Recipe', {}, { timeout: 3000 });
-        expect(screen.getByText('Recipes')).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: /^Recipes$/i }).length).toBeGreaterThan(0);
     });
 });
 
@@ -121,7 +122,7 @@ describe('Gallery', () => {
         fireEvent.change(screen.getByPlaceholderText(/e.g. Grandma Joan/), { target: { value: 'kyle' } });
         fireEvent.click(screen.getByText('Enter The Archive'));
         await screen.findByText('Test Recipe', {}, { timeout: 3000 });
-        fireEvent.click(screen.getByText('Gallery'));
+        fireEvent.click(screen.getAllByRole('button', { name: /^Gallery$/i })[0]);
 
         const deleteButton = screen.getByRole('button', { name: /remove "admin delete test" from gallery/i });
         expect(deleteButton).toBeInTheDocument();

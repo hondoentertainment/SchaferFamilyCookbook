@@ -5,14 +5,15 @@ interface FooterProps {
     activeTab: string;
     setTab: (t: string) => void;
     currentUser: UserProfile | null;
+    className?: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser }) => {
+export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser, className = '' }) => {
     if (!currentUser) return null;
 
     return (
         <footer
-            className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-t border-stone-100 pb-[env(safe-area-inset-bottom)]"
+            className={`fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-t border-stone-100 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] ${className}`.trim()}
             role="contentinfo"
             aria-label="Footer"
         >

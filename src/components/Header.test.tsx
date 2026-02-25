@@ -41,7 +41,7 @@ describe('Header', () => {
         expect(screen.getByRole('button', { name: 'Go to Recipes' })).toBeInTheDocument();
         expect(screen.getByText('Archive')).toBeInTheDocument();
         expect(screen.getByText('Recipes')).toBeInTheDocument();
-        expect(screen.getByText('Index')).toBeInTheDocument();
+        expect(screen.getByText('A–Z')).toBeInTheDocument();
         expect(screen.getByText('Family Story')).toBeInTheDocument();
     });
 
@@ -63,14 +63,15 @@ describe('Header', () => {
     it('should show user profile when logged in', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        expect(screen.getByText(mockUser.name)).toBeInTheDocument();
-        expect(screen.getByAltText(mockUser.name)).toBeInTheDocument();
+        const profileBtn = screen.getByRole('button', { name: new RegExp(`${mockUser.name}.*view profile`, 'i') });
+        expect(profileBtn).toBeInTheDocument();
+        expect(profileBtn.querySelector('img')).toBeInTheDocument();
     });
 
     it('should switch to Profile tab when user clicks their profile', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        fireEvent.click(screen.getByText(mockUser.name));
+        fireEvent.click(screen.getByRole('button', { name: /view profile/i }));
         expect(mockSetTab).toHaveBeenCalledWith('Profile');
     });
 

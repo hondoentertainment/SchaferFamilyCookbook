@@ -38,6 +38,7 @@ describe('TriviaView', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.removeItem('schafer_trivia_scores');
     });
 
     it('should render start screen when quiz has not started', () => {
@@ -102,9 +103,8 @@ describe('TriviaView', () => {
 
         // Results
         expect(screen.getByText('Legacy Challenge Complete')).toBeInTheDocument();
-        // Check for score and total questions specifically
         expect(screen.getByText(/You scored/)).toBeInTheDocument();
-        expect(screen.getByText('100%')).toBeInTheDocument();
+        expect(screen.getAllByText(/100%/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('should allow restarting the quiz', () => {
@@ -121,5 +121,18 @@ describe('TriviaView', () => {
         fireEvent.click(screen.getByText('Try Again'));
 
         expect(screen.getByText('Question 1 of 2')).toBeInTheDocument();
+    });
+
+    it('should show scoreboard on results screen after completing quiz', () => {
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        fireEvent.click(screen.getByText('Love'));
+        fireEvent.click(screen.getByText('Next Archival Record'));
+        fireEvent.click(screen.getByText('45 min'));
+        fireEvent.click(screen.getByText('Finish Archive Challenge'));
+
+        expect(screen.getByText(/Legacy Scoreboard/)).toBeInTheDocument();
+        expect(screen.getByText(/Scores saved to the family scoreboard/)).toBeInTheDocument();
     });
 });

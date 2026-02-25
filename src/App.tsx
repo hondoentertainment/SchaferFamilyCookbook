@@ -5,6 +5,10 @@ import { Header } from './components/Header';
 import { PLACEHOLDER_AVATAR } from './constants';
 import { Footer } from './components/Footer';
 import { RecipeModal } from './components/RecipeModal';
+import { CookModeView } from './components/CookModeView';
+import { BottomNav } from './components/BottomNav';
+import { getFavoriteIds, toggleFavorite } from './utils/favorites';
+import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 
 const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -52,6 +56,112 @@ const GallerySkeleton: React.FC = () => (
                 </div>
             </div>
         ))}
+    </div>
+);
+
+const IndexSkeleton: React.FC = () => (
+    <div className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
+        <div className="md:hidden -mx-6 mb-4">
+            <div className="flex gap-2">
+                {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-stone-200 animate-pulse" />
+                ))}
+            </div>
+        </div>
+        <div className="hidden md:block w-20 shrink-0">
+            <div className="flex flex-col gap-1.5">
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="w-11 h-11 rounded-full bg-stone-200 animate-pulse" />
+                ))}
+            </div>
+        </div>
+        <div className="flex-1 space-y-12">
+            <div className="h-10 bg-stone-200 rounded w-48 animate-pulse" />
+            <div className="space-y-8">
+                {[1, 2, 3].map((_, i) => (
+                    <div key={i} className="space-y-4">
+                        <div className="h-12 bg-stone-100 rounded w-16" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {Array.from({ length: 6 }).map((_, j) => (
+                                <div key={j} className="h-20 bg-stone-100 rounded-[2rem] animate-pulse" />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+const HistorySkeleton: React.FC = () => (
+    <div className="max-w-6xl mx-auto py-12 md:py-20 px-4 md:px-6 flex flex-col lg:flex-row gap-12 lg:gap-16">
+        <nav className="lg:w-56 shrink-0 space-y-2">
+            <div className="h-3 bg-stone-200 rounded w-24 mb-4" />
+            {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 bg-stone-100 rounded-xl animate-pulse" />
+            ))}
+            <div className="h-12 bg-stone-100 rounded-xl mt-6 w-full animate-pulse" />
+        </nav>
+        <article className="flex-1 space-y-12">
+            <div className="h-24 bg-stone-200 rounded w-3/4 animate-pulse" />
+            <div className="space-y-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-4 bg-stone-100 rounded animate-pulse" style={{ width: `${60 + i * 10}%` }} />
+                ))}
+            </div>
+            <div className="bg-white rounded-[3rem] p-8 md:p-16 border border-stone-100 space-y-6">
+                <div className="h-8 bg-stone-200 rounded w-2/3 animate-pulse" />
+                <div className="space-y-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-4 bg-stone-100 rounded animate-pulse" style={{ width: `${65 + i * 5}%` }} />
+                    ))}
+                </div>
+            </div>
+        </article>
+    </div>
+);
+
+const ProfileSkeleton: React.FC = () => (
+    <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-12 md:space-y-16">
+        <section className="bg-white rounded-[3rem] md:rounded-[4rem] p-6 md:p-16 border border-stone-100">
+            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                <div className="w-40 h-40 md:w-48 md:h-48 rounded-full bg-stone-200 animate-pulse" />
+                <div className="flex-1 space-y-6 w-full">
+                    <div className="h-16 bg-stone-100 rounded-3xl animate-pulse" />
+                    <div className="h-12 bg-stone-200 rounded-full w-32 animate-pulse" />
+                </div>
+            </div>
+        </section>
+        <div className="grid lg:grid-cols-2 gap-12">
+            <section className="space-y-6">
+                <div className="h-8 bg-stone-200 rounded w-48 animate-pulse" />
+                <div className="space-y-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex gap-4 p-4 bg-stone-50 rounded-[2rem] border border-stone-100">
+                            <div className="w-16 h-16 rounded-2xl bg-stone-200 animate-pulse shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-5 bg-stone-200 rounded w-3/4 animate-pulse" />
+                                <div className="h-3 bg-stone-100 rounded w-1/3" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+            <section className="space-y-6">
+                <div className="h-8 bg-stone-200 rounded w-48 animate-pulse" />
+                <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex gap-4 p-4 bg-stone-50/50 rounded-2xl border border-stone-100">
+                            <div className="w-8 h-8 rounded-full bg-stone-200 animate-pulse shrink-0" />
+                            <div className="flex-1 space-y-1">
+                                <div className="h-4 bg-stone-100 rounded w-full animate-pulse" />
+                                <div className="h-3 bg-stone-100 rounded w-20" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </div>
     </div>
 );
 
@@ -128,7 +238,9 @@ const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({
                     onClick={(e) => e.stopPropagation()}
                     title={item.caption || 'Family video'}
                     aria-label={`Video: ${item.caption || 'Family memory'}`}
-                />
+                >
+                    <track kind="captions" srcLang="en" label="English" />
+                </video>
             ) : (
                 <img
                     src={item.url}
@@ -192,6 +304,7 @@ const App: React.FC = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
     const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
+    const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState<GalleryItem | null>(null);
     const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
         const s = localStorage.getItem('schafer_user');
         if (!s) return null;
@@ -231,6 +344,10 @@ const App: React.FC = () => {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
+    const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
+
+    const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
+    const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
 
     const defaultRecipeIds = useMemo(
         () => new Set((defaultRecipes as Recipe[]).map(r => r.id)),
@@ -292,6 +409,7 @@ const App: React.FC = () => {
                 const id = decodeURIComponent(match[1]);
                 const recipe = recipes.find(r => r.id === id);
                 if (recipe) {
+                    recordRecipeView(recipe.id, recipe.title);
                     setTab('Recipes');
                     setSelectedRecipe(recipe);
                 }
@@ -347,7 +465,37 @@ const App: React.FC = () => {
         });
     }, [recipes, search, category, contributor]);
 
-    const handleRecipeClick = (recipe: Recipe) => {
+    const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
+
+    const sortedRecipes = useMemo(() => {
+        const list = [...filteredRecipes];
+        switch (sortBy) {
+            case 'title-desc':
+                return list.sort((a, b) => b.title.localeCompare(a.title));
+            case 'category':
+                return list.sort((a, b) =>
+                    a.category.localeCompare(b.category) || a.title.localeCompare(b.title)
+                );
+            case 'contributor':
+                return list.sort((a, b) =>
+                    a.contributor.localeCompare(b.contributor) || a.title.localeCompare(b.title)
+                );
+            case 'recent':
+                return list.sort((a, b) => {
+                    const ia = recentIds.indexOf(a.id);
+                    const ib = recentIds.indexOf(b.id);
+                    if (ia === -1 && ib === -1) return a.title.localeCompare(b.title);
+                    if (ia === -1) return 1;
+                    if (ib === -1) return -1;
+                    return ia - ib;
+                });
+            default:
+                return list.sort((a, b) => a.title.localeCompare(b.title));
+        }
+    }, [filteredRecipes, sortBy, recentIds]);
+
+    const handleSelectRecipe = (recipe: Recipe) => {
+        recordRecipeView(recipe.id, recipe.title);
         setSelectedRecipe(recipe);
         window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
     };
@@ -357,6 +505,22 @@ const App: React.FC = () => {
         if (window.location.hash.match(RECIPE_HASH_REGEX)) {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
+    };
+
+    const recipeListForModal = useMemo(() => {
+        if (!selectedRecipe) return [];
+        if (tab === 'Recipes') return sortedRecipes;
+        if (tab === 'Index') return [...recipes].sort((a, b) => a.title.localeCompare(b.title));
+        return [...recipes].sort((a, b) => a.title.localeCompare(b.title));
+    }, [tab, selectedRecipe, sortedRecipes, recipes]);
+
+    const handleNavigateToRecipe = (recipe: Recipe) => {
+        setSelectedRecipe(recipe);
+        window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
+    };
+
+    const handleToggleFavorite = (id: string) => {
+        setFavoriteIds(toggleFavorite(id));
     };
 
     if (!currentUser) {
@@ -386,11 +550,13 @@ const App: React.FC = () => {
                     <form onSubmit={handleLoginSubmit} className="space-y-8 relative z-10">
                         <div className="space-y-2">
                             <label htmlFor="login-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Legacy Contributor Name</label>
+                            <p className="text-sm text-stone-500 font-serif italic -mt-1">Enter any family name to browse recipes, cook mode, and the gallery.</p>
                             <input
                                 id="login-name"
                                 type="text"
                                 placeholder="e.g. Grandma Joan"
                                 autoComplete="name"
+                                autoFocus
                                 disabled={isLoggingIn}
                                 aria-busy={isLoggingIn}
                                 className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner text-base disabled:opacity-70 disabled:cursor-not-allowed"
@@ -418,9 +584,9 @@ const App: React.FC = () => {
     // Gallery View
     if (tab === 'Gallery') {
         return (
-            <div className="min-h-screen bg-[#FDFBF7]">
+            <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <main className="max-w-7xl mx-auto py-12 px-6" role="main" aria-label="Family Gallery">
+                <main className="max-w-7xl mx-auto py-12 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery">
                     <section className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                         <div>
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
@@ -515,7 +681,7 @@ const App: React.FC = () => {
                                             </div>
                                             {currentUser?.role === 'admin' && (
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); CloudArchive.deleteGalleryItem(item.id); }}
+                                                    onClick={(e) => { e.stopPropagation(); setGalleryDeleteConfirm(item); }}
                                                     className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
                                                     aria-label={`Remove "${item.caption}" from gallery`}
                                                     title="Remove from gallery"
@@ -535,10 +701,54 @@ const App: React.FC = () => {
                                     onClose={() => setSelectedGalleryItem(null)}
                                 />
                             )}
+
+                            {/* Gallery delete confirmation */}
+                            {galleryDeleteConfirm && (
+                                <div
+                                    role="dialog"
+                                    aria-modal="true"
+                                    aria-labelledby="gallery-delete-title"
+                                    aria-describedby="gallery-delete-desc"
+                                    className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                                    onClick={() => setGalleryDeleteConfirm(null)}
+                                >
+                                    <div
+                                        className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] mb-2">Remove from gallery?</h3>
+                                        <p id="gallery-delete-desc" className="text-stone-500 mb-6">
+                                            "{galleryDeleteConfirm.caption}" will be permanently removed.
+                                        </p>
+                                        <div className="flex gap-3 justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => setGalleryDeleteConfirm(null)}
+                                                className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-50 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    const id = galleryDeleteConfirm.id;
+                                                    setGalleryDeleteConfirm(null);
+                                                    await CloudArchive.deleteGalleryItem(id);
+                                                    await refreshLocalState();
+                                                }}
+                                                className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-white bg-red-500 hover:bg-red-600 transition-colors"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </main>
-                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
         );
     }
@@ -546,12 +756,13 @@ const App: React.FC = () => {
     // Trivia View
     if (tab === 'Trivia') {
         return (
-            <div className="min-h-screen bg-[#FDFBF7] pb-20">
+            <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
                         trivia={trivia}
                         currentUser={currentUser as any}
+                        isDataLoading={isDataLoading}
                         onAddTrivia={async (t) => {
                             await CloudArchive.upsertTrivia(t);
                             await refreshLocalState();
@@ -562,24 +773,37 @@ const App: React.FC = () => {
                         }}
                     />
                 </Suspense>
-                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-20">
+        <div className="min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
             <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
             {selectedRecipe && (
                 <RecipeModal
                     recipe={selectedRecipe}
                     onClose={handleRecipeClose}
+                    recipeList={recipeListForModal}
+                    onNavigate={handleNavigateToRecipe}
+                    isFavorite={(id) => favoriteIds.has(id)}
+                    onToggleFavorite={handleToggleFavorite}
+                    onStartCook={() => setCookModeRecipe(selectedRecipe)}
+                />
+            )}
+
+            {cookModeRecipe && (
+                <CookModeView
+                    recipe={cookModeRecipe}
+                    onClose={() => setCookModeRecipe(null)}
                 />
             )}
 
             {tab === 'Recipes' && (
-                <main className="max-w-[1600px] mx-auto px-6 py-8 md:py-12 space-y-12">
+                <main className="max-w-[1600px] mx-auto pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] py-8 md:py-12 space-y-12">
                     {/* Hero Section */}
                     <div className="relative rounded-[3rem] overflow-hidden bg-[#2D4635] text-white p-8 md:p-20 shadow-2xl">
                         <div className="relative z-10 max-w-2xl space-y-6">
@@ -611,36 +835,107 @@ const App: React.FC = () => {
                                 type="text"
                                 placeholder="Search by title..."
                                 aria-label="Search recipes by title"
-                                className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300"
+                                className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
                         </div>
                         <label htmlFor="recipe-category" className="sr-only">Filter by category</label>
-                        <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-sm font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
+                        <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
                             <option value="All">All Categories</option>
                             {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                         <label htmlFor="recipe-contributor" className="sr-only">Filter by contributor</label>
-                        <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-sm font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
+                        <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
                             <option value="All">All Contributors</option>
                             {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
+                        <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
+                        <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                            <option value="title-asc">A–Z</option>
+                            <option value="title-desc">Z–A</option>
+                            <option value="category">Category</option>
+                            <option value="contributor">Contributor</option>
+                            <option value="recent">Recently viewed</option>
+                        </select>
                     </div>
 
+                    {/* Quick-access: Recently viewed & Favorites */}
+                    {!isDataLoading && recipes.length > 0 && (() => {
+                        const recentEntries = getRecentlyViewedEntries();
+                        const favRecipeIds = Array.from(favoriteIds);
+                        const recentRecipes = recentEntries
+                            .map((e) => recipes.find((r) => r.id === e.id))
+                            .filter((r): r is Recipe => !!r)
+                            .slice(0, 8);
+                        const favRecipes = favRecipeIds
+                            .map((id) => recipes.find((r) => r.id === id))
+                            .filter((r): r is Recipe => !!r)
+                            .slice(0, 8);
+                        const hasQuickAccess = recentRecipes.length > 0 || favRecipes.length > 0;
+                        if (!hasQuickAccess) return null;
+                        return (
+                            <div className="space-y-6">
+                                {favRecipes.length > 0 && (
+                                    <section aria-label="Favorite recipes">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">❤️ Favorites</h3>
+                                        <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                            {favRecipes.map((r) => (
+                                                <button
+                                                    key={r.id}
+                                                    type="button"
+                                                    onClick={() => handleSelectRecipe(r)}
+                                                    className="flex-shrink-0 w-32 md:w-40 group text-left"
+                                                    aria-label={`View recipe: ${r.title}`}
+                                                >
+                                                    <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-stone-200 shadow-md group-hover:shadow-xl transition-all">
+                                                        <RecipeCardImage recipe={r} />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                                                    </div>
+                                                    <p className="mt-2 text-sm font-serif italic text-stone-700 truncate group-hover:text-[#2D4635]">{r.title}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+                                {recentRecipes.length > 0 && (
+                                    <section aria-label="Recently viewed recipes">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">👁 Recently viewed</h3>
+                                        <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                            {recentRecipes.map((r) => (
+                                                <button
+                                                    key={r.id}
+                                                    type="button"
+                                                    onClick={() => handleSelectRecipe(r)}
+                                                    className="flex-shrink-0 w-32 md:w-40 group text-left"
+                                                    aria-label={`View recipe: ${r.title}`}
+                                                >
+                                                    <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-stone-200 shadow-md group-hover:shadow-xl transition-all">
+                                                        <RecipeCardImage recipe={r} />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                                                    </div>
+                                                    <p className="mt-2 text-sm font-serif italic text-stone-700 truncate group-hover:text-[#2D4635]">{r.title}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {filteredRecipes.map(recipe => (
+                            {sortedRecipes.map(recipe => (
                                 <div
                                     key={recipe.id}
-                                    onClick={() => handleRecipeClick(recipe)}
+                                    onClick={() => handleSelectRecipe(recipe)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
                                             e.preventDefault();
-                                            handleRecipeClick(recipe);
+                                            handleSelectRecipe(recipe);
                                         }
                                     }}
                                     tabIndex={0}
@@ -666,6 +961,22 @@ const App: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    {/* Favorite button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleFavorite(recipe.id);
+                                        }}
+                                        className={`absolute top-4 left-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 ${
+                                            favoriteIds.has(recipe.id)
+                                                ? 'bg-red-50/90 text-red-500'
+                                                : 'bg-white/90 text-stone-400 hover:text-red-400'
+                                        }`}
+                                        title={favoriteIds.has(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                        aria-label={favoriteIds.has(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                    >
+                                        <span className="text-lg">{favoriteIds.has(recipe.id) ? '❤️' : '🤍'}</span>
+                                    </button>
                                     {/* Admin Quick-Action Button */}
                                     {currentUser?.role === 'admin' && (
                                         <button
@@ -688,22 +999,41 @@ const App: React.FC = () => {
                     )}
 
                     {!isDataLoading && filteredRecipes.length === 0 && (
-                        <div className="py-20 text-center space-y-4 opacity-50">
-                            <span className="text-4xl">🍂</span>
-                            <p className="font-serif italic text-stone-400">No recipes found in the archive.</p>
+                        <div className="py-20 text-center space-y-6">
+                            <span className="text-5xl" aria-hidden="true">🍂</span>
+                            <div className="space-y-2">
+                                <p className="font-serif italic text-stone-600 text-lg">
+                                    {recipes.length === 0
+                                        ? 'No recipes found in the archive.'
+                                        : 'No recipes match your current filters.'}
+                                </p>
+                                {recipes.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearch('');
+                                            setCategory('All');
+                                            setContributor('All');
+                                        }}
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
+                                    >
+                                        Clear filters
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
                 </main>
             )}
 
             {tab === 'Index' && (
-                <Suspense fallback={<TabFallback />}>
-                    <AlphabeticalIndex recipes={recipes} onSelect={setSelectedRecipe} />
+                <Suspense fallback={<IndexSkeleton />}>
+                    <AlphabeticalIndex recipes={recipes} onSelect={handleSelectRecipe} />
                 </Suspense>
             )}
 
             {tab === 'Family Story' && (
-                <Suspense fallback={<TabFallback />}>
+                <Suspense fallback={<HistorySkeleton />}>
                     <HistoryView />
                 </Suspense>
             )}
@@ -803,7 +1133,7 @@ const App: React.FC = () => {
             )}
 
             {tab === 'Profile' && currentUser && (
-                <Suspense fallback={<TabFallback />}>
+                <Suspense fallback={<ProfileSkeleton />}>
                     <ProfileView
                         currentUser={currentUser}
                         userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
@@ -834,7 +1164,8 @@ const App: React.FC = () => {
                     />
                 </Suspense>
             )}
-            <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} />
+            <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+            <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
         </div>
     );
 };

@@ -21,8 +21,9 @@ export const HistoryView: React.FC = () => {
         if (!el) return;
 
         const onScroll = () => {
+            type SectionId = (typeof SECTIONS)[number]['id'];
             const sections = SECTIONS.map(({ id }) => ({ id, el: document.getElementById(id) })).filter(
-                (s): s is { id: string; el: HTMLElement } => !!s.el
+                (s): s is { id: SectionId; el: HTMLElement } => !!s.el
             );
             const scrollTop = window.scrollY + 120;
 

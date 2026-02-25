@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Recipe } from '../types';
 import { buildRecipeSchema } from '../utils/recipeSchema';
 import { siteConfig } from '../config/site';
 import { useUI } from '../context/UIContext';
 import { useFocusTrap } from '../utils/focusTrap';
+import { scaleIngredients } from '../utils/scaleIngredients';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -20,14 +21,40 @@ const CATEGORY_ICONS: Record<string, string> = {
 interface RecipeModalProps {
     recipe: Recipe;
     onClose: () => void;
+    /** Ordered list for prev/next navigation; when provided, prev/next buttons are shown */
+    recipeList?: Recipe[];
+    onNavigate?: (recipe: Recipe) => void;
+    isFavorite?: (id: string) => boolean;
+    onToggleFavorite?: (id: string) => void;
+    onStartCook?: () => void;
 }
 
 const SCROLL_THRESHOLD = 200;
 
-export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => {
+export const RecipeModal: React.FC<RecipeModalProps> = ({
+    recipe,
+    onClose,
+    recipeList = [],
+    onNavigate,
+    isFavorite,
+    onToggleFavorite,
+    onStartCook,
+}) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [showScrollToTop, setShowScrollToTop] = useState(false);
+    const baseServings = recipe ? (typeof recipe.servings === 'number' ? recipe.servings : 4) : 4;
+    const [scaleTo, setScaleTo] = useState(baseServings);
+    const scaleFactor = baseServings > 0 ? scaleTo / baseServings : 1;
+    const displayedIngredients = useMemo(
+        () => (recipe ? scaleIngredients(recipe.ingredients, scaleFactor) : []),
+        [recipe, scaleFactor]
+    );
+
+    const navIndex = recipe ? recipeList.findIndex((r) => r.id === recipe.id) : -1;
+    const prevRecipe = navIndex > 0 ? recipeList[navIndex - 1] : null;
+    const nextRecipe = navIndex >= 0 && navIndex < recipeList.length - 1 ? recipeList[navIndex + 1] : null;
+
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
@@ -69,6 +96,30 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
         return () => el.removeEventListener('scroll', onScroll);
     }, []);
 
+    // Sync scale and scroll when recipe changes
+    useEffect(() => {
+        if (!recipe) return;
+        const base = typeof recipe.servings === 'number' ? recipe.servings : 4;
+        setScaleTo(base);
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    }, [recipe?.id, recipe?.servings]);
+
+    // Arrow keys: prev/next recipe
+    useEffect(() => {
+        if (!onNavigate || lightboxOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft' && prevRecipe) {
+                e.preventDefault();
+                onNavigate(prevRecipe);
+            } else if (e.key === 'ArrowRight' && nextRecipe) {
+                e.preventDefault();
+                onNavigate(nextRecipe);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [lightboxOpen, onNavigate, prevRecipe, nextRecipe]);
+
     if (!recipe) return null;
 
     const shareUrl = `${siteConfig.baseUrl}/#recipe/${recipe.id}`;
@@ -103,6 +154,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
     const emailRecipeUrl = `mailto:?subject=${encodeURIComponent(`${recipe.title} from ${siteConfig.siteName}`)}&body=${encodeURIComponent(buildEmailBody())}`;
 
     const handleShare = async () => {
+        const doCopy = async () => {
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                toast('Link copied to clipboard', 'success');
+            } catch {
+                toast('Could not copy link', 'error');
+            }
+        };
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -113,18 +172,12 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                 toast('Recipe shared', 'success');
             } catch (err) {
                 if ((err as Error).name !== 'AbortError') {
-                    await copyToClipboard(shareUrl);
-                    toast('Link copied to clipboard', 'success');
+                    await doCopy();
                 }
             }
         } else {
-            await copyToClipboard(shareUrl);
-            toast('Link copied to clipboard', 'success');
+            await doCopy();
         }
-    };
-
-    const copyToClipboard = async (text: string) => {
-        await navigator.clipboard.writeText(text);
     };
 
     const handlePrint = () => {
@@ -168,6 +221,40 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
                 <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
                     <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2 print:hidden">
+                        {onToggleFavorite && isFavorite && (
+                            <button
+                                onClick={() => onToggleFavorite(recipe.id)}
+                                className={`w-12 h-12 min-w-[3rem] min-h-[3rem] backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
+                                    isFavorite(recipe.id)
+                                        ? 'bg-red-50 text-red-500 hover:bg-red-100'
+                                        : 'bg-white/95 text-stone-400 hover:text-stone-900 hover:bg-white'
+                                }`}
+                                aria-label={isFavorite(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                title={isFavorite(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
+                            >
+                                <span className="text-xl">{isFavorite(recipe.id) ? '❤️' : '🤍'}</span>
+                            </button>
+                        )}
+                        {prevRecipe && onNavigate && (
+                            <button
+                                onClick={() => onNavigate(prevRecipe)}
+                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                aria-label={`Previous: ${prevRecipe.title}`}
+                                title="Previous recipe"
+                            >
+                                <span className="text-xl">‹</span>
+                            </button>
+                        )}
+                        {nextRecipe && onNavigate && (
+                            <button
+                                onClick={() => onNavigate(nextRecipe)}
+                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                aria-label={`Next: ${nextRecipe.title}`}
+                                title="Next recipe"
+                            >
+                                <span className="text-xl">›</span>
+                            </button>
+                        )}
                         <button onClick={handleShare} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
                             <span className="text-xl">⎘</span>
                         </button>
@@ -184,6 +271,16 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         <button onClick={handlePrint} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
                             <span className="text-xl">🖨</span>
                         </button>
+                        {onStartCook && (
+                            <button
+                                onClick={onStartCook}
+                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-[#2D4635] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 hover:bg-[#2D4635]/90"
+                                aria-label="Start cook mode"
+                                title="Cook mode"
+                            >
+                                <span className="text-xl">👨‍🍳</span>
+                            </button>
+                        )}
                         <button ref={closeButtonRef} onClick={onClose} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
                             <span className="text-xl font-light">✕</span>
                         </button>
@@ -275,12 +372,51 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
 
                         {/* Ingredients Section */}
                         <div className="print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50">
-                            <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
-                                <span className="text-2xl">🥘</span>
-                                <span>Ingredients</span>
-                            </h3>
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
+                                    <span className="text-2xl">🥘</span>
+                                    <span>Ingredients</span>
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {baseServings > 0 && (
+                                        <label className="flex items-center gap-2 text-sm">
+                                            <span className="text-stone-500 font-medium">Scale to:</span>
+                                            <select
+                                                value={scaleTo}
+                                                onChange={(e) => setScaleTo(parseInt(e.target.value, 10))}
+                                                className="px-3 py-2 rounded-full border border-stone-200 bg-white text-stone-700 font-medium focus:ring-2 focus:ring-[#2D4635]/20"
+                                                aria-label="Scale ingredients by serving size"
+                                            >
+                                                {[...new Set([1, 2, 4, 6, 8, 10, 12, baseServings])]
+                                                    .sort((a, b) => a - b)
+                                                    .map((n) => (
+                                                        <option key={n} value={n}>
+                                                            {n} serving{n !== 1 ? 's' : ''}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </label>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            const text = displayedIngredients.join('\n');
+                                            try {
+                                                await navigator.clipboard.writeText(text);
+                                                toast('Ingredients copied to clipboard', 'success');
+                                            } catch {
+                                                toast('Could not copy ingredients', 'error');
+                                            }
+                                        }}
+                                        className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#2D4635] hover:text-[#A0522D] hover:bg-white/80 rounded-full border border-stone-200 transition-colors"
+                                        aria-label="Copy ingredients to clipboard"
+                                    >
+                                        Copy ingredients
+                                    </button>
+                                </div>
+                            </div>
                             <ul className="space-y-3 pl-2">
-                                {recipe.ingredients.map((ing, i) => (
+                                {displayedIngredients.map((ing, i) => (
                                     <li key={i} className="text-sm md:text-base text-stone-700 flex items-start gap-3 leading-relaxed group hover:text-[#2D4635] transition-colors">
                                         <span className="text-[#A0522D] mt-2 w-2 h-2 rounded-full bg-[#A0522D]/30 shrink-0 group-hover:bg-[#A0522D] transition-colors" />
                                         <span className="flex-1">{ing}</span>
@@ -290,14 +426,35 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose }) => 
                         </div>
 
                         {/* Instructions Section */}
-                        <div className="space-y-5">
-                            <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2 pb-2 border-b border-stone-200">
-                                <span className="text-2xl">📝</span>
-                                <span>Instructions</span>
-                            </h3>
+                        <div className="space-y-5" id="recipe-instructions">
+                            <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-stone-200">
+                                <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
+                                    <span className="text-2xl">📝</span>
+                                    <span>Instructions</span>
+                                </h3>
+                                {recipe.instructions.length >= 5 && (
+                                    <div className="flex flex-wrap gap-2 print:hidden">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 self-center">Jump to:</span>
+                                        {recipe.instructions.map((_, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => {
+                                                    const el = document.getElementById(`recipe-step-${i}`);
+                                                    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                }}
+                                                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-[#2D4635] hover:text-white text-stone-600 text-xs font-bold transition-colors"
+                                                aria-label={`Go to step ${i + 1}`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             <div className="space-y-6">
                                 {recipe.instructions.map((step, i) => (
-                                    <div key={i} className="flex gap-4 group hover:bg-white/50 p-4 rounded-xl transition-all -ml-4">
+                                    <div key={i} id={`recipe-step-${i}`} className="flex gap-4 group hover:bg-white/50 p-4 rounded-xl transition-all -ml-4 scroll-mt-24">
                                         <span className="text-3xl font-serif italic text-[#A0522D]/30 group-hover:text-[#A0522D]/50 shrink-0 tabular-nums transition-colors leading-none pt-1">
                                             {(i + 1).toString().padStart(2, '0')}
                                         </span>

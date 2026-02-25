@@ -459,7 +459,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <p className="text-stone-500 text-sm leading-relaxed">Promote family members to admin status by their legacy name.</p>
                                     <div className="flex gap-4">
                                         <label htmlFor="admin-promote-name" className="sr-only">Enter name to promote</label>
-                                        <input id="admin-promote-name" type="text" placeholder="Enter name (e.g. Aunt Mary)" className="flex-1 px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 text-base" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} />
+                                        <input id="admin-promote-name" type="text" placeholder="Enter name (e.g. Aunt Mary)" className="flex-1 px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-base font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} />
                                         <button onClick={() => {
                                             if (!newAdminName.trim()) return;
                                             const name = newAdminName.trim();
@@ -483,7 +483,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <img src={admin.avatar} className="w-6 h-6 rounded-full border border-white" alt={admin.name} />
                                                 <span className="text-xs font-bold text-stone-600">{admin.name}</span>
                                                 {admin.name.toLowerCase() !== 'admin' && (
-                                                    <button onClick={async () => { if (await confirm(`Revoke admin access for ${admin.name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-4 h-4 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>
+                                                    <button onClick={async () => { if (await confirm(`Revoke admin access for ${admin.name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>
                                                 )}
                                             </div>
                                         ))}
@@ -552,7 +552,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         placeholder="Search recipes..."
                                                         value={recipeSearch}
                                                         onChange={e => setRecipeSearch(e.target.value)}
-                                                        className="pl-8 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#2D4635]/20 w-48 text-base"
+                                                        className="pl-8 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20 w-48"
                                                     />
                                                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
                                                 </div>
@@ -630,7 +630,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {!editingRecipe && (
                                         <div className="space-y-4">
                                             <label htmlFor="admin-magic-import" className="sr-only">Paste raw recipe text for AI analysis</label>
-                                            <textarea id="admin-magic-import" placeholder="Paste raw recipe text here..." aria-label="Paste raw recipe text for AI analysis" className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-sm bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
+                                            <textarea id="admin-magic-import" placeholder="Paste raw recipe text here..." aria-label="Paste raw recipe text for AI analysis" className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-base bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
                                             <div className="flex gap-4">
                                                 <button onClick={handleMagicImport} disabled={isMagicLoading || isAICooldownActive} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
                                                     {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
@@ -691,7 +691,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                         <div>
                                             <label htmlFor="admin-recipe-title" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Recipe Title</label>
-                                            <input id="admin-recipe-title" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20 text-base" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
+                                            <input id="admin-recipe-title" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
                                         </div>
 
                                         {/* Contributor Selection */}
@@ -699,7 +699,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <label htmlFor="admin-recipe-contributor" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Contributed By</label>
                                             <select
                                                 id="admin-recipe-contributor"
-                                                className="w-full p-4 border border-stone-200 rounded-2xl text-sm bg-white focus:ring-2 focus:ring-[#2D4635]/20 text-base"
+                                                className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20"
                                                 value={recipeForm.contributor || currentUser?.name || ''}
                                                 onChange={e => setRecipeForm({ ...recipeForm, contributor: e.target.value })}
                                             >
@@ -713,30 +713,30 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
                                                 <label htmlFor="admin-recipe-category" className="sr-only">Recipe Category</label>
-                                                <select id="admin-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-sm bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
+                                                <select id="admin-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
                                                     {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
                                                 </select>
                                             </div>
                                             <div>
                                                 <label htmlFor="admin-recipe-preptime" className="sr-only">Prep time</label>
-                                                <input id="admin-recipe-preptime" placeholder="Prep Time (e.g. 15 min)" aria-label="Prep time" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
+                                                <input id="admin-recipe-preptime" placeholder="Prep Time (e.g. 15 min)" aria-label="Prep time" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label htmlFor="admin-recipe-cooktime" className="sr-only">Cook Time</label>
-                                                <input id="admin-recipe-cooktime" placeholder="Cook Time (e.g. 30 min)" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
+                                                <input id="admin-recipe-cooktime" placeholder="Cook Time (e.g. 30 min)" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label htmlFor="admin-recipe-calories" className="sr-only">Estimated calories</label>
-                                                <input id="admin-recipe-calories" type="number" placeholder="Est. Calories" aria-label="Estimated calories" className="p-4 border border-stone-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
+                                                <input id="admin-recipe-calories" type="number" placeholder="Est. Calories" aria-label="Estimated calories" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
                                             </div>
                                         </div>
                                         <div>
                                             <label htmlFor="admin-recipe-ingredients" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Ingredients (one per line)</label>
-                                            <textarea id="admin-recipe-ingredients" placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
+                                            <textarea id="admin-recipe-ingredients" placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
                                         </div>
                                         <div>
                                             <label htmlFor="admin-recipe-instructions" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Instructions (one per line)</label>
-                                            <textarea id="admin-recipe-instructions" placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-sm bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
+                                            <textarea id="admin-recipe-instructions" placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
                                         </div>
 
                                         {/* Heirloom Notes */}
@@ -745,7 +745,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <textarea
                                                 id="admin-recipe-notes"
                                                 placeholder="Add any special memories, tips, or history about this recipe..."
-                                                className="w-full h-24 p-4 border border-[#2D4635]/20 rounded-2xl text-sm bg-[#2D4635]/5 focus:ring-2 focus:ring-[#2D4635]/20 italic text-base"
+                                                className="w-full h-24 p-4 border border-[#2D4635]/20 rounded-2xl text-base bg-[#2D4635]/5 focus:ring-2 focus:ring-[#2D4635]/20 italic"
                                                 value={recipeForm.notes || ''}
                                                 onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })}
                                             />
@@ -804,7 +804,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                         <div>
                                             <label htmlFor="admin-gallery-caption" className="sr-only">Gallery Caption</label>
-                                            <input id="admin-gallery-caption" placeholder="Caption (e.g. Summer BBQ 1985)" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20 text-base" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
+                                            <input id="admin-gallery-caption" placeholder="Caption (e.g. Summer BBQ 1985)" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
                                         </div>
                                         <button type="submit" disabled={!galleryFile || isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
                                             {isSubmitting ? 'Uploading...' : 'Upload Memory'}
@@ -859,7 +859,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         id="admin-bulk-gallery-caption"
                                                         placeholder="Caption for all (optional)..."
                                                         aria-label="Caption for all bulk upload files (optional)"
-                                                        className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none bg-white"
+                                                        className="w-full p-3 border border-stone-200 rounded-xl text-base outline-none bg-white"
                                                         value={galleryForm.caption}
                                                         onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })}
                                                     />
@@ -929,13 +929,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' });
                                         setEditingTrivia(null);
                                     }} className="space-y-4">
-                                        <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-sm outline-none" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} />
+                                        <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} />
                                         <div className="grid grid-cols-2 gap-3">
                                             {triviaForm.options?.map((opt, i) => (
-                                                <input key={i} placeholder={`Opt ${i + 1}`} className="p-3 border border-stone-200 rounded-xl text-xs" value={opt} onChange={e => { const n = [...(triviaForm.options || [])]; n[i] = e.target.value; setTriviaForm({ ...triviaForm, options: n }) }} />
+                                                <input key={i} placeholder={`Opt ${i + 1}`} className="p-3 border border-stone-200 rounded-xl text-base min-h-[2.75rem]" value={opt} onChange={e => { const n = [...(triviaForm.options || [])]; n[i] = e.target.value; setTriviaForm({ ...triviaForm, options: n }) }} />
                                             ))}
                                         </div>
-                                        <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-sm font-bold bg-stone-50" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
+                                        <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-base font-bold bg-stone-50" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
                                         <div className="flex gap-4">
                                             <button type="submit" className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
                                                 {editingTrivia ? 'Update Question' : 'Add Question'}
@@ -951,7 +951,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <span className="text-xs truncate font-bold text-[#2D4635]">{t.question}</span>
                                                     <span className="text-[9px] uppercase tracking-widest text-stone-400">Click to edit</span>
                                                 </div>
-                                                <button onClick={() => onDeleteTrivia(t.id)} className="text-stone-300 hover:text-red-500 transition-all ml-4">✕</button>
+                                                <button onClick={() => onDeleteTrivia(t.id)} className="min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 transition-all ml-4" aria-label={`Delete question: ${t.question}`}>✕</button>
                                             </div>
                                         ))}
                                     </div>
@@ -984,7 +984,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 placeholder="e.g. Dawn Schafer Tessmer"
                                                 value={mergeFrom}
                                                 onChange={e => setMergeFrom(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
+                                                className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#A0522D]/20"
                                             />
                                         </div>
                                         <span className="text-stone-300 text-xl hidden md:block">→</span>
@@ -995,7 +995,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 placeholder="e.g. Dawn"
                                                 value={mergeTo}
                                                 onChange={e => setMergeTo(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A0522D]/20"
+                                                className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#A0522D]/20"
                                             />
                                         </div>
                                         <button

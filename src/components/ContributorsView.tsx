@@ -113,7 +113,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                         placeholder="Search contributors…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full max-w-md px-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-stone-700 placeholder:text-stone-400 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-all"
+                        className="w-full max-w-md px-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base text-stone-700 placeholder:text-stone-400 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-all"
                         aria-describedby={search ? "search-results" : undefined}
                     />
                     {search && (

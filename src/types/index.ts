@@ -36,6 +36,15 @@ export interface Trivia {
   created_at?: string;
 }
 
+export interface TriviaScore {
+  id: string;
+  playerName: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  timestamp: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;

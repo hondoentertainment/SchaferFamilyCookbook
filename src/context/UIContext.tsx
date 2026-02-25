@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { hapticSuccess, hapticError } from '../utils/haptics';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -39,6 +40,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
     const toast = useCallback((message: string, type: ToastType = 'info') => {
         const id = ++toastIdRef.current;
+        if (type === 'success') hapticSuccess();
+        else if (type === 'error') hapticError();
         setToasts(prev => [...prev, { id, message, type }]);
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id));
