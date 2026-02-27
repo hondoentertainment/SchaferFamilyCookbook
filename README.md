@@ -2,12 +2,14 @@
 
 A digital archive for preserving and celebrating the Schafer family's culinary heritage. Built with React, Vite, Firebase, and Google Gemini.
 
-## Run Locally
+## For Contributors
+
+### Run Locally
 
 **Prerequisites:** Node.js 18+
 
 1. Install dependencies: `npm install`
-2. Copy `.env.example` to `.env.local` and add:
+2. Create `.env.local` with (no `.env.example` in repo):
    - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
 3. Run: `npm run dev`
 
@@ -20,6 +22,13 @@ Magic Import and Imagen (image generation) require the Gemini API. In local deve
 - **Option C:** Set `GEMINI_API_KEY` in `.env.local` and use `npm run dev`. This only works if your Vite setup proxies API requests; otherwise the client may hit a non-existent `/api/gemini` endpoint.
 
 Without a valid key or working proxy, AI buttons will fail with network/API errors. Non-AI features (browse recipes, gallery, trivia) work without the key.
+
+### Troubleshooting
+
+| Symptom | Cause |
+|--------|-------|
+| AI buttons fail with network error | No `GEMINI_API_KEY` or no working `/api/gemini` proxy (use `vercel dev` or deploy to Vercel) |
+| MMS webhook doesn't receive texts | Needs `FIREBASE_SERVICE_ACCOUNT` and `TWILIO_AUTH_TOKEN` in Vercel env; webhook runs only on Vercel, not GitHub Pages |
 
 ## Deploy (Vercel)
 

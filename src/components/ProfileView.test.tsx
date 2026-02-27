@@ -18,6 +18,9 @@ describe('ProfileView', () => {
         },
         userRecipes: [],
         userHistory: [],
+        favoriteRecipes: [] as ReturnType<typeof createMockRecipe>[],
+        recentRecipes: [] as ReturnType<typeof createMockRecipe>[],
+        onViewRecipe: vi.fn(),
         onUpdateProfile: mockOnUpdateProfile,
         onEditRecipe: mockOnEditRecipe,
     };

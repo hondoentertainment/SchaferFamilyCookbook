@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
+import { useUI } from './context/UIContext';
+import { shouldToastImageError } from './utils/imageErrorToast';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
 import { PLACEHOLDER_AVATAR } from './constants';
@@ -9,12 +11,14 @@ import { CookModeView } from './components/CookModeView';
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
+import { useFocusTrap } from './utils/focusTrap';
 
 const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
 const ContributorsView = lazy(() => import('./components/ContributorsView').then(m => ({ default: m.ContributorsView })));
 const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
+const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ default: m.TriviaView })));
 
 const TabFallback = () => (
@@ -200,8 +204,61 @@ const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => voi
     return <div>{imgEl}</div>;
 };
 
+const GalleryDeleteConfirmDialog: React.FC<{ item: GalleryItem; onClose: () => void; onConfirm: () => void | Promise<void> }> = ({ item, onClose, onConfirm }) => {
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const cancelRef = React.useRef<HTMLButtonElement>(null);
+
+    useFocusTrap(true, containerRef);
+    useEffect(() => {
+        cancelRef.current?.focus();
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
+
+    return (
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gallery-delete-title"
+            aria-describedby="gallery-delete-desc"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                ref={containerRef}
+                className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] mb-2">Remove from gallery?</h3>
+                <p id="gallery-delete-desc" className="text-stone-500 mb-6">
+                    "{item.caption}" will be permanently removed.
+                </p>
+                <div className="flex gap-3 justify-end">
+                    <button
+                        ref={cancelRef}
+                        type="button"
+                        onClick={onClose}
+                        className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onConfirm()}
+                        className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-white bg-red-500 hover:bg-red-600 transition-colors"
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({ item, onClose }) => {
     const closeRef = React.useRef<HTMLButtonElement>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         closeRef.current?.focus();
@@ -210,10 +267,13 @@ const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [onClose]);
 
+    useFocusTrap(true, containerRef);
+
     const isVideo = item.type === 'video';
 
     return (
         <div
+            ref={containerRef}
             role="dialog"
             aria-modal="true"
             aria-label={isVideo ? 'Fullscreen gallery video' : 'Enlarged gallery image'}
@@ -263,18 +323,29 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import defaultRecipes from './data/recipes.json';
 
+const isValidImageUrl = (url: string) =>
+    !!url && (url.startsWith('/recipe-images/') || url.startsWith('http://') || url.startsWith('https://'));
+
 const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const [broken, setBroken] = useState(false);
-    const hasAffiliatedImage = !!recipe.image && recipe.image.startsWith('/recipe-images/') && !broken;
+    const { toast } = useUI();
+    const hasValidImage = isValidImageUrl(recipe.image) && !broken;
 
-    if (hasAffiliatedImage) {
+    const handleImageError = () => {
+        setBroken(true);
+        if (shouldToastImageError(recipe.id)) {
+            toast('Image failed to load', 'info');
+        }
+    };
+
+    if (hasValidImage) {
         return (
             <img
                 src={recipe.image}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
                 alt={recipe.title}
-                onError={() => setBroken(true)}
+                onError={handleImageError}
             />
         );
     }
@@ -293,7 +364,10 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
 
 const RECIPE_HASH_REGEX = /^#recipe\/(.+)$/;
 
+const CLOUD_ERROR_MSG = 'Could not save — check connection';
+
 const App: React.FC = () => {
+    const { toast } = useUI();
     const [tab, setTab] = useState('Recipes');
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -357,18 +431,22 @@ const App: React.FC = () => {
     const refreshLocalState = async () => {
         const provider = CloudArchive.getProvider();
         if (provider === 'local') {
-            const [r, t, g, c, h] = await Promise.all([
-                CloudArchive.getRecipes(),
-                CloudArchive.getTrivia(),
-                CloudArchive.getGallery(),
-                CloudArchive.getContributors(),
-                CloudArchive.getHistory()
-            ]);
-            setRecipes(r);
-            setTrivia(t);
-            setGallery(g);
-            setContributors(c);
-            setHistory(h);
+            try {
+                const [r, t, g, c, h] = await Promise.all([
+                    CloudArchive.getRecipes(),
+                    CloudArchive.getTrivia(),
+                    CloudArchive.getGallery(),
+                    CloudArchive.getContributors(),
+                    CloudArchive.getHistory()
+                ]);
+                setRecipes(r);
+                setTrivia(t);
+                setGallery(g);
+                setContributors(c);
+                setHistory(h);
+            } catch {
+                toast(CLOUD_ERROR_MSG, 'error');
+            }
         }
     };
 
@@ -379,12 +457,14 @@ const App: React.FC = () => {
             refreshLocalState().then(() => setIsDataLoading(false));
             // Auto-seed trivia if empty in local mode
             if (provider === 'local') {
-                CloudArchive.getTrivia().then(current => {
-                    if (current.length === 0) {
-                        Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as any)))
-                            .then(refreshLocalState);
-                    }
-                });
+                CloudArchive.getTrivia()
+                    .then(current => {
+                        if (current.length === 0) {
+                            return Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as any)))
+                                .then(refreshLocalState);
+                        }
+                    })
+                    .catch(() => toast(CLOUD_ERROR_MSG, 'error'));
             }
             return;
         }
@@ -526,7 +606,10 @@ const App: React.FC = () => {
     if (!currentUser) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-6">
-                <div className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700">
+                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
+                    Skip to main content
+                </a>
+                <div id="main-content" className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700" tabIndex={-1}>
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-800 via-orange-300 to-emerald-800" />
 
                     <div className="relative mb-12">
@@ -543,7 +626,7 @@ const App: React.FC = () => {
                         </div>
                         <div className="mt-8">
                             <h1 className="text-4xl font-serif italic text-[#2D4635] mb-2">Identify Yourself</h1>
-                            <p className="text-stone-400 italic font-serif text-sm">Welcome to the Schafer Family Archive.</p>
+                            <p className="text-stone-500 italic font-serif text-sm">Welcome to the Schafer Family Archive.</p>
                         </div>
                     </div>
 
@@ -572,7 +655,7 @@ const App: React.FC = () => {
                         >
                             {isLoggingIn ? 'Entering…' : 'Enter The Archive'}
                         </button>
-                        <p className="text-stone-400 text-xs italic pt-4">
+                        <p className="text-stone-500 text-xs italic pt-4">
                             <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="underline hover:text-[#2D4635] focus:outline-none focus:ring-2 focus:ring-[#2D4635] focus:ring-offset-2 rounded">Need access? Contact an administrator.</a>
                         </p>
                     </form>
@@ -585,12 +668,15 @@ const App: React.FC = () => {
     if (tab === 'Gallery') {
         return (
             <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                    Skip to main content
+                </a>
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <main className="max-w-7xl mx-auto py-12 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery">
+                <main id="main-content" className="max-w-7xl mx-auto py-12 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
                     <section className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                         <div>
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
-                            <p className="text-stone-400 font-serif italic mt-2">Captured moments across the generations.</p>
+                            <p className="text-stone-500 font-serif italic mt-2">Captured moments across the generations.</p>
                         </div>
                         {archivePhone ? (
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
@@ -630,7 +716,7 @@ const App: React.FC = () => {
                                 <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
                                 <p className="text-stone-500 font-serif italic max-w-md mx-auto">Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.</p>
                             </div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Share the moments that matter</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Share the moments that matter</p>
                         </div>
                     ) : (
                         <>
@@ -641,8 +727,24 @@ const App: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setSelectedGalleryItem(item)}
-                                                className="w-full text-left rounded-2xl overflow-hidden mb-4 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                                                className="w-full text-left rounded-2xl overflow-hidden mb-4 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
                                                 aria-label={`View full size: ${item.caption || 'Family video'}`}
+                                                onFocus={e => {
+                                                    const vid = e.currentTarget.querySelector('video');
+                                                    if (vid) vid.play();
+                                                }}
+                                                onBlur={e => {
+                                                    const vid = e.currentTarget.querySelector('video');
+                                                    if (vid) vid.pause();
+                                                }}
+                                                onMouseOver={e => {
+                                                    const vid = e.currentTarget.querySelector('video');
+                                                    if (vid) vid.play();
+                                                }}
+                                                onMouseOut={e => {
+                                                    const vid = e.currentTarget.querySelector('video');
+                                                    if (vid) vid.pause();
+                                                }}
                                             >
                                                 <video
                                                     src={item.url}
@@ -652,10 +754,6 @@ const App: React.FC = () => {
                                                     preload="metadata"
                                                     title={item.caption || 'Family video'}
                                                     aria-hidden
-                                                    onMouseOver={e => (e.target as HTMLVideoElement).play()}
-                                                    onMouseOut={e => (e.target as HTMLVideoElement).pause()}
-                                                    onFocus={e => (e.target as HTMLVideoElement).play()}
-                                                    onBlur={e => (e.target as HTMLVideoElement).pause()}
                                                     onTouchStart={e => {
                                                         const el = e.target as HTMLVideoElement;
                                                         if (el.paused) el.play();
@@ -704,45 +802,20 @@ const App: React.FC = () => {
 
                             {/* Gallery delete confirmation */}
                             {galleryDeleteConfirm && (
-                                <div
-                                    role="dialog"
-                                    aria-modal="true"
-                                    aria-labelledby="gallery-delete-title"
-                                    aria-describedby="gallery-delete-desc"
-                                    className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-                                    onClick={() => setGalleryDeleteConfirm(null)}
-                                >
-                                    <div
-                                        className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] mb-2">Remove from gallery?</h3>
-                                        <p id="gallery-delete-desc" className="text-stone-500 mb-6">
-                                            "{galleryDeleteConfirm.caption}" will be permanently removed.
-                                        </p>
-                                        <div className="flex gap-3 justify-end">
-                                            <button
-                                                type="button"
-                                                onClick={() => setGalleryDeleteConfirm(null)}
-                                                className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-50 transition-colors"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    const id = galleryDeleteConfirm.id;
-                                                    setGalleryDeleteConfirm(null);
-                                                    await CloudArchive.deleteGalleryItem(id);
-                                                    await refreshLocalState();
-                                                }}
-                                                className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-white bg-red-500 hover:bg-red-600 transition-colors"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <GalleryDeleteConfirmDialog
+                                    item={galleryDeleteConfirm}
+                                    onClose={() => setGalleryDeleteConfirm(null)}
+                                    onConfirm={async () => {
+                                        const id = galleryDeleteConfirm.id;
+                                        setGalleryDeleteConfirm(null);
+                                        try {
+                                            await CloudArchive.deleteGalleryItem(id);
+                                            await refreshLocalState();
+                                        } catch {
+                                            toast(CLOUD_ERROR_MSG, 'error');
+                                        }
+                                    }}
+                                />
                             )}
                         </>
                     )}
@@ -753,26 +826,58 @@ const App: React.FC = () => {
         );
     }
 
+    // Grocery List View
+    if (tab === 'Grocery' && currentUser) {
+        return (
+            <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                    Skip to main content
+                </a>
+                <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                <div id="main-content" tabIndex={-1}>
+                    <Suspense fallback={<TabFallback />}>
+                        <GroceryListView recipes={recipes} />
+                    </Suspense>
+                </div>
+                <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
+            </div>
+        );
+    }
+
     // Trivia View
     if (tab === 'Trivia') {
         return (
             <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                    Skip to main content
+                </a>
                 <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                <div id="main-content" tabIndex={-1}>
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
                         trivia={trivia}
                         currentUser={currentUser as any}
                         isDataLoading={isDataLoading}
                         onAddTrivia={async (t) => {
-                            await CloudArchive.upsertTrivia(t);
-                            await refreshLocalState();
+                            try {
+                                await CloudArchive.upsertTrivia(t);
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onDeleteTrivia={async (id) => {
-                            await CloudArchive.deleteTrivia(id);
-                            await refreshLocalState();
+                            try {
+                                await CloudArchive.deleteTrivia(id);
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                     />
                 </Suspense>
+                </div>
                 <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
                 <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
@@ -781,8 +886,12 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                Skip to main content
+            </a>
             <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
+            <div id="main-content" tabIndex={-1}>
             {selectedRecipe && (
                 <RecipeModal
                     recipe={selectedRecipe}
@@ -878,7 +987,7 @@ const App: React.FC = () => {
                             <div className="space-y-6">
                                 {favRecipes.length > 0 && (
                                     <section aria-label="Favorite recipes">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">❤️ Favorites</h3>
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">❤️ Favorites</h3>
                                         <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                                             {favRecipes.map((r) => (
                                                 <button
@@ -900,7 +1009,7 @@ const App: React.FC = () => {
                                 )}
                                 {recentRecipes.length > 0 && (
                                     <section aria-label="Recently viewed recipes">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">👁 Recently viewed</h3>
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">👁 Recently viewed</h3>
                                         <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                                             {recentRecipes.map((r) => (
                                                 <button
@@ -1063,40 +1172,68 @@ const App: React.FC = () => {
                         currentUser={currentUser}
                         dbStats={{ ...dbStats, archivePhone }}
                         onAddRecipe={async (r, f) => {
-                            const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
-                            await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
-                            await refreshLocalState();
+                            try {
+                                const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
+                                await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onAddGallery={async (g, f) => {
-                            const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
-                            await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
-                            await refreshLocalState();
+                            try {
+                                const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
+                                await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onAddTrivia={async (t) => {
-                            await CloudArchive.upsertTrivia(t);
-                            await refreshLocalState();
+                            try {
+                                await CloudArchive.upsertTrivia(t);
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onDeleteTrivia={async (id) => {
-                            await CloudArchive.deleteTrivia(id);
-                            await refreshLocalState();
+                            try {
+                                await CloudArchive.deleteTrivia(id);
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onDeleteRecipe={async (id) => {
-                            await CloudArchive.deleteRecipe(id);
-                            await refreshLocalState();
+                            try {
+                                await CloudArchive.deleteRecipe(id);
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onUpdateContributor={async (p) => {
-                            await CloudArchive.upsertContributor(p);
-                            // Sync with current user if they just updated themselves
-                            if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
-                                const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
-                                setCurrentUser(updatedUser);
-                                localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                            try {
+                                await CloudArchive.upsertContributor(p);
+                                // Sync with current user if they just updated themselves
+                                if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
+                                    const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
+                                    setCurrentUser(updatedUser);
+                                    localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                                }
+                                await refreshLocalState();
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
                             }
-                            await refreshLocalState();
                         }}
                         onUpdateArchivePhone={async (p) => {
-                            await CloudArchive.setArchivePhone(p);
-                            setArchivePhone(p);
+                            try {
+                                await CloudArchive.setArchivePhone(p);
+                                setArchivePhone(p);
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
                         }}
                         onEditRecipe={setEditingRecipe}
                     />
@@ -1107,7 +1244,7 @@ const App: React.FC = () => {
                     <div className="text-center space-y-6">
                         <div className="w-24 h-24 bg-orange-50 rounded-full mx-auto flex items-center justify-center text-4xl shadow-inner border border-stone-100">🔐</div>
                         <h2 className="text-5xl font-serif italic text-[#2D4635]">Meet your Administrators</h2>
-                        <p className="text-stone-400 font-serif max-w-lg mx-auto italic">
+                        <p className="text-stone-500 font-serif max-w-lg mx-auto italic">
                             These family members help maintain the archive, organize heritage recipes, and verify memories.
                         </p>
                     </div>
@@ -1125,7 +1262,7 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="pt-12 border-t border-stone-50 text-center">
-                        <p className="text-stone-400 text-xs italic">
+                        <p className="text-stone-500 text-xs italic">
                             Need administrative access? Contact one of the curators above to be promoted.
                         </p>
                     </div>
@@ -1138,6 +1275,11 @@ const App: React.FC = () => {
                         currentUser={currentUser}
                         userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
                         userHistory={history.filter(h => h.contributor === currentUser.name)}
+                        favoriteRecipes={recipes.filter(r => favoriteIds.has(r.id))}
+                        recentRecipes={getRecentlyViewedEntries()
+                            .map(e => recipes.find(r => r.id === e.id))
+                            .filter((r): r is Recipe => !!r)}
+                        onViewRecipe={(r) => handleSelectRecipe(r)}
                         onUpdateProfile={async (name, avatar) => {
                             const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
                             const profileToUpdate = {
@@ -1147,15 +1289,16 @@ const App: React.FC = () => {
                                 role: currentUser.role,
                                 email: currentUser.email
                             };
-
-                            await CloudArchive.upsertContributor(profileToUpdate);
-
-                            // Local sync
-                            const updatedUser = { ...currentUser, name, picture: avatar };
-                            setCurrentUser(updatedUser);
-                            localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
-
-                            await refreshLocalState();
+                            try {
+                                await CloudArchive.upsertContributor(profileToUpdate);
+                                // Local sync
+                                const updatedUser = { ...currentUser, name, picture: avatar };
+                                setCurrentUser(updatedUser);
+                                localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                                await refreshLocalState();
+                            } catch {
+                                throw new Error(CLOUD_ERROR_MSG);
+                            }
                         }}
                         onEditRecipe={(recipe) => {
                             setEditingRecipe(recipe);
@@ -1166,6 +1309,7 @@ const App: React.FC = () => {
             )}
             <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
             <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
+            </div>
         </div>
     );
 };

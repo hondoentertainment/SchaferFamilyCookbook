@@ -16,10 +16,10 @@ interface AdminViewProps {
     onAddRecipe: (r: Recipe, file?: File) => Promise<void>;
     onAddGallery: (g: GalleryItem, file?: File) => Promise<void>;
     onAddTrivia: (t: Trivia) => Promise<void>;
-    onDeleteTrivia: (id: string) => void;
+    onDeleteTrivia: (id: string) => void | Promise<void>;
     onDeleteRecipe: (id: string) => void;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
-    onUpdateArchivePhone: (p: string) => void;
+    onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (r: Recipe) => void;
     defaultRecipeIds?: string[];
 }
@@ -55,6 +55,15 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; errors: string[] }>({ current: 0, total: 0, errors: [] });
     const [aiCooldownUntil, setAiCooldownUntil] = useState<number>(0);
     const [aiCooldownSecondsLeft, setAiCooldownSecondsLeft] = useState(0);
+    const [isTriviaSubmitting, setIsTriviaSubmitting] = useState(false);
+    const [archivePhoneLocal, setArchivePhoneLocal] = useState('');
+    const [isSavingArchivePhone, setIsSavingArchivePhone] = useState(false);
+    const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
+
+    // Sync archive phone from dbStats
+    useEffect(() => {
+        setArchivePhoneLocal(dbStats.archivePhone || '');
+    }, [dbStats.archivePhone]);
 
     // Hide seed/default recipes in Admin record management.
     const managedRecipes = recipes.filter(r => !defaultRecipeIds.includes(r.id));
@@ -145,12 +154,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         const defaultImage = getDefaultImageForCategory(recipeForm.category);
         setRecipeFile(null);
         setPreviewUrl(defaultImage);
-        setRecipeForm(prev => ({ ...prev, image: defaultImage }));
+        setRecipeForm(prev => ({ ...prev, image: defaultImage, imageSource: undefined }));
     };
 
     const useDefaultImageForRecipe = async (recipe: Recipe) => {
         const defaultImage = getDefaultImageForCategory(recipe.category);
-        await onAddRecipe({ ...recipe, image: defaultImage });
+        await onAddRecipe({ ...recipe, image: defaultImage, imageSource: undefined });
         setSuccessMessage(`✓ "${recipe.title}" now uses the default ${recipe.category} image.`);
         setTimeout(() => setSuccessMessage(''), 4000);
     };
@@ -274,7 +283,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     };
     const handleRecipeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!recipeForm.title || isSubmitting) return;
+        if (!recipeForm.title?.trim()) {
+            toast('Recipe title is required.', 'error');
+            return;
+        }
+        const ingredients = recipeForm.ingredients?.filter(Boolean) ?? [];
+        const instructions = recipeForm.instructions?.filter(Boolean) ?? [];
+        if (ingredients.length === 0 || instructions.length === 0) {
+            toast('Ingredients and instructions are required.', 'error');
+            return;
+        }
+        if (isSubmitting) return;
         setIsSubmitting(true);
         try {
             const isUpdate = !!editingRecipe;
@@ -284,11 +303,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 id: recipeForm.id || 'r' + Date.now(),
                 contributor: recipeForm.contributor || currentUser?.name || 'Family',
                 image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic,
-                imageSource: imageSource || undefined
+                imageSource: imageSource || undefined,
+                ingredients,
+                instructions
             }, recipeFile || undefined);
 
-            // Show success feedback
             setSuccessMessage(isUpdate ? `✓ "${recipeForm.title}" updated successfully!` : `✓ "${recipeForm.title}" added to archive!`);
+            toast(isUpdate ? 'Recipe updated' : 'Recipe saved', 'success');
             setTimeout(() => setSuccessMessage(''), 4000);
 
             setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [], notes: '', contributor: '' });
@@ -301,7 +322,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
     const handleGallerySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!galleryFile || isSubmitting) return;
+        if (!galleryFile) {
+            toast('Please select a photo or video to upload.', 'error');
+            return;
+        }
+        if (isSubmitting) return;
         setIsSubmitting(true);
         try {
             const isVideo = galleryFile.type.startsWith('video/');
@@ -312,6 +337,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 caption: galleryForm.caption || (isVideo ? 'Family Video' : 'Family Memory'),
                 contributor: currentUser?.name || 'Family'
             }, galleryFile);
+            toast('Gallery updated', 'success');
             setGalleryForm({ caption: '' });
             setGalleryFile(null);
         } finally { setIsSubmitting(false); }
@@ -425,29 +451,49 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     </div>
                 )}
                 {/* Sub-navigation bar */}
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-full px-2">
+                <div
+                    role="tablist"
+                    aria-label="Admin subtabs"
+                    className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-[2rem] px-2 border border-stone-100"
+                >
                     {[
                         { id: 'records', label: '📖 Record' },
                         { id: 'gallery', label: '🖼️ Gallery' },
                         { id: 'trivia', label: '💡 Trivia' },
                         { id: 'directory', label: '👥 Directory' },
                         { id: 'permissions', label: '🔐 Admins', restricted: true },
-                    ].map(tab => (
-                        (!tab.restricted || isSuperAdmin) && (
+                    ]
+                        .filter(tab => !tab.restricted || isSuperAdmin)
+                        .map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveSubtab(tab.id as any)}
-                                className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSubtab === tab.id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-white'}`}
+                                role="tab"
+                                aria-selected={activeSubtab === tab.id}
+                                aria-controls={`admin-panel-${tab.id}`}
+                                id={`admin-tab-${tab.id}`}
+                                tabIndex={activeSubtab === tab.id ? 0 : -1}
+                                onClick={() => setActiveSubtab(tab.id as typeof activeSubtab)}
+                                onKeyDown={(e) => {
+                                    const tabs = ['records', 'gallery', 'trivia', 'directory', ...(isSuperAdmin ? ['permissions'] as const : [])];
+                                    const i = tabs.indexOf(activeSubtab);
+                                    if (e.key === 'ArrowRight' && i < tabs.length - 1) {
+                                        e.preventDefault();
+                                        setActiveSubtab(tabs[i + 1]);
+                                    } else if (e.key === 'ArrowLeft' && i > 0) {
+                                        e.preventDefault();
+                                        setActiveSubtab(tabs[i - 1]);
+                                    }
+                                }}
+                                className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ${activeSubtab === tab.id ? 'bg-[#2D4635] text-white shadow-lg ring-2 ring-[#2D4635] ring-offset-2 ring-offset-stone-50' : 'text-stone-400 hover:bg-white hover:text-stone-600'}`}
                             >
                                 {tab.label}
                             </button>
-                        )
-                    ))}
+                        ))}
                 </div>
 
                 {/* Permissions & Admin Management */}
                 {activeSubtab === 'permissions' && isSuperAdmin && (
-                    <section className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                    <section id="admin-panel-permissions" role="tabpanel" aria-labelledby="admin-tab-permissions" className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-200 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
                         <div className="relative z-10">
                             <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
@@ -460,19 +506,30 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <div className="flex gap-4">
                                         <label htmlFor="admin-promote-name" className="sr-only">Enter name to promote</label>
                                         <input id="admin-promote-name" type="text" placeholder="Enter name (e.g. Aunt Mary)" className="flex-1 px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-base font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} />
-                                        <button onClick={() => {
-                                            if (!newAdminName.trim()) return;
-                                            const name = newAdminName.trim();
-                                            const profile = props.contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
-                                            onUpdateContributor({
-                                                id: profile?.id || 'c_' + Date.now(),
-                                                name: profile?.name || name,
-                                                avatar: profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-                                                role: 'admin'
-                                            });
-                                            setNewAdminName('');
-                                            toast(`${name} has been promoted.`, 'success');
-                                        }} className="px-8 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">Grant Access</button>
+                                        <button
+                                            onClick={async () => {
+                                                if (!newAdminName.trim()) return;
+                                                const name = newAdminName.trim();
+                                                if (isPromotingAdmin) return;
+                                                setIsPromotingAdmin(true);
+                                                try {
+                                                    const profile = props.contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
+                                                    await onUpdateContributor({
+                                                        id: profile?.id || 'c_' + Date.now(),
+                                                        name: profile?.name || name,
+                                                        avatar: profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+                                                        role: 'admin'
+                                                    });
+                                                    setNewAdminName('');
+                                                    toast(`${name} has been promoted.`, 'success');
+                                                } finally { setIsPromotingAdmin(false); }
+                                            }}
+                                            disabled={isPromotingAdmin}
+                                            aria-busy={isPromotingAdmin}
+                                            className="px-8 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            {isPromotingAdmin ? 'Saving...' : 'Grant Access'}
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
@@ -495,7 +552,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 )}
 
                 {(activeSubtab === 'records' || activeSubtab === 'gallery' || activeSubtab === 'trivia') && (
-                    <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-100 shadow-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-4">
+                    <div id={`admin-panel-${activeSubtab}`} role="tabpanel" aria-labelledby={`admin-tab-${activeSubtab}`} className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                             <h2 className="text-3xl font-serif italic text-[#2D4635]">
                                 {activeSubtab === 'records' ? 'New Heritage Record' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
@@ -752,10 +809,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
 
                                         <div className="flex gap-4">
-                                            <button type="submit" disabled={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                                {isSubmitting ? 'Archiving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
+                                            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
+                                                {isSubmitting ? 'Saving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
                                             </button>
-                                            {editingRecipe && <button type="button" onClick={clearEditing} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400">Cancel</button>}
+                                            {editingRecipe && <button type="button" onClick={clearEditing} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
                                         </div>
                                     </form>
                                 </section>
@@ -778,18 +835,34 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-stone-50 rounded-3xl border border-stone-100 mb-8">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Twilio Configuration</h4>
+                                    <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-200 mb-8">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Twilio Configuration</h4>
                                         <p className="text-xs text-stone-500 mb-4">Enter your Twilio number (E.164, e.g. +15551234567) so family members can text photos and videos to the gallery. The number appears in the Gallery tab once set.</p>
-                                        <div className="flex gap-4">
+                                        <div className="flex flex-col sm:flex-row gap-3">
                                             <label htmlFor="admin-archive-phone" className="sr-only">Archive phone number (E.164)</label>
                                             <input
                                                 id="admin-archive-phone"
                                                 placeholder="e.g. +15551234567"
-                                                className="flex-1 p-3 border border-stone-200 rounded-xl text-xs bg-white text-base"
-                                                value={dbStats.archivePhone || ''}
-                                                onChange={e => onUpdateArchivePhone(e.target.value)}
+                                                className="flex-1 p-4 border border-stone-200 rounded-2xl text-base bg-white outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                                                value={archivePhoneLocal}
+                                                onChange={e => setArchivePhoneLocal(e.target.value)}
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (isSavingArchivePhone) return;
+                                                    setIsSavingArchivePhone(true);
+                                                    try {
+                                                        await Promise.resolve(onUpdateArchivePhone(archivePhoneLocal));
+                                                        toast('Gallery config updated', 'success');
+                                                    } finally { setIsSavingArchivePhone(false); }
+                                                }}
+                                                disabled={isSavingArchivePhone}
+                                                aria-busy={isSavingArchivePhone}
+                                                className="px-6 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                                            >
+                                                {isSavingArchivePhone ? 'Saving...' : 'Save'}
+                                            </button>
                                         </div>
                                     </div>
                                     <form onSubmit={handleGallerySubmit} className="space-y-4">
@@ -806,8 +879,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <label htmlFor="admin-gallery-caption" className="sr-only">Gallery Caption</label>
                                             <input id="admin-gallery-caption" placeholder="Caption (e.g. Summer BBQ 1985)" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
                                         </div>
-                                        <button type="submit" disabled={!galleryFile || isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-                                            {isSubmitting ? 'Uploading...' : 'Upload Memory'}
+                                        <button type="submit" disabled={!galleryFile || isSubmitting} aria-busy={isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+                                            {isSubmitting ? 'Saving...' : 'Upload Memory'}
                                         </button>
                                     </form>
 
@@ -900,8 +973,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             <p className="text-[9px] font-bold text-red-600 uppercase tracking-widest mb-2">
                                                                 {uploadProgress.errors.length} Failed:
                                                             </p>
-                                                            <p className="text-[9px] text-red-500 max-h-20 overflow-y-auto">
-                                                                {uploadProgress.errors.join('\\n')}
+                                                            <p className="text-[9px] text-red-500 max-h-20 overflow-y-auto whitespace-pre-line">
+                                                                {uploadProgress.errors.join('\n')}
                                                             </p>
                                                         </div>
                                                     )}
@@ -920,38 +993,58 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     </h3>
                                     <form onSubmit={async (e) => {
                                         e.preventDefault();
-                                        if (!triviaForm.question) return;
-                                        await onAddTrivia({
-                                            ...(triviaForm as Trivia),
-                                            id: editingTrivia?.id || 't_' + Date.now(),
-                                            contributor: editingTrivia?.contributor || currentUser?.name || 'Unknown'
-                                        });
-                                        setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' });
-                                        setEditingTrivia(null);
+                                        if (!triviaForm.question?.trim()) {
+                                            toast('Question is required.', 'error');
+                                            return;
+                                        }
+                                        if (isTriviaSubmitting) return;
+                                        setIsTriviaSubmitting(true);
+                                        try {
+                                            await onAddTrivia({
+                                                ...(triviaForm as Trivia),
+                                                id: editingTrivia?.id || 't_' + Date.now(),
+                                                contributor: editingTrivia?.contributor || currentUser?.name || 'Unknown'
+                                            });
+                                            toast(editingTrivia ? 'Trivia updated' : 'Trivia added', 'success');
+                                            setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' });
+                                            setEditingTrivia(null);
+                                        } finally { setIsTriviaSubmitting(false); }
                                     }} className="space-y-4">
-                                        <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} />
+                                        <input placeholder="The Question" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} aria-required="true" />
                                         <div className="grid grid-cols-2 gap-3">
                                             {triviaForm.options?.map((opt, i) => (
-                                                <input key={i} placeholder={`Opt ${i + 1}`} className="p-3 border border-stone-200 rounded-xl text-base min-h-[2.75rem]" value={opt} onChange={e => { const n = [...(triviaForm.options || [])]; n[i] = e.target.value; setTriviaForm({ ...triviaForm, options: n }) }} />
+                                                <input key={i} placeholder={`Opt ${i + 1}`} className="p-3 border border-stone-200 rounded-xl text-base min-h-[2.75rem] focus:ring-2 focus:ring-[#2D4635]/20 outline-none" value={opt} onChange={e => { const n = [...(triviaForm.options || [])]; n[i] = e.target.value; setTriviaForm({ ...triviaForm, options: n }) }} />
                                             ))}
                                         </div>
-                                        <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-base font-bold bg-stone-50" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
+                                        <input placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-base font-bold bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20 outline-none" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
                                         <div className="flex gap-4">
-                                            <button type="submit" className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
-                                                {editingTrivia ? 'Update Question' : 'Add Question'}
+                                            <button type="submit" disabled={isTriviaSubmitting} aria-busy={isTriviaSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-70 disabled:cursor-not-allowed">
+                                                {isTriviaSubmitting ? 'Saving...' : editingTrivia ? 'Update Question' : 'Add Question'}
                                             </button>
-                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400">Cancel</button>}
+                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} disabled={isTriviaSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
                                         </div>
                                     </form>
-                                    <div className="pt-8 border-t border-stone-100 max-h-96 overflow-y-auto custom-scrollbar">
-                                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-4">Current Questions</h4>
+                                    <div className="pt-8 border-t border-stone-200 max-h-96 overflow-y-auto custom-scrollbar rounded-[2rem] p-4 bg-stone-50/50 border border-stone-100">
+                                        <h4 className="text-[10px] font-black uppercase text-stone-500 mb-4">Current Questions</h4>
                                         {trivia.map(t => (
-                                            <div key={t.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl mb-2 group">
+                                            <div key={t.id} className="flex items-center justify-between p-3 bg-white rounded-2xl mb-2 group border border-stone-100 shadow-sm">
                                                 <div className="flex flex-col truncate flex-1 cursor-pointer" onClick={() => { setEditingTrivia(t); setTriviaForm(t); }}>
                                                     <span className="text-xs truncate font-bold text-[#2D4635]">{t.question}</span>
                                                     <span className="text-[9px] uppercase tracking-widest text-stone-400">Click to edit</span>
                                                 </div>
-                                                <button onClick={() => onDeleteTrivia(t.id)} className="min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 transition-all ml-4" aria-label={`Delete question: ${t.question}`}>✕</button>
+                                                <button
+                                                    onClick={async () => {
+                                                        const ok = await confirm(`Delete "${t.question}"? This cannot be undone.`, { variant: 'danger', confirmLabel: 'Delete', title: 'Delete Trivia' });
+                                                        if (ok) {
+                                                            await onDeleteTrivia(t.id);
+                                                            toast('Trivia deleted', 'success');
+                                                        }
+                                                    }}
+                                                    className="min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 transition-all ml-4 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                                                    aria-label={`Delete question: ${t.question}`}
+                                                >
+                                                    ✕
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
@@ -963,7 +1056,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                 {
                     activeSubtab === 'directory' && (
-                        <section className="bg-white rounded-[3rem] p-10 md:p-16 border border-stone-100 shadow-xl animate-in fade-in slide-in-from-bottom-4">
+                        <section id="admin-panel-directory" role="tabpanel" aria-labelledby="admin-tab-directory" className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-200 shadow-xl animate-in fade-in slide-in-from-bottom-4">
                             <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
                                 <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">👥</span>
                                 Family Directory & Avatars
@@ -971,7 +1064,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                             {/* Merge Contributors Tool */}
                             {isSuperAdmin && (
-                                <div className="mb-10 p-6 bg-orange-50/50 rounded-3xl border border-orange-100">
+                                <div className="mb-10 p-6 bg-orange-50/50 rounded-[2rem] border border-orange-200">
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D] mb-4 flex items-center gap-2">
                                         <span>🔀</span> Merge Contributors
                                     </h4>
@@ -1001,7 +1094,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <button
                                             onClick={handleMergeContributors}
                                             disabled={isMerging || !mergeFrom.trim() || !mergeTo.trim()}
-                                            className="px-6 py-3 bg-[#A0522D] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                            aria-busy={isMerging}
+                                            className="px-6 py-3 bg-[#A0522D] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             {isMerging ? 'Merging...' : '🔀 Merge'}
                                         </button>
@@ -1019,39 +1113,73 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     const avatar = profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
                                     const role = profile?.role || 'user';
                                     return (
-                                        <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-3xl border border-stone-100 hover:shadow-lg transition-all cursor-pointer group relative">
+                                        <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-[2rem] border border-stone-200 hover:shadow-lg transition-all cursor-pointer group relative">
                                             <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
                                             <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
                                             <div className="flex gap-2">
-                                                <span onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const phone = prompt(`Enter phone number for ${name} (e.g. +1234567890):`, profile?.phone || '');
-                                                    if (phone !== null) {
-                                                        const updatedProfile = profile ? { ...profile, phone } : { id: 'c_' + Date.now(), name, avatar, role: 'user', phone };
-                                                        onUpdateContributor(updatedProfile as any);
-                                                    }
-                                                }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Phone</span>
-                                                <span onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (isSuperAdmin) {
-                                                        setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
-                                                    } else {
-                                                        const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
-                                                        if (url) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
-                                                    }
-                                                }} className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold">Avatar</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        const phone = prompt(`Enter phone number for ${name} (e.g. +1234567890):`, profile?.phone || '');
+                                                        if (phone !== null) {
+                                                            const updatedProfile = profile ? { ...profile, phone } : { id: 'c_' + Date.now(), name, avatar, role: 'user', phone };
+                                                            await onUpdateContributor(updatedProfile as ContributorProfile);
+                                                            toast('Contributor updated', 'success');
+                                                        }
+                                                    }}
+                                                    className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold bg-transparent border-0 cursor-pointer p-0"
+                                                >
+                                                    Phone
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (isSuperAdmin) {
+                                                            setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
+                                                        } else {
+                                                            const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
+                                                            if (url) {
+                                                                await onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
+                                                                toast('Avatar updated', 'success');
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="text-[9px] uppercase tracking-widest text-[#2D4635] hover:font-bold bg-transparent border-0 cursor-pointer p-0"
+                                                >
+                                                    Avatar
+                                                </button>
                                                 {role === 'admin' ? (
-                                                    <span onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
-                                                        if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
-                                                    }} className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600">Admin ✓</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                            if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) {
+                                                                await onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
+                                                                toast('Admin access revoked', 'success');
+                                                            }
+                                                        }}
+                                                        className="text-[9px] uppercase tracking-widest text-orange-500 font-bold hover:text-orange-600 bg-transparent border-0 cursor-pointer p-0"
+                                                    >
+                                                        Admin ✓
+                                                    </button>
                                                 ) : (
-                                                    <span onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
-                                                        if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
-                                                    }} className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold">Grant Admin</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                            if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) {
+                                                                await onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
+                                                                toast('Contributor promoted', 'success');
+                                                            }
+                                                        }}
+                                                        className="text-[9px] uppercase tracking-widest text-stone-400 hover:text-[#2D4635] hover:font-bold bg-transparent border-0 cursor-pointer p-0"
+                                                    >
+                                                        Grant Admin
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -1066,11 +1194,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     pickerTarget && isSuperAdmin && (
                         <AvatarPicker
                             currentAvatar={pickerTarget.avatar}
-                            onSelect={(url) => {
-                                onUpdateContributor({
+                            onSelect={async (url) => {
+                                await onUpdateContributor({
                                     ...pickerTarget,
                                     avatar: url
                                 });
+                                toast('Avatar updated', 'success');
+                                setPickerTarget(null);
                             }}
                             onClose={() => setPickerTarget(null)}
                         />

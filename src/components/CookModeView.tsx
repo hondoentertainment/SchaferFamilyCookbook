@@ -14,6 +14,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const [scaleTo, setScaleTo] = useState(typeof recipe.servings === 'number' ? recipe.servings : 4);
     const containerRef = useRef<HTMLDivElement>(null);
     const touchStartX = useRef<number>(0);
+    const touchStartY = useRef<number>(0);
 
     const baseServings = typeof recipe.servings === 'number' ? recipe.servings : 4;
     const scaleFactor = baseServings > 0 ? scaleTo / baseServings : 1;
@@ -65,10 +66,14 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
 
     const handleTouchStart = (e: React.TouchEvent) => {
         touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
     };
     const handleTouchEnd = (e: React.TouchEvent) => {
         const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        if (absX >= SWIPE_THRESHOLD && absX > absY) {
             if (deltaX > 0) goPrev();
             else goNext();
         }

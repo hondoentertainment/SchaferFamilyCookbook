@@ -46,8 +46,10 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                             onClick={() => setSelectedUrl(url)}
                             className={`relative group rounded-2xl overflow-hidden transition-all hover:scale-110 active:scale-90 p-2 ${selectedUrl === url ? 'bg-emerald-50 ring-2 ring-[#2D4635]' : 'bg-stone-50 hover:bg-white'
                                 }`}
+                            aria-label={`Select avatar ${i + 1}`}
+                            aria-pressed={selectedUrl === url}
                         >
-                            <img src={url} className="w-full aspect-square object-cover rounded-xl" alt={`Avatar ${i + 1}`} />
+                            <img src={url} className="w-full aspect-square object-cover rounded-xl" alt="" aria-hidden />
                             {selectedUrl === url && (
                                 <div className="absolute top-1 right-1 w-4 h-4 bg-[#2D4635] text-white rounded-full flex items-center justify-center text-[8px]">
                                     ✓
@@ -72,6 +74,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                                 onClose();
                             }}
                             className="px-8 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] transition-all"
+                            aria-label="Save selected avatar"
                         >
                             Save Identity
                         </button>

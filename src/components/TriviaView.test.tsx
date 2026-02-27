@@ -101,9 +101,9 @@ describe('TriviaView', () => {
         fireEvent.click(screen.getByText('45 min'));
         fireEvent.click(screen.getByText('Finish Archive Challenge'));
 
-        // Results
+        // Results (multiple elements contain "You scored" - sr-only and visible)
         expect(screen.getByText('Legacy Challenge Complete')).toBeInTheDocument();
-        expect(screen.getByText(/You scored/)).toBeInTheDocument();
+        expect(screen.getAllByText(/You scored/).length).toBeGreaterThanOrEqual(1);
         expect(screen.getAllByText(/100%/).length).toBeGreaterThanOrEqual(1);
     });
 

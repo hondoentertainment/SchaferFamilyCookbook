@@ -14,6 +14,7 @@ const ALL_NAV_TABS = [
     { id: 'Recipes', title: 'Browse recipes with filters', label: 'Recipes' },
     { id: 'Index', title: 'Browse recipes A–Z', label: 'A–Z' },
     { id: 'Gallery', title: 'Family photos and videos', label: 'Gallery' },
+    { id: 'Grocery', title: 'Grocery list', label: 'Grocery' },
     { id: 'Trivia', title: 'Family trivia quiz', label: 'Trivia' },
     ...EXTRA_TABS.map((t) => ({ ...t, label: t.id })),
     { id: 'Profile', title: 'Your profile and contributions', label: 'Profile' }
@@ -44,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
         return () => { document.removeEventListener('click', onClick); document.removeEventListener('keydown', onKeyDown); };
     }, [moreOpen]);
 
-    const navTabs = ALL_NAV_TABS.filter(({ id }) => id !== 'Profile' || currentUser);
+    const navTabs = ALL_NAV_TABS.filter(({ id }) => (id !== 'Profile' && id !== 'Grocery') || currentUser);
 
     return (
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-100 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">

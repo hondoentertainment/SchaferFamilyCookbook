@@ -79,6 +79,7 @@ test.describe('Gallery', () => {
     });
     await page.reload();
     await page.getByRole('button', { name: 'Gallery' }).click();
+    await expect(page.getByText('Beach day')).toBeVisible({ timeout: 5000 });
 
     await page.getByRole('button', { name: /View full size: Beach day/i }).click();
 
@@ -104,10 +105,11 @@ test.describe('Gallery', () => {
     });
     await page.reload();
     await page.getByRole('button', { name: 'Gallery' }).click();
+    await expect(page.getByText('Escape test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape test/i }).click();
 
     await expect(page.getByRole('dialog', { name: /Enlarged gallery image/i })).toBeVisible();
-    await page.getByRole('button', { name: /Close enlarged image/i }).click();
+    await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('dialog', { name: /Enlarged gallery image/i })).not.toBeVisible({ timeout: 2000 });
   });
 
@@ -129,6 +131,7 @@ test.describe('Gallery', () => {
     });
     await page.reload();
     await page.getByRole('button', { name: 'Gallery' }).click();
+    await expect(page.getByText('Escape key test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape key test/i }).click();
 
     await expect(page.getByRole('dialog', { name: /Enlarged gallery image/i })).toBeVisible();

@@ -8,12 +8,15 @@ interface ProfileViewProps {
     currentUser: UserProfile;
     userRecipes: Recipe[];
     userHistory: HistoryEntry[];
+    favoriteRecipes: Recipe[];
+    recentRecipes: Recipe[];
+    onViewRecipe: (recipe: Recipe) => void;
     onUpdateProfile: (name: string, avatar: string) => Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, onUpdateProfile, onEditRecipe } = props;
+    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, onViewRecipe, onUpdateProfile, onEditRecipe } = props;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
@@ -51,6 +54,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         <button
                             onClick={() => setShowPicker(true)}
                             className="absolute bottom-4 right-4 w-12 h-12 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-xl"
+                            aria-label="Change avatar"
                         >
                             🎭
                         </button>
@@ -102,6 +106,80 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             </section>
 
             <div className="grid lg:grid-cols-2 gap-12">
+                {/* My Favorites */}
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-50 flex items-center justify-center not-italic text-xl md:text-2xl">❤️</span>
+                        My Favorites
+                    </h3>
+                    <div className="space-y-3 md:space-y-4">
+                        {favoriteRecipes.map((recipe) => (
+                            <button
+                                key={recipe.id}
+                                type="button"
+                                onClick={() => onViewRecipe(recipe)}
+                                className="w-full text-left bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all"
+                            >
+                                <img
+                                    src={recipe.image}
+                                    className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
+                                    alt={recipe.title}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
+                                    }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
+                                </div>
+                                <span className="text-stone-400 group-hover:text-[#2D4635] transition-colors">→</span>
+                            </button>
+                        ))}
+                        {favoriteRecipes.length === 0 && (
+                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
+                                <p className="text-stone-300 font-serif italic text-lg">No favorites yet.</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* Recently Viewed */}
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-xl md:text-2xl">👁</span>
+                        Recently Viewed
+                    </h3>
+                    <div className="space-y-3 md:space-y-4">
+                        {recentRecipes.map((recipe) => (
+                            <button
+                                key={recipe.id}
+                                type="button"
+                                onClick={() => onViewRecipe(recipe)}
+                                className="w-full text-left bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all"
+                            >
+                                <img
+                                    src={recipe.image}
+                                    className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
+                                    alt={recipe.title}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
+                                    }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
+                                </div>
+                                <span className="text-stone-400 group-hover:text-[#2D4635] transition-colors">→</span>
+                            </button>
+                        ))}
+                        {recentRecipes.length === 0 && (
+                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
+                                <p className="text-stone-300 font-serif italic text-lg">No recent views.</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
                 {/* My Recipes */}
                 <section className="space-y-6 md:space-y-8">
                     <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">

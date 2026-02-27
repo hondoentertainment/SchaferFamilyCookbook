@@ -6,6 +6,7 @@ const MAIN_TABS = [
     { id: 'Recipes', label: 'Recipes', icon: '📖' },
     { id: 'Index', label: 'A–Z', icon: '🔤' },
     { id: 'Gallery', label: 'Gallery', icon: '🖼️' },
+    { id: 'Grocery', label: 'Grocery', icon: '🛒' },
     { id: 'Trivia', label: 'Trivia', icon: '💡' },
     { id: 'Profile', label: 'Profile', icon: '👤' },
     { id: 'Admin', label: 'Admin', icon: '⚙️' },

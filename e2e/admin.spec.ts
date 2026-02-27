@@ -60,14 +60,14 @@ test.describe('Admin (admin user)', () => {
 
   test('admin can navigate to Gallery subtab', async ({ page }) => {
     await page.getByRole('button', { name: 'Admin' }).click();
-    await page.getByRole('button', { name: '🖼️ Gallery' }).click();
+    await page.getByRole('tab', { name: '🖼️ Gallery' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Family Archive' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Family Archive' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('admin can set archive phone in Gallery config', async ({ page }) => {
     await page.getByRole('button', { name: 'Admin' }).click();
-    await page.getByRole('button', { name: '🖼️ Gallery' }).click();
+    await page.getByRole('tab', { name: '🖼️ Gallery' }).click();
 
     const phoneInput = page.getByPlaceholder('e.g. +15551234567');
     await phoneInput.fill('+15551234567');
@@ -77,14 +77,14 @@ test.describe('Admin (admin user)', () => {
 
   test('admin can navigate to Trivia subtab', async ({ page }) => {
     await page.getByRole('button', { name: 'Admin' }).click();
-    await page.getByRole('button', { name: '💡 Trivia' }).click();
+    await page.getByRole('tab', { name: '💡 Trivia' }).click();
 
     await expect(page.getByRole('heading', { name: 'Family Trivia' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('admin can navigate to Directory subtab', async ({ page }) => {
     await page.getByRole('button', { name: 'Admin' }).click();
-    await page.getByRole('button', { name: '👥 Directory' }).click();
+    await page.getByRole('tab', { name: '👥 Directory' }).click();
 
     await expect(page.getByText('Family Directory & Avatars')).toBeVisible({ timeout: 5000 });
   });
@@ -93,7 +93,7 @@ test.describe('Admin (admin user)', () => {
     const recipeCard = page.locator('[role="button"][aria-label*="View recipe:"]').first();
     await recipeCard.hover();
 
-    const editBtn = page.locator('[role="button"][aria-label*="View recipe:"]').first().getByRole('button', { name: '✨' });
+    const editBtn = page.locator('[role="button"][aria-label*="View recipe:"]').first().getByRole('button', { name: /Edit.*with AI/i });
     await expect(editBtn).toBeVisible({ timeout: 3000 });
   });
 });

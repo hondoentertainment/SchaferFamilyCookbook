@@ -11,12 +11,13 @@ test.describe('Tab navigation', () => {
 
   test('shows all main nav tabs', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Recipes' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Index' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'A–Z' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Gallery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Grocery' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Trivia' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Family Story' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Family Story' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Contributors' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Profile' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /Admin/i })).toBeVisible();
   });
 
@@ -65,7 +66,7 @@ test.describe('Tab navigation', () => {
 
   test('navigates to Profile tab', async ({ page }) => {
     await page.locator('#tab-Profile').click();
-    await expect(page.getByText(/Display Identity|Save Profile|Family Member|Legacy Custodian/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByLabel(/Display Identity/i)).toBeVisible({ timeout: 5000 });
   });
 
   test('can log out', async ({ page }) => {

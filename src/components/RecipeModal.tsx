@@ -3,8 +3,10 @@ import { Recipe } from '../types';
 import { buildRecipeSchema } from '../utils/recipeSchema';
 import { siteConfig } from '../config/site';
 import { useUI } from '../context/UIContext';
+import { shouldToastImageError } from '../utils/imageErrorToast';
 import { useFocusTrap } from '../utils/focusTrap';
 import { scaleIngredients } from '../utils/scaleIngredients';
+import { addFromRecipe } from '../utils/groceryList';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -59,8 +61,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const hasAffiliatedImage = !!recipe?.image && recipe.image.startsWith('/recipe-images/');
-    const isAIGenerated = recipe?.imageSource === 'imagen';
+    const [imageBroken, setImageBroken] = useState(false);
+    const hasValidImage =
+        !!recipe?.image &&
+        !imageBroken &&
+        (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http://') || recipe.image.startsWith('https://'));
+    const isAIGenerated =
+        recipe?.imageSource === 'imagen' ||
+        (recipe?.imageSource == null && !!recipe?.image?.includes?.('pollinations.ai'));
 
     useFocusTrap(true, modalRef);
 
@@ -101,6 +109,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         if (!recipe) return;
         const base = typeof recipe.servings === 'number' ? recipe.servings : 4;
         setScaleTo(base);
+        setImageBroken(false);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
 
@@ -157,7 +166,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         const doCopy = async () => {
             try {
                 await navigator.clipboard.writeText(shareUrl);
-                toast('Link copied to clipboard', 'success');
+                toast(`Link copied! Share to open "${recipe.title}" in ${siteConfig.siteName}`, 'success');
             } catch {
                 toast('Could not copy link', 'error');
             }
@@ -166,7 +175,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             try {
                 await navigator.share({
                     title: recipe.title,
-                    text: `${recipe.title} from ${recipe.contributor}`,
+                    text: `${recipe.title} from ${siteConfig.siteName}`,
                     url: shareUrl,
                 });
                 toast('Recipe shared', 'success');
@@ -287,12 +296,32 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     </div>
 
                     <div
-                        className="w-full md:w-1/2 h-64 md:h-auto relative cursor-zoom-in group"
-                        onClick={() => hasAffiliatedImage && setLightboxOpen(true)}
+                        className={`w-full md:w-1/2 h-64 md:h-auto relative cursor-zoom-in group ${hasValidImage ? 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2' : ''}`}
+                        onClick={() => hasValidImage && setLightboxOpen(true)}
+                        onKeyDown={(e) => {
+                            if (hasValidImage && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault();
+                                setLightboxOpen(true);
+                            }
+                        }}
+                        role={hasValidImage ? 'button' : undefined}
+                        tabIndex={hasValidImage ? 0 : undefined}
+                        aria-label={hasValidImage ? 'Enlarge recipe image' : undefined}
                     >
-                        {hasAffiliatedImage ? (
+                        {hasValidImage ? (
                             <>
-                                <img src={recipe.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={recipe.title} />
+                                <img
+                                    src={recipe.image}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    alt={recipe.title}
+                                    loading="lazy"
+                                    onError={() => {
+                                        setImageBroken(true);
+                                        if (shouldToastImageError(recipe.id)) {
+                                            toast('Image failed to load', 'info');
+                                        }
+                                    }}
+                                />
                                 {isAIGenerated && (
                                     <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/50 text-white text-[9px] font-bold uppercase tracking-wider" title="AI-generated from recipe ingredients">✨ AI</span>
                                 )}
@@ -317,7 +346,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent md:hidden" />
 
                         {/* Interactive Overlay - only show if image exists */}
-                        {hasAffiliatedImage && (
+                        {hasValidImage && (
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center gap-2">
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 text-stone-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg pointer-events-none">
                                     🔍 Enlarge
@@ -397,6 +426,17 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             </select>
                                         </label>
                                     )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const added = addFromRecipe(displayedIngredients, recipe.id, recipe.title);
+                                            toast(added > 0 ? `${added} item${added === 1 ? '' : 's'} added to grocery list` : 'All ingredients already in list', added > 0 ? 'success' : 'info');
+                                        }}
+                                        className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#2D4635] hover:text-[#A0522D] hover:bg-white/80 rounded-full border border-stone-200 transition-colors"
+                                        aria-label="Add ingredients to grocery list"
+                                    >
+                                        🛒 Add to grocery list
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={async () => {

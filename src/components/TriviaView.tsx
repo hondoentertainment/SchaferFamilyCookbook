@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trivia, UserProfile } from '../types';
 import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
 import { hapticSuccess, hapticError } from '../utils/haptics';
 import type { TriviaScore } from '../types';
+
+const FEEDBACK_DELAY_MS = 1500;
 
 interface TriviaViewProps {
     trivia: Trivia[];
@@ -67,11 +69,25 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const [answerLog, setAnswerLog] = useState<Array<{ selectedOption: string; isCorrect: boolean }>>([]);
     const [scoreboard, setScoreboard] = useState<TriviaScore[]>(() => getTriviaScores());
     const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
+    const [ariaAnnouncement, setAriaAnnouncement] = useState('');
+    const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const scoreRef = useRef(score);
+    const selectedOptionRef = useRef<string | null>(null);
+    scoreRef.current = score;
+    selectedOptionRef.current = selectedOption;
 
     const questions = trivia;
 
+    const clearAutoAdvance = useCallback(() => {
+        if (autoAdvanceTimerRef.current) {
+            clearTimeout(autoAdvanceTimerRef.current);
+            autoAdvanceTimerRef.current = null;
+        }
+    }, []);
+
     const startQuiz = () => {
+        clearAutoAdvance();
         setQuizStarted(true);
         setCurrentQuestionIndex(0);
         setScore(0);
@@ -82,6 +98,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
         setReviewIndex(0);
         setAnswerLog([]);
         setLastSavedScoreId(undefined);
+        setAriaAnnouncement('');
         setScoreboard(getTriviaScores());
     };
 
@@ -92,30 +109,41 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
     const handleOptionSelect = (option: string) => {
         if (isAnswered) return;
+        clearAutoAdvance();
         setSelectedOption(option);
         setIsAnswered(true);
         const isCorrect = option === questions[currentQuestionIndex].answer;
+        const correctAnswer = questions[currentQuestionIndex].answer;
         if (isCorrect) {
             setScore(prev => prev + 1);
             hapticSuccess();
+            setAriaAnnouncement(`Correct! The answer was ${correctAnswer}.`);
         } else {
             hapticError();
+            setAriaAnnouncement(`Incorrect. The correct answer was ${correctAnswer}.`);
         }
+        autoAdvanceTimerRef.current = setTimeout(() => {
+            autoAdvanceTimerRef.current = null;
+            nextQuestion();
+        }, FEEDBACK_DELAY_MS);
     };
 
     const nextQuestion = () => {
-        if (selectedOption !== null) {
+        clearAutoAdvance();
+        const sel = selectedOptionRef.current;
+        if (sel !== null) {
             setAnswerLog(prev => [...prev, {
-                selectedOption,
-                isCorrect: selectedOption === questions[currentQuestionIndex].answer,
+                selectedOption: sel,
+                isCorrect: sel === questions[currentQuestionIndex].answer,
             }]);
         }
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
             setSelectedOption(null);
             setIsAnswered(false);
+            setAriaAnnouncement('');
         } else {
-            const finalScore = score;
+            const finalScore = scoreRef.current;
             const percentage = questions.length > 0 ? Math.round((finalScore / questions.length) * 100) : 0;
             const { scores: updated, newId } = addTriviaScore({
                 playerName: currentUser.name,
@@ -127,8 +155,12 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             setScoreboard(updated);
             setLastSavedScoreId(newId);
             setShowResults(true);
+            const msg = percentage >= 90 ? 'You know the family well!' : percentage >= 70 ? 'Great job!' : 'Keep exploring the archive!';
+            setAriaAnnouncement(`Quiz complete. You scored ${finalScore} out of ${questions.length}, ${percentage} percent. ${msg}`);
         }
     };
+
+    useEffect(() => () => clearAutoAdvance(), [clearAutoAdvance]);
 
     // Keyboard navigation: 1-4 to select option, Enter to advance
     useEffect(() => {
@@ -209,15 +241,15 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <h3 className="text-2xl font-serif text-[#2D4635] leading-snug">{q.question}</h3>
                     {log && (
                         <div className="space-y-4">
-                            <div className={log.isCorrect ? 'p-4 rounded-2xl bg-emerald-50 border border-emerald-200' : 'p-4 rounded-2xl bg-red-50 border border-red-200'}>
+                            <div className={log.isCorrect ? 'p-4 rounded-2xl bg-[#2D4635]/10 border border-[#2D4635]/30' : 'p-4 rounded-2xl bg-stone-100 border border-stone-200'}>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Your answer</p>
                                 <p className="font-serif">{log.selectedOption}</p>
-                                {log.isCorrect ? <p className="text-sm text-emerald-700 mt-2">✓ Correct</p> : null}
+                                {log.isCorrect ? <p className="text-sm text-[#2D4635] font-medium mt-2">✓ Correct</p> : null}
                             </div>
                             {!log.isCorrect && (
-                                <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
+                                <div className="p-4 rounded-2xl bg-[#2D4635]/5 border border-[#2D4635]/20">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">Correct answer</p>
-                                    <p className="font-serif text-emerald-800 font-medium">{q.answer}</p>
+                                    <p className="font-serif text-[#2D4635] font-medium">{q.answer}</p>
                                 </div>
                             )}
                             {q.explanation && (
@@ -251,26 +283,51 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
     if (showResults) {
         const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+        const celebratoryMessage = percentage >= 90
+            ? "You know the family well!"
+            : percentage >= 70
+                ? "Great job! You have a strong grasp of our family's flavor and history."
+                : "Keep exploring the archive—every recipe tells a story.";
         return (
             <div className="max-w-3xl mx-auto py-20 px-6 text-center space-y-12 animate-in zoom-in duration-700">
+                <div className="sr-only" aria-live="polite" aria-atomic="true" role="status">
+                    {ariaAnnouncement}
+                </div>
                 <div className="space-y-6">
-                    <div className="w-32 h-32 bg-[#2D4635] text-white rounded-full mx-auto flex items-center justify-center text-4xl shadow-2xl ring-8 ring-stone-50">
-                        {percentage}%
+                    <div className="w-32 h-32 bg-[#2D4635] text-white rounded-full mx-auto flex flex-col items-center justify-center shadow-2xl ring-8 ring-[#F4A460]/20 animate-in zoom-in duration-500" role="img" aria-label={`Score: ${score} out of ${questions.length}, ${percentage} percent`}>
+                        <span className="text-4xl font-black tabular-nums">{percentage}%</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">{score}/{questions.length}</span>
                     </div>
-                    <h2 className="text-5xl font-serif italic text-[#2D4635]">Legacy Challenge Complete</h2>
+                    <h2 className="text-5xl font-serif italic text-[#2D4635] animate-in fade-in slide-in-from-bottom-2 duration-500">Legacy Challenge Complete</h2>
                     <p className="text-stone-500 font-serif italic text-xl">
-                        You scored <span className="text-[#A0522D] font-bold">{score}</span> out of <span className="font-bold">{questions.length}</span> questions.
+                        You scored <span className="text-[#2D4635] font-bold">{score}</span> out of <span className="font-bold text-stone-700">{questions.length}</span> questions.
+                    </p>
+                    <p className="text-lg font-serif text-[#F4A460] font-medium animate-in fade-in duration-700 delay-300">
+                        {celebratoryMessage}
                     </p>
                 </div>
 
-                <div className="bg-white rounded-[3rem] p-10 border border-stone-100 shadow-xl space-y-6">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Archives Evaluated</h4>
-                    <p className="text-stone-800 font-serif italic leading-relaxed">
-                        {percentage >= 90 ? "A true historian of the Schafer line! Your knowledge is unmatched." :
-                            percentage >= 70 ? "Well done! You have a strong grasp of our family's flavor and history." :
-                                "Practical experience is the best teacher—keep exploring the archive!"}
-                    </p>
-                </div>
+                {answerLog.length > 0 && (
+                    <div className="bg-white rounded-[3rem] p-6 md:p-8 border border-stone-100 shadow-xl text-left">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-4">Score breakdown</h4>
+                        <div className="flex flex-wrap gap-2" role="list" aria-label="Question results">
+                            {answerLog.map((log, i) => (
+                                <span
+                                    key={i}
+                                    role="listitem"
+                                    className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold ${
+                                        log.isCorrect
+                                            ? 'bg-[#2D4635]/15 text-[#2D4635] border border-[#2D4635]/30'
+                                            : 'bg-stone-100 text-stone-500 border border-stone-200'
+                                    }`}
+                                    title={log.isCorrect ? `Question ${i + 1}: Correct` : `Question ${i + 1}: Incorrect`}
+                                >
+                                    {log.isCorrect ? '✓' : '✗'}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="max-w-md mx-auto">
                     <Scoreboard scores={scoreboard} highlightId={lastSavedScoreId} />
@@ -301,6 +358,14 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
     return (
         <div className="max-w-3xl mx-auto py-20 px-6 space-y-12 animate-in slide-in-from-bottom-8 duration-500">
+            <div
+                className="sr-only"
+                aria-live="assertive"
+                aria-atomic="true"
+                role="status"
+            >
+                {ariaAnnouncement}
+            </div>
             <div className="flex justify-between items-end">
                 <div className="space-y-1">
                     <span className="text-xs font-black uppercase tracking-widest text-[#A0522D]" role="status" aria-live="polite">
@@ -331,27 +396,27 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <div
                         className={`mb-8 p-6 rounded-2xl border-2 animate-in fade-in slide-in-from-top-2 duration-300 ${
                             selectedOption === currentQuestion.answer
-                                ? 'bg-emerald-50 border-emerald-200'
-                                : 'bg-red-50 border-red-200'
+                                ? 'bg-[#2D4635]/10 border-[#2D4635]/40'
+                                : 'bg-stone-100 border-stone-200'
                         }`}
                         role="alert"
                         aria-live="polite"
                     >
                         {selectedOption === currentQuestion.answer ? (
                             <div className="flex items-center gap-4">
-                                <span className="text-4xl">✓</span>
+                                <span className="text-4xl text-[#2D4635]">✓</span>
                                 <div>
-                                    <span className="text-lg font-serif italic font-bold text-emerald-800">Correct!</span>
-                                    <p className="text-sm text-emerald-700 mt-1">You know your family legacy well.</p>
+                                    <span className="text-lg font-serif italic font-bold text-[#2D4635]">Correct!</span>
+                                    <p className="text-sm text-stone-600 mt-1">You know your family legacy well.</p>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex items-start gap-4">
-                                <span className="text-4xl">✗</span>
+                                <span className="text-4xl text-stone-400">✗</span>
                                 <div className="flex-1">
-                                    <span className="text-lg font-serif italic font-bold text-red-800">Incorrect</span>
-                                    <p className="text-sm text-red-700 mt-1">
-                                        The correct answer was: <strong>{currentQuestion.answer}</strong>
+                                    <span className="text-lg font-serif italic font-bold text-stone-600">Incorrect</span>
+                                    <p className="text-sm text-stone-600 mt-1">
+                                        The correct answer was: <strong className="text-[#2D4635]">{currentQuestion.answer}</strong>
                                     </p>
                                 </div>
                             </div>
@@ -366,8 +431,8 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
                         let buttonStyles = "bg-stone-50 hover:bg-stone-100 text-stone-700 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2";
                         if (isAnswered) {
-                            if (isCorrect) buttonStyles = "bg-emerald-500 text-white shadow-lg ring-4 ring-emerald-100";
-                            else if (isSelected) buttonStyles = "bg-red-500 text-white opacity-90 scale-95";
+                            if (isCorrect) buttonStyles = "bg-[#2D4635] text-white shadow-lg ring-4 ring-[#2D4635]/20";
+                            else if (isSelected) buttonStyles = "bg-stone-400 text-white opacity-90 scale-95";
                             else buttonStyles = "bg-stone-50 text-stone-300 opacity-50";
                         }
 
@@ -396,7 +461,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
                 {isAnswered && (
                     <div className="mt-12 pt-10 border-t border-stone-50 animate-in fade-in slide-in-from-top-4 duration-500 text-center space-y-8">
-                        <p className="text-[10px] text-stone-400 uppercase tracking-widest">Press Enter to continue</p>
+                        <p className="text-[10px] text-stone-400 uppercase tracking-widest">Advancing in 1.5s — or press Enter now</p>
                         {currentQuestion.explanation && (
                             <div className="p-6 bg-orange-50/50 rounded-[2rem] text-sm italic text-[#A0522D] font-serif leading-relaxed">
                                 {currentQuestion.explanation}
