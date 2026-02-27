@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, DBStats } from '../types';
+import { avatarOnError } from '../utils/avatarFallback';
 
-const LOGO_URL = "https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=1000";
+const LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
+)}`;
 
 const EXTRA_TABS = [
     { id: 'Family Story', title: 'Family food history narrative' },
@@ -130,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTab('Profile'); } }}
                                 aria-label={`${currentUser.name}, view profile`}
                             >
-                                <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover shadow-sm" alt="" />
+                                <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover shadow-sm" alt="" onError={avatarOnError} />
                             </div>
                             <button
                                 onClick={onLogout}
