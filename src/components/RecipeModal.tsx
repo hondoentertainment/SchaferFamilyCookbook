@@ -229,11 +229,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
                 <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
-                    <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2 print:hidden">
+                    <div className="absolute top-2 right-2 md:top-6 md:right-6 z-10 flex flex-wrap justify-end gap-1.5 md:gap-2 max-w-[calc(100%-1rem)] print:hidden">
                         {onToggleFavorite && isFavorite && (
                             <button
                                 onClick={() => onToggleFavorite(recipe.id)}
-                                className={`w-12 h-12 min-w-[3rem] min-h-[3rem] backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
+                                className={`w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
                                     isFavorite(recipe.id)
                                         ? 'bg-red-50 text-red-500 hover:bg-red-100'
                                         : 'bg-white/95 text-stone-400 hover:text-stone-900 hover:bg-white'
@@ -247,7 +247,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         {prevRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(prevRecipe)}
-                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
                                 aria-label={`Previous: ${prevRecipe.title}`}
                                 title="Previous recipe"
                             >
@@ -257,40 +257,40 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         {nextRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(nextRecipe)}
-                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
                                 aria-label={`Next: ${nextRecipe.title}`}
                                 title="Next recipe"
                             >
                                 <span className="text-xl">›</span>
                             </button>
                         )}
-                        <button onClick={handleShare} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
+                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
                             <span className="text-xl">⎘</span>
                         </button>
                         {!hasWebShare && (
                             <a
                                 href={emailRecipeUrl}
-                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110 no-underline"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110 no-underline"
                                 aria-label="Email recipe"
                                 title="Email recipe"
                             >
                                 <span className="text-xl">✉</span>
                             </a>
                         )}
-                        <button onClick={handlePrint} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
+                        <button onClick={handlePrint} className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
                             <span className="text-xl">🖨</span>
                         </button>
                         {onStartCook && (
                             <button
                                 onClick={onStartCook}
-                                className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-[#2D4635] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 hover:bg-[#2D4635]/90"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-[#2D4635] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 hover:bg-[#2D4635]/90"
                                 aria-label="Start cook mode"
                                 title="Cook mode"
                             >
                                 <span className="text-xl">👨‍🍳</span>
                             </button>
                         )}
-                        <button ref={closeButtonRef} onClick={onClose} className="w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
+                        <button ref={closeButtonRef} onClick={onClose} className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
                             <span className="text-xl font-light">✕</span>
                         </button>
                     </div>
@@ -357,7 +357,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                     <div
                         ref={scrollContainerRef}
-                        className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 space-y-8 pb-12"
+                        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 md:p-12 space-y-8 pb-12"
                     >
                         {/* Header Section */}
                         <div className="space-y-3">

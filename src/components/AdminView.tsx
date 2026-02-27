@@ -4,6 +4,7 @@ import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
+import { avatarOnError } from '../utils/avatarFallback';
 
 interface AdminViewProps {
     editingRecipe: Recipe | null;
@@ -537,7 +538,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <div className="flex flex-wrap gap-3">
                                         {props.contributors.filter(c => c.role === 'admin').map(admin => (
                                             <div key={admin.id} className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-full border border-stone-100 group">
-                                                <img src={admin.avatar} className="w-6 h-6 rounded-full border border-white" alt={admin.name} />
+                                                <img src={admin.avatar} className="w-6 h-6 rounded-full border border-white object-cover" alt={admin.name} onError={avatarOnError} />
                                                 <span className="text-xs font-bold text-stone-600">{admin.name}</span>
                                                 {admin.name.toLowerCase() !== 'admin' && (
                                                     <button onClick={async () => { if (await confirm(`Revoke admin access for ${admin.name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ ...admin, role: 'user' }); }} className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>

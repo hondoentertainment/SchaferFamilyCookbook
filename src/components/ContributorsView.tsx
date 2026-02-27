@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Recipe, GalleryItem, Trivia, ContributorProfile } from '../types';
+import { PLACEHOLDER_AVATAR } from '../constants';
+import { avatarOnError } from '../utils/avatarFallback';
 
 interface ContributorsViewProps {
     recipes: Recipe[];
@@ -18,11 +20,6 @@ interface ContributorStats {
 }
 
 const normalizeName = (n: string) => n.trim().toLowerCase();
-
-/** Data URI for a neutral avatar when both profile image and dicebear fail */
-const PLACEHOLDER_AVATAR = `data:image/svg+xml,${encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23d6d3d1"/><circle cx="50" cy="38" r="18" fill="%23a8a29e"/><path d="M20 92c0-16 13-30 30-30s30 14 30 30z" fill="%23a8a29e"/></svg>'
-)}`;
 
 export const ContributorsView: React.FC<ContributorsViewProps> = ({
     recipes,
@@ -160,9 +157,9 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                     <div className="relative inline-block mb-6">
                                         <img
                                             src={avatarUrl}
-                                            className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 border-8 border-white shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300"
-                                            alt=""
-                                            onError={() => handleAvatarError(stat.name)}
+                                            className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 border-8 border-white shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
+                                            alt={`${stat.name}'s avatar`}
+                                            onError={(e) => { handleAvatarError(stat.name); avatarOnError(e); }}
                                             loading="lazy"
                                         />
                                         {admin && (

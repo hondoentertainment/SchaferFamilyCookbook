@@ -12,6 +12,7 @@ import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
+import { avatarOnError } from './utils/avatarFallback';
 
 const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -183,7 +184,7 @@ const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => voi
     const imgEl = (
         <img
             src={url}
-            className={`w-full rounded-2xl mb-4 object-cover ${onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''}`}
+            className={`w-full rounded-2xl mb-4 object-cover max-h-[32rem] ${onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''}`}
             alt={caption || 'Gallery photo'}
             onError={() => setBroken(true)}
             loading="lazy"
@@ -619,6 +620,7 @@ const App: React.FC = () => {
                                     src={contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase())?.avatar ?? PLACEHOLDER_AVATAR}
                                     className="w-full h-full object-cover animate-in fade-in zoom-in"
                                     alt="Identity"
+                                    onError={avatarOnError}
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-stone-300 text-3xl font-serif">?</div>
@@ -771,10 +773,10 @@ const App: React.FC = () => {
                                                 onClick={() => setSelectedGalleryItem(item)}
                                             />
                                         )}
-                                        <p className="font-serif italic text-stone-800 text-lg px-2">{item.caption}</p>
+                                        <p className="font-serif italic text-stone-800 text-lg px-2 line-clamp-3">{item.caption}</p>
                                         <div className="flex justify-between items-center mt-4 px-2">
                                             <div className="flex items-center gap-2">
-                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full" alt={item.contributor} />
+                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full object-cover" alt={item.contributor} onError={avatarOnError} />
                                                 <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
                                             </div>
                                             {currentUser?.role === 'admin' && (
@@ -935,7 +937,7 @@ const App: React.FC = () => {
                         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-400 rounded-full blur-[80px] opacity-10" />
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-6 sticky top-24 z-30">
+                    <div className="flex flex-col md:flex-row gap-6 sticky top-16 md:top-24 z-30">
                         <div className="relative flex-1">
                             <label htmlFor="recipe-search" className="sr-only">Search recipes by title</label>
                             <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
@@ -1065,7 +1067,7 @@ const App: React.FC = () => {
                                             </div>
                                             <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
                                             <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
-                                                By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block" alt={recipe.contributor} /> {recipe.contributor}
+                                                By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block object-cover align-middle" alt={recipe.contributor} onError={avatarOnError} /> {recipe.contributor}
                                             </p>
                                         </div>
                                     </div>
@@ -1252,7 +1254,7 @@ const App: React.FC = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
                         {contributors.filter(c => c.role === 'admin').map(admin => (
                             <div key={admin.id} className="bg-white p-8 rounded-[3rem] border border-stone-100 shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-xl hover:scale-105">
-                                <img src={admin.avatar} className="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-stone-50" alt={admin.name} />
+                                <img src={admin.avatar} className="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-stone-50 object-cover" alt={admin.name} onError={avatarOnError} />
                                 <div className="text-center">
                                     <h4 className="font-serif italic text-[#2D4635] text-xl leading-none">{admin.name}</h4>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Legacy Custodian</span>
