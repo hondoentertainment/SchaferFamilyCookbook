@@ -27,7 +27,7 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Index tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Index' }).click();
+    await page.getByRole('button', { name: 'A–Z' }).first().click();
     await expect(page.getByRole('heading', { name: /Alphabetical|Index/i })).toBeVisible({ timeout: 5000 });
   });
 

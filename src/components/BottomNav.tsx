@@ -8,8 +8,6 @@ const MAIN_TABS = [
     { id: 'Gallery', label: 'Gallery', icon: '🖼️' },
     { id: 'Grocery', label: 'Grocery', icon: '🛒' },
     { id: 'Trivia', label: 'Trivia', icon: '💡' },
-    { id: 'Profile', label: 'Profile', icon: '👤' },
-    { id: 'Admin', label: 'Admin', icon: '⚙️' },
 ] as const;
 
 interface BottomNavProps {
@@ -21,7 +19,7 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, currentUser }) => {
     if (!currentUser) return null;
 
-    const tabs = MAIN_TABS.filter((t) => t.id !== 'Admin' || currentUser.role === 'admin');
+    const tabs = MAIN_TABS;
 
     return (
         <nav

@@ -318,7 +318,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     onError={() => {
                                         setImageBroken(true);
                                         if (shouldToastImageError(recipe.id)) {
-                                            toast('Image failed to load', 'info');
+                                            toast('Some recipe images couldn\'t be loaded', 'info');
                                         }
                                     }}
                                 />

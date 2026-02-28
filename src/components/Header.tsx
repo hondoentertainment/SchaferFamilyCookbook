@@ -13,14 +13,15 @@ const EXTRA_TABS = [
 
 type NavTab = { id: string; title: string; label?: string };
 
-const ALL_NAV_TABS = [
+const ALL_NAV_TABS: Array<{ id: string; title: string; label: string; adminOnly?: boolean }> = [
     { id: 'Recipes', title: 'Browse recipes with filters', label: 'Recipes' },
     { id: 'Index', title: 'Browse recipes A–Z', label: 'A–Z' },
     { id: 'Gallery', title: 'Family photos and videos', label: 'Gallery' },
     { id: 'Grocery', title: 'Grocery list', label: 'Grocery' },
     { id: 'Trivia', title: 'Family trivia quiz', label: 'Trivia' },
     ...EXTRA_TABS.map((t) => ({ ...t, label: t.id })),
-    { id: 'Profile', title: 'Your profile and contributions', label: 'Profile' }
+    { id: 'Profile', title: 'Your profile and contributions', label: 'Profile' },
+    { id: 'Admin', title: 'Admin tools', label: 'Admin', adminOnly: true },
 ];
 
 interface HeaderProps {
@@ -48,7 +49,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
         return () => { document.removeEventListener('click', onClick); document.removeEventListener('keydown', onKeyDown); };
     }, [moreOpen]);
 
-    const navTabs = ALL_NAV_TABS.filter(({ id }) => (id !== 'Profile' && id !== 'Grocery') || currentUser);
+    const navTabs = ALL_NAV_TABS.filter((tab) => {
+        const { id, adminOnly } = tab as { id: string; adminOnly?: boolean };
+        if (adminOnly) return !!currentUser; // Admin tab visible to all logged-in users (shows "Meet your Administrators" for non-admins)
+        return (id !== 'Profile' && id !== 'Grocery') || currentUser;
+    });
 
     return (
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-100 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
@@ -107,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 className="absolute top-full left-0 mt-1 py-2 bg-white rounded-2xl shadow-xl border border-stone-100 min-w-[10rem] animate-in fade-in slide-in-from-top-2 duration-200 z-50"
                                 aria-label="More sections"
                             >
-                                {EXTRA_TABS.map(({ id }) => (
+                                {[...EXTRA_TABS, ...(currentUser ? [{ id: 'Profile' as const }, { id: 'Admin' as const }] : [])].map(({ id }) => (
                                     <button
                                         key={id}
                                         role="menuitem"

@@ -1,8 +1,8 @@
-/** Tracks recipe IDs that have already shown an "Image failed to load" toast this session to avoid spam. */
-const imageErrorToastedRecipeIds = new Set<string>();
+/** Single consolidated toast per session to avoid stacked "Image failed to load" messages. */
+let hasShownImageErrorToast = false;
 
-export function shouldToastImageError(recipeId: string): boolean {
-    if (imageErrorToastedRecipeIds.has(recipeId)) return false;
-    imageErrorToastedRecipeIds.add(recipeId);
+export function shouldToastImageError(_recipeId: string): boolean {
+    if (hasShownImageErrorToast) return false;
+    hasShownImageErrorToast = true;
     return true;
 }

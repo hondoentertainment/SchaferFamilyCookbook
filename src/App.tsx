@@ -5,7 +5,6 @@ import { shouldToastImageError } from './utils/imageErrorToast';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
 import { PLACEHOLDER_AVATAR } from './constants';
-import { Footer } from './components/Footer';
 import { RecipeModal } from './components/RecipeModal';
 import { CookModeView } from './components/CookModeView';
 import { BottomNav } from './components/BottomNav';
@@ -335,7 +334,7 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const handleImageError = () => {
         setBroken(true);
         if (shouldToastImageError(recipe.id)) {
-            toast('Image failed to load', 'info');
+            toast('Some recipe images couldn\'t be loaded', 'info');
         }
     };
 
@@ -823,7 +822,6 @@ const App: React.FC = () => {
                     )}
                 </main>
                 <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
-                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
         );
     }
@@ -842,7 +840,6 @@ const App: React.FC = () => {
                     </Suspense>
                 </div>
                 <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
-                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
         );
     }
@@ -881,7 +878,6 @@ const App: React.FC = () => {
                 </Suspense>
                 </div>
                 <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
-                <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
         );
     }
@@ -1310,7 +1306,6 @@ const App: React.FC = () => {
                 </Suspense>
             )}
             <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
-            <Footer activeTab={tab} setTab={setTab} currentUser={currentUser} className="hidden md:flex" />
             </div>
         </div>
     );
