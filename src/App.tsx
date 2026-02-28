@@ -173,10 +173,9 @@ const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => voi
     const [broken, setBroken] = useState(false);
     if (!url || broken) {
         return (
-            <div className="w-full aspect-video rounded-2xl mb-4 bg-stone-100 flex flex-col items-center justify-center gap-2 text-stone-400 border-2 border-dashed border-stone-200">
-                <span className="text-2xl">📷</span>
-                <span className="text-xs font-bold uppercase tracking-widest">{url ? 'Image failed to load' : 'No image'}</span>
-                <span className="text-[10px] italic">Upload may have failed or URL is invalid</span>
+            <div className="w-full aspect-video rounded-2xl mb-4 bg-gradient-to-br from-stone-100 to-stone-200 flex flex-col items-center justify-center gap-2 text-stone-400 border border-stone-200">
+                <span className="text-4xl opacity-60">📷</span>
+                <span className="text-[10px] font-medium uppercase tracking-wider">{url ? 'Preview unavailable' : 'No image'}</span>
             </div>
         );
     }
