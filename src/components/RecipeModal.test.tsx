@@ -17,7 +17,7 @@ describe('RecipeModal', () => {
     it('should render recipe details correctly', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
 
-        expect(screen.getByText('Test Recipe')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 2, name: 'Test Recipe' })).toBeInTheDocument();
         expect(screen.getAllByText('Main').length).toBeGreaterThan(0);
         expect(screen.getByText(/By Test User/i)).toBeInTheDocument();
     });

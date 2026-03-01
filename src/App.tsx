@@ -5,13 +5,14 @@ import { shouldToastImageError } from './utils/imageErrorToast';
 import { CloudArchive } from './services/db';
 import { Header } from './components/Header';
 import { PLACEHOLDER_AVATAR } from './constants';
-import { RecipeModal } from './components/RecipeModal';
-import { CookModeView } from './components/CookModeView';
+const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
+const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
+import { hapticLight } from './utils/haptics';
 
 const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -182,6 +183,8 @@ const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => voi
     const imgEl = (
         <img
             src={url}
+            width={800}
+            height={600}
             className={`w-full rounded-2xl mb-4 object-cover max-h-[32rem] ${onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''}`}
             alt={caption || 'Gallery photo'}
             onError={() => setBroken(true)}
@@ -221,7 +224,7 @@ const GalleryDeleteConfirmDialog: React.FC<{ item: GalleryItem; onClose: () => v
             aria-modal="true"
             aria-labelledby="gallery-delete-title"
             aria-describedby="gallery-delete-desc"
-            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
             onClick={onClose}
         >
             <div
@@ -231,21 +234,21 @@ const GalleryDeleteConfirmDialog: React.FC<{ item: GalleryItem; onClose: () => v
             >
                 <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] mb-2">Remove from gallery?</h3>
                 <p id="gallery-delete-desc" className="text-stone-500 mb-6">
-                    "{item.caption}" will be permanently removed.
+                    &quot;{item.caption}&quot; will be permanently removed. This cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
                     <button
                         ref={cancelRef}
                         type="button"
                         onClick={onClose}
-                        className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-50 transition-colors"
+                        className="min-h-11 min-w-11 px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-50 transition-colors touch-manipulation"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
-                        onClick={() => onConfirm()}
-                        className="px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-white bg-red-500 hover:bg-red-600 transition-colors"
+                        onClick={() => { hapticLight(); onConfirm(); }}
+                        className="min-h-11 min-w-11 px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-white bg-red-500 hover:bg-red-600 transition-colors touch-manipulation"
                     >
                         Remove
                     </button>
@@ -276,13 +279,13 @@ const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({
             role="dialog"
             aria-modal="true"
             aria-label={isVideo ? 'Fullscreen gallery video' : 'Enlarged gallery image'}
-            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 cursor-zoom-out"
+            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 cursor-zoom-out pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
             onClick={onClose}
         >
             <button
                 ref={closeRef}
-                onClick={onClose}
-                className="absolute top-6 right-6 w-12 h-12 min-w-[3rem] min-h-[3rem] bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                onClick={() => { hapticLight(); onClose(); }}
+                className="absolute top-[max(1.5rem,env(safe-area-inset-top))] right-[max(1.5rem,env(safe-area-inset-right))] w-12 h-12 min-w-11 min-h-11 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white touch-manipulation"
                 aria-label="Close"
             >
                 ✕
@@ -303,6 +306,8 @@ const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({
             ) : (
                 <img
                     src={item.url}
+                    width={800}
+                    height={600}
                     loading="lazy"
                     className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500 pointer-events-none"
                     alt={item.caption || 'Gallery photo'}
@@ -333,7 +338,7 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const handleImageError = () => {
         setBroken(true);
         if (shouldToastImageError(recipe.id)) {
-            toast('Some recipe images couldn\'t be loaded', 'info');
+            toast("Some recipe images couldn't load. Check your connection and refresh.", 'info');
         }
     };
 
@@ -341,6 +346,8 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
         return (
             <img
                 src={recipe.image}
+                width={800}
+                height={600}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
                 alt={recipe.title}
@@ -363,7 +370,7 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
 
 const RECIPE_HASH_REGEX = /^#recipe\/(.+)$/;
 
-const CLOUD_ERROR_MSG = 'Could not save — check connection';
+const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
 const App: React.FC = () => {
     const { toast } = useUI();
@@ -599,7 +606,11 @@ const App: React.FC = () => {
     };
 
     const handleToggleFavorite = (id: string) => {
-        setFavoriteIds(toggleFavorite(id));
+        const next = toggleFavorite(id);
+        setFavoriteIds(next);
+        hapticLight();
+        const name = recipes.find(r => r.id === id)?.title ?? 'Recipe';
+        toast(next.has(id) ? `Added "${name}" to favorites` : `Removed "${name}" from favorites`, next.has(id) ? 'success' : 'info');
     };
 
     if (!currentUser) {
@@ -608,7 +619,7 @@ const App: React.FC = () => {
                 <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
                     Skip to main content
                 </a>
-                <div id="main-content" className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700" tabIndex={-1}>
+                <div id="main-content" className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]" tabIndex={-1}>
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-800 via-orange-300 to-emerald-800" />
 
                     <div className="relative mb-12">
@@ -639,7 +650,6 @@ const App: React.FC = () => {
                                 type="text"
                                 placeholder="e.g. Grandma Joan"
                                 autoComplete="name"
-                                autoFocus
                                 disabled={isLoggingIn}
                                 aria-busy={isLoggingIn}
                                 className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner text-base disabled:opacity-70 disabled:cursor-not-allowed"
@@ -890,22 +900,27 @@ const App: React.FC = () => {
 
             <div id="main-content" tabIndex={-1}>
             {selectedRecipe && (
-                <RecipeModal
-                    recipe={selectedRecipe}
-                    onClose={handleRecipeClose}
-                    recipeList={recipeListForModal}
-                    onNavigate={handleNavigateToRecipe}
-                    isFavorite={(id) => favoriteIds.has(id)}
-                    onToggleFavorite={handleToggleFavorite}
-                    onStartCook={() => setCookModeRecipe(selectedRecipe)}
-                />
+                <Suspense fallback={<div className="fixed inset-0 z-[100] bg-stone-900/60 flex items-center justify-center" aria-label="Loading recipe"><span className="animate-pulse text-white">Loading…</span></div>}>
+                    <RecipeModal
+                        recipe={selectedRecipe}
+                        onClose={handleRecipeClose}
+                        recipeList={recipeListForModal}
+                        onNavigate={handleNavigateToRecipe}
+                        isFavorite={(id) => favoriteIds.has(id)}
+                        onToggleFavorite={handleToggleFavorite}
+                        onStartCook={() => setCookModeRecipe(selectedRecipe)}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Grocery: 'Grocery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Admin: 'Admin' }[tab] ?? 'Recipes'}
+                    />
+                </Suspense>
             )}
 
             {cookModeRecipe && (
-                <CookModeView
-                    recipe={cookModeRecipe}
-                    onClose={() => setCookModeRecipe(null)}
-                />
+                <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
+                    <CookModeView
+                        recipe={cookModeRecipe}
+                        onClose={() => setCookModeRecipe(null)}
+                    />
+                </Suspense>
             )}
 
             {tab === 'Recipes' && (
@@ -1113,7 +1128,12 @@ const App: React.FC = () => {
                                         ? 'No recipes found in the archive.'
                                         : 'No recipes match your current filters.'}
                                 </p>
-                                {recipes.length > 0 && (
+                                <p className="text-stone-400 text-sm">
+                                    {recipes.length === 0
+                                        ? (currentUser?.role === 'admin' ? 'Add recipes via the Admin tab.' : 'Ask an administrator to add recipes.')
+                                        : 'Try a different search or filter.'}
+                                </p>
+                                {recipes.length > 0 ? (
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -1124,6 +1144,14 @@ const App: React.FC = () => {
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
                                     >
                                         Clear filters
+                                    </button>
+                                ) : currentUser?.role === 'admin' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setTab('Admin'); window.scrollTo(0, 0); }}
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
+                                    >
+                                        Add recipe
                                     </button>
                                 )}
                             </div>

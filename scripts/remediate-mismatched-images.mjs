@@ -1,7 +1,13 @@
 #!/usr/bin/env node
+/**
+ * Remediate duplicate recipe images: replace with recipe-accurate Pollinations images.
+ * Uses shared/recipeImagePrompts.mjs and shared/recipePrompts.mjs (no loremflickr).
+ */
 import { readFileSync, writeFileSync } from 'fs';
 import { createHash } from 'crypto';
 import { resolve } from 'path';
+import { buildPollinationsPrompt, buildDeterministicPrompt } from '../shared/recipeImagePrompts.mjs';
+import { getRecipePrompt } from '../shared/recipePrompts.mjs';
 
 const ROOT = process.cwd();
 const recipesPath = resolve(ROOT, 'src/data/recipes.json');
@@ -13,28 +19,22 @@ function md5(buf) {
   return createHash('md5').update(buf).digest('hex');
 }
 
-function toTags(recipe) {
-  const titleWords = String(recipe.title || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .filter((w) => !['the', 'and', 'for', 'with', 'from', 'best', 'easy'].includes(w))
-    .slice(0, 3);
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return hash;
+}
 
-  const cat = String(recipe.category || '')
-    .toLowerCase()
-    .replace('/', ' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  const ingredient = Array.isArray(recipe.ingredients) && recipe.ingredients.length
-    ? String(recipe.ingredients[0]).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 2)
-    : [];
-
-  const tags = [...new Set([...titleWords, ...cat, ...ingredient])].slice(0, 5);
-  return tags.length ? tags.join(',') : 'food';
+function buildPollinationsUrl(recipe) {
+  const prompt = getRecipePrompt(recipe.title) || buildDeterministicPrompt(recipe);
+  const fullPrompt = buildPollinationsPrompt(prompt);
+  const seed = Math.abs(hashCode(recipe.id));
+  const encoded = encodeURIComponent(fullPrompt);
+  return `https://image.pollinations.ai/prompt/${encoded}?seed=${seed}&width=800&height=600&nologo=true`;
 }
 
 function getImageFile(recipe) {
@@ -71,8 +71,7 @@ let failed = 0;
 
 for (let i = 0; i < targets.length; i++) {
   const { recipe, fullPath } = targets[i];
-  const tags = toTags(recipe);
-  const url = `https://loremflickr.com/1200/900/${encodeURIComponent(tags)}`;
+  const url = buildPollinationsUrl(recipe);
   process.stdout.write(`[${String(i + 1).padStart(2, ' ')}/${targets.length}] ${recipe.title.padEnd(42).slice(0, 42)} `);
   try {
     const res = await fetch(url);

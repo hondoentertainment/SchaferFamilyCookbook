@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { hapticSuccess, hapticError } from '../utils/haptics';
+import { useFocusTrap } from '../utils/focusTrap';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -68,13 +69,22 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         }
     }, [confirmState]);
 
+    const confirmContainerRef = useRef<HTMLDivElement>(null);
+    useFocusTrap(!!confirmState, confirmContainerRef);
+    useEffect(() => {
+        if (!confirmState) return;
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') handleCancel(); };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [confirmState, handleCancel]);
+
     return (
         <UIContext.Provider value={{ toast, confirm }}>
             {children}
 
             {/* Toast container - aria-live for screen readers */}
             <div
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-2 pointer-events-none"
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-2 pointer-events-none pb-[env(safe-area-inset-bottom,0px)]"
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
@@ -98,13 +108,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
             {/* Confirm Modal */}
             {confirmState && (
                 <div
-                    className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="confirm-title"
                     aria-describedby="confirm-desc"
+                    onClick={(e) => e.target === e.currentTarget && handleCancel()}
                 >
-                    <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div ref={confirmContainerRef} className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
                         <h3 id="confirm-title" className="text-xl font-serif italic text-[#2D4635] mb-4">
                             {confirmState.options.title || 'Confirm'}
                         </h3>
@@ -114,13 +125,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
                         <div className="flex gap-4 justify-end">
                             <button
                                 onClick={handleCancel}
-                                className="px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 text-stone-500 hover:bg-stone-50 transition-all"
+                                className="min-h-11 min-w-11 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 text-stone-500 hover:bg-stone-50 transition-all touch-manipulation"
                             >
                                 {confirmState.options.cancelLabel || 'Cancel'}
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                                className={`min-h-11 min-w-11 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all touch-manipulation ${
                                     confirmState.options.variant === 'danger'
                                         ? 'bg-red-600 text-white hover:bg-red-700'
                                         : 'bg-[#2D4635] text-white hover:bg-[#1e2f23]'

@@ -23,7 +23,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
     }, [onClose]);
 
     return (
-        <div ref={containerRef} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="avatar-picker-title">
+        <div ref={containerRef} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-300 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]" role="dialog" aria-modal="true" aria-labelledby="avatar-picker-title">
             <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl border border-stone-100 overflow-hidden animate-in zoom-in-95 duration-300">
                 <div className="p-8 border-b border-stone-50 flex justify-between items-center">
                     <div>

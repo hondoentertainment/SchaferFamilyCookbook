@@ -102,7 +102,12 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
 
             <div className="flex-1 space-y-20">
                 <h2 className="text-4xl font-serif italic text-[#2D4635] mb-12">Archival Index</h2>
-                {activeLetters.length === 0 && <div className="text-center py-32 bg-stone-50 rounded-[3rem] border border-stone-100"><p className="text-stone-400 font-serif">Index is empty.</p></div>}
+                {activeLetters.length === 0 && (
+                    <div className="text-center py-32 bg-stone-50 rounded-[3rem] border border-stone-100 space-y-2" role="status">
+                        <p className="text-stone-400 font-serif">Index is empty.</p>
+                        <p className="text-stone-300 text-sm">Try a different filter in Recipes, or add recipes via the Admin tab.</p>
+                    </div>
+                )}
                 {letters.filter(l => activeLetters.includes(l)).map(l => (
                     <div key={l} id={`idx-${l}`} className="space-y-8 animate-in fade-in">
                         {/* Added sticky positioning to the h3 header */}

@@ -7,6 +7,7 @@ import { shouldToastImageError } from '../utils/imageErrorToast';
 import { useFocusTrap } from '../utils/focusTrap';
 import { scaleIngredients } from '../utils/scaleIngredients';
 import { addFromRecipe } from '../utils/groceryList';
+import { hapticLight } from '../utils/haptics';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -29,6 +30,8 @@ interface RecipeModalProps {
     isFavorite?: (id: string) => boolean;
     onToggleFavorite?: (id: string) => void;
     onStartCook?: () => void;
+    /** Optional breadcrumb context (e.g. "Recipes", "A–Z") when opened from deep link or other section */
+    breadcrumbContext?: string;
 }
 
 const SCROLL_THRESHOLD = 200;
@@ -41,6 +44,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     isFavorite,
     onToggleFavorite,
     onStartCook,
+    breadcrumbContext = 'Recipes',
 }) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -168,7 +172,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                 await navigator.clipboard.writeText(shareUrl);
                 toast(`Link copied! Share to open "${recipe.title}" in ${siteConfig.siteName}`, 'success');
             } catch {
-                toast('Could not copy link', 'error');
+                toast("Couldn't copy link. Check clipboard permissions and try again.", 'error');
             }
         };
         if (navigator.share) {
@@ -204,19 +208,22 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     role="dialog"
                     aria-modal="true"
                     aria-label="Enlarged recipe image"
-                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 cursor-zoom-out"
+                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 cursor-zoom-out pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
                     onClick={() => setLightboxOpen(false)}
                 >
                     <button
                         ref={lightboxCloseRef}
-                        onClick={() => setLightboxOpen(false)}
-                        className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors"
+                        onClick={() => { hapticLight(); setLightboxOpen(false); }}
+                        className="absolute top-[max(1.5rem,env(safe-area-inset-top))] right-[max(1.5rem,env(safe-area-inset-right))] w-12 h-12 min-w-11 min-h-11 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                         aria-label="Close enlarged image"
+                        title="Close"
                     >
                         ✕
                     </button>
                     <img
                         src={recipe.image}
+                        width={800}
+                        height={600}
                         className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500"
                         alt={recipe.title}
                     />
@@ -226,14 +233,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                 </div>
             )}
 
-            <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
+            <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
                 <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
                     <div className="absolute top-2 right-2 md:top-6 md:right-6 z-10 flex flex-wrap justify-end gap-1.5 md:gap-2 max-w-[calc(100%-1rem)] print:hidden">
                         {onToggleFavorite && isFavorite && (
                             <button
                                 onClick={() => onToggleFavorite(recipe.id)}
-                                className={`w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
+                                className={`w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
                                     isFavorite(recipe.id)
                                         ? 'bg-red-50 text-red-500 hover:bg-red-100'
                                         : 'bg-white/95 text-stone-400 hover:text-stone-900 hover:bg-white'
@@ -247,7 +254,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         {prevRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(prevRecipe)}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
                                 aria-label={`Previous: ${prevRecipe.title}`}
                                 title="Previous recipe"
                             >
@@ -257,46 +264,46 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         {nextRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(nextRecipe)}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
                                 aria-label={`Next: ${nextRecipe.title}`}
                                 title="Next recipe"
                             >
                                 <span className="text-xl">›</span>
                             </button>
                         )}
-                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
+                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
                             <span className="text-xl">⎘</span>
                         </button>
                         {!hasWebShare && (
                             <a
                                 href={emailRecipeUrl}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110 no-underline"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110 no-underline"
                                 aria-label="Email recipe"
                                 title="Email recipe"
                             >
                                 <span className="text-xl">✉</span>
                             </a>
                         )}
-                        <button onClick={handlePrint} className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
+                        <button onClick={handlePrint} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
                             <span className="text-xl">🖨</span>
                         </button>
                         {onStartCook && (
                             <button
                                 onClick={onStartCook}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-[#2D4635] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 hover:bg-[#2D4635]/90"
-                                aria-label="Start cook mode"
-                                title="Cook mode"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-[#2D4635] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 hover:bg-[#2D4635]/90"
+                                aria-label="Start Cook"
+                                title="Start Cook"
                             >
                                 <span className="text-xl">👨‍🍳</span>
                             </button>
                         )}
-                        <button ref={closeButtonRef} onClick={onClose} className="w-10 h-10 md:w-12 md:h-12 min-w-[2.5rem] min-h-[2.5rem] md:min-w-[3rem] md:min-h-[3rem] bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
+                        <button ref={closeButtonRef} onClick={onClose} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
                             <span className="text-xl font-light">✕</span>
                         </button>
                     </div>
 
                     <div
-                        className={`w-full md:w-1/2 h-64 md:h-auto relative cursor-zoom-in group ${hasValidImage ? 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2' : ''}`}
+                        className={`w-full md:w-1/2 h-64 md:min-h-[400px] md:aspect-[4/3] relative cursor-zoom-in group ${hasValidImage ? 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2' : ''}`}
                         onClick={() => hasValidImage && setLightboxOpen(true)}
                         onKeyDown={(e) => {
                             if (hasValidImage && (e.key === 'Enter' || e.key === ' ')) {
@@ -312,6 +319,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             <>
                                 <img
                                     src={recipe.image}
+                                    width={800}
+                                    height={600}
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     alt={recipe.title}
                                     loading="lazy"
@@ -361,6 +370,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     >
                         {/* Header Section */}
                         <div className="space-y-3">
+                            <nav aria-label="Breadcrumb" className="text-[10px] text-stone-400 tracking-widest">
+                                <span>{breadcrumbContext}</span>
+                                <span aria-hidden className="mx-1.5">›</span>
+                                <span className="text-stone-600 font-medium">{recipe.title}</span>
+                            </nav>
                             <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
                             <h2 id="recipe-modal-title" className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
                             <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
@@ -445,7 +459,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                 await navigator.clipboard.writeText(text);
                                                 toast('Ingredients copied to clipboard', 'success');
                                             } catch {
-                                                toast('Could not copy ingredients', 'error');
+                                                toast("Couldn't copy ingredients. Check clipboard permissions and try again.", 'error');
                                             }
                                         }}
                                         className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#2D4635] hover:text-[#A0522D] hover:bg-white/80 rounded-full border border-stone-200 transition-colors"

@@ -33,6 +33,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             await onUpdateProfile(name, avatar);
             setSaveSuccess(true);
             setSaveError(null);
+            toast('Profile updated', 'success');
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to save profile';
@@ -124,6 +125,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     src={recipe.image}
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
+                                    loading="lazy"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}
@@ -161,6 +163,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     src={recipe.image}
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
+                                    loading="lazy"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}
@@ -194,6 +197,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     src={recipe.image}
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
+                                    loading="lazy"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}

@@ -25,14 +25,14 @@ test.describe('Profile', () => {
   });
 
   test('can edit display name', async ({ page }) => {
-    await page.getByRole('button', { name: 'Profile' }).click();
+    await page.locator('#tab-Profile').click();
 
     const nameInput = page.getByLabel(/Display Identity/i);
     await nameInput.clear();
     await nameInput.fill('Alice Smith');
     await page.getByRole('button', { name: /Save Profile/i }).click();
 
-    await expect(page.getByText(/Profile Updated/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/Profile [Uu]pdated/i).first()).toBeVisible({ timeout: 3000 });
   });
 
   test('avatar picker button is present', async ({ page }) => {
@@ -46,6 +46,6 @@ test.describe('Profile', () => {
   test('shows user recipes section', async ({ page }) => {
     await page.locator('#tab-Profile').click();
 
-    await expect(page.getByText(/My Shared Recipes|No recipes shared yet/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('heading', { name: /My Shared Recipes/i })).toBeVisible({ timeout: 3000 });
   });
 });

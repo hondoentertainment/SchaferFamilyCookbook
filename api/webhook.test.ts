@@ -90,7 +90,7 @@ vi.mock('firebase-admin', () => ({
 }));
 
 // --- Global fetch mock ---
-vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve({
+vi.stubGlobal('fetch', vi.fn((_: string) => Promise.resolve({
     ok: mockState.fetchOk,
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
     headers: { get: () => mockState.fetchContentType }

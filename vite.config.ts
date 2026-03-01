@@ -120,18 +120,31 @@ export default defineConfig(({ mode }) => {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
+            {
+              urlPattern: /^https:\/\/image\.pollinations\.ai\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'pollinations-images-cache',
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
           ],
         },
       }),
     ],
     build: {
+      target: 'es2022',
+      minify: 'esbuild',
       rollupOptions: {
         output: {
           manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
             'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/storage'],
           },
         },
       },
+      chunkSizeWarningLimit: 500,
     },
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),

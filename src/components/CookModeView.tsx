@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Recipe } from '../types';
 import { scaleIngredients } from '../utils/scaleIngredients';
+import { useFocusTrap } from '../utils/focusTrap';
 
 const SWIPE_THRESHOLD = 50;
 
@@ -31,6 +32,8 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const goNext = useCallback(() => {
         if (!isLast) setStepIndex((i) => i + 1);
     }, [isLast]);
+
+    useFocusTrap(true, containerRef);
 
     useEffect(() => {
         if (containerRef.current) containerRef.current.focus();
@@ -84,7 +87,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
             ref={containerRef}
             tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- Cook mode needs focus for keyboard nav (arrow keys)
             role="application"
-            className="fixed inset-0 z-[150] bg-[#2D4635] text-white flex flex-col items-stretch overflow-hidden focus:outline-none"
+            className="fixed inset-0 z-[150] bg-[#2D4635] text-white flex flex-col items-stretch overflow-hidden focus:outline-none pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
             aria-label={`Cook mode: ${recipe.title}. Swipe left for next, right for previous.`}
         >
             {/* Header */}

@@ -8,6 +8,7 @@ import {
     type GroceryItem,
 } from '../utils/groceryList';
 import { hapticLight } from '../utils/haptics';
+import { useUI } from '../context/UIContext';
 import type { Recipe } from '../types';
 
 function useDebouncedValue<T>(value: T, delay: number): T {
@@ -24,6 +25,7 @@ interface GroceryListViewProps {
 }
 
 export const GroceryListView: React.FC<GroceryListViewProps> = ({ recipes = [] }) => {
+    const { confirm } = useUI();
     const [items, setItems] = useState<GroceryItem[]>([]);
     const [searchRaw, setSearchRaw] = useState('');
     const searchQuery = useDebouncedValue(searchRaw.trim().toLowerCase(), 150);
@@ -84,9 +86,15 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({ recipes = [] }
         refresh();
     };
 
-    const handleClearChecked = () => {
-        clearCheckedItems();
-        refresh();
+    const handleClearChecked = async () => {
+        const ok = await confirm(
+            `Clear ${checkedCount} checked item${checkedCount === 1 ? '' : 's'}? This cannot be undone.`,
+            { variant: 'danger', confirmLabel: 'Clear checked', cancelLabel: 'Cancel', title: 'Clear checked items' }
+        );
+        if (ok) {
+            clearCheckedItems();
+            refresh();
+        }
     };
 
     const getSourceLabel = (item: GroceryItem) => {
@@ -132,7 +140,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({ recipes = [] }
                     <input
                         id="grocery-search"
                         type="search"
-                        placeholder="Search items..."
+                        placeholder="Search your list (e.g. flour, butter)"
                         value={searchRaw}
                         onChange={(e) => setSearchRaw(e.target.value)}
                         aria-label="Search grocery items"
@@ -158,7 +166,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({ recipes = [] }
                         Your grocery list is empty.
                     </p>
                     <p className="text-stone-300 text-sm mt-2">
-                        Open a recipe and tap &quot;Add to grocery list&quot; to add ingredients.
+                        Add ingredients from a recipe.
                     </p>
                 </div>
             ) : isEmptySearch ? (
@@ -237,7 +245,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({ recipes = [] }
                                 <button
                                     type="button"
                                     onClick={() => handleRemove(item.id)}
-                                    className="shrink-0 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center opacity-0 group-hover:opacity-100 sm:opacity-50 sm:hover:opacity-100 text-stone-300 hover:text-red-500 transition-all rounded-full touch-manipulation"
+                                    className="shrink-0 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center opacity-50 md:opacity-0 md:group-hover:opacity-100 text-stone-300 hover:text-red-500 transition-all rounded-full touch-manipulation focus:opacity-100"
                                     aria-label={`Remove ${item.text}`}
                                 >
                                     ✕

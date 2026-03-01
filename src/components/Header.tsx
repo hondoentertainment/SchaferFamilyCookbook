@@ -116,6 +116,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                     <button
                                         key={id}
                                         role="menuitem"
+                                        aria-current={activeTab === id ? 'page' : undefined}
                                         onClick={() => { setTab(id); setMoreOpen(false); }}
                                         className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wider transition-colors first:rounded-t-2xl last:rounded-b-2xl ${activeTab === id ? 'bg-[#2D4635] text-white' : 'text-stone-600 hover:bg-stone-50'}`}
                                     >
@@ -133,6 +134,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             <div
                                 role="button"
                                 tabIndex={0}
+                                aria-current={activeTab === 'Profile' ? 'page' : undefined}
                                 className={`flex items-center cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200'}`}
                                 onClick={() => setTab('Profile')}
                                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTab('Profile'); } }}
