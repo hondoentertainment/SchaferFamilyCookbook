@@ -25,29 +25,7 @@ describe('Footer', () => {
 
     it('should not render when currentUser is null', () => {
         renderWithProviders(<Footer {...defaultProps} currentUser={null} />);
-        expect(screen.queryByRole('button', { name: 'Admin tools' })).not.toBeInTheDocument();
-    });
-
-    it('should show Admin button when logged in', () => {
-        renderWithProviders(<Footer {...defaultProps} />);
-        expect(screen.getByRole('button', { name: 'Admin tools' })).toBeInTheDocument();
-    });
-
-    it('should show lock on Admin when user is not admin', () => {
-        renderWithProviders(<Footer {...defaultProps} currentUser={{ ...defaultProps.currentUser!, role: 'user' }} />);
-        expect(screen.getByText('🔒 Admin')).toBeInTheDocument();
-    });
-
-    it('should show Admin without lock when user is admin', () => {
-        renderWithProviders(<Footer {...defaultProps} currentUser={{ ...defaultProps.currentUser!, role: 'admin' }} />);
-        expect(screen.getByText('Admin')).toBeInTheDocument();
-        expect(screen.queryByText('🔒 Admin')).not.toBeInTheDocument();
-    });
-
-    it('should call setTab with Admin when clicked', () => {
-        renderWithProviders(<Footer {...defaultProps} />);
-        fireEvent.click(screen.getByRole('button', { name: 'Admin tools' }));
-        expect(mockSetTab).toHaveBeenCalledWith('Admin');
+        expect(screen.queryByRole('button', { name: /view profile/i })).not.toBeInTheDocument();
     });
 
     it('should show profile button with avatar when logged in', () => {

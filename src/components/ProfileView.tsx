@@ -1,8 +1,30 @@
 import React, { useState } from 'react';
-import { UserProfile, Recipe, HistoryEntry } from '../types';
+import { UserProfile, Recipe, HistoryEntry, GalleryItem, Trivia, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
+import { AdminView } from './AdminView';
 import { useUI } from '../context/UIContext';
+import { avatarOnError } from '../utils/avatarFallback';
+
+export type ProfileSubView = 'profile' | 'admin';
+
+export interface AdminSectionProps {
+    editingRecipe: Recipe | null;
+    clearEditing: () => void;
+    recipes: Recipe[];
+    trivia: Trivia[];
+    contributors: ContributorProfile[];
+    dbStats: DBStats;
+    onAddRecipe: (r: Recipe, file?: File) => Promise<void>;
+    onAddGallery: (g: GalleryItem, file?: File) => Promise<void>;
+    onAddTrivia: (t: Trivia) => Promise<void>;
+    onDeleteTrivia: (id: string) => void | Promise<void>;
+    onDeleteRecipe: (id: string) => void;
+    onUpdateContributor: (c: ContributorProfile) => Promise<void>;
+    onUpdateArchivePhone: (p: string) => void | Promise<void>;
+    onEditRecipe: (recipe: Recipe) => void;
+    defaultRecipeIds: string[];
+}
 
 interface ProfileViewProps {
     currentUser: UserProfile;
@@ -13,10 +35,15 @@ interface ProfileViewProps {
     onViewRecipe: (recipe: Recipe) => void;
     onUpdateProfile: (name: string, avatar: string) => Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
+    /** For admin users: sub-view and admin props */
+    profileSubView?: ProfileSubView;
+    setProfileSubView?: (v: ProfileSubView) => void;
+    adminSectionProps?: AdminSectionProps;
+    contributors?: ContributorProfile[];
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, onViewRecipe, onUpdateProfile, onEditRecipe } = props;
+    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, profileSubView = 'profile', setProfileSubView, adminSectionProps, contributors = [] } = props;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
@@ -43,6 +70,43 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             setIsSaving(false);
         }
     };
+
+    const isAdmin = currentUser.role === 'admin';
+    const showAdminSection = isAdmin && adminSectionProps && setProfileSubView;
+
+    // Admin sub-view: render AdminView when admin and subView is 'admin'
+    if (showAdminSection && profileSubView === 'admin') {
+        return (
+            <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <nav className="flex gap-2 mb-8" aria-label="Profile sections">
+                    <button
+                        onClick={() => setProfileSubView('profile')}
+                        className="px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider text-stone-500 hover:bg-stone-50"
+                    >
+                        ← My Profile
+                    </button>
+                </nav>
+                <AdminView
+                    editingRecipe={adminSectionProps.editingRecipe}
+                    clearEditing={adminSectionProps.clearEditing}
+                    recipes={adminSectionProps.recipes}
+                    trivia={adminSectionProps.trivia}
+                    contributors={adminSectionProps.contributors}
+                    currentUser={currentUser}
+                    dbStats={adminSectionProps.dbStats}
+                    onAddRecipe={adminSectionProps.onAddRecipe}
+                    onAddGallery={adminSectionProps.onAddGallery}
+                    onAddTrivia={adminSectionProps.onAddTrivia}
+                    onDeleteTrivia={adminSectionProps.onDeleteTrivia}
+                    onDeleteRecipe={adminSectionProps.onDeleteRecipe}
+                    onUpdateContributor={adminSectionProps.onUpdateContributor}
+                    onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
+                    onEditRecipe={adminSectionProps.onEditRecipe}
+                    defaultRecipeIds={adminSectionProps.defaultRecipeIds}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-12 md:space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -101,6 +165,15 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     {currentUser.role === 'admin' ? '🏆 Legacy Custodian' : '👤 Family Member'}
                                 </span>
                             </div>
+                            {showAdminSection && (
+                                <button
+                                    type="button"
+                                    onClick={() => setProfileSubView!('admin')}
+                                    className="px-6 py-3 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-100 hover:bg-orange-100 transition-colors"
+                                >
+                                    Admin Tools →
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -261,6 +334,30 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     </div>
                 </section>
             </div>
+
+            {/* Meet your Administrators - for non-admin users */}
+            {!isAdmin && contributors.filter(c => c.role === 'admin').length > 0 && (
+                <section className="space-y-6 md:space-y-8 mt-12">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-xl md:text-2xl">🔐</span>
+                        Meet your Administrators
+                    </h3>
+                    <p className="text-stone-500 font-serif italic max-w-lg">
+                        These family members help maintain the archive, organize heritage recipes, and verify memories. Need administrative access? Contact one of the curators below to be promoted.
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {contributors.filter(c => c.role === 'admin').map(admin => (
+                            <div key={admin.id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-md">
+                                <img src={admin.avatar} className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-stone-50 object-cover" alt={admin.name} onError={avatarOnError} />
+                                <div className="text-center">
+                                    <h4 className="font-serif italic text-[#2D4635] text-lg leading-none">{admin.name}</h4>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Legacy Custodian</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {showPicker && (
                 <AvatarPicker

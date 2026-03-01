@@ -60,15 +60,15 @@ describe('AdminView', () => {
         });
     });
 
-    it('should render Records tab by default with New Heritage Record', () => {
+    it('should render Records tab by default with Manage Recipes', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
-        expect(screen.getAllByText('New Heritage Record').length).toBeGreaterThan(0);
-        expect(screen.getByText('Manage Existing Records (2)')).toBeInTheDocument();
+        expect(screen.getAllByText('Manage Recipes').length).toBeGreaterThan(0);
+        expect(screen.getByText('Manage Recipes (2)')).toBeInTheDocument();
     });
 
-    it('should render subtabs for Record, Gallery, Trivia, Directory', () => {
+    it('should render subtabs for Recipes, Gallery, Trivia, Directory', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
-        expect(screen.getByText('📖 Record')).toBeInTheDocument();
+        expect(screen.getByText('📖 Recipes')).toBeInTheDocument();
         expect(screen.getByText('🖼️ Gallery')).toBeInTheDocument();
         expect(screen.getByText('💡 Trivia')).toBeInTheDocument();
         expect(screen.getByText('👥 Directory')).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('AdminView', () => {
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getByText('Apple Pie')).toBeInTheDocument();
         expect(screen.queryByText('Banana Bread')).not.toBeInTheDocument();
-        expect(screen.getByText(/Manage Existing Records \(1 of 2\)/)).toBeInTheDocument();
+        expect(screen.getByText(/Manage Recipes \(1 of 2\)/)).toBeInTheDocument();
     });
 
     it('should show empty state when search has no matches', () => {
@@ -107,8 +107,9 @@ describe('AdminView', () => {
         expect(screen.getByText('Family Directory & Avatars')).toBeInTheDocument();
     });
 
-    it('should show recipe form with title and ingredients inputs', () => {
-        renderWithProviders(<AdminView {...defaultProps} />);
+    it('should show recipe form with title and ingredients inputs when editing', () => {
+        const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+        renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
         expect(screen.getByPlaceholderText('Recipe Title')).toBeInTheDocument();
         expect(screen.getByPlaceholderText('Ingredients (one per line)')).toBeInTheDocument();
     });
@@ -136,9 +137,9 @@ describe('AdminView', () => {
         expect(mockClearEditing).toHaveBeenCalled();
     });
 
-    it('should show Magic Import and bulk image buttons', () => {
+    it('should show bulk image buttons', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
-        expect(screen.getByText('✨ Organize with AI')).toBeInTheDocument();
         expect(screen.getByText('🖼️ Fill Missing (Imagen)')).toBeInTheDocument();
+        expect(screen.getByText('🔄 Regenerate All (Imagen)')).toBeInTheDocument();
     });
 });

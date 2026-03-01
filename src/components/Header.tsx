@@ -13,15 +13,12 @@ const EXTRA_TABS = [
 
 type NavTab = { id: string; title: string; label?: string };
 
-const ALL_NAV_TABS: Array<{ id: string; title: string; label: string; adminOnly?: boolean }> = [
+const ALL_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
     { id: 'Recipes', title: 'Browse recipes with filters', label: 'Recipes' },
     { id: 'Index', title: 'Browse recipes A–Z', label: 'A–Z' },
     { id: 'Gallery', title: 'Family photos and videos', label: 'Gallery' },
-    { id: 'Grocery', title: 'Grocery list', label: 'Grocery' },
     { id: 'Trivia', title: 'Family trivia quiz', label: 'Trivia' },
     ...EXTRA_TABS.map((t) => ({ ...t, label: t.id })),
-    { id: 'Profile', title: 'Your profile and contributions', label: 'Profile' },
-    { id: 'Admin', title: 'Admin tools', label: 'Admin', adminOnly: true },
 ];
 
 interface HeaderProps {
@@ -49,11 +46,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
         return () => { document.removeEventListener('click', onClick); document.removeEventListener('keydown', onKeyDown); };
     }, [moreOpen]);
 
-    const navTabs = ALL_NAV_TABS.filter((tab) => {
-        const { id, adminOnly } = tab as { id: string; adminOnly?: boolean };
-        if (adminOnly) return !!currentUser; // Admin tab visible to all logged-in users (shows "Meet your Administrators" for non-admins)
-        return (id !== 'Profile' && id !== 'Grocery') || currentUser;
-    });
+    const navTabs = ALL_NAV_TABS;
 
     return (
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-100 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
@@ -112,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 className="absolute top-full left-0 mt-1 py-2 bg-white rounded-2xl shadow-xl border border-stone-100 min-w-[10rem] animate-in fade-in slide-in-from-top-2 duration-200 z-50"
                                 aria-label="More sections"
                             >
-                                {[...EXTRA_TABS, ...(currentUser ? [{ id: 'Profile' as const }, { id: 'Admin' as const }] : [])].map(({ id }) => (
+                                {EXTRA_TABS.map(({ id }) => (
                                     <button
                                         key={id}
                                         role="menuitem"
@@ -135,12 +128,15 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 role="button"
                                 tabIndex={0}
                                 aria-current={activeTab === 'Profile' ? 'page' : undefined}
-                                className={`flex items-center cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200'}`}
+                                className={`flex items-center gap-2 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center px-2 ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200'}`}
                                 onClick={() => setTab('Profile')}
                                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTab('Profile'); } }}
                                 aria-label={`${currentUser.name}, view profile`}
                             >
-                                <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover shadow-sm" alt="" onError={avatarOnError} />
+                                <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
+                                <span className={`hidden sm:inline text-[10px] font-black uppercase tracking-widest ${activeTab === 'Profile' ? 'text-[#2D4635]' : 'text-stone-500'}`}>
+                                    Profile
+                                </span>
                             </div>
                             <button
                                 onClick={onLogout}

@@ -105,7 +105,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                 {activeLetters.length === 0 && (
                     <div className="text-center py-32 bg-stone-50 rounded-[3rem] border border-stone-100 space-y-2" role="status">
                         <p className="text-stone-400 font-serif">Index is empty.</p>
-                        <p className="text-stone-300 text-sm">Try a different filter in Recipes, or add recipes via the Admin tab.</p>
+                        <p className="text-stone-300 text-sm">Try a different filter in Recipes, or use Add New Recipe to add recipes.</p>
                     </div>
                 )}
                 {letters.filter(l => activeLetters.includes(l)).map(l => (

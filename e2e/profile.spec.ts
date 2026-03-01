@@ -10,7 +10,7 @@ test.describe('Profile', () => {
   });
 
   test('displays profile with identity and role', async ({ page }) => {
-    await page.locator('#tab-Profile').click();
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     await expect(page.getByLabel(/Display Identity/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Save Profile/i })).toBeVisible();
@@ -18,14 +18,14 @@ test.describe('Profile', () => {
   });
 
   test('shows current user name in display', async ({ page }) => {
-    await page.locator('#tab-Profile').click();
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     const nameInput = page.getByLabel(/Display Identity/i);
     await expect(nameInput).toHaveValue('Alice');
   });
 
   test('can edit display name', async ({ page }) => {
-    await page.locator('#tab-Profile').click();
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     const nameInput = page.getByLabel(/Display Identity/i);
     await nameInput.clear();
@@ -36,7 +36,7 @@ test.describe('Profile', () => {
   });
 
   test('avatar picker button is present', async ({ page }) => {
-    await page.locator('#tab-Profile').click();
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     await expect(page.getByRole('button', { name: /🎭/ }).or(
       page.locator('button').filter({ hasText: '🎭' })
@@ -44,7 +44,7 @@ test.describe('Profile', () => {
   });
 
   test('shows user recipes section', async ({ page }) => {
-    await page.locator('#tab-Profile').click();
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     await expect(page.getByRole('heading', { name: /My Shared Recipes/i })).toBeVisible({ timeout: 3000 });
   });

@@ -458,7 +458,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-[2rem] px-2 border border-stone-100"
                 >
                     {[
-                        { id: 'records', label: '📖 Record' },
+                        { id: 'records', label: '📖 Recipes' },
                         { id: 'gallery', label: '🖼️ Gallery' },
                         { id: 'trivia', label: '💡 Trivia' },
                         { id: 'directory', label: '👥 Directory' },
@@ -564,18 +564,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     <div id={`admin-panel-${activeSubtab}`} role="tabpanel" aria-labelledby={`admin-tab-${activeSubtab}`} className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                             <h2 className="text-3xl font-serif italic text-[#2D4635]">
-                                {activeSubtab === 'records' ? 'New Heritage Record' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
+                                {activeSubtab === 'records' ? 'Manage Recipes' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
                             </h2>
                         </div>
 
                         <div className="grid grid-cols-1 gap-16">
                             {activeSubtab === 'records' && (
                                 <section className="space-y-8 animate-in fade-in">
-                                    <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
-                                        <span className="w-10 h-10 rounded-full bg-[#A0522D]/5 flex items-center justify-center not-italic">📖</span>
-                                        {editingRecipe ? 'Edit Archival Entry' : 'New Heritage Record'}
-                                    </h3>
-
                                     {/* Success Toast */}
                                     {successMessage && (
                                         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
@@ -603,12 +598,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                     )}
 
-                                    {/* Existing Records List with Search */}
+                                    {/* Manage Recipes List with Search */}
                                     {!editingRecipe && (
                                         <div className="bg-stone-50 rounded-3xl border border-stone-100 p-6 max-h-[500px] overflow-hidden mb-8">
                                             <div className="flex items-center justify-between mb-4 sticky top-0 bg-stone-50 py-2 z-10">
                                                 <h4 className="text-[10px] font-black uppercase text-stone-400">
-                                                    Manage Existing Records ({filteredRecipes.length}{recipeSearch ? ` of ${managedRecipes.length}` : ''})
+                                                    Manage Recipes ({filteredRecipes.length}{recipeSearch ? ` of ${managedRecipes.length}` : ''})
                                                 </h4>
                                                 <div className="relative">
                                                     <label htmlFor="admin-recipe-search" className="sr-only">Search recipes</label>
@@ -703,21 +698,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                     {!editingRecipe && (
                                         <div className="space-y-4">
-                                            <label htmlFor="admin-magic-import" className="sr-only">Paste raw recipe text for AI analysis</label>
-                                            <textarea id="admin-magic-import" placeholder="Paste recipe text here for AI to parse (ingredients, instructions, title)…" aria-label="Paste raw recipe text for AI analysis" className="w-full h-32 p-5 border border-stone-100 rounded-3xl text-base bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
-                                            <div className="flex gap-4">
-                                                <button onClick={handleMagicImport} disabled={isMagicLoading || isAICooldownActive} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50">
-                                                    {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
-                                                </button>
-                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
+                                            <div className="flex gap-4 flex-wrap">
+                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Imagen (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing (Imagen)'}
                                                 </button>
-                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
+                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Generating...` : '🔄 Regenerate All (Imagen)'}
                                                 </button>
                                             </div>
                                         </div>
                                     )}
+                                    {editingRecipe && (
                                     <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
@@ -832,6 +823,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             {editingRecipe && <button type="button" onClick={clearEditing} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
                                         </div>
                                     </form>
+                                    )}
                                 </section>
                             )}
 

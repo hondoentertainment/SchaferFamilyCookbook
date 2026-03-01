@@ -75,7 +75,7 @@ const defaultConfig: SiteConfig = {
     subtitle: 'Captured moments across the generations.',
     textPromptTitle: 'Text your memories',
     textPromptHint: 'Photo/Video to:',
-    noPhoneHint: 'Admins can enable text-to-archive in Admin → Gallery. Or ask an administrator to add your memories.',
+    noPhoneHint: 'Admins can enable text-to-archive in Profile → Admin Tools → Gallery. Or ask an administrator to add your memories.',
   },
 };
 

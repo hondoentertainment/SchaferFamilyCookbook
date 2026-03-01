@@ -6,7 +6,6 @@ import { useUI } from '../context/UIContext';
 import { shouldToastImageError } from '../utils/imageErrorToast';
 import { useFocusTrap } from '../utils/focusTrap';
 import { scaleIngredients } from '../utils/scaleIngredients';
-import { addFromRecipe } from '../utils/groceryList';
 import { hapticLight } from '../utils/haptics';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -440,17 +439,6 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             </select>
                                         </label>
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const added = addFromRecipe(displayedIngredients, recipe.id, recipe.title);
-                                            toast(added > 0 ? `${added} item${added === 1 ? '' : 's'} added to grocery list` : 'All ingredients already in list', added > 0 ? 'success' : 'info');
-                                        }}
-                                        className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#2D4635] hover:text-[#A0522D] hover:bg-white/80 rounded-full border border-stone-200 transition-colors"
-                                        aria-label="Add ingredients to grocery list"
-                                    >
-                                        🛒 Add to grocery list
-                                    </button>
                                     <button
                                         type="button"
                                         onClick={async () => {

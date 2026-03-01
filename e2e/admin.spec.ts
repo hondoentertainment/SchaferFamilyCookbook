@@ -9,14 +9,14 @@ test.describe('Admin (non-admin user)', () => {
     await loginAs(page, 'Alice');
   });
 
-  test('shows Meet your Administrators for non-admin', async ({ page }) => {
-    await page.getByRole('button', { name: /Admin|🔒 Admin/i }).click();
+  test('shows Meet your Administrators in Profile for non-admin', async ({ page }) => {
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     await expect(page.getByText(/Meet your Administrators/i)).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/These family members help maintain the archive/i)).toBeVisible();
   });
 
-  test('shows Legacy Custodian label for admins in list', async ({ page }) => {
+  test('shows Legacy Custodian label for admins in Profile', async ({ page }) => {
     await page.evaluate(() => {
       localStorage.setItem(
         'schafer_db_contributors',
@@ -32,7 +32,7 @@ test.describe('Admin (non-admin user)', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: /Admin|🔒 Admin/i }).click();
+    await page.getByRole('button', { name: /view profile/i }).first().click();
 
     await expect(page.getByText(/Legacy Custodian/i)).toBeVisible({ timeout: 5000 });
   });
@@ -46,27 +46,32 @@ test.describe('Admin (admin user)', () => {
     await loginAsAdmin(page);
   });
 
-  test('shows admin panel for admin user', async ({ page }) => {
-    await page.getByRole('button', { name: 'Admin' }).click();
+  const goToAdminTools = async (page: import('@playwright/test').Page) => {
+    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.getByRole('button', { name: /Admin Tools/i }).click();
+  };
 
-    await expect(page.getByRole('heading', { name: 'New Heritage Record' }).first()).toBeVisible({ timeout: 5000 });
+  test('shows admin panel for admin user', async ({ page }) => {
+    await goToAdminTools(page);
+
+    await expect(page.getByRole('heading', { name: 'Manage Recipes' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('admin can navigate to Records subtab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Admin' }).click();
+    await goToAdminTools(page);
 
-    await expect(page.getByRole('heading', { name: 'New Heritage Record' }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Manage Recipes' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('admin can navigate to Gallery subtab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Admin' }).click();
+    await goToAdminTools(page);
     await page.getByRole('tab', { name: '🖼️ Gallery' }).click();
 
     await expect(page.getByRole('heading', { name: 'Family Archive' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('admin can set archive phone in Gallery config', async ({ page }) => {
-    await page.getByRole('button', { name: 'Admin' }).click();
+    await goToAdminTools(page);
     await page.getByRole('tab', { name: '🖼️ Gallery' }).click();
 
     const phoneInput = page.getByPlaceholder('e.g. +15551234567');
@@ -76,14 +81,14 @@ test.describe('Admin (admin user)', () => {
   });
 
   test('admin can navigate to Trivia subtab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Admin' }).click();
+    await goToAdminTools(page);
     await page.getByRole('tab', { name: '💡 Trivia' }).click();
 
     await expect(page.getByRole('heading', { name: 'Family Trivia' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('admin can navigate to Directory subtab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Admin' }).click();
+    await goToAdminTools(page);
     await page.getByRole('tab', { name: '👥 Directory' }).click();
 
     await expect(page.getByText('Family Directory & Avatars')).toBeVisible({ timeout: 5000 });

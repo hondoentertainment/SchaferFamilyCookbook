@@ -14,12 +14,11 @@ import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
 
-const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
+const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
 const ContributorsView = lazy(() => import('./components/ContributorsView').then(m => ({ default: m.ContributorsView })));
 const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
-const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ default: m.TriviaView })));
 
 const TabFallback = () => (
@@ -428,6 +427,16 @@ const App: React.FC = () => {
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
+    const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [profileSubView, setProfileSubView] = useState<'profile' | 'admin'>('profile');
+
+    // When navigating to Profile from nav (not from edit flow), reset sub-view to profile
+    const handleSetTab = (newTab: string, opts?: { profileSubView?: 'profile' | 'admin' }) => {
+        setTab(newTab);
+        if (newTab === 'Profile') {
+            setProfileSubView(opts?.profileSubView ?? 'profile');
+        }
+    };
 
     const defaultRecipeIds = useMemo(
         () => new Set((defaultRecipes as Recipe[]).map(r => r.id)),
@@ -681,7 +690,7 @@ const App: React.FC = () => {
                 <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                     Skip to main content
                 </a>
-                <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
                 <main id="main-content" className="max-w-7xl mx-auto py-12 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
                     <section className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                         <div>
@@ -711,7 +720,7 @@ const App: React.FC = () => {
                                 <span className="text-2xl" aria-hidden="true">📷</span>
                                 <div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Want to add photos?</h4>
-                                    <p className="text-sm text-stone-500 font-serif italic">Admins can enable text-to-archive in Admin → Gallery. Or ask an administrator to add your memories.</p>
+                                    <p className="text-sm text-stone-500 font-serif italic">Admins can enable text-to-archive in Profile → Admin Tools → Gallery. Or ask an administrator to add your memories.</p>
                                 </div>
                             </div>
                         )}
@@ -830,25 +839,7 @@ const App: React.FC = () => {
                         </>
                     )}
                 </main>
-                <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
-            </div>
-        );
-    }
-
-    // Grocery List View
-    if (tab === 'Grocery' && currentUser) {
-        return (
-            <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
-                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
-                    Skip to main content
-                </a>
-                <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <div id="main-content" tabIndex={-1}>
-                    <Suspense fallback={<TabFallback />}>
-                        <GroceryListView recipes={recipes} />
-                    </Suspense>
-                </div>
-                <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
             </div>
         );
     }
@@ -860,7 +851,7 @@ const App: React.FC = () => {
                 <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                     Skip to main content
                 </a>
-                <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
                 <div id="main-content" tabIndex={-1}>
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
@@ -886,7 +877,7 @@ const App: React.FC = () => {
                     />
                 </Suspense>
                 </div>
-                <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+                <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
             </div>
         );
     }
@@ -896,9 +887,29 @@ const App: React.FC = () => {
             <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                 Skip to main content
             </a>
-            <Header activeTab={tab} setTab={setTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+            <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
             <div id="main-content" tabIndex={-1}>
+            {showAddRecipeModal && currentUser?.role === 'admin' && (
+                <Suspense fallback={null}>
+                    <AddRecipeModal
+                        onAddRecipe={async (r, f) => {
+                            try {
+                                const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
+                                await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser!.name);
+                                await refreshLocalState();
+                                setShowAddRecipeModal(false);
+                            } catch {
+                                toast(CLOUD_ERROR_MSG, 'error');
+                            }
+                        }}
+                        onClose={() => setShowAddRecipeModal(false)}
+                        contributors={contributors}
+                        currentUser={currentUser}
+                    />
+                </Suspense>
+            )}
+
             {selectedRecipe && (
                 <Suspense fallback={<div className="fixed inset-0 z-[100] bg-stone-900/60 flex items-center justify-center" aria-label="Loading recipe"><span className="animate-pulse text-white">Loading…</span></div>}>
                     <RecipeModal
@@ -909,7 +920,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Grocery: 'Grocery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Admin: 'Admin' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile' }[tab] ?? 'Recipes'}
                     />
                 </Suspense>
             )}
@@ -979,6 +990,15 @@ const App: React.FC = () => {
                             <option value="contributor">Contributor</option>
                             <option value="recent">Recently viewed</option>
                         </select>
+                        {currentUser?.role === 'admin' && (
+                            <button
+                                type="button"
+                                onClick={() => setShowAddRecipeModal(true)}
+                                className="px-6 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                            >
+                                + Add New Recipe
+                            </button>
+                        )}
                     </div>
 
                     {/* Quick-access: Recently viewed & Favorites */}
@@ -1104,7 +1124,7 @@ const App: React.FC = () => {
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setEditingRecipe(recipe);
-                                                setTab('Admin');
+                                                handleSetTab('Profile', { profileSubView: 'admin' });
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                             }}
                                             className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
@@ -1130,7 +1150,7 @@ const App: React.FC = () => {
                                 </p>
                                 <p className="text-stone-400 text-sm">
                                     {recipes.length === 0
-                                        ? (currentUser?.role === 'admin' ? 'Add recipes via the Admin tab.' : 'Ask an administrator to add recipes.')
+                                        ? (currentUser?.role === 'admin' ? 'Use Add New Recipe to add recipes.' : 'Ask an administrator to add recipes.')
                                         : 'Try a different search or filter.'}
                                 </p>
                                 {recipes.length > 0 ? (
@@ -1148,10 +1168,10 @@ const App: React.FC = () => {
                                 ) : currentUser?.role === 'admin' && (
                                     <button
                                         type="button"
-                                        onClick={() => { setTab('Admin'); window.scrollTo(0, 0); }}
+                                        onClick={() => setShowAddRecipeModal(true)}
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
                                     >
-                                        Add recipe
+                                        Add New Recipe
                                     </button>
                                 )}
                             </div>
@@ -1183,115 +1203,6 @@ const App: React.FC = () => {
                         <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
                     )}
                 </Suspense>
-            )}
-
-            {tab === 'Admin' && currentUser.role === 'admin' && (
-                <Suspense fallback={<TabFallback />}>
-                    <AdminView
-                        editingRecipe={editingRecipe}
-                        clearEditing={() => setEditingRecipe(null)}
-                        recipes={recipes}
-                        defaultRecipeIds={Array.from(defaultRecipeIds)}
-                        trivia={trivia}
-                        contributors={contributors}
-                        currentUser={currentUser}
-                        dbStats={{ ...dbStats, archivePhone }}
-                        onAddRecipe={async (r, f) => {
-                            try {
-                                const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
-                                await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
-                                await refreshLocalState();
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onAddGallery={async (g, f) => {
-                            try {
-                                const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
-                                await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
-                                await refreshLocalState();
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onAddTrivia={async (t) => {
-                            try {
-                                await CloudArchive.upsertTrivia(t);
-                                await refreshLocalState();
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onDeleteTrivia={async (id) => {
-                            try {
-                                await CloudArchive.deleteTrivia(id);
-                                await refreshLocalState();
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onDeleteRecipe={async (id) => {
-                            try {
-                                await CloudArchive.deleteRecipe(id);
-                                await refreshLocalState();
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onUpdateContributor={async (p) => {
-                            try {
-                                await CloudArchive.upsertContributor(p);
-                                // Sync with current user if they just updated themselves
-                                if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
-                                    const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
-                                    setCurrentUser(updatedUser);
-                                    localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
-                                }
-                                await refreshLocalState();
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onUpdateArchivePhone={async (p) => {
-                            try {
-                                await CloudArchive.setArchivePhone(p);
-                                setArchivePhone(p);
-                            } catch {
-                                toast(CLOUD_ERROR_MSG, 'error');
-                            }
-                        }}
-                        onEditRecipe={setEditingRecipe}
-                    />
-                </Suspense>
-            )}
-            {tab === 'Admin' && currentUser.role !== 'admin' && (
-                <div className="max-w-4xl mx-auto py-20 px-6 space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                    <div className="text-center space-y-6">
-                        <div className="w-24 h-24 bg-orange-50 rounded-full mx-auto flex items-center justify-center text-4xl shadow-inner border border-stone-100">🔐</div>
-                        <h2 className="text-5xl font-serif italic text-[#2D4635]">Meet your Administrators</h2>
-                        <p className="text-stone-500 font-serif max-w-lg mx-auto italic">
-                            These family members help maintain the archive, organize heritage recipes, and verify memories.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-                        {contributors.filter(c => c.role === 'admin').map(admin => (
-                            <div key={admin.id} className="bg-white p-8 rounded-[3rem] border border-stone-100 shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-xl hover:scale-105">
-                                <img src={admin.avatar} className="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-stone-50 object-cover" alt={admin.name} onError={avatarOnError} />
-                                <div className="text-center">
-                                    <h4 className="font-serif italic text-[#2D4635] text-xl leading-none">{admin.name}</h4>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Legacy Custodian</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="pt-12 border-t border-stone-50 text-center">
-                        <p className="text-stone-500 text-xs italic">
-                            Need administrative access? Contact one of the curators above to be promoted.
-                        </p>
-                    </div>
-                </div>
             )}
 
             {tab === 'Profile' && currentUser && (
@@ -1327,12 +1238,88 @@ const App: React.FC = () => {
                         }}
                         onEditRecipe={(recipe) => {
                             setEditingRecipe(recipe);
-                            setTab('Admin');
+                            handleSetTab('Profile', { profileSubView: 'admin' });
                         }}
+                        profileSubView={profileSubView}
+                        setProfileSubView={setProfileSubView}
+                        contributors={contributors}
+                        adminSectionProps={currentUser.role === 'admin' ? {
+                            editingRecipe,
+                            clearEditing: () => setEditingRecipe(null),
+                            recipes,
+                            trivia,
+                            contributors,
+                            dbStats: { ...dbStats, archivePhone },
+                            onAddRecipe: async (r, f) => {
+                                try {
+                                    const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
+                                    await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onAddGallery: async (g, f) => {
+                                try {
+                                    const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
+                                    await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onAddTrivia: async (t) => {
+                                try {
+                                    await CloudArchive.upsertTrivia(t);
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onDeleteTrivia: async (id) => {
+                                try {
+                                    await CloudArchive.deleteTrivia(id);
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onDeleteRecipe: async (id) => {
+                                try {
+                                    await CloudArchive.deleteRecipe(id);
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onUpdateContributor: async (p) => {
+                                try {
+                                    await CloudArchive.upsertContributor(p);
+                                    if (currentUser && p.name.toLowerCase() === currentUser.name.toLowerCase()) {
+                                        const updatedUser = { ...currentUser, name: p.name, picture: p.avatar, role: p.role };
+                                        setCurrentUser(updatedUser);
+                                        localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+                                    }
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onUpdateArchivePhone: async (p) => {
+                                try {
+                                    await CloudArchive.setArchivePhone(p);
+                                    setArchivePhone(p);
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                }
+                            },
+                            onEditRecipe: setEditingRecipe,
+                            defaultRecipeIds: Array.from(defaultRecipeIds),
+                        } : undefined}
                     />
                 </Suspense>
             )}
-            <BottomNav activeTab={tab} setTab={setTab} currentUser={currentUser} />
+            <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
             </div>
         </div>
     );

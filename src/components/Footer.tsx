@@ -39,19 +39,6 @@ export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser, 
                     />
                     <span className="hidden sm:inline">Profile</span>
                 </button>
-                <button
-                    onClick={() => setTab('Admin')}
-                    className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[2.75rem] flex items-center gap-2 ${
-                        activeTab === 'Admin'
-                            ? 'bg-[#2D4635] text-white shadow-lg'
-                            : 'text-stone-400 hover:bg-stone-50 hover:text-stone-600'
-                    }`}
-                    aria-current={activeTab === 'Admin' ? 'page' : undefined}
-                    aria-label="Admin tools"
-                    title="Admin tools"
-                >
-                    {currentUser.role !== 'admin' ? '🔒 Admin' : 'Admin'}
-                </button>
             </div>
         </footer>
     );
