@@ -19,7 +19,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
-    "ci": "npm run lint && npm run type-check && npm run test:run && npm run build"
+    "ci": "npm run lint && npm run type-check && npm run test:run && npm run build",
+    "images:dry-run": "node scripts/generate-imagen-images.mjs --dry-run --missing-only",
+    "images:batch": "node scripts/generate-imagen-images.mjs --missing-only --limit 20",
+    "images:resume": "node scripts/generate-imagen-images.mjs --missing-only --limit 20 --resume"
   },
   "dependencies": {
     "@google/genai": "^1.38.0",

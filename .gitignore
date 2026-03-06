@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+.cache
 
 # Playwright and test artifacts
 playwright-report/

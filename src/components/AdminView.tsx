@@ -269,6 +269,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             } catch (e) {
                 console.error(`Failed to generate image for "${recipe.title}":`, e);
                 failCount++;
+                if (isQuotaError(e)) {
+                    handleAIError(e, 'AI quota exhausted during bulk generation: ${message}');
+                    toast(`Stopped early after ${successCount} images because Gemini quota is exhausted. Resume later to continue.`, 'error');
+                    break;
+                }
                 if (failCount === 1) {
                     const friendly = getAIErrorMessage(e, '${message}');
                     if (friendly.includes('GEMINI_API_KEY')) {
