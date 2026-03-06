@@ -64,6 +64,10 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
         <div id="alphabetical-index-container" className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
             {/* Mobile: compact horizontal scrollable letter strip */}
             <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 backdrop-blur-sm pb-2 border-b border-stone-100">
+                <div className="px-4 pt-3 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Jump by letter</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Swipe for more →</p>
+                </div>
                 <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex flex-nowrap gap-1.5 justify-start py-2 min-w-max">
                         {letters.map(l => (
@@ -111,7 +115,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                 {letters.filter(l => activeLetters.includes(l)).map(l => (
                     <div key={l} id={`idx-${l}`} className="space-y-8 animate-in fade-in">
                         {/* Added sticky positioning to the h3 header */}
-                        <h3 className="text-6xl font-serif italic text-[#A0522D]/10 border-b border-stone-100 pb-4 flex items-center gap-6 sticky top-[120px] bg-white z-10">{l}</h3>
+                        <h3 className="text-6xl font-serif italic text-[#A0522D]/20 border-b border-stone-100 pb-4 flex items-center gap-6 sticky top-[120px] bg-white/95 backdrop-blur-sm z-10">{l}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {grouped[l].map(r => (
                                 <button key={r.id} onClick={() => onSelect(r)} className="group flex items-center justify-between p-6 bg-white rounded-[2rem] border border-stone-100 hover:shadow-xl transition-all text-left">

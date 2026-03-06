@@ -70,6 +70,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const [scoreboard, setScoreboard] = useState<TriviaScore[]>(() => getTriviaScores());
     const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
     const [ariaAnnouncement, setAriaAnnouncement] = useState('');
+    const [feedbackCountdownMs, setFeedbackCountdownMs] = useState(0);
     const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const scoreRef = useRef(score);
@@ -84,6 +85,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             clearTimeout(autoAdvanceTimerRef.current);
             autoAdvanceTimerRef.current = null;
         }
+        setFeedbackCountdownMs(0);
     }, []);
 
     const startQuiz = () => {
@@ -122,6 +124,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             hapticError();
             setAriaAnnouncement(`Incorrect. The correct answer was ${correctAnswer}.`);
         }
+        setFeedbackCountdownMs(FEEDBACK_DELAY_MS);
         autoAdvanceTimerRef.current = setTimeout(() => {
             autoAdvanceTimerRef.current = null;
             nextQuestion();
@@ -161,6 +164,14 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     };
 
     useEffect(() => () => clearAutoAdvance(), [clearAutoAdvance]);
+
+    useEffect(() => {
+        if (!isAnswered || feedbackCountdownMs <= 0) return;
+        const interval = setInterval(() => {
+            setFeedbackCountdownMs(prev => Math.max(0, prev - 100));
+        }, 100);
+        return () => clearInterval(interval);
+    }, [isAnswered, feedbackCountdownMs]);
 
     // Keyboard navigation: 1-4 to select option, Enter to advance
     useEffect(() => {
@@ -211,6 +222,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     >
                         Begin The Challenge
                     </button>
+                    <p className="text-[10px] text-stone-400 uppercase tracking-widest">Tip: press 1-4 on your keyboard to answer quickly</p>
                     <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-8">Prove your status as a legacy keeper</p>
                 </div>
                 <div className="mt-12 max-w-md mx-auto">
@@ -375,6 +387,9 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 </div>
                 <div className="text-xs font-black text-stone-300">Score: {score}</div>
             </div>
+            {!isAnswered && (
+                <p className="text-[10px] text-stone-400 uppercase tracking-widest text-center">Tip: use keys 1-4 to answer</p>
+            )}
 
             {/* Progress Bar */}
             <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden shadow-inner">
@@ -461,7 +476,17 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
                 {isAnswered && (
                     <div className="mt-12 pt-10 border-t border-stone-50 animate-in fade-in slide-in-from-top-4 duration-500 text-center space-y-8">
-                        <p className="text-[10px] text-stone-400 uppercase tracking-widest">Advancing in 1.5s — or press Enter now</p>
+                        <div className="max-w-sm mx-auto space-y-3">
+                            <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
+                                <div
+                                    className="h-full bg-[#2D4635] transition-[width] duration-100 ease-linear"
+                                    style={{ width: `${(feedbackCountdownMs / FEEDBACK_DELAY_MS) * 100}%` }}
+                                />
+                            </div>
+                            <p className="text-[10px] text-stone-500 uppercase tracking-widest">
+                                Next question in {(feedbackCountdownMs / 1000).toFixed(1)}s — or press Enter now
+                            </p>
+                        </div>
                         {currentQuestion.explanation && (
                             <div className="p-6 bg-orange-50/50 rounded-[2rem] text-sm italic text-[#A0522D] font-serif leading-relaxed">
                                 {currentQuestion.explanation}

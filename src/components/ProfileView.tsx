@@ -165,16 +165,28 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     {currentUser.role === 'admin' ? '🏆 Legacy Custodian' : '👤 Family Member'}
                                 </span>
                             </div>
-                            {showAdminSection && (
-                                <button
-                                    type="button"
-                                    onClick={() => setProfileSubView!('admin')}
-                                    className="px-6 py-3 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-100 hover:bg-orange-100 transition-colors"
-                                >
-                                    Admin Tools →
-                                </button>
-                            )}
                         </div>
+
+                        {showAdminSection && (
+                            <div className="rounded-[2rem] border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-5 md:p-6 shadow-sm">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Admin workspace</p>
+                                        <h3 className="text-2xl font-serif italic text-[#2D4635]">Manage the archive from your profile</h3>
+                                        <p className="text-sm text-stone-600 font-serif italic">
+                                            Jump straight into recipes, gallery, trivia, directory, and contributor permissions from one focused workspace.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setProfileSubView!('admin')}
+                                        className="px-8 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#24382b] transition-colors whitespace-nowrap"
+                                    >
+                                        Open Admin Tools
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
@@ -212,7 +224,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         ))}
                         {favoriteRecipes.length === 0 && (
                             <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
-                                <p className="text-stone-300 font-serif italic text-lg">No favorites yet.</p>
+                                <p className="text-stone-400 font-serif italic text-lg">Your favorite recipes will appear here when you save them.</p>
                             </div>
                         )}
                     </div>
@@ -250,7 +262,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         ))}
                         {recentRecipes.length === 0 && (
                             <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
-                                <p className="text-stone-300 font-serif italic text-lg">No recent views.</p>
+                                <p className="text-stone-400 font-serif italic text-lg">The recipes you open most recently will gather here.</p>
                             </div>
                         )}
                     </div>
@@ -295,7 +307,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         ))}
                         {userRecipes.length === 0 && (
                             <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
-                                <p className="text-stone-300 font-serif italic text-lg">No recipes shared yet.</p>
+                                <p className="text-stone-400 font-serif italic text-lg">When you contribute a recipe, it will be added to your family shelf here.</p>
                             </div>
                         )}
                     </div>
@@ -328,7 +340,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         ))}
                         {userHistory.length === 0 && (
                             <div className="py-20 text-center border-2 border-dashed border-stone-100 rounded-[3rem]">
-                                <p className="text-stone-300 font-serif italic text-lg">Your activity will appear here.</p>
+                                <p className="text-stone-400 font-serif italic text-lg">Your contributions and updates will appear here as the archive grows.</p>
                             </div>
                         )}
                     </div>

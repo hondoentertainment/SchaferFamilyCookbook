@@ -16,7 +16,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
-    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'imagen' | null>(null);
+    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'nano-banana' | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [rawText, setRawText] = useState('');
     const [isMagicLoading, setIsMagicLoading] = useState(false);
@@ -77,7 +77,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         toast(getAIErrorMessage(err, fallback), 'error');
     };
 
-    const base64ToFile = (base64: string, filename: string): File => {
+    const base64ToFile = (base64: string, filename: string, mimeType: string = 'image/png'): File => {
         const byteCharacters = atob(base64);
         const byteArrays: Uint8Array[] = [];
         for (let offset = 0; offset < byteCharacters.length; offset += 512) {
@@ -91,7 +91,13 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
             new Uint8Array(ab).set(ua);
             return ab;
         });
-        return new File([new Blob(blobs, { type: 'image/png' })], filename, { type: 'image/png' });
+        return new File([new Blob(blobs, { type: mimeType })], filename, { type: mimeType });
+    };
+
+    const getFileExtension = (mimeType: string = 'image/png') => {
+        if (mimeType === 'image/jpeg') return 'jpg';
+        if (mimeType === 'image/webp') return 'webp';
+        return 'png';
     };
 
     const getDefaultImageForCategory = (category?: string) =>
@@ -121,10 +127,10 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
-            const imageBase64 = await geminiProxy.generateImage(recipeForm);
-            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
+            const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipeForm);
+            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
             setRecipeFile(file);
-            setImageSourceForCurrent('imagen');
+            setImageSourceForCurrent(imageSource);
             setPreviewUrl(URL.createObjectURL(file));
         } catch (e: unknown) {
             handleAIError(e, 'Failed to generate image: ${message}. Try uploading a photo instead.');

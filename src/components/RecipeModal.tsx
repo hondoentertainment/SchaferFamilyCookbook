@@ -70,7 +70,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         !imageBroken &&
         (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http://') || recipe.image.startsWith('https://'));
     const isAIGenerated =
-        recipe?.imageSource === 'imagen' ||
+        recipe?.imageSource === 'nano-banana' ||
         (recipe?.imageSource == null && !!recipe?.image?.includes?.('pollinations.ai'));
 
     useFocusTrap(true, modalRef);
@@ -235,6 +235,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
                 <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
+                    <button
+                        onClick={onClose}
+                        className="absolute top-2 left-2 z-10 md:hidden px-4 py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600"
+                        aria-label={`Back to ${breadcrumbContext}`}
+                    >
+                        ← {breadcrumbContext}
+                    </button>
                     <div className="absolute top-2 right-2 md:top-6 md:right-6 z-10 flex flex-wrap justify-end gap-1.5 md:gap-2 max-w-[calc(100%-1rem)] print:hidden">
                         {onToggleFavorite && isFavorite && (
                             <button

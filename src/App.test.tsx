@@ -24,7 +24,7 @@ describe('App', () => {
 
     it('should show login form when not authenticated', async () => {
         renderWithProviders(<App />);
-        expect(await screen.findByText('Identify Yourself')).toBeInTheDocument();
+        expect(await screen.findByText('Welcome to the Family Table')).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/e.g. Grandma Joan/)).toBeInTheDocument();
     });
 

@@ -1,16 +1,20 @@
 /**
  * Canonical recipe image prompt rules.
- * Used by: AdminView (single + bulk), scripts/generate-imagen-images.mjs
+ * Used by: AdminView (single + bulk), api/gemini.ts, scripts/generate-imagen-images.mjs
  * Ensures images match recipe content and avoid hallucination.
  */
+
+export const TEXT_MODEL = 'gemini-2.0-flash';
+export const RECIPE_IMAGE_MODEL = 'gemini-3.1-flash-image-preview';
+export const DEFAULT_IMAGE_MIME_TYPE = 'image/png';
 
 export const RECIPE_IMAGE_RULES = {
   /** LLM instruction: strict anti-hallucination. */
   LLM_SYSTEM:
-    `You are describing the finished dish for a food photographer. Be ACCURATE. Use ONLY the recipe data below. Do NOT add parsley, herbs, garnish, or any ingredient not listed.`,
-  /** Imagen prompt suffix: no invented elements. */
-  IMAGEN_SUFFIX:
-    `Accurately depict only this dish—no invented garnish or extra ingredients. Warm natural lighting, appetizing, rustic table, shallow depth of field.`,
+    `You are describing the finished dish for a food photographer. Be ACCURATE. Use ONLY the recipe data below. Do NOT add parsley, herbs, garnish, side dishes, utensils, or any ingredient not listed unless the recipe explicitly calls for them.`,
+  /** Nano Banana suffix: strongly constrain the generated scene. */
+  NANO_BANANA_SUFFIX:
+    `Show only the finished recipe as a realistic plated dish. No invented garnish or extra ingredients. No text overlay, no hands, no people. Warm natural lighting, appetizing styling, rustic kitchen table, shallow depth of field.`,
   /** Pollinations-style suffix (for hand-curated prompts). */
   POLLINATIONS_ACCURACY: `accurately depicting only this dish with no invented garnish`,
 };
@@ -57,10 +61,36 @@ export function normalizeDescription(raw, recipe) {
 }
 
 /**
- * Build final Imagen prompt from description.
+ * Build final Nano Banana prompt from description.
  */
-export function buildImagenPrompt(description) {
-  return `Professional food photography: ${description}. ${RECIPE_IMAGE_RULES.IMAGEN_SUFFIX}`;
+export function buildRecipeImagePrompt(description) {
+  return `Professional food photography: ${description}. ${RECIPE_IMAGE_RULES.NANO_BANANA_SUFFIX}`;
+}
+
+/**
+ * Extract the first generated image payload from Gemini image responses.
+ */
+export function extractGeneratedImage(response) {
+  const parts = response?.candidates?.[0]?.content?.parts || [];
+  for (const part of parts) {
+    const inlineData = part?.inlineData;
+    if (inlineData?.data) {
+      return {
+        imageBase64: inlineData.data,
+        mimeType: inlineData.mimeType || DEFAULT_IMAGE_MIME_TYPE,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Convert MIME type to a file extension for saved recipe images.
+ */
+export function getImageExtension(mimeType = DEFAULT_IMAGE_MIME_TYPE) {
+  if (mimeType === 'image/jpeg') return 'jpg';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'png';
 }
 
 /**

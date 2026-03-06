@@ -33,13 +33,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
-    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'imagen' | null>(null);
+    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'nano-banana' | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [galleryFile, setGalleryFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [rawText, setRawText] = useState('');
-    const [isMagicLoading, setIsMagicLoading] = useState(false);
+    const [_isMagicLoading, setIsMagicLoading] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
@@ -167,7 +167,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
     const isAICooldownActive = aiCooldownSecondsLeft > 0;
 
-    const base64ToFile = (base64: string, filename: string): File => {
+    const base64ToFile = (base64: string, filename: string, mimeType: string = 'image/png'): File => {
         const byteCharacters = atob(base64);
         const byteArrays: Uint8Array[] = [];
         for (let offset = 0; offset < byteCharacters.length; offset += 512) {
@@ -181,10 +181,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             new Uint8Array(ab).set(ua);
             return ab;
         });
-        return new File([new Blob(blobs, { type: 'image/png' })], filename, { type: 'image/png' });
+        return new File([new Blob(blobs, { type: mimeType })], filename, { type: mimeType });
     };
 
-    const handleMagicImport = async () => {
+    const getFileExtension = (mimeType: string = 'image/png') => {
+        if (mimeType === 'image/jpeg') return 'jpg';
+        if (mimeType === 'image/webp') return 'webp';
+        return 'png';
+    };
+
+    const _handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
         try {
@@ -202,10 +208,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (!recipeForm.title) return;
         setIsGeneratingImage(true);
         try {
-            const imageBase64 = await geminiProxy.generateImage(recipeForm);
-            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
+            const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipeForm);
+            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
             setRecipeFile(file);
-            setImageSourceForCurrent('imagen');
+            setImageSourceForCurrent(imageSource);
             setPreviewUrl(URL.createObjectURL(file));
         } catch (e: any) {
             console.error(e);
@@ -216,9 +222,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const handleQuickSource = async (recipe: Recipe) => {
         setIsGeneratingImage(true);
         try {
-            const imageBase64 = await geminiProxy.generateImage(recipe);
-            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
-            await onAddRecipe({ ...recipe, imageSource: 'imagen' }, file);
+            const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
+            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
+            await onAddRecipe({ ...recipe, imageSource }, file);
         } catch (e: any) {
             console.error(e);
             handleAIError(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.');
@@ -241,8 +247,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }
 
         const message = forceRefresh
-            ? `This will generate Imagen photos for ALL ${targetRecipes.length} recipes using their ingredients. This may take several minutes. Continue?`
-            : `Found ${targetRecipes.length} recipes needing photos. Generate Imagen images from ingredients? This may take several minutes.`;
+            ? `This will generate Nano Banana recipe photos for ALL ${targetRecipes.length} recipes using their ingredients. This may take several minutes. Continue?`
+            : `Found ${targetRecipes.length} recipes needing photos. Generate Nano Banana images from ingredients? This may take several minutes.`;
 
         const ok = await confirm(message, { title: 'Bulk Image Generation', confirmLabel: 'Continue' });
         if (!ok) return;
@@ -256,9 +262,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         for (let i = 0; i < targetRecipes.length; i++) {
             const recipe = targetRecipes[i];
             try {
-                const imageBase64 = await geminiProxy.generateImage(recipe);
-                const file = base64ToFile(imageBase64, `recipe-${Date.now()}.png`);
-                await onAddRecipe({ ...recipe, imageSource: 'imagen' }, file);
+                const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
+                const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
+                await onAddRecipe({ ...recipe, imageSource }, file);
                 successCount++;
             } catch (e) {
                 console.error(`Failed to generate image for "${recipe.title}":`, e);
@@ -279,7 +285,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (failCount > 0) {
             toast(`Bulk sourcing complete: ${successCount} succeeded, ${failCount} failed. Failed recipes kept their existing images.`, 'error');
         } else {
-            toast(`Bulk sourcing complete! All ${successCount} recipes now have Imagen-generated photos.`, 'success');
+            toast(`Bulk sourcing complete! All ${successCount} recipes now have Nano Banana-generated photos.`, 'success');
         }
     };
     const handleRecipeSubmit = async (e: React.FormEvent) => {

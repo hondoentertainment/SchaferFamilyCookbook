@@ -68,7 +68,7 @@ describe('ProfileView', () => {
 
     it('should show empty state for no recipes', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
-        expect(screen.getByText('No recipes shared yet.')).toBeInTheDocument();
+        expect(screen.getByText('When you contribute a recipe, it will be added to your family shelf here.')).toBeInTheDocument();
     });
 
     it('should display history entries', () => {

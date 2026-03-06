@@ -95,9 +95,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             aria-expanded={moreOpen}
                             aria-haspopup="true"
                             aria-label="More sections"
-                            className="min-h-11 min-w-11 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 active:bg-stone-200 transition-colors"
+                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${
+                                moreOpen ? 'bg-stone-100 text-[#2D4635]' : 'text-stone-500 hover:bg-stone-100 active:bg-stone-200'
+                            }`}
                         >
-                            <span className="text-xl" aria-hidden>☰</span>
+                            <span className="text-xl leading-none" aria-hidden>☰</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">More</span>
                         </button>
                         {moreOpen && (
                             <div

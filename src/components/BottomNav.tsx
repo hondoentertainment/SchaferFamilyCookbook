@@ -36,19 +36,23 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                             setTab(id);
                         }}
                         aria-current={activeTab === id ? 'page' : undefined}
-                        className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 transition-colors touch-manipulation active:scale-95 ${
+                        className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${
                             activeTab === id
-                                ? 'text-[#2D4635]'
+                                ? 'text-[#2D4635] bg-[#2D4635]/8'
                                 : 'text-stone-400'
                         }`}
                         aria-label={label}
                     >
-                        <span className="text-xl sm:text-2xl mb-0.5 select-none" aria-hidden>
+                        <span className={`text-xl sm:text-2xl mb-0.5 select-none transition-transform ${activeTab === id ? 'scale-110' : ''}`} aria-hidden>
                             {icon}
                         </span>
                         <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-full px-0.5">
                             {label}
                         </span>
+                        <span
+                            className={`mt-1 h-1.5 rounded-full bg-[#2D4635] transition-all ${activeTab === id ? 'w-5 opacity-100' : 'w-1 opacity-0'}`}
+                            aria-hidden
+                        />
                     </button>
                 ))}
                 <button
@@ -57,8 +61,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         setTab('Profile');
                     }}
                     aria-current={activeTab === 'Profile' ? 'page' : undefined}
-                    className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 transition-colors touch-manipulation active:scale-95 ${
-                        activeTab === 'Profile' ? 'text-[#2D4635]' : 'text-stone-400'
+                    className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${
+                        activeTab === 'Profile' ? 'text-[#2D4635] bg-[#2D4635]/8' : 'text-stone-400'
                     }`}
                     aria-label={`${currentUser.name}, view profile`}
                 >
@@ -67,13 +71,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         alt=""
                         aria-hidden
                         onError={avatarOnError}
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 object-cover mb-0.5 ${
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 object-cover mb-0.5 transition-transform ${
+                            activeTab === 'Profile' ? 'scale-105' : ''
+                        } ${
                             activeTab === 'Profile' ? 'border-[#2D4635]' : 'border-stone-200'
                         }`}
                     />
                     <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-full px-0.5">
                         Profile
                     </span>
+                    <span
+                        className={`mt-1 h-1.5 rounded-full bg-[#2D4635] transition-all ${activeTab === 'Profile' ? 'w-5 opacity-100' : 'w-1 opacity-0'}`}
+                        aria-hidden
+                    />
                 </button>
             </div>
         </nav>

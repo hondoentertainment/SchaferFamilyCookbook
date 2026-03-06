@@ -424,6 +424,7 @@ const App: React.FC = () => {
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
@@ -519,6 +520,10 @@ const App: React.FC = () => {
         setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
     }, [recipes, trivia, gallery]);
 
+    useEffect(() => {
+        if (tab !== 'Recipes') setShowMobileFilters(false);
+    }, [tab]);
+
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!loginName.trim() || isLoggingIn) return;
@@ -561,6 +566,11 @@ const App: React.FC = () => {
     }, [recipes, search, category, contributor]);
 
     const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
+    const matchedContributor = useMemo(
+        () => contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase()) ?? null,
+        [contributors, loginName]
+    );
+    const activeFilterCount = [category !== 'All', contributor !== 'All', sortBy !== 'title-asc'].filter(Boolean).length;
 
     const sortedRecipes = useMemo(() => {
         const list = [...filteredRecipes];
@@ -622,6 +632,13 @@ const App: React.FC = () => {
         toast(next.has(id) ? `Added "${name}" to favorites` : `Removed "${name}" from favorites`, next.has(id) ? 'success' : 'info');
     };
 
+    const clearRecipeFilters = () => {
+        setSearch('');
+        setCategory('All');
+        setContributor('All');
+        setSortBy('title-asc');
+    };
+
     if (!currentUser) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-6">
@@ -635,7 +652,7 @@ const App: React.FC = () => {
                         <div className="w-24 h-24 bg-stone-100 rounded-full mx-auto relative overflow-hidden border-4 border-white shadow-2xl group transition-all">
                             {loginName ? (
                                 <img
-                                    src={contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase())?.avatar ?? PLACEHOLDER_AVATAR}
+                                    src={matchedContributor?.avatar ?? PLACEHOLDER_AVATAR}
                                     className="w-full h-full object-cover animate-in fade-in zoom-in"
                                     alt="Identity"
                                     onError={avatarOnError}
@@ -644,16 +661,24 @@ const App: React.FC = () => {
                                 <div className="w-full h-full flex items-center justify-center text-stone-300 text-3xl font-serif">?</div>
                             )}
                         </div>
-                        <div className="mt-8">
-                            <h1 className="text-4xl font-serif italic text-[#2D4635] mb-2">Identify Yourself</h1>
-                            <p className="text-stone-500 italic font-serif text-sm">Welcome to the Schafer Family Archive.</p>
+                        <div className="mt-8 space-y-3">
+                            <h1 className="text-4xl font-serif italic text-[#2D4635] mb-2">Welcome to the Family Table</h1>
+                            <p className="text-stone-600 italic font-serif text-sm md:text-base max-w-md mx-auto">
+                                Step into the Schafer Family Archive to browse treasured recipes, revisit family memories, and keep the story cooking for the next generation.
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Recipes</span>
+                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Gallery</span>
+                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Trivia</span>
+                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Family Story</span>
+                            </div>
                         </div>
                     </div>
 
                     <form onSubmit={handleLoginSubmit} className="space-y-8 relative z-10">
                         <div className="space-y-2">
                             <label htmlFor="login-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Legacy Contributor Name</label>
-                            <p className="text-sm text-stone-500 font-serif italic -mt-1">Enter any family name to browse recipes, cook mode, and the gallery.</p>
+                            <p className="text-sm text-stone-500 font-serif italic -mt-1">Enter a family name to continue. If we recognize it, we&apos;ll bring in the saved avatar and profile.</p>
                             <input
                                 id="login-name"
                                 type="text"
@@ -665,6 +690,18 @@ const App: React.FC = () => {
                                 value={loginName}
                                 onChange={e => setLoginName(e.target.value)}
                             />
+                            {loginName.trim() && (
+                                <div className={`mt-3 rounded-2xl border px-4 py-3 text-left ${matchedContributor ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-stone-50 border-stone-100 text-stone-600'}`}>
+                                    <p className="text-[10px] font-black uppercase tracking-widest">
+                                        {matchedContributor ? 'Known family profile found' : 'New archive guest'}
+                                    </p>
+                                    <p className="mt-1 text-sm font-serif italic">
+                                        {matchedContributor
+                                            ? `You’ll enter as ${matchedContributor.name} with your saved identity.`
+                                            : 'You can still explore the archive now, and an administrator can personalize this profile later.'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         <button
                             type="submit"
@@ -779,8 +816,11 @@ const App: React.FC = () => {
                                                         else el.pause();
                                                     }}
                                                 />
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity bg-black/30 pointer-events-none">
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:hover:opacity-100 focus-within:opacity-100 transition-opacity bg-black/30 pointer-events-none">
                                                     <span className="bg-white/90 text-stone-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">▶ Fullscreen</span>
+                                                </div>
+                                                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/70 text-white text-[10px] font-black uppercase tracking-widest pointer-events-none">
+                                                    Video
                                                 </div>
                                             </button>
                                         ) : (
@@ -958,47 +998,110 @@ const App: React.FC = () => {
                         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-400 rounded-full blur-[80px] opacity-10" />
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-6 sticky top-16 md:top-24 z-30">
-                        <div className="relative flex-1">
-                            <label htmlFor="recipe-search" className="sr-only">Search recipes by title</label>
-                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
-                            <input
-                                id="recipe-search"
-                                type="text"
-                                placeholder="Search by title..."
-                                aria-label="Search recipes by title"
-                                className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                            />
+                    <div className="sticky top-16 md:top-24 z-30 space-y-4">
+                        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                            <div className="relative flex-1">
+                                <label htmlFor="recipe-search" className="sr-only">Search recipes by title</label>
+                                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
+                                <input
+                                    id="recipe-search"
+                                    type="text"
+                                    placeholder="Search by title..."
+                                    aria-label="Search recipes by title"
+                                    className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex md:hidden gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMobileFilters(v => !v)}
+                                    className={`flex-1 min-h-[2.75rem] px-5 py-4 rounded-full border text-[10px] font-black uppercase tracking-widest transition-colors ${
+                                        showMobileFilters || activeFilterCount > 0
+                                            ? 'bg-[#2D4635] text-white border-[#2D4635]'
+                                            : 'bg-white/80 text-stone-600 border-stone-200'
+                                    }`}
+                                    aria-expanded={showMobileFilters}
+                                    aria-controls="mobile-recipe-filters"
+                                >
+                                    Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+                                </button>
+                                {currentUser?.role === 'admin' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddRecipeModal(true)}
+                                        className="min-h-[2.75rem] px-5 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors whitespace-nowrap"
+                                    >
+                                        + Add
+                                    </button>
+                                )}
+                            </div>
+                            <div className="hidden md:flex gap-6">
+                                <label htmlFor="recipe-category" className="sr-only">Filter by category</label>
+                                <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
+                                    <option value="All">All Categories</option>
+                                    {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <label htmlFor="recipe-contributor" className="sr-only">Filter by contributor</label>
+                                <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
+                                    <option value="All">All Contributors</option>
+                                    {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
+                                <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                                    <option value="title-asc">A–Z</option>
+                                    <option value="title-desc">Z–A</option>
+                                    <option value="category">Category</option>
+                                    <option value="contributor">Contributor</option>
+                                    <option value="recent">Recently viewed</option>
+                                </select>
+                                {currentUser?.role === 'admin' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddRecipeModal(true)}
+                                        className="px-6 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                                    >
+                                        + Add New Recipe
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <label htmlFor="recipe-category" className="sr-only">Filter by category</label>
-                        <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
-                            <option value="All">All Categories</option>
-                            {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <label htmlFor="recipe-contributor" className="sr-only">Filter by contributor</label>
-                        <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
-                            <option value="All">All Contributors</option>
-                            {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
-                        <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
-                            <option value="title-asc">A–Z</option>
-                            <option value="title-desc">Z–A</option>
-                            <option value="category">Category</option>
-                            <option value="contributor">Contributor</option>
-                            <option value="recent">Recently viewed</option>
-                        </select>
-                        {currentUser?.role === 'admin' && (
-                            <button
-                                type="button"
-                                onClick={() => setShowAddRecipeModal(true)}
-                                className="px-6 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors min-h-[2.75rem] whitespace-nowrap"
-                            >
-                                + Add New Recipe
-                            </button>
-                        )}
+
+                        <div
+                            id="mobile-recipe-filters"
+                            className={`${showMobileFilters ? 'block' : 'hidden'} md:hidden bg-white/90 backdrop-blur-md border border-stone-200 rounded-[2rem] p-4 shadow-sm space-y-3`}
+                        >
+                            <div className="grid grid-cols-1 gap-3">
+                                <select aria-label="Filter by category" className="px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-base font-bold text-stone-600 outline-none" value={category} onChange={e => setCategory(e.target.value)}>
+                                    <option value="All">All Categories</option>
+                                    {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <select aria-label="Filter by contributor" className="px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-base font-bold text-stone-600 outline-none" value={contributor} onChange={e => setContributor(e.target.value)}>
+                                    <option value="All">All Contributors</option>
+                                    {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <select aria-label="Sort recipes" className="px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-base font-bold text-stone-600 outline-none" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                                    <option value="title-asc">A–Z</option>
+                                    <option value="title-desc">Z–A</option>
+                                    <option value="category">Category</option>
+                                    <option value="contributor">Contributor</option>
+                                    <option value="recent">Recently viewed</option>
+                                </select>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                    {activeFilterCount > 0 ? `${activeFilterCount} filters active` : 'Browsing everything'}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={clearRecipeFilters}
+                                    className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-stone-600 border border-stone-200"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Quick-access: Recently viewed & Favorites */}
@@ -1096,7 +1199,7 @@ const App: React.FC = () => {
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
                                             </div>
                                             <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
-                                            <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
+                                            <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
                                                 By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block object-cover align-middle" alt={recipe.contributor} onError={avatarOnError} /> {recipe.contributor}
                                             </p>
                                         </div>
@@ -1108,7 +1211,7 @@ const App: React.FC = () => {
                                             e.stopPropagation();
                                             handleToggleFavorite(recipe.id);
                                         }}
-                                        className={`absolute top-4 left-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 ${
+                                        className={`absolute top-4 left-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 ${
                                             favoriteIds.has(recipe.id)
                                                 ? 'bg-red-50/90 text-red-500'
                                                 : 'bg-white/90 text-stone-400 hover:text-red-400'
@@ -1127,7 +1230,7 @@ const App: React.FC = () => {
                                                 handleSetTab('Profile', { profileSubView: 'admin' });
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                             }}
-                                            className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
+                                            className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
                                             title="Edit with AI"
                                             aria-label={`Edit ${recipe.title} with AI`}
                                         >
@@ -1156,11 +1259,7 @@ const App: React.FC = () => {
                                 {recipes.length > 0 ? (
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setSearch('');
-                                            setCategory('All');
-                                            setContributor('All');
-                                        }}
+                                        onClick={clearRecipeFilters}
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
                                     >
                                         Clear filters
