@@ -70,19 +70,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             const id = tab.id;
                             const title = tab.title;
                             return (
-                            <button
-                                key={id}
-                                id={`tab-${id}`}
-                                onClick={() => {
-                                    setTab(id);
-                                    document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                                }}
-                                title={title}
-                                aria-current={activeTab === id ? 'page' : undefined}
-                                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
-                            >
-                                {(tab as NavTab).label || id}
-                            </button>
+                                <button
+                                    key={id}
+                                    id={`tab-${id}`}
+                                    onClick={() => {
+                                        setTab(id);
+                                        document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                    }}
+                                    title={title}
+                                    aria-current={activeTab === id ? 'page' : undefined}
+                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
+                                >
+                                    {(tab as NavTab).label || id}
+                                </button>
                             );
                         })}
                     </nav>
@@ -95,9 +95,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             aria-expanded={moreOpen}
                             aria-haspopup="true"
                             aria-label="More sections"
-                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${
-                                moreOpen ? 'bg-stone-100 text-[#2D4635]' : 'text-stone-500 hover:bg-stone-100 active:bg-stone-200'
-                            }`}
+                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${moreOpen ? 'bg-stone-100 text-[#2D4635]' : 'text-stone-500 hover:bg-stone-100 active:bg-stone-200'
+                                }`}
                         >
                             <span className="text-xl leading-none" aria-hidden>☰</span>
                             <span className="text-[10px] font-black uppercase tracking-widest">More</span>
@@ -130,6 +129,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             <div
                                 role="button"
                                 tabIndex={0}
+                                data-testid="nav-profile"
                                 aria-current={activeTab === 'Profile' ? 'page' : undefined}
                                 className={`flex items-center gap-2 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center px-2 ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200'}`}
                                 onClick={() => setTab('Profile')}

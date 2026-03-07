@@ -34,6 +34,29 @@ describe('CloudArchive', () => {
             expect(Array.isArray(recipes)).toBe(true);
         });
 
+        it('should recover from invalid recipes JSON in localStorage', async () => {
+            localStorage.setItem('schafer_db_recipes', '{bad json');
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(Array.isArray(recipes)).toBe(true);
+            expect(recipes.length).toBeGreaterThan(0);
+        });
+
+        it('should migrate external recipe image URLs to local category fallbacks', async () => {
+            const oldRecipe = createMockRecipe({
+                id: 'recipe-old-image',
+                category: 'Dessert',
+                image: 'https://image.pollinations.ai/prompt/old'
+            });
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([oldRecipe]));
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes[0].image).toBe('/recipe-images/imported_13bpozmcw.jpg');
+
+            const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
+            expect(stored[0].image).toBe('/recipe-images/imported_13bpozmcw.jpg');
+        });
+
         it('should upsert a new recipe', async () => {
             const newRecipe = createMockRecipe({ id: 'recipe-new' });
             await CloudArchive.upsertRecipe(newRecipe);
@@ -183,3 +206,4 @@ describe('CloudArchive', () => {
         });
     });
 });
+

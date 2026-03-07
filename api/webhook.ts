@@ -4,12 +4,19 @@ import admin from 'firebase-admin';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-    if (serviceAccount.project_id) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            storageBucket: `${serviceAccount.project_id}.firebasestorage.app`
-        });
+    const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (rawServiceAccount) {
+        try {
+            const serviceAccount = JSON.parse(rawServiceAccount);
+            if (serviceAccount.project_id) {
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount),
+                    storageBucket: `${serviceAccount.project_id}.firebasestorage.app`
+                });
+            }
+        } catch (error) {
+            console.error('Invalid FIREBASE_SERVICE_ACCOUNT JSON; Firebase Admin not initialized.', error);
+        }
     }
 }
 
@@ -18,6 +25,13 @@ function getWebhookUrl(req: VercelRequest): string {
     const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.VERCEL_URL || 'localhost:3000';
     const proto = req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
     return `${proto}://${host}/api/webhook`;
+}
+
+function buildTwilioMediaAuthHeader(): string | null {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    if (!accountSid || !authToken) return null;
+    return `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -45,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Basic Validation
     if (!From || parseInt(NumMedia) === 0 || !MediaUrl0) {
         const twiml = new twilio.twiml.MessagingResponse();
-        twiml.message("archive keeper: no media detected. please text a photo or video to preserve it.");
+        twiml.message('archive keeper: no media detected. please text a photo or video to preserve it.');
         res.setHeader('Content-Type', 'text/xml');
         return res.status(200).send(twiml.toString());
     }
@@ -57,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 2. Identify Contributor (phone in E.164; try From and normalized variants)
         const normalizedFrom = From.replace(/\s/g, '');
         const variants = [normalizedFrom, normalizedFrom.startsWith('+') ? normalizedFrom.slice(1) : `+${normalizedFrom}`];
-        let contributorName = "MMS Submission";
+        let contributorName = 'MMS Submission';
         for (const phone of variants) {
             const snap = await db.collection('contributors').where('phone', '==', phone).get();
             if (!snap.empty) {
@@ -67,8 +81,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // 3. Download Media from Twilio
-        const response = await fetch(MediaUrl0);
-        if (!response.ok) throw new Error("Failed to download media from Twilio");
+        const mediaAuthHeader = buildTwilioMediaAuthHeader();
+        const response = await fetch(MediaUrl0, mediaAuthHeader
+            ? { headers: { Authorization: mediaAuthHeader } }
+            : undefined);
+        if (!response.ok) throw new Error('Failed to download media from Twilio');
         const buffer = Buffer.from(await response.arrayBuffer());
         const contentType = response.headers.get('content-type') || 'image/jpeg';
         const extension = contentType.split('/')[1] || 'jpg';
@@ -90,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             id: itemId,
             type: contentType.startsWith('video') ? 'video' : 'image',
             url: publicUrl,
-            caption: Body || "Preserved via MMS",
+            caption: Body || 'Preserved via MMS',
             contributor: contributorName,
             created_at: new Date().toISOString()
         };
@@ -98,8 +115,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await db.collection('gallery').doc(itemId).set(galleryItem);
 
         // 6. Record History
-        await db.collection('history').doc('h' + Date.now()).set({
-            id: 'h' + Date.now(),
+        const historyId = 'h' + Date.now();
+        await db.collection('history').doc(historyId).set({
+            id: historyId,
             contributor: contributorName,
             action: 'added',
             type: 'gallery',
@@ -115,9 +133,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).send(twiml.toString());
 
     } catch (error: any) {
-        console.error("MMS Webhook Error:", error);
+        console.error('MMS Webhook Error:', error);
         const twiml = new twilio.twiml.MessagingResponse();
-        twiml.message("archive keeper: error preserving memory. please try again later.");
+        twiml.message('archive keeper: error preserving memory. please try again later.');
         res.setHeader('Content-Type', 'text/xml');
         return res.status(200).send(twiml.toString());
     }

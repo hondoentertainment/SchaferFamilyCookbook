@@ -127,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 error: 'AI quota exceeded for Gemini. Please try again later or upgrade the Gemini API plan.'
             });
         }
-        return res.status(500).json({ error: message || 'Gemini API error' });
+        return res.status(500).json({ error: 'Gemini API error' });
     }
 }
+

@@ -3,6 +3,38 @@ import { getFirestore, collection, setDoc, doc, deleteDoc, query, orderBy, onSna
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
 import defaultRecipes from '../data/recipes.json';
+import { CATEGORY_IMAGES } from '../constants';
+
+function safeParseArray<T>(raw: string | null): T[] {
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed as T[] : [];
+    } catch {
+        return [];
+    }
+}
+
+function getCategoryFallbackImage(category?: Recipe['category']): string {
+    return CATEGORY_IMAGES[category || 'Main'] || CATEGORY_IMAGES.Generic;
+}
+
+function shouldUseCategoryFallbackImage(image?: string): boolean {
+    if (!image) return true;
+    if (image.startsWith('/recipe-images/') || image.startsWith('data:image/')) return false;
+    if (image.includes('storage.googleapis.com') || image.includes('firebasestorage.googleapis.com')) return false;
+    return image.includes('pollinations.ai') || image.includes('images.unsplash.com') || (!image.startsWith('http://') && !image.startsWith('https://'));
+}
+
+function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
+    return recipes.map((recipe) => {
+        if (!shouldUseCategoryFallbackImage(recipe.image)) return recipe;
+        return {
+            ...recipe,
+            image: getCategoryFallbackImage(recipe.category)
+        };
+    });
+}
 
 export const CloudArchive = {
     _firebaseApp: null as FirebaseApp | null,
@@ -32,7 +64,7 @@ export const CloudArchive = {
             this._storage = getStorage(this._firebaseApp);
             return { app: this._firebaseApp, db: this._firestore, storage: this._storage };
         } catch (e) {
-            console.error("Firebase connection failed:", e);
+            console.error('Firebase connection failed:', e);
             return null;
         }
     },
@@ -41,7 +73,7 @@ export const CloudArchive = {
     subscribeRecipes(callback: (recipes: Recipe[]) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
-        const q = query(collection(fb.db, "recipes"), orderBy("created_at", "desc"));
+        const q = query(collection(fb.db, 'recipes'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as Recipe));
         });
@@ -50,7 +82,7 @@ export const CloudArchive = {
     subscribeTrivia(callback: (trivia: Trivia[]) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
-        const q = query(collection(fb.db, "trivia"), orderBy("created_at", "desc"));
+        const q = query(collection(fb.db, 'trivia'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as Trivia));
         });
@@ -59,7 +91,7 @@ export const CloudArchive = {
     subscribeGallery(callback: (items: GalleryItem[]) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
-        const q = query(collection(fb.db, "gallery"), orderBy("created_at", "desc"));
+        const q = query(collection(fb.db, 'gallery'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as GalleryItem));
         });
@@ -68,17 +100,17 @@ export const CloudArchive = {
     subscribeHistory(callback: (history: HistoryEntry[]) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
-        const q = query(collection(fb.db, "history"), orderBy("timestamp", "desc"));
+        const q = query(collection(fb.db, 'history'), orderBy('timestamp', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as HistoryEntry));
         });
     },
 
-    /** Archive phone for Twilio MMS – synced via Firestore when Firebase is active. */
+    /** Archive phone for Twilio MMS - synced via Firestore when Firebase is active. */
     subscribeArchivePhone(callback: (phone: string) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
-        return onSnapshot(doc(fb.db, "config", "settings"), (snapshot) => {
+        return onSnapshot(doc(fb.db, 'config', 'settings'), (snapshot) => {
             const data = snapshot.data();
             callback(data?.archivePhone || localStorage.getItem('schafer_archive_phone') || '');
         });
@@ -90,7 +122,7 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (fb) {
-                await setDoc(doc(fb.db, "config", "settings"), { archivePhone: phone }, { merge: true });
+                await setDoc(doc(fb.db, 'config', 'settings'), { archivePhone: phone }, { merge: true });
             }
         }
     },
@@ -141,9 +173,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await deleteDoc(doc(fb.db, "recipes", id));
+            await deleteDoc(doc(fb.db, 'recipes', id));
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
+            const current = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
             localStorage.setItem('schafer_db_recipes', JSON.stringify(current.filter((r: any) => r.id !== id)));
         }
     },
@@ -153,9 +185,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await deleteDoc(doc(fb.db, "gallery", id));
+            await deleteDoc(doc(fb.db, 'gallery', id));
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_gallery') || '[]');
+            const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
             localStorage.setItem('schafer_db_gallery', JSON.stringify(current.filter((g: any) => g.id !== id)));
         }
     },
@@ -165,9 +197,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await deleteDoc(doc(fb.db, "trivia", id));
+            await deleteDoc(doc(fb.db, 'trivia', id));
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_trivia') || '[]');
+            const current = safeParseArray<Trivia>(localStorage.getItem('schafer_db_trivia'));
             localStorage.setItem('schafer_db_trivia', JSON.stringify(current.filter((t: any) => t.id !== id)));
         }
     },
@@ -179,7 +211,7 @@ export const CloudArchive = {
             const fb = this.getFirebase();
             if (!fb) return;
             const isNew = !(await this.getRecipes()).find(r => r.id === recipe.id);
-            await setDoc(doc(fb.db, "recipes", recipe.id), payload);
+            await setDoc(doc(fb.db, 'recipes', recipe.id), payload);
             if (contributorName) {
                 await this.addHistoryEntry({
                     id: 'h' + Date.now(),
@@ -191,7 +223,7 @@ export const CloudArchive = {
                 });
             }
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
+            const current = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
             const index = current.findIndex((r: any) => r.id === recipe.id);
             if (index > -1) current[index] = payload;
             else current.push(payload);
@@ -205,9 +237,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await setDoc(doc(fb.db, "trivia", item.id), payload);
+            await setDoc(doc(fb.db, 'trivia', item.id), payload);
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_trivia') || '[]');
+            const current = safeParseArray<Trivia>(localStorage.getItem('schafer_db_trivia'));
             const index = current.findIndex((t: any) => t.id === item.id);
             if (index > -1) current[index] = payload;
             else current.push(payload);
@@ -221,9 +253,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await setDoc(doc(fb.db, "gallery", item.id), payload);
+            await setDoc(doc(fb.db, 'gallery', item.id), payload);
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_gallery') || '[]');
+            const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
             const index = current.findIndex((g: any) => g.id === item.id);
             if (index > -1) current[index] = payload;
             else current.push(payload);
@@ -232,30 +264,31 @@ export const CloudArchive = {
     },
 
     async getRecipes(): Promise<Recipe[]> {
-        const data = localStorage.getItem('schafer_db_recipes');
-        if (data) {
-            const parsed = JSON.parse(data);
-            if (parsed.length > 0) return parsed;
+        const parsed = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
+        if (parsed.length > 0) {
+            const normalized = normalizeRecipeImages(parsed);
+            if (JSON.stringify(normalized) !== JSON.stringify(parsed)) {
+                localStorage.setItem('schafer_db_recipes', JSON.stringify(normalized));
+            }
+            return normalized;
         }
 
         // Return default seeded data
         // Also save it to localStorage so future edits are saved
-        localStorage.setItem('schafer_db_recipes', JSON.stringify(defaultRecipes));
-        return defaultRecipes as Recipe[];
+        const seeded = normalizeRecipeImages(defaultRecipes as Recipe[]);
+        localStorage.setItem('schafer_db_recipes', JSON.stringify(seeded));
+        return seeded;
     },
     async getTrivia(): Promise<Trivia[]> {
-        const data = localStorage.getItem('schafer_db_trivia');
-        return data ? JSON.parse(data) : [];
+        return safeParseArray<Trivia>(localStorage.getItem('schafer_db_trivia'));
     },
     async getGallery(): Promise<GalleryItem[]> {
-        const data = localStorage.getItem('schafer_db_gallery');
-        return data ? JSON.parse(data) : [];
+        return safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
     },
 
     // Contributors
     async getContributors(): Promise<ContributorProfile[]> {
-        const data = localStorage.getItem('schafer_db_contributors');
-        return data ? JSON.parse(data) : [];
+        return safeParseArray<ContributorProfile>(localStorage.getItem('schafer_db_contributors'));
     },
 
     async upsertContributor(profile: ContributorProfile): Promise<void> {
@@ -263,9 +296,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await setDoc(doc(fb.db, "contributors", profile.id), profile);
+            await setDoc(doc(fb.db, 'contributors', profile.id), profile);
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_contributors') || '[]');
+            const current = safeParseArray<ContributorProfile>(localStorage.getItem('schafer_db_contributors'));
             const index = current.findIndex((c: any) => c.id === profile.id);
             if (index > -1) current[index] = profile;
             else current.push(profile);
@@ -278,9 +311,9 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await deleteDoc(doc(fb.db, "contributors", id));
+            await deleteDoc(doc(fb.db, 'contributors', id));
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_contributors') || '[]');
+            const current = safeParseArray<ContributorProfile>(localStorage.getItem('schafer_db_contributors'));
             localStorage.setItem('schafer_db_contributors', JSON.stringify(current.filter((c: any) => c.id !== id)));
         }
     },
@@ -288,7 +321,7 @@ export const CloudArchive = {
     subscribeContributors(callback: (profiles: ContributorProfile[]) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
-        const q = query(collection(fb.db, "contributors"));
+        const q = query(collection(fb.db, 'contributors'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as ContributorProfile));
         });
@@ -299,16 +332,16 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await setDoc(doc(fb.db, "history", entry.id), entry);
+            await setDoc(doc(fb.db, 'history', entry.id), entry);
         } else {
-            const current = JSON.parse(localStorage.getItem('schafer_db_history') || '[]');
+            const current = safeParseArray<HistoryEntry>(localStorage.getItem('schafer_db_history'));
             current.unshift(entry);
             localStorage.setItem('schafer_db_history', JSON.stringify(current.slice(0, 100))); // Keep last 100
         }
     },
 
     async getHistory(): Promise<HistoryEntry[]> {
-        const data = localStorage.getItem('schafer_db_history');
-        return data ? JSON.parse(data) : [];
+        return safeParseArray<HistoryEntry>(localStorage.getItem('schafer_db_history'));
     }
 };
+

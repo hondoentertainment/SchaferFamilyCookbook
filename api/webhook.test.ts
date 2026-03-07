@@ -89,12 +89,14 @@ vi.mock('firebase-admin', () => ({
     }
 }));
 
-// --- Global fetch mock ---
-vi.stubGlobal('fetch', vi.fn((_: string) => Promise.resolve({
+const mockFetch = vi.fn((_: string) => Promise.resolve({
     ok: mockState.fetchOk,
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
     headers: { get: () => mockState.fetchContentType }
-})));
+}));
+
+// --- Global fetch mock ---
+vi.stubGlobal('fetch', mockFetch);
 
 function res() {
     return {
@@ -110,6 +112,7 @@ describe('webhook', () => {
         vi.clearAllMocks();
         vi.resetModules();
         vi.stubEnv('TWILIO_AUTH_TOKEN', '');
+        vi.stubEnv('TWILIO_ACCOUNT_SID', '');
         vi.stubEnv('NODE_ENV', 'test');
         mockState.validateRequest = true;
         mockState.contributorSnap = { empty: true, docs: [] };
@@ -195,6 +198,27 @@ describe('webhook', () => {
         expect(mockHistorySet).toHaveBeenCalled();
         expect(mockFileSave).toHaveBeenCalled();
         expect(mockFileMakePublic).toHaveBeenCalled();
+    });
+
+    it('should include Twilio Basic auth when credentials are configured', async () => {
+        vi.stubEnv('TWILIO_ACCOUNT_SID', 'AC123');
+        vi.stubEnv('TWILIO_AUTH_TOKEN', 'auth_token');
+        mockState.validateRequest = true;
+        vi.resetModules();
+
+        const handler = (await import('./webhook')).default;
+        const r = res();
+
+        await handler({
+            method: 'POST',
+            headers: { 'x-twilio-signature': 'valid_sig', host: 'localhost:3000' },
+            body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'caption' }
+        } as any, r as any);
+
+        const expectedAuth = `Basic ${Buffer.from('AC123:auth_token').toString('base64')}`;
+        expect(mockFetch).toHaveBeenCalledWith('https://api.twilio.com/media/1', {
+            headers: { Authorization: expectedAuth }
+        });
     });
 
     it('should use contributor name when phone matches in contributors', async () => {

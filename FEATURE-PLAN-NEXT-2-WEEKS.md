@@ -42,13 +42,13 @@ Add haptic feedback on key actions to improve mobile UX (per AUDIT-MOBILE-UX.md)
 
 ### Implementation Tasks
 
-1. [ ] Add `src/utils/vibration.ts` with `vibrateShort` and `vibrateError`
-2. [ ] Add `src/utils/vibration.test.ts` unit tests
-3. [ ] Integrate in `TriviaView.tsx` (correct/incorrect/complete)
-4. [ ] Integrate in `App.tsx` (`handleToggleFavorite`)
-5. [ ] Integrate in `ProfileView.tsx` (save success)
-6. [ ] Optional: Integrate in `UIContext` toast handler
-7. [ ] Update `AUDIT-MOBILE-UX.md` checklist for Vibration API
+1. [x] Add `src/utils/vibration.ts` with `vibrateShort` and `vibrateError`
+2. [x] Add `src/utils/vibration.test.ts` unit tests
+3. [x] Integrate in `TriviaView.tsx` (correct/incorrect/complete)
+4. [x] Integrate in `App.tsx` (`handleToggleFavorite`)
+5. [x] Integrate in `ProfileView.tsx` (save success)
+6. [x] Optional: Integrate in `UIContext` toast handler
+7. [x] Update `AUDIT-MOBILE-UX.md` checklist for Vibration API
 
 ---
 
@@ -83,13 +83,13 @@ Add haptic feedback on key actions to improve mobile UX (per AUDIT-MOBILE-UX.md)
 
 ### Implementation Tasks
 
-1. [ ] Run `npm run test:e2e` and capture failing tests
-2. [ ] Add `data-testid` to Header tabs, Footer, BottomNav where useful
-3. [ ] Update profile.spec.ts selectors to use unambiguous locators
-4. [ ] Update gallery.spec.ts, trivia.spec.ts, recipes.spec.ts, admin.spec.ts as needed
-5. [ ] Adjust `loginAs` / `loginAsAdmin` waits if needed
-6. [ ] Document any required env (e.g. Firebase emulator) for E2E
-7. [ ] Add `playwright-report` and `test-results` to `.gitignore` if not already
+1. [x] Run `npm run test:e2e` and capture failing tests
+2. [x] Add `data-testid` to Header tabs, Footer, BottomNav where useful
+3. [x] Update profile.spec.ts selectors to use unambiguous locators
+4. [x] Update gallery.spec.ts, trivia.spec.ts, recipes.spec.ts, admin.spec.ts as needed
+5. [x] Adjust `loginAs` / `loginAsAdmin` waits if needed
+6. [x] Document any required env (e.g. Firebase emulator) for E2E
+7. [x] Add `playwright-report` and `test-results` to `.gitignore` if not already
 
 ---
 
@@ -154,13 +154,13 @@ export function getRecentEntries(): RecentlyViewedEntry[] {
 
 ### Implementation Tasks
 
-1. [ ] Add `getRecentEntries()` to `recentlyViewed.ts`
-2. [ ] Add `src/utils/favorites.test.ts` and `src/utils/recentlyViewed.test.ts`
-3. [ ] Extend `ProfileView` props: `favoriteRecipes`, `recentRecipes`, `onViewRecipe`
-4. [ ] Add "My Favorites" and "Recently Viewed" sections to `ProfileView`
-5. [ ] Update `App.tsx` to compute and pass new props
-6. [ ] Add unit tests in `ProfileView.test.tsx` for favorites and recently viewed
-7. [ ] Add E2E tests in `profile.spec.ts` for favorites and recently viewed flows
+1. [x] Add `getRecentEntries()` to `recentlyViewed.ts`
+2. [x] Add `src/utils/favorites.test.ts` and `src/utils/recentlyViewed.test.ts`
+3. [x] Extend `ProfileView` props: `favoriteRecipes`, `recentRecipes`, `onViewRecipe`
+4. [x] Add "My Favorites" and "Recently Viewed" sections to `ProfileView`
+5. [x] Update `App.tsx` to compute and pass new props
+6. [x] Add unit tests in `ProfileView.test.tsx` for favorites and recently viewed
+7. [x] Add E2E tests in `profile.spec.ts` for favorites and recently viewed flows
 
 ---
 
