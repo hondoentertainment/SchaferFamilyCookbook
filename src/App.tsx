@@ -429,14 +429,9 @@ const App: React.FC = () => {
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
-    const [profileSubView, setProfileSubView] = useState<'profile' | 'admin'>('profile');
 
-    // When navigating to Profile from nav (not from edit flow), reset sub-view to profile
-    const handleSetTab = (newTab: string, opts?: { profileSubView?: 'profile' | 'admin' }) => {
+    const handleSetTab = (newTab: string) => {
         setTab(newTab);
-        if (newTab === 'Profile') {
-            setProfileSubView(opts?.profileSubView ?? 'profile');
-        }
     };
 
     const defaultRecipeIds = useMemo(
@@ -1227,7 +1222,7 @@ const App: React.FC = () => {
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setEditingRecipe(recipe);
-                                                handleSetTab('Profile', { profileSubView: 'admin' });
+                                                handleSetTab('Profile');
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                             }}
                                             className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
@@ -1337,10 +1332,8 @@ const App: React.FC = () => {
                         }}
                         onEditRecipe={(recipe) => {
                             setEditingRecipe(recipe);
-                            handleSetTab('Profile', { profileSubView: 'admin' });
+                            handleSetTab('Profile');
                         }}
-                        profileSubView={profileSubView}
-                        setProfileSubView={setProfileSubView}
                         contributors={contributors}
                         adminSectionProps={currentUser.role === 'admin' ? {
                             editingRecipe,

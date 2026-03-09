@@ -6,8 +6,6 @@ import { AdminView } from './AdminView';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 
-export type ProfileSubView = 'profile' | 'admin';
-
 export interface AdminSectionProps {
     editingRecipe: Recipe | null;
     clearEditing: () => void;
@@ -35,15 +33,13 @@ interface ProfileViewProps {
     onViewRecipe: (recipe: Recipe) => void;
     onUpdateProfile: (name: string, avatar: string) => Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
-    /** For admin users: sub-view and admin props */
-    profileSubView?: ProfileSubView;
-    setProfileSubView?: (v: ProfileSubView) => void;
+    /** For admin users: admin props */
     adminSectionProps?: AdminSectionProps;
     contributors?: ContributorProfile[];
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, profileSubView = 'profile', setProfileSubView, adminSectionProps, contributors = [] } = props;
+    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [] } = props;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
@@ -72,41 +68,16 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     };
 
     const isAdmin = currentUser.role === 'admin';
-    const showAdminSection = isAdmin && adminSectionProps && setProfileSubView;
+    const showAdminSection = isAdmin && !!adminSectionProps;
+    const scrollToAdminSection = () => {
+        document.getElementById('admin-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
-    // Admin sub-view: render AdminView when admin and subView is 'admin'
-    if (showAdminSection && profileSubView === 'admin') {
-        return (
-            <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                <nav className="flex gap-2 mb-8" aria-label="Profile sections">
-                    <button
-                        onClick={() => setProfileSubView('profile')}
-                        className="px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider text-stone-500 hover:bg-stone-50"
-                    >
-                        ← My Profile
-                    </button>
-                </nav>
-                <AdminView
-                    editingRecipe={adminSectionProps.editingRecipe}
-                    clearEditing={adminSectionProps.clearEditing}
-                    recipes={adminSectionProps.recipes}
-                    trivia={adminSectionProps.trivia}
-                    contributors={adminSectionProps.contributors}
-                    currentUser={currentUser}
-                    dbStats={adminSectionProps.dbStats}
-                    onAddRecipe={adminSectionProps.onAddRecipe}
-                    onAddGallery={adminSectionProps.onAddGallery}
-                    onAddTrivia={adminSectionProps.onAddTrivia}
-                    onDeleteTrivia={adminSectionProps.onDeleteTrivia}
-                    onDeleteRecipe={adminSectionProps.onDeleteRecipe}
-                    onUpdateContributor={adminSectionProps.onUpdateContributor}
-                    onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
-                    onEditRecipe={adminSectionProps.onEditRecipe}
-                    defaultRecipeIds={adminSectionProps.defaultRecipeIds}
-                />
-            </div>
-        );
-    }
+    React.useEffect(() => {
+        if (!showAdminSection || !adminSectionProps?.editingRecipe) return;
+        const timer = window.setTimeout(scrollToAdminSection, 0);
+        return () => window.clearTimeout(timer);
+    }, [showAdminSection, adminSectionProps?.editingRecipe]);
 
     return (
         <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-12 md:space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -179,7 +150,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => setProfileSubView!('admin')}
+                                        onClick={scrollToAdminSection}
                                         className="px-8 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#24382b] transition-colors whitespace-nowrap"
                                     >
                                         Open Admin Tools
@@ -346,6 +317,51 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     </div>
                 </section>
             </div>
+
+
+            {showAdminSection && adminSectionProps && (
+                <section
+                    id="admin-tools-section"
+                    className="space-y-6 rounded-[2.5rem] md:rounded-[3rem] border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-4 md:p-8 shadow-xl scroll-mt-24"
+                    aria-label="Admin tools"
+                >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Admin tools</p>
+                            <h3 className="text-3xl font-serif italic text-[#2D4635]">Archive control room</h3>
+                            <p className="max-w-2xl text-sm text-stone-600 font-serif italic">
+                                Add and update recipes, manage gallery and trivia records, and keep contributor access current without leaving the profile page.
+                            </p>
+                        </div>
+                        {adminSectionProps.editingRecipe && (
+                            <div className="rounded-full border border-orange-200 bg-white/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-orange-600 shadow-sm">
+                                Editing: {adminSectionProps.editingRecipe.title}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="rounded-[2rem] bg-white/80 p-2 md:p-4 shadow-inner ring-1 ring-white/60">
+                        <AdminView
+                            editingRecipe={adminSectionProps.editingRecipe}
+                            clearEditing={adminSectionProps.clearEditing}
+                            recipes={adminSectionProps.recipes}
+                            trivia={adminSectionProps.trivia}
+                            contributors={adminSectionProps.contributors}
+                            currentUser={currentUser}
+                            dbStats={adminSectionProps.dbStats}
+                            onAddRecipe={adminSectionProps.onAddRecipe}
+                            onAddGallery={adminSectionProps.onAddGallery}
+                            onAddTrivia={adminSectionProps.onAddTrivia}
+                            onDeleteTrivia={adminSectionProps.onDeleteTrivia}
+                            onDeleteRecipe={adminSectionProps.onDeleteRecipe}
+                            onUpdateContributor={adminSectionProps.onUpdateContributor}
+                            onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
+                            onEditRecipe={adminSectionProps.onEditRecipe}
+                            defaultRecipeIds={adminSectionProps.defaultRecipeIds}
+                        />
+                    </div>
+                </section>
+            )}
 
             {/* Meet your Administrators - for non-admin users */}
             {!isAdmin && contributors.filter(c => c.role === 'admin').length > 0 && (

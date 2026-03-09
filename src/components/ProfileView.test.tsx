@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProfileView } from './ProfileView';
 import { renderWithProviders, createMockRecipe, createMockHistoryEntry, createMockContributor } from '../test/utils';
@@ -7,6 +7,7 @@ describe('ProfileView', () => {
     const mockOnUpdateProfile = vi.fn();
     const mockOnEditRecipe = vi.fn();
     const mockUser = createMockContributor({ name: 'Test User', role: 'user' });
+    const adminContributor = createMockContributor({ id: 'admin-1', name: 'Admin User', role: 'admin' });
 
     const defaultProps = {
         currentUser: {
@@ -25,6 +26,35 @@ describe('ProfileView', () => {
         onEditRecipe: mockOnEditRecipe,
     };
 
+    const createAdminSectionProps = (overrides = {}) => ({
+        editingRecipe: null,
+        clearEditing: vi.fn(),
+        recipes: [],
+        trivia: [],
+        contributors: [adminContributor],
+        dbStats: {
+            recipeCount: 0,
+            galleryCount: 0,
+            triviaCount: 0,
+            isCloudActive: false,
+            activeProvider: 'local' as const,
+        },
+        onAddRecipe: vi.fn().mockResolvedValue(undefined),
+        onAddGallery: vi.fn().mockResolvedValue(undefined),
+        onAddTrivia: vi.fn().mockResolvedValue(undefined),
+        onDeleteTrivia: vi.fn(),
+        onDeleteRecipe: vi.fn(),
+        onUpdateContributor: vi.fn().mockResolvedValue(undefined),
+        onUpdateArchivePhone: vi.fn(),
+        onEditRecipe: vi.fn(),
+        defaultRecipeIds: [],
+        ...overrides,
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('should render user profile with name and avatar', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
         expect(screen.getByDisplayValue('Test User')).toBeInTheDocument();
@@ -41,6 +71,42 @@ describe('ProfileView', () => {
             <ProfileView {...defaultProps} currentUser={{ ...defaultProps.currentUser, role: 'admin' }} />
         );
         expect(screen.getByText(/Legacy Custodian/)).toBeInTheDocument();
+    });
+
+    it('should render admin tools inline for admin users', () => {
+        renderWithProviders(
+            <ProfileView
+                {...defaultProps}
+                currentUser={{ ...defaultProps.currentUser, role: 'admin' }}
+                adminSectionProps={createAdminSectionProps()}
+            />
+        );
+
+        expect(screen.getByText('Archive control room')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /open admin tools/i })).toBeInTheDocument();
+    });
+
+    it('should scroll to admin tools when an admin edit session is active', async () => {
+        const scrollIntoView = vi.fn();
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+            configurable: true,
+            value: scrollIntoView,
+        });
+
+        renderWithProviders(
+            <ProfileView
+                {...defaultProps}
+                currentUser={{ ...defaultProps.currentUser, role: 'admin' }}
+                adminSectionProps={createAdminSectionProps({
+                    editingRecipe: createMockRecipe({ title: 'Editing Target' }),
+                })}
+            />
+        );
+
+        await waitFor(() => {
+            expect(scrollIntoView).toHaveBeenCalled();
+        });
+        expect(screen.getAllByText(/Editing: Editing Target/).length).toBeGreaterThan(0);
     });
 
     it('should display user recipes', () => {
