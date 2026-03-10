@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { getFavoriteIds, toggleFavorite, isFavorite } from './favorites';
 
 describe('favorites utility', () => {
@@ -42,18 +42,16 @@ describe('favorites utility', () => {
             expect(res.size).toBe(1);
             expect(res.has('recipe-1')).toBe(true);
 
-            // Verify storage updated
             const stored = JSON.parse(localStorage.getItem('schafer_favorites') || '[]');
             expect(stored).toEqual(['recipe-1']);
         });
 
         it('removes an existing favorite', () => {
-            toggleFavorite('recipe-1'); // Add
-            const res = toggleFavorite('recipe-1'); // Remove
+            toggleFavorite('recipe-1');
+            const res = toggleFavorite('recipe-1');
             expect(res.size).toBe(0);
             expect(res.has('recipe-1')).toBe(false);
 
-            // Verify storage updated
             const stored = JSON.parse(localStorage.getItem('schafer_favorites') || '[]');
             expect(stored).toEqual([]);
         });

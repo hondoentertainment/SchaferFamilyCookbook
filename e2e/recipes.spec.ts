@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Recipes tab', () => {
@@ -21,18 +21,17 @@ test.describe('Recipes tab', () => {
   });
 
   test('category filter works', async ({ page }) => {
-    await page.getByRole('combobox', { name: /All Categories/i }).selectOption('Dessert');
-    await expect(page.locator('select').filter({ hasText: 'Dessert' })).toBeVisible();
+    const categoryFilter = page.getByLabel(/Filter by category/i).first();
+    await categoryFilter.selectOption('Dessert');
+    await expect(categoryFilter).toHaveValue('Dessert');
   });
 
   test('contributor filter exists', async ({ page }) => {
-    await expect(page.getByRole('combobox', { name: /All Contributors/i }).or(
-      page.locator('select').filter({ hasText: 'All Contributors' })
-    )).toBeVisible();
+    await expect(page.getByLabel(/Filter by contributor/i).first()).toBeVisible();
   });
 
   test('empty filter shows empty message', async ({ page }) => {
     await page.getByPlaceholder(/Search by title/).fill('xyznonexistent123');
-    await expect(page.getByText(/No recipes found/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/No recipes match your current filters/i)).toBeVisible({ timeout: 3000 });
   });
 });

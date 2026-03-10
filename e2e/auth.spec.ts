@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('Login', () => {
   test('shows login form when not authenticated', async ({ page }) => {
@@ -6,10 +6,10 @@ test.describe('Login', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
 
-    await expect(page.getByText('Identify Yourself')).toBeVisible();
-    await expect(page.getByPlaceholder(/e\.g\. Grandma Joan/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Welcome to the Family Table/i })).toBeVisible();
+    await expect(page.getByLabel(/Legacy Contributor Name/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Enter The Archive/i })).toBeVisible();
-    await expect(page.getByText('Welcome to the Schafer Family Archive')).toBeVisible();
+    await expect(page.getByText(/Step into the Schafer Family Archive/i)).toBeVisible();
   });
 
   test('accepts name and enters the archive', async ({ page }) => {
@@ -28,8 +28,6 @@ test.describe('Login', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
 
-    await expect(
-      page.getByRole('link', { name: /Need access\?/i })
-    ).toBeVisible();
+    await expect(page.getByRole('link', { name: /Need access\? Contact an administrator\./i })).toBeVisible();
   });
 });

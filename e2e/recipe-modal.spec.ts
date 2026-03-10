@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Recipe modal', () => {
@@ -21,7 +21,7 @@ test.describe('Recipe modal', () => {
     await page.getByRole('button', { name: /View recipe:/i }).first().click();
 
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.locator('.print-recipe-content h1, [role="dialog"] h1').first()).toBeVisible();
+    await expect(page.locator('[role="dialog"] h2').first()).toBeVisible();
   });
 
   test('closes on close button', async ({ page }) => {
@@ -36,7 +36,9 @@ test.describe('Recipe modal', () => {
     await page.getByRole('button', { name: /View recipe:/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    await page.keyboard.press('Escape');
+    await page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    });
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 2000 });
   });
 
@@ -46,13 +48,12 @@ test.describe('Recipe modal', () => {
     await page.reload();
     await loginAs(page, 'Alice');
 
-    // Default recipes include "imported_9mrpvyxve" (Festive Apple Dip)
     const recipeId = 'imported_9mrpvyxve';
-    await page.goto(`/#recipe/${encodeURIComponent(recipeId)}`);
+    await page.goto('/#recipe/' + encodeURIComponent(recipeId));
     await page.reload();
 
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('Festive Apple Dip')).toBeVisible();
+    await expect(page.getByRole('dialog').getByRole('heading', { name: 'Festive Apple Dip' })).toBeVisible();
   });
 
   test('share button is present', async ({ page }) => {
@@ -60,7 +61,9 @@ test.describe('Recipe modal', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
 
     await expect(
-      page.getByRole('button', { name: /Share|Copy link|Email/i })
+      page.getByRole('button', { name: /Share recipe/i }).or(
+        page.getByRole('link', { name: /Email recipe/i })
+      ).first()
     ).toBeVisible({ timeout: 2000 });
   });
 
@@ -68,6 +71,6 @@ test.describe('Recipe modal', () => {
     await page.getByRole('button', { name: /View recipe:/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    await expect(page.getByRole('button', { name: /Print/i })).toBeVisible({ timeout: 2000 });
+    await expect(page.getByRole('button', { name: /Print recipe/i })).toBeVisible({ timeout: 2000 });
   });
 });

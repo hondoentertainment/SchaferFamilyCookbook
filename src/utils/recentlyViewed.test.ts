@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries, RecentlyViewedEntry } from './recentlyViewed';
+﻿import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './recentlyViewed';
 
 describe('recentlyViewed utility', () => {
     beforeEach(() => {
@@ -56,8 +56,8 @@ describe('recentlyViewed utility', () => {
 
             const entries = getRecentlyViewedEntries();
             expect(entries).toHaveLength(20);
-            expect(entries[0].id).toBe('rec-25'); // The most recent
-            expect(entries[19].id).toBe('rec-6'); // The oldest of the 20
+            expect(entries[0].id).toBe('rec-25');
+            expect(entries[19].id).toBe('rec-6');
         });
     });
 

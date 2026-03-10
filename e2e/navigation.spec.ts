@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Tab navigation', () => {
@@ -69,7 +69,8 @@ test.describe('Tab navigation', () => {
 
   test('can log out', async ({ page }) => {
     await page.getByRole('button', { name: /Log out/i }).click();
-    await expect(page.getByText('Identify Yourself')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('heading', { name: /Welcome to the Family Table/i })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByLabel(/Legacy Contributor Name/i)).toBeVisible();
   });
 
   test('logo link returns to Recipes', async ({ page }) => {
