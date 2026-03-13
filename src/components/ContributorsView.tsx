@@ -9,6 +9,8 @@ interface ContributorsViewProps {
     trivia?: Trivia[];
     contributors: ContributorProfile[];
     onSelectContributor: (name: string) => void;
+    /** Optional: called when user taps "Browse recipes" in empty state */
+    onGoToRecipes?: () => void;
 }
 
 interface ContributorStats {
@@ -26,7 +28,8 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
     gallery = [],
     trivia = [],
     contributors,
-    onSelectContributor
+    onSelectContributor,
+    onGoToRecipes
 }) => {
     const [search, setSearch] = useState('');
     const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
@@ -110,7 +113,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                         placeholder="Search contributors…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full max-w-md px-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base text-stone-700 placeholder:text-stone-400 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-all"
+                        className="w-full max-w-md px-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base text-stone-700 placeholder:text-stone-500 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-colors"
                         aria-describedby={search ? "search-results" : undefined}
                     />
                     {search && (
@@ -128,13 +131,22 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     aria-live="polite"
                 >
                     <span className="text-5xl block mb-6" aria-hidden="true">👨‍👩‍👧‍👦</span>
-                    <p className="text-stone-400 font-serif italic text-lg">No contributors yet.</p>
-                    <p className="text-stone-300 text-sm mt-2">Add recipes, photos, or trivia to see contributors appear here.</p>
-                    <p className="text-stone-300 text-xs mt-4">Every contribution counts—recipes, gallery memories, and trivia questions.</p>
+                    <p className="text-stone-500 font-serif italic text-lg">No contributors yet.</p>
+                    <p className="text-stone-500 text-sm mt-2">Add recipes, photos, or trivia to see contributors appear here.</p>
+                    <p className="text-stone-500 text-xs mt-4">Every contribution counts—recipes, gallery memories, and trivia questions.</p>
+                    {onGoToRecipes && (
+                        <button
+                            type="button"
+                            onClick={onGoToRecipes}
+                            className="mt-6 px-6 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                        >
+                            Browse recipes
+                        </button>
+                    )}
                 </div>
             ) : filteredStats.length === 0 ? (
                 <div className="py-12 text-center border-2 border-dashed border-stone-100 rounded-[3rem] bg-white/50" role="status">
-                    <p className="text-stone-400 font-serif italic">No contributors match &ldquo;{search}&rdquo;.</p>
+                    <p className="text-stone-500 font-serif italic">No contributors match &ldquo;{search}&rdquo;.</p>
                     <button
                         type="button"
                         onClick={() => setSearch('')}

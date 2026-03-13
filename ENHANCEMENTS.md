@@ -40,6 +40,21 @@
 - AdminView, AvatarPicker, RecipeModal (accessibility), webhook tests added.
 - Coverage for major components.
 
+### Admin under Profile (Fixed)
+- Admin is no longer a top-level tab. Admins access it via **Profile → Admin Tools**. Reduces clutter and keeps admin entry discoverable from identity.
+
+### Recipe image generation strategy (Documented)
+- Quota-safe batch script: `npm run images:batch` (see `IMAGE_GENERATION_STRATEGY.md`). Resumable state, missing-only by default, configurable limit and delay.
+- Admin shows **Recipe images** progress: total recipes, count with images, count missing. Suggests Fill Missing or local `npm run images:batch`.
+
+### Avatar sets (Enhanced)
+- **Photos:** randomuser.me portraits (198). **Illustrated:** DiceBear avataaars (48). Avatar picker has tabs to switch between sets.
+
+### Polish and finalization
+- Contrast: secondary text uses stone-500 for readability. Focus states and motion-reduce where appropriate.
+- Empty states: Contributors and A–Z index show "Browse recipes" CTA when empty. Share copy: "Open in [SiteName]: [recipe title]".
+- Recipe image source in admin: badge (Imagen / Upload) per recipe in Manage Recipes list.
+
 ---
 
 ## Open / Future

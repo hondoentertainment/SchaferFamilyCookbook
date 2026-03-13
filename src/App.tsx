@@ -22,8 +22,8 @@ const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ d
 const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ default: m.TriviaView })));
 
 const TabFallback = () => (
-    <div className="flex items-center justify-center min-h-[50vh] text-stone-400">
-        <span className="animate-pulse font-serif italic">Loading…</span>
+    <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
+        <span className="animate-pulse font-serif italic motion-reduce:animate-none">Loading…</span>
     </div>
 );
 
@@ -1276,7 +1276,7 @@ const App: React.FC = () => {
 
             {tab === 'Index' && (
                 <Suspense fallback={<IndexSkeleton />}>
-                    <AlphabeticalIndex recipes={recipes} onSelect={handleSelectRecipe} />
+                    <AlphabeticalIndex recipes={recipes} onSelect={handleSelectRecipe} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
                 </Suspense>
             )}
 
@@ -1294,7 +1294,7 @@ const App: React.FC = () => {
                             <ContributorsSkeleton />
                         </div>
                     ) : (
-                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} />
+                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
                     )}
                 </Suspense>
             )}

@@ -36,9 +36,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                             setTab(id);
                         }}
                         aria-current={activeTab === id ? 'page' : undefined}
-                        className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${activeTab === id
+                        className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-colors touch-manipulation active:scale-95 motion-reduce:transition-none ${activeTab === id
                                 ? 'text-[#2D4635] bg-[#2D4635]/8'
-                                : 'text-stone-400'
+                                : 'text-stone-500'
                             }`}
                         aria-label={label}
                     >
@@ -61,7 +61,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         setTab('Profile');
                     }}
                     aria-current={activeTab === 'Profile' ? 'page' : undefined}
-                    className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${activeTab === 'Profile' ? 'text-[#2D4635] bg-[#2D4635]/8' : 'text-stone-400'
+                    className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${activeTab === 'Profile' ? 'text-[#2D4635] bg-[#2D4635]/8' : 'text-stone-500'
                         }`}
                     aria-label={`${currentUser.name}, view profile`}
                 >

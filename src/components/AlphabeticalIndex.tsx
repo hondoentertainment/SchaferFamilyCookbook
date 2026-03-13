@@ -4,11 +4,13 @@ import { Recipe } from '../types';
 interface AlphabeticalIndexProps {
     recipes: Recipe[];
     onSelect: (r: Recipe) => void;
+    /** Optional: called when user taps "Browse recipes" in empty state */
+    onGoToRecipes?: () => void;
 }
 
 const LETTERS = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
 
-export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, onSelect }) => {
+export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, onSelect, onGoToRecipes }) => {
     const [activeLetter, setActiveLetter] = useState<string>(LETTERS[0]);
 
     const grouped = useMemo(() => {
@@ -66,7 +68,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
             <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 backdrop-blur-sm pb-2 border-b border-stone-100">
                 <div className="px-4 pt-3 flex items-center justify-between gap-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Jump by letter</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Swipe for more →</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Swipe for more →</p>
                 </div>
                 <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex flex-nowrap gap-1.5 justify-start py-2 min-w-max">
@@ -108,8 +110,17 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                 <h2 className="text-4xl font-serif italic text-[#2D4635] mb-12">Archival Index</h2>
                 {activeLetters.length === 0 && (
                     <div className="text-center py-32 bg-stone-50 rounded-[3rem] border border-stone-100 space-y-2" role="status">
-                        <p className="text-stone-400 font-serif">Index is empty.</p>
-                        <p className="text-stone-300 text-sm">Try a different filter in Recipes, or use Add New Recipe to add recipes.</p>
+                        <p className="text-stone-500 font-serif">Index is empty.</p>
+                        <p className="text-stone-500 text-sm">Try a different filter in Recipes, or add recipes from the Recipes tab.</p>
+                        {onGoToRecipes && (
+                            <button
+                                type="button"
+                                onClick={onGoToRecipes}
+                                className="mt-6 px-6 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                            >
+                                Browse recipes
+                            </button>
+                        )}
                     </div>
                 )}
                 {letters.filter(l => activeLetters.includes(l)).map(l => (
@@ -121,7 +132,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                                 <button key={r.id} onClick={() => onSelect(r)} className="group flex items-center justify-between p-6 bg-white rounded-[2rem] border border-stone-100 hover:shadow-xl transition-all text-left">
                                     <div className="overflow-hidden">
                                         <p className="text-xl font-serif italic text-[#2D4635] mb-1 truncate">{r.title}</p>
-                                        <p className="text-[9px] uppercase tracking-widest text-stone-400">By {r.contributor} • {r.category}</p>
+                                        <p className="text-[9px] uppercase tracking-widest text-stone-500">By {r.contributor} • {r.category}</p>
                                     </div>
                                     <span className="text-[9px] font-black uppercase text-stone-300 group-hover:text-[#2D4635] ml-4 shrink-0 transition-all">Open →</span>
                                 </button>

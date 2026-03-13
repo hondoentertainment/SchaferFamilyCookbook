@@ -165,11 +165,12 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
     const emailRecipeUrl = `mailto:?subject=${encodeURIComponent(`${recipe.title} from ${siteConfig.siteName}`)}&body=${encodeURIComponent(buildEmailBody())}`;
 
+    const shareTitle = `Open in ${siteConfig.siteName}: ${recipe.title}`;
     const handleShare = async () => {
         const doCopy = async () => {
             try {
                 await navigator.clipboard.writeText(shareUrl);
-                toast(`Link copied! Share to open "${recipe.title}" in ${siteConfig.siteName}`, 'success');
+                toast(`Link copied! ${shareTitle}`, 'success');
             } catch {
                 toast("Couldn't copy link. Check clipboard permissions and try again.", 'error');
             }
@@ -177,8 +178,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: recipe.title,
-                    text: `${recipe.title} from ${siteConfig.siteName}`,
+                    title: shareTitle,
+                    text: `${recipe.title} — ${siteConfig.siteName}`,
                     url: shareUrl,
                 });
                 toast('Recipe shared', 'success');
@@ -277,7 +278,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <span className="text-xl">›</span>
                             </button>
                         )}
-                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Share recipe" title="Share">
+                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2" aria-label={`Share recipe: ${shareTitle}`} title={shareTitle}>
                             <span className="text-xl">⎘</span>
                         </button>
                         {!hasWebShare && (

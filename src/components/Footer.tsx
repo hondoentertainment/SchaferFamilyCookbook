@@ -23,7 +23,7 @@ export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser, 
                     className={`flex items-center gap-2 px-3 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[2.75rem] ${
                         activeTab === 'Profile'
                             ? 'bg-[#2D4635] text-white shadow-lg'
-                            : 'text-stone-400 hover:bg-stone-50 hover:text-stone-600'
+                            : 'text-stone-500 hover:bg-stone-50 hover:text-stone-600'
                     }`}
                     aria-current={activeTab === 'Profile' ? 'page' : undefined}
                     aria-label={`${currentUser.name}, view profile`}

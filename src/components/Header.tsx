@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                     }}
                                     title={title}
                                     aria-current={activeTab === id ? 'page' : undefined}
-                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
+                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors whitespace-nowrap min-h-[2.75rem] motion-reduce:transition-none ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-500 hover:bg-stone-50'}`}
                                 >
                                     {(tab as NavTab).label || id}
                                 </button>
@@ -143,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-all"
+                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-colors motion-reduce:transition-none"
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >

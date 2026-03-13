@@ -10,7 +10,7 @@ export const CATEGORY_IMAGES: Record<string, string> = {
     Generic: '/recipe-images/imported_3hbv3ty65.jpg'
 };
 
-/** Lifelike portrait avatars from randomuser.me (99 men + 99 women = 198). Used in Admin avatar picker. */
+/** Lifelike portrait avatars from randomuser.me (99 men + 99 women = 198). Used in avatar picker "Photos" set. */
 export const HERITAGE_AVATARS: string[] = (() => {
     const base = 'https://randomuser.me/api/portraits';
     const avatars: string[] = [];
@@ -20,6 +20,18 @@ export const HERITAGE_AVATARS: string[] = (() => {
     }
     return avatars;
 })();
+
+/** Illustrated avatars from DiceBear (avataaars). 48 options. Used in avatar picker "Illustrated" set. */
+export const ILLUSTRATED_AVATARS: string[] = (() => {
+    const base = 'https://api.dicebear.com/7.x/avataaars/svg';
+    return Array.from({ length: 48 }, (_, i) => `${base}?seed=${i + 1}`);
+})();
+
+/** All avatar sets for the picker: [label, urls]. */
+export const AVATAR_SETS: { label: string; urls: string[] }[] = [
+    { label: 'Photos', urls: HERITAGE_AVATARS },
+    { label: 'Illustrated', urls: ILLUSTRATED_AVATARS },
+];
 
 /** Neutral silhouette used when a user has no avatar assigned (e.g. on sign-in). */
 export const PLACEHOLDER_AVATAR = `data:image/svg+xml,${encodeURIComponent(

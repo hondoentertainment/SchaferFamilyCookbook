@@ -121,9 +121,9 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 ### 5.3 Navigation
 
-- **Main Tabs:** Recipes, A–Z (Index), Gallery, Grocery, Trivia, Family Story, Contributors, Profile, Admin (admins only).
-- **Mobile:** Bottom nav (Recipes, A–Z, Gallery, Grocery, Trivia, Profile, Admin); hamburger for Family Story, Contributors.
-- **Desktop:** Full horizontal nav in Header; Footer with Profile and Admin.
+- **Main Tabs:** Recipes, A–Z (Index), Gallery, Grocery, Trivia, Family Story, Contributors, Profile. Admin is available only to admins via **Profile → Admin Tools** (no top-level Admin tab).
+- **Mobile:** Bottom nav (Recipes, A–Z, Gallery, Trivia, Profile); hamburger for Family Story, Contributors. Admin entry from Profile.
+- **Desktop:** Full horizontal nav in Header; Footer with Profile. Admin entry from Profile.
 
 ### 5.4 Security
 

@@ -651,9 +651,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             </div>
                                                             <div>
                                                                 <h5 className="text-sm font-serif font-bold text-[#2D4635]">{r.title}</h5>
-                                                                <div className="flex items-center gap-2">
+                                                                <div className="flex items-center gap-2 flex-wrap">
                                                                     <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">{r.category}</span>
-                                                                    {r.contributor && <span className="text-[9px] text-stone-400">by {r.contributor}</span>}
+                                                                    {r.contributor && <span className="text-[9px] text-stone-500">by {r.contributor}</span>}
+                                                                    {r.imageSource && (
+                                                                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-stone-200 text-stone-600 font-bold uppercase" title={`Image source: ${r.imageSource}`}>
+                                                                            {r.imageSource === 'nano-banana' ? 'Imagen' : r.imageSource === 'upload' ? 'Upload' : r.imageSource}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -709,6 +714,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                     {!editingRecipe && (
                                         <div className="space-y-4">
+                                            {/* Recipe images progress */}
+                                            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Recipe images</h4>
+                                                <p className="text-sm text-stone-700">
+                                                    <span className="font-bold">{recipes.filter(r => r.image?.trim()).length}</span> of <span className="font-bold">{recipes.length}</span> recipes have images
+                                                    {recipes.length - recipes.filter(r => r.image?.trim()).length > 0 && (
+                                                        <> · <span className="text-amber-700">{recipes.length - recipes.filter(r => r.image?.trim()).length} missing</span></>
+                                                    )}
+                                                </p>
+                                                <p className="text-xs text-stone-500 mt-1">Use Fill Missing below or run <code className="bg-white px-1 rounded">npm run images:batch</code> locally for quota-safe batches.</p>
+                                            </div>
                                             <div className="flex gap-4 flex-wrap">
                                                 <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Imagen (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing (Imagen)'}
