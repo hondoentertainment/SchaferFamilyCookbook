@@ -142,4 +142,16 @@ describe('AdminView', () => {
         expect(screen.getByText('🖼️ Fill Missing (Imagen)')).toBeInTheDocument();
         expect(screen.getByText('🔄 Regenerate All (Imagen)')).toBeInTheDocument();
     });
+
+    it('should show Recipe images progress when recipes are passed', () => {
+        const recipesWithMixedImages = [
+            createMockRecipe({ id: 'r1', title: 'With Image', image: 'https://example.com/a.jpg', imageSource: 'upload' }),
+            createMockRecipe({ id: 'r2', title: 'No Image', image: '', imageSource: undefined }),
+            createMockRecipe({ id: 'r3', title: 'With Imagen', image: 'https://example.com/b.jpg', imageSource: 'nano-banana' }),
+        ];
+        renderWithProviders(<AdminView {...defaultProps} recipes={recipesWithMixedImages} />);
+        expect(screen.getByText('Recipe images')).toBeInTheDocument();
+        const recipeImagesSection = screen.getByText('Recipe images').closest('div');
+        expect(recipeImagesSection).toHaveTextContent(/2 of 3 recipes have images/);
+    });
 });

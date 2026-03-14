@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Tab navigation', () => {
@@ -60,6 +60,14 @@ test.describe('Tab navigation', () => {
   test('navigates to Contributors tab', async ({ page }) => {
     await page.getByRole('button', { name: 'Contributors' }).click();
     await expect(page.getByText(/The Contributors|Contributors/i)).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Contributors tab loads after login and shows expected content', async ({ page }) => {
+    await page.getByRole('button', { name: 'Contributors' }).click();
+    await expect(page.getByRole('heading', { name: 'The Contributors' })).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByPlaceholder('Search contributors…').or(page.getByRole('button', { name: 'Browse recipes' }))
+    ).toBeVisible({ timeout: 3000 });
   });
 
   test('navigates to Profile tab', async ({ page }) => {

@@ -63,6 +63,8 @@ Located in `scripts/`:
 | `generate-recipe-images.mjs` | Create Pollinations AI image URLs from hand-curated prompts. |
 | `download-recipe-images.mjs` | Download Pollinations URLs to `public/recipe-images/`. |
 
+For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATEGY.md. Use: npm run images:dry-run, npm run images:batch, npm run images:resume.
+
 **Prompt rules:** `shared/recipeImagePrompts.mjs` defines canonical prompts for recipe images. Used by AdminView (single + bulk) and `generate-imagen-images.mjs`.
 
 ## Identity & Access

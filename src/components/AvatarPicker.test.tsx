@@ -44,5 +44,35 @@ describe('AvatarPicker', () => {
         expect(mockOnSelect).toHaveBeenCalled();
         expect(mockOnClose).toHaveBeenCalled();
     });
+
+    it('should show Photos and Illustrated tabs', () => {
+        render(
+            <AvatarPicker
+                currentAvatar="https://example.com/avatar1.jpg"
+                onSelect={mockOnSelect}
+                onClose={mockOnClose}
+            />
+        );
+        expect(screen.getByRole('tab', { name: 'Photos' })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Illustrated' })).toBeInTheDocument();
+    });
+
+    it('should change visible avatar set when switching tabs', () => {
+        render(
+            <AvatarPicker
+                currentAvatar="https://example.com/avatar1.jpg"
+                onSelect={mockOnSelect}
+                onClose={mockOnClose}
+            />
+        );
+        const grid = screen.getByRole('tabpanel', { name: 'Photos' });
+        const buttonsInPhotos = grid.querySelectorAll('button[aria-label^="Select avatar"]');
+        expect(buttonsInPhotos.length).toBeGreaterThan(0);
+
+        fireEvent.click(screen.getByRole('tab', { name: 'Illustrated' }));
+        const buttonsInIllustrated = grid.querySelectorAll('button[aria-label^="Select avatar"]');
+        expect(buttonsInIllustrated.length).toBeGreaterThan(0);
+        expect(buttonsInIllustrated.length).not.toBe(buttonsInPhotos.length);
+    });
 });
 

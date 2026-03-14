@@ -82,4 +82,16 @@ describe('AlphabeticalIndex', () => {
         expect(zButtons.length).toBeGreaterThan(0);
         zButtons.forEach(btn => expect(btn).toBeDisabled());
     });
+
+    it('should show Browse recipes button when onGoToRecipes is provided and recipes is empty', () => {
+        const mockOnGoToRecipes = vi.fn();
+        renderWithProviders(
+            <AlphabeticalIndex recipes={[]} onSelect={mockOnSelect} onGoToRecipes={mockOnGoToRecipes} />
+        );
+        expect(screen.getByText('Index is empty.')).toBeInTheDocument();
+        const browseBtn = screen.getByRole('button', { name: 'Browse recipes' });
+        expect(browseBtn).toBeInTheDocument();
+        fireEvent.click(browseBtn);
+        expect(mockOnGoToRecipes).toHaveBeenCalled();
+    });
 });

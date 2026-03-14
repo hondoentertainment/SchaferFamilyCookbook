@@ -131,4 +131,12 @@ describe('RecipeModal', () => {
         fireEvent.click(lightboxClose);
         expect(screen.queryByText('Click anywhere to close')).not.toBeInTheDocument();
     });
+
+    it('should show share button with accessible label containing recipe title', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        const shareBtn = screen.getByRole('button', { name: /Share recipe/i });
+        expect(shareBtn).toBeInTheDocument();
+        expect(shareBtn).toHaveAttribute('aria-label');
+        expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);
+    });
 });

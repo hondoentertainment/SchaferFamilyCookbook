@@ -60,8 +60,7 @@
 ## Open / Future
 
 ### Recipe image source metadata
-- Optional `imageSource?: 'upload' | 'imagen' | 'pollinations'` for explicit tracking.
-- Current: AI badge inferred from URL patterns (pollinations.ai, /recipe-images/).
+Implemented: imageSource on Recipe and Imagen/Upload badge in Admin Manage Recipes list. Optional pollinations tracking remains URL-based.
 
 ### API key in local dev
 - AI features require deployed `/api/gemini` or `GEMINI_API_KEY` in Vercel env.

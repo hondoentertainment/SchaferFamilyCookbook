@@ -36,17 +36,17 @@ A strategic roadmap for the next phases of development, informed by the current 
 ## Immediate Next Steps (1–2 weeks)
 
 ### 1. Finish Mobile UX Polish
-- [ ] **Vibration API** – Add light haptic feedback on Trivia correct/incorrect, nav taps, save success (per `AUDIT-MOBILE-UX.md`)
-- [ ] **Fix failing E2E tests** – Several Playwright tests show as modified/failing; stabilize before next release
+- [x] **Vibration API** (Trivia correct/incorrect, nav taps, toast)
+- [ ] **Fix failing E2E tests** – Several Playwright tests show as modified/failing; stabilize before next release (Run npm run test:e2e; fix or quarantine flaky tests)
 
 ### 2. Quick Wins
-- [ ] **Profile integration** – Add "Favorites" and "Recently Viewed" sections to Profile so users see their own activity
+- [x] **Profile integration** – Add "Favorites" and "Recently Viewed" sections to Profile so users see their own activity
 - [ ] **Index tab on BottomNav** – Consider whether Index deserves a spot in mobile bottom nav (currently only Recipes, Index, Gallery, Trivia, Profile, Admin)
-- [ ] **Recipe deep-link sharing** – Improve share copy (e.g., "Open in Schafer Cookbook: [recipe name]")
+- [x] **Recipe deep-link sharing** – Improve share copy (e.g., "Open in Schafer Cookbook: [recipe name]") (share copy improved)
 
 ### 3. Technical Debt
-- [ ] **CI reliability** – Ensure `npm run ci` passes consistently; consider excluding or fixing flaky Playwright tests
-- [ ] **Git clean-up** – Decide whether `playwright-report/` and `test-results/` belong in `.gitignore`
+- [ ] **CI reliability** – Ensure `npm run ci` passes consistently; consider excluding or fixing flaky Playwright tests (Run npm run test:e2e; fix or quarantine flaky tests)
+- [x] **Git clean-up** – Decide whether `playwright-report/` and `test-results/` belong in `.gitignore`
 
 ---
 

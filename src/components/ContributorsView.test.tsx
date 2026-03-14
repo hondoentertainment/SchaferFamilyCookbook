@@ -63,4 +63,23 @@ describe('ContributorsView', () => {
         expect(screen.getByText('Alice')).toBeInTheDocument();
         expect(screen.queryByText('Bob')).not.toBeInTheDocument();
     });
+
+    it('should show Browse recipes button when onGoToRecipes is provided and there are no contributors', () => {
+        const mockOnGoToRecipes = vi.fn();
+        renderWithProviders(
+            <ContributorsView
+                recipes={[]}
+                gallery={[]}
+                trivia={[]}
+                contributors={[]}
+                onSelectContributor={mockOnSelect}
+                onGoToRecipes={mockOnGoToRecipes}
+            />
+        );
+        expect(screen.getByText('No contributors yet.')).toBeInTheDocument();
+        const browseBtn = screen.getByRole('button', { name: 'Browse recipes' });
+        expect(browseBtn).toBeInTheDocument();
+        fireEvent.click(browseBtn);
+        expect(mockOnGoToRecipes).toHaveBeenCalled();
+    });
 });
