@@ -30,6 +30,16 @@ Without a valid key or working proxy, AI buttons will fail with network/API erro
 | AI buttons fail with network error | No `GEMINI_API_KEY` or no working `/api/gemini` proxy (use `vercel dev` or deploy to Vercel) |
 | MMS webhook doesn't receive texts | Needs `FIREBASE_SERVICE_ACCOUNT` and `TWILIO_AUTH_TOKEN` in Vercel env; webhook runs only on Vercel, not GitHub Pages |
 
+## Finalize and Deploy
+
+```bash
+npm run ci              # Lint, type-check, unit tests, build
+npm run test:e2e        # E2E (chromium: --project=chromium)
+npm run smoke:prod      # Verify Vercel + GitHub Pages return 200 and expected content
+```
+
+After push to `main`: CI and Deploy to GitHub Pages run automatically. Vercel deploys if connected. Verify env vars in Vercel: `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT`, `TWILIO_AUTH_TOKEN`.
+
 ## Deploy (Vercel)
 
 1. Connect the repo to Vercel.
