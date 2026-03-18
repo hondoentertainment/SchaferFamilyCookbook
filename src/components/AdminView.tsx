@@ -3,6 +3,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
+import { getGeminiApiKey, safelyGetText } from '../services/ai';
 
 interface AdminViewProps {
     editingRecipe: Recipe | null;
@@ -67,13 +68,6 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         return () => URL.revokeObjectURL(url);
     }, [recipeFile, editingRecipe]);
 
-    const getGeminiApiKey = () => {
-        return ((import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-            (process.env?.GEMINI_API_KEY) ||
-            (process.env?.VITE_GEMINI_API_KEY) ||
-            '';
-    };
-
     const handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
@@ -103,7 +97,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 }
             });
 
-            const responseText = (response as any).text;
+            const responseText = safelyGetText(response);
             const parsed = JSON.parse(responseText || '{}');
             setRecipeForm(prev => ({ ...prev, ...parsed }));
             setRawText('');
@@ -127,15 +121,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 contents: [{
                     role: 'user',
                     parts: [{
-                        text: `You are a heritage food photography curator. Based on the recipe: "${recipeForm.title}" (${recipeForm.category}), find a high-quality Unsplash Image ID that best represents this dish in a vintage 'family archive' aesthetic. Return ONLY the ID (e.g. 1547592166-23ac45744acd).`
+                        text: `Describe the dish "${recipeForm.title}" (${recipeForm.category}) in 5-10 words for an AI image generator. Focus on the food itself in a rustic, appetizing style. Example: "fluffy blackberries pancakes with melting butter rustic farmhouse style". Return ONLY the description.`
                     }]
                 }],
             });
 
-            const photoId = response.text.trim().replace(/['"]/g, '');
+            const description = safelyGetText(response).trim().replace(/['"\\n]/g, '');
 
-            if (photoId.length > 5) {
-                const url = `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=1200`;
+            if (description.length > 5) {
+                const encodedPrompt = encodeURIComponent(`${description} food photography, highly detailed, 4k, appetizing, warm lighting`);
+                const seed = Math.floor(Math.random() * 1000);
+                const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=800&height=600&nologo=true`;
                 setRecipeForm(prev => ({ ...prev, image: url }));
                 setPreviewUrl(url);
                 setRecipeFile(null);
@@ -193,7 +189,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     }],
                 });
 
-                const description = response.text.trim().replace(/['"\\n]/g, '');
+                const description = safelyGetText(response).trim().replace(/['"\\n]/g, '');
 
                 if (description.length > 5) {
                     // Use Pollinations.ai for reliable AI image generation
@@ -208,7 +204,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             }
 
             // Subtle delay to avoid rate limits
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 1000));
         }
 
         setIsBulkSourcing(false);
