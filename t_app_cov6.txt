@@ -1,0 +1,46 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/kyle/Downloads/SchaferFamilyCookbook[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32mΓ£ô[39m src/App.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 4808[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m should navigate to Index, Family Story, Contributors, and Profile tabs [33m 4058[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 08:58:35
+[2m   Duration [22m 6.15s[2m (transform 363ms, setup 187ms, import 234ms, tests 4.81s, environment 356ms)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   30.11 |    25.95 |   29.53 |    31.5 |                   
+ src               |   45.59 |    49.27 |   42.04 |    47.3 |                   
+  App.tsx          |   45.59 |    49.27 |   42.04 |    47.3 | ...1307,1310-1405 
+ src/components    |   22.14 |    18.42 |   21.12 |   23.11 |                   
+  AdminView.tsx    |    0.21 |        0 |       0 |    0.24 | 29-1268           
+  ...icalIndex.tsx |   83.67 |     62.5 |   73.68 |   88.09 | 19,33-34,78,97    
+  AvatarPicker.tsx |    3.57 |        0 |       0 |       4 | 12-108            
+  BottomNav.tsx    |   54.54 |       95 |      50 |      60 | 35-61             
+  ...utorsView.tsx |   76.92 |       60 |      56 |      86 | ...15-152,174,206 
+  Header.tsx       |   42.55 |     42.1 |    37.5 |   58.06 | ...-61,96-117,138 
+  HistoryView.tsx  |   81.57 |       70 |   63.63 |   82.35 | 48,52,56-58,82    
+  ProfileView.tsx  |   32.69 |    43.13 |    9.09 |   32.65 | ...3,78-79,91-397 
+ src/constants     |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ src/context       |   40.42 |     9.37 |   18.75 |   48.64 |                   
+  UIContext.tsx    |   40.42 |     9.37 |   18.75 |   48.64 | ...8,76-78,93-116 
+ src/data          |     100 |      100 |     100 |     100 |                   
+  recipes.json     |       0 |        0 |       0 |       0 |                   
+  trivia_seed.ts   |     100 |      100 |     100 |     100 |                   
+ src/services      |   15.41 |    19.37 |   19.04 |   16.92 |                   
+  db.ts            |   16.07 |       21 |   20.68 |   17.67 | ...62,271,295-339 
+  geminiProxy.ts   |    6.25 |        0 |       0 |    7.14 | 17-43             
+ src/utils         |   39.02 |    21.73 |      40 |    39.7 |                   
+  ...arFallback.ts |       0 |        0 |       0 |       0 | 10-12             
+  favorites.ts     |   31.25 |    16.66 |      25 |   26.66 | 7-31              
+  focusTrap.ts     |      64 |    35.71 |      75 |   63.63 | 24-33             
+  haptics.ts       |   13.33 |    16.66 |   33.33 |   11.11 | 6-14,19-20        
+  ...ErrorToast.ts |      20 |        0 |       0 |      25 | 5-7               
+  ...ntlyViewed.ts |   44.44 |       25 |   42.85 |   46.66 | 14-30             
+-------------------|---------|----------|---------|---------|-------------------

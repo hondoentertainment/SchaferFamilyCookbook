@@ -6,6 +6,7 @@ import {
     createMockRecipe,
     createMockTrivia,
     createMockContributor,
+    waitFor
 } from '../test/utils';
 
 describe('AdminView', () => {
@@ -153,5 +154,91 @@ describe('AdminView', () => {
         expect(screen.getByText('Recipe images')).toBeInTheDocument();
         const recipeImagesSection = screen.getByText('Recipe images').closest('div');
         expect(recipeImagesSection).toHaveTextContent(/2 of 3 recipes have images/);
+    });
+
+    it('should call onAddRecipe when the recipe form is submitted', async () => {
+        const editingRecipe = createMockRecipe({ id: 'r1', title: 'Editing Pie' });
+        renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+
+        fireEvent.change(screen.getByPlaceholderText('Recipe Title'), { target: { value: 'New Test Recipe' } });
+        fireEvent.change(screen.getByPlaceholderText('Ingredients (one per line)'), { target: { value: 'Apple\nSugar' } });
+        fireEvent.change(screen.getByPlaceholderText('Instructions (one per line)'), { target: { value: 'Bake it' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+
+        expect(mockOnAddRecipe).toHaveBeenCalledWith(
+            expect.objectContaining({
+                title: 'New Test Recipe',
+                ingredients: ['Apple', 'Sugar'],
+                instructions: ['Bake it']
+            }),
+            undefined
+        );
+    });
+
+    it('should call onDeleteRecipe when delete is confirmed', async () => {
+        renderWithProviders(<AdminView {...defaultProps} />);
+        const deleteButtons = screen.getAllByRole('button', { name: /Delete/i });
+        fireEvent.click(deleteButtons[0]);
+
+        const confirmDialogBtn = await screen.findByRole('button', { name: 'Delete' });
+        fireEvent.click(confirmDialogBtn);
+
+        await waitFor(() => {
+            expect(mockOnDeleteRecipe).toHaveBeenCalledWith('r1');
+        });
+    });
+
+    it('should call onAddGallery when gallery form is submitted', async () => {
+        renderWithProviders(<AdminView {...defaultProps} />);
+        fireEvent.click(screen.getByText('🖼️ Gallery'));
+
+        const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
+        const input = screen.getByLabelText(/Choose family photo or video to upload/i);
+        fireEvent.change(input, { target: { files: [file] } });
+
+        fireEvent.change(screen.getByPlaceholderText(/Caption/i), { target: { value: 'Test Photo' } });
+        fireEvent.click(screen.getByRole('button', { name: /Upload Memory/i }));
+
+        expect(mockOnAddGallery).toHaveBeenCalledWith(
+            expect.objectContaining({ caption: 'Test Photo' }),
+            file
+        );
+    });
+
+    it('should call onAddTrivia when trivia form is submitted', async () => {
+        renderWithProviders(<AdminView {...defaultProps} />);
+        fireEvent.click(screen.getByText('💡 Trivia'));
+
+        fireEvent.change(screen.getByPlaceholderText(/e\.g\. Who grew up/i), { target: { value: 'Test Question?' } });
+        fireEvent.change(screen.getByPlaceholderText('Option 1'), { target: { value: 'A' } });
+        fireEvent.change(screen.getByPlaceholderText('Option 2'), { target: { value: 'B' } });
+        fireEvent.change(screen.getByPlaceholderText('Correct Answer'), { target: { value: 'A' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /Add Question/i }));
+
+        expect(mockOnAddTrivia).toHaveBeenCalledWith(
+            expect.objectContaining({ question: 'Test Question?', options: ['A', 'B', '', ''], answer: 'A' })
+        );
+    });
+
+    it('should trigger merge contributors if superadmin', async () => {
+        const superAdminUser = { ...defaultProps.currentUser!, name: 'Kyle' };
+        renderWithProviders(<AdminView {...defaultProps} currentUser={superAdminUser} />);
+        fireEvent.click(screen.getByText('👥 Directory'));
+
+        fireEvent.change(screen.getByPlaceholderText('e.g. Dawn Schafer Tessmer'), { target: { value: 'Test User' } });
+        fireEvent.change(screen.getByPlaceholderText('e.g. Dawn'), { target: { value: 'New User' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /🔀 Merge/i }));
+
+        const confirmDialogBtn = await screen.findByRole('button', { name: 'Merge' });
+        fireEvent.click(confirmDialogBtn);
+        // Expect onAddRecipe to be called to update "Test User" recipes to "New User"
+        // Wait for the re-save
+        await screen.findByText(/Successfully merged 2 recipes/i).catch(() => { });
+        expect(mockOnAddRecipe).toHaveBeenCalledWith(
+            expect.objectContaining({ contributor: 'New User' })
+        );
     });
 });

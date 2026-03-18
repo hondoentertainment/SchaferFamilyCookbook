@@ -1,0 +1,24 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/kyle/Downloads/SchaferFamilyCookbook[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [31mΓ¥»[39m src/App.test.tsx [2m([22m[2m13 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 748[2mms[22m[39m
+     [32mΓ£ô[39m should show login form when not authenticated[32m 48[2mms[22m[39m
+     [32mΓ£ô[39m should login and show Recipes tab when name is submitted[32m 82[2mms[22m[39m
+     [32mΓ£ô[39m should show empty state when gallery has no items[32m 63[2mms[22m[39m
+     [32mΓ£ô[39m should show gallery items when data exists[32m 55[2mms[22m[39m
+     [32mΓ£ô[39m should open lightbox when clicking an image[32m 57[2mms[22m[39m
+     [32mΓ£ô[39m should close lightbox when clicking close button[32m 63[2mms[22m[39m
+     [32mΓ£ô[39m should close lightbox on Escape key[32m 58[2mms[22m[39m
+     [32mΓ£ô[39m should open lightbox for videos and show fullscreen viewer[32m 49[2mms[22m[39m
+     [32mΓ£ô[39m should show delete button for admin users[32m 49[2mms[22m[39m
+     [32mΓ£ô[39m should show "Want to add photos?" when no archive phone is set[32m 40[2mms[22m[39m
+     [32mΓ£ô[39m should show text-to-archive instructions when archive phone is set[32m 44[2mms[22m[39m
+     [32mΓ£ô[39m should render gallery with semantic structure[32m 51[2mms[22m[39m
+[31m     [31m├ù[31m should navigate to Index, Family Story, Contributors, and Profile tabs[39m[32m 88[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m12 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 08:23:19
+[2m   Duration [22m 2.46s[2m (transform 254ms, setup 213ms, import 258ms, tests 748ms, environment 510ms)[22m
+

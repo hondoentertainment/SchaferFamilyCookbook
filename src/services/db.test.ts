@@ -205,5 +205,114 @@ describe('CloudArchive', () => {
             expect(history.length).toBeLessThanOrEqual(100);
         });
     });
+
+    describe('Firebase Provider Operations', () => {
+        beforeEach(async () => {
+            CloudArchive._firebaseApp = null;
+            CloudArchive._firestore = null;
+            CloudArchive._storage = null;
+            localStorage.setItem('schafer_active_provider', 'firebase');
+            localStorage.setItem('schafer_firebase_config', JSON.stringify({ apiKey: 'test', projectId: 'test' }));
+            const { vi } = await import('vitest');
+            vi.clearAllMocks();
+        });
+
+        it('should initialize firebase and return app instance', () => {
+            const fb = CloudArchive.getFirebase();
+            expect(fb).not.toBeNull();
+            expect(fb?.app).toBeDefined();
+        });
+
+        it('should fail gracefully if config is invalid', () => {
+            localStorage.setItem('schafer_firebase_config', JSON.stringify({ apiKey: '' }));
+            const fb = CloudArchive.getFirebase();
+            expect(fb).toBeNull();
+        });
+
+        it('should call setDoc when upserting recipe in firebase mode', async () => {
+            const { setDoc } = await import('firebase/firestore');
+            const newRecipe = createMockRecipe({ id: 'fb-recipe' });
+            await CloudArchive.upsertRecipe(newRecipe);
+            expect(setDoc).toHaveBeenCalled();
+        });
+
+        it('should call deleteDoc when deleting recipe in firebase mode', async () => {
+            const { deleteDoc } = await import('firebase/firestore');
+            await CloudArchive.deleteRecipe('fb-recipe');
+            expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('should handle trivia in firebase mode', async () => {
+            const { setDoc, deleteDoc } = await import('firebase/firestore');
+            await CloudArchive.upsertTrivia(createMockTrivia({ id: 'fb-trivia' }));
+            expect(setDoc).toHaveBeenCalled();
+            await CloudArchive.deleteTrivia('fb-trivia');
+            expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('should handle gallery items in firebase mode', async () => {
+            const { setDoc, deleteDoc } = await import('firebase/firestore');
+            await CloudArchive.upsertGalleryItem(createMockGalleryItem({ id: 'fb-gallery' }));
+            expect(setDoc).toHaveBeenCalled();
+            await CloudArchive.deleteGalleryItem('fb-gallery');
+            expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('should call generic onSnapshot for subscriptions', async () => {
+            const { onSnapshot } = await import('firebase/firestore');
+            const { vi } = await import('vitest');
+            vi.mocked(onSnapshot).mockImplementation((q: any, cb: any) => {
+                cb({ docs: [], data: () => ({ archivePhone: '' }) });
+                return vi.fn();
+            });
+            CloudArchive.subscribeRecipes(() => { });
+            CloudArchive.subscribeTrivia(() => { });
+            CloudArchive.subscribeGallery(() => { });
+            CloudArchive.subscribeHistory(() => { });
+            CloudArchive.subscribeArchivePhone(() => { });
+            CloudArchive.subscribeContributors(() => { });
+            expect(onSnapshot).toHaveBeenCalledTimes(6);
+        });
+
+        it('should update archive phone in firebase mode', async () => {
+            const { setDoc } = await import('firebase/firestore');
+            await CloudArchive.setArchivePhone('555-555-5555');
+            expect(setDoc).toHaveBeenCalled();
+            expect(localStorage.getItem('schafer_archive_phone')).toBe('555-555-5555');
+        });
+
+        it('should update contributors in firebase mode', async () => {
+            const { setDoc, deleteDoc } = await import('firebase/firestore');
+            await CloudArchive.upsertContributor({ id: 'c1', name: 'Test' } as any);
+            expect(setDoc).toHaveBeenCalled();
+            await CloudArchive.deleteContributor('c1');
+            expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('should get correct download URL when uploading file in firebase mode', async () => {
+            const { uploadBytes } = await import('firebase/storage');
+            const { vi } = await import('vitest');
+            vi.mocked(uploadBytes).mockResolvedValueOnce({ ref: {} } as any);
+            const file = new File(['test'], 'test.png', { type: 'image/png' });
+            const url = await CloudArchive.uploadFile(file, 'test-folder');
+            expect(url).toBe('https://example.com/image.jpg');
+        });
+
+        it('should return base64 when uploading file in local mode', async () => {
+            localStorage.setItem('schafer_active_provider', 'local');
+            const file = new File(['test'], 'test.png', { type: 'image/png' });
+            const url = await CloudArchive.uploadFile(file, 'test-folder');
+            expect(url).toContain('data:image/png;base64');
+        });
+
+        it('should handle bulk upload failures gracefully', async () => {
+            localStorage.setItem('schafer_active_provider', 'local');
+            const file1 = new File(['1'], '1.png', { type: 'image/png' });
+            const file2 = new File(['2'], '2.png', { type: 'image/png' });
+            const results = await CloudArchive.uploadFiles([file1, file2], 'folder');
+            expect(results).toHaveLength(2);
+            expect(results[0].url).toContain('data:image/png;base64');
+        });
+    });
 });
 

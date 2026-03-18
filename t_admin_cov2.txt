@@ -1,0 +1,29 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/kyle/Downloads/SchaferFamilyCookbook[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [31mΓ¥»[39m src/components/AdminView.test.tsx [2m([22m[2m18 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 296[2mms[22m[39m
+     [32mΓ£ô[39m should render Records tab by default with Manage Recipes[32m 33[2mms[22m[39m
+     [32mΓ£ô[39m should render subtabs for Recipes, Gallery, Trivia, Directory[32m 8[2mms[22m[39m
+     [32mΓ£ô[39m should filter recipes by search[32m 13[2mms[22m[39m
+     [32mΓ£ô[39m should show empty state when search has no matches[32m 9[2mms[22m[39m
+     [32mΓ£ô[39m should switch to Gallery tab[32m 17[2mms[22m[39m
+     [32mΓ£ô[39m should switch to Trivia tab[32m 12[2mms[22m[39m
+     [32mΓ£ô[39m should switch to Directory tab[32m 11[2mms[22m[39m
+     [32mΓ£ô[39m should show recipe form with title and ingredients inputs when editing[32m 12[2mms[22m[39m
+     [32mΓ£ô[39m should call onEditRecipe when Edit is clicked on a recipe[32m 15[2mms[22m[39m
+     [32mΓ£ô[39m should show editing banner when editingRecipe is set[32m 10[2mms[22m[39m
+     [32mΓ£ô[39m should call clearEditing when Cancel Edit is clicked[32m 10[2mms[22m[39m
+     [32mΓ£ô[39m should show bulk image buttons[32m 7[2mms[22m[39m
+     [32mΓ£ô[39m should show Recipe images progress when recipes are passed[32m 9[2mms[22m[39m
+     [32mΓ£ô[39m should call onAddRecipe when the recipe form is submitted[32m 33[2mms[22m[39m
+[31m     [31m├ù[31m should call onDeleteRecipe when delete is confirmed[39m[32m 23[2mms[22m[39m
+     [32mΓ£ô[39m should call onAddGallery when gallery form is submitted[32m 26[2mms[22m[39m
+     [32mΓ£ô[39m should call onAddTrivia when trivia form is submitted[32m 33[2mms[22m[39m
+[31m     [31m├ù[31m should trigger merge contributors if superadmin[39m[32m 13[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (18)[39m
+[2m   Start at [22m 04:44:53
+[2m   Duration [22m 1.20s[2m (transform 141ms, setup 144ms, import 139ms, tests 296ms, environment 310ms)[22m
+

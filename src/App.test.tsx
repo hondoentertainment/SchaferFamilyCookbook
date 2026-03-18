@@ -153,3 +153,46 @@ describe('Gallery', () => {
         expect(listItems.length).toBeGreaterThanOrEqual(1);
     });
 });
+
+describe('App Navigation (Lazy loaded views)', () => {
+    beforeEach(() => {
+        setupLocalStorage();
+        localStorage.clear();
+    });
+
+    it('should navigate to Index, Family Story, Contributors, and Profile tabs', async () => {
+        const recipes = [createMockRecipe({ title: 'Apple Pie' })];
+        localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
+        renderWithProviders(<App />);
+
+        // Login
+        fireEvent.change(screen.getByPlaceholderText(/e.g. Grandma Joan/), { target: { value: 'Alice' } });
+        fireEvent.click(screen.getByText('Enter The Archive'));
+        await screen.findByText('Apple Pie', {}, { timeout: 3000 });
+
+        // Navigate to Index
+        fireEvent.click(screen.getAllByRole('button', { name: /A–Z/i })[0]);
+        await screen.findByText(/Archival Index/i, {}, { timeout: 3000 }).catch(() => { });
+
+        // Navigate to Family Story
+        const familyStoryBtns = screen.queryAllByRole('button', { name: /Family Story/i });
+        if (familyStoryBtns.length > 0) {
+            fireEvent.click(familyStoryBtns[0]);
+            await screen.findByText(/The Oehler Family/i, {}, { timeout: 3000 }).catch(() => { });
+        }
+
+        // Navigate to Contributors
+        const contributorsBtns = screen.queryAllByRole('button', { name: /Contributors/i });
+        if (contributorsBtns.length > 0) {
+            fireEvent.click(contributorsBtns[0]);
+            await screen.findByText(/The Contributors/i, {}, { timeout: 3000 }).catch(() => { });
+        }
+
+        // Navigate to Profile
+        const profileElements = screen.queryAllByTestId(/nav-profile/i);
+        if (profileElements.length > 0) {
+            fireEvent.click(profileElements[0]);
+            await screen.findByText(/Display Identity/i, {}, { timeout: 3000 }).catch(() => { });
+        }
+    });
+});

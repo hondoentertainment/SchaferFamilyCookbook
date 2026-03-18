@@ -59,7 +59,7 @@ test.describe('Tab navigation', () => {
 
   test('navigates to Contributors tab', async ({ page }) => {
     await page.getByRole('button', { name: 'Contributors' }).click();
-    await expect(page.getByText(/The Contributors|Contributors/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'The Contributors' })).toBeVisible({ timeout: 5000 });
   });
 
   test('Contributors tab loads after login and shows expected content', async ({ page }) => {

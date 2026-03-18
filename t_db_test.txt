@@ -1,0 +1,32 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/kyle/Downloads/SchaferFamilyCookbook[39m
+
+ [31mΓ¥»[39m src/services/db.test.ts [2m([22m[2m22 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 79[2mms[22m[39m
+       [32mΓ£ô[39m should return "local" as default provider[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should return stored provider from localStorage[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get recipes from localStorage[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should return default recipes if localStorage is empty[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should recover from invalid recipes JSON in localStorage[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should migrate external recipe image URLs to local category fallbacks[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should upsert a new recipe[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should update an existing recipe[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should delete a recipe[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get trivia from localStorage[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should return empty array if no trivia exists[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should upsert trivia[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should delete trivia[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get gallery items from localStorage[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should return empty array if no gallery items exist[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should upsert gallery item[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should delete gallery item[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should add history entry[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get recipes from default seed when localStorage is empty[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should limit history to 100 entries[39m[32m 8[2mms[22m[39m
+       [32mΓ£ô[39m should return base64 when uploading file in local mode[32m 14[2mms[22m[39m
+       [32mΓ£ô[39m should handle bulk upload failures gracefully[32m 51[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m21 passed[39m[22m[90m (22)[39m
+[2m   Start at [22m 05:55:16
+[2m   Duration [22m 1.24s[2m (transform 122ms, setup 305ms, import 98ms, tests 79ms, environment 524ms)[22m
+
