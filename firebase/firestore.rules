@@ -1,0 +1,42 @@
+rules_version = '2';
+
+/**
+ * Schafer Family Cookbook — Firestore security rules
+ *
+ * CURRENT APP: Client SDK writes without Firebase Auth (name-based identity in localStorage).
+ * These rules allow read/write for a connected Firebase project so the app continues to work.
+ *
+ * TO HARDEN FOR PRODUCTION:
+ * 1. Add Firebase Authentication (email link, Google, or custom).
+ * 2. Replace `allow write` with `request.auth != null` and optional custom claims for `admin`.
+ * 3. Enable App Check to reduce abuse of your API key.
+ * 4. See docs/FIREBASE_SECURITY.md
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /recipes/{recipeId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /trivia/{id} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /gallery/{id} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /contributors/{id} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /history/{id} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /config/{id} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+  }
+}

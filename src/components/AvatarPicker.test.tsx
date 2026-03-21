@@ -65,14 +65,15 @@ describe('AvatarPicker', () => {
                 onClose={mockOnClose}
             />
         );
-        const grid = screen.getByRole('tabpanel', { name: 'Photos' });
-        const buttonsInPhotos = grid.querySelectorAll('button[aria-label^="Select avatar"]');
-        expect(buttonsInPhotos.length).toBeGreaterThan(0);
+        const photosPanel = screen.getByRole('tabpanel', { name: 'Photos' });
+        const firstPhotoImg = photosPanel.querySelector('img');
+        expect(firstPhotoImg?.getAttribute('src')).toContain('randomuser');
 
         fireEvent.click(screen.getByRole('tab', { name: 'Illustrated' }));
-        const buttonsInIllustrated = grid.querySelectorAll('button[aria-label^="Select avatar"]');
-        expect(buttonsInIllustrated.length).toBeGreaterThan(0);
-        expect(buttonsInIllustrated.length).not.toBe(buttonsInPhotos.length);
+        const illustratedPanel = screen.getByRole('tabpanel', { name: 'Illustrated' });
+        const firstIllustratedImg = illustratedPanel.querySelector('img');
+        expect(firstIllustratedImg?.getAttribute('src')).toContain('dicebear');
+        expect(firstPhotoImg?.getAttribute('src')).not.toBe(firstIllustratedImg?.getAttribute('src'));
     });
 });
 

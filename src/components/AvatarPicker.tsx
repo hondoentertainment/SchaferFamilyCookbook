@@ -1,6 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { AVATAR_SETS } from '../constants';
 import { useFocusTrap } from '../utils/focusTrap';
+
+/** Initial batch + each "Load more" step (keeps DOM small for large illustrated sets). */
+const AVATAR_PAGE_SIZE = 96;
 
 interface AvatarPickerProps {
     currentAvatar: string;
@@ -15,6 +18,12 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
 
     const currentSet = AVATAR_SETS[activeSetIndex];
     const urls = currentSet.urls;
+    const [visibleCount, setVisibleCount] = useState(AVATAR_PAGE_SIZE);
+
+    const visibleUrls = useMemo(
+        () => urls.slice(0, Math.min(visibleCount, urls.length)),
+        [urls, visibleCount]
+    );
 
     // If current avatar belongs to another set, switch tab to it on open
     useEffect(() => {
@@ -25,6 +34,19 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
             }
         }
     }, [currentAvatar]);
+
+    useEffect(() => {
+        setVisibleCount(AVATAR_PAGE_SIZE);
+    }, [activeSetIndex]);
+
+    useEffect(() => {
+        if (urls.includes(currentAvatar)) {
+            const idx = urls.indexOf(currentAvatar);
+            if (idx >= visibleCount) {
+                setVisibleCount(Math.min(Math.ceil((idx + 1) / AVATAR_PAGE_SIZE) * AVATAR_PAGE_SIZE, urls.length));
+            }
+        }
+    }, [currentAvatar, urls, visibleCount]);
 
     useFocusTrap(true, containerRef);
 
@@ -74,16 +96,22 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                     </div>
                 </div>
 
-                <div id="avatar-grid" role="tabpanel" aria-labelledby={`avatar-tab-${activeSetIndex}`} className="p-8 grid grid-cols-4 sm:grid-cols-6 gap-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
-                    {urls.map((url, i) => (
+                <div
+                    id="avatar-grid"
+                    role="tabpanel"
+                    aria-labelledby={`avatar-tab-${activeSetIndex}`}
+                    className="p-8 grid grid-cols-4 sm:grid-cols-6 gap-4 max-h-[50vh] overflow-y-auto custom-scrollbar"
+                >
+                    {visibleUrls.map((url, i) => (
                         <button
-                            key={`${activeSetIndex}-${i}`}
+                            key={`${activeSetIndex}-${url}`}
+                            type="button"
                             onClick={() => setSelectedUrl(url)}
                             className={`relative group rounded-2xl overflow-hidden transition-colors p-2 motion-reduce:transition-none ${!prefersReducedMotion ? 'hover:scale-110 active:scale-95 transition-transform' : ''} ${selectedUrl === url ? 'bg-emerald-50 ring-2 ring-[#2D4635]' : 'bg-stone-50 hover:bg-white'}`}
                             aria-label={`Select avatar ${i + 1} from ${currentSet.label}`}
                             aria-pressed={selectedUrl === url}
                         >
-                            <img src={url} className="w-full aspect-square object-cover rounded-xl" alt="" aria-hidden />
+                            <img src={url} className="w-full aspect-square object-cover rounded-xl" alt="" loading="lazy" decoding="async" />
                             {selectedUrl === url && (
                                 <div className="absolute top-1 right-1 w-4 h-4 bg-[#2D4635] text-white rounded-full flex items-center justify-center text-[8px]">
                                     ✓
@@ -91,6 +119,18 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                             )}
                         </button>
                     ))}
+                    {visibleCount < urls.length && (
+                        <div className="col-span-4 sm:col-span-6 flex justify-center pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setVisibleCount((c) => Math.min(c + AVATAR_PAGE_SIZE, urls.length))}
+                                className="px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest bg-stone-100 text-[#2D4635] border border-stone-200 hover:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                aria-label={`Load more ${currentSet.label} avatars`}
+                            >
+                                Load more ({urls.length - visibleCount} remaining)
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="p-8 bg-stone-50 flex justify-between items-center gap-4">

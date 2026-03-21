@@ -20,6 +20,7 @@ const ContributorsView = lazy(() => import('./components/ContributorsView').then
 const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
 const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ default: m.TriviaView })));
+const PrivacyView = lazy(() => import('./components/PrivacyView').then(m => ({ default: m.PrivacyView })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -637,10 +638,10 @@ const App: React.FC = () => {
     if (!currentUser) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-6">
-                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
+                <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
                     Skip to main content
                 </a>
-                <div id="main-content" className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]" tabIndex={-1}>
+                <div id="main-content-login" className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]" tabIndex={-1}>
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-800 via-orange-300 to-emerald-800" />
 
                     <div className="relative mb-12">
@@ -883,11 +884,11 @@ const App: React.FC = () => {
     if (tab === 'Trivia') {
         return (
             <div className="min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
-                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                <a href="#main-content-trivia" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                     Skip to main content
                 </a>
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <div id="main-content" tabIndex={-1}>
+                <div id="main-content-trivia" tabIndex={-1} role="main" aria-label="Family trivia">
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
                         trivia={trivia}
@@ -924,7 +925,7 @@ const App: React.FC = () => {
             </a>
             <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
-            <div id="main-content" tabIndex={-1}>
+            <div id="main-content" tabIndex={-1} aria-live="polite">
             {showAddRecipeModal && currentUser?.role === 'admin' && (
                 <Suspense fallback={null}>
                     <AddRecipeModal
@@ -955,7 +956,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
                     />
                 </Suspense>
             )}
@@ -1296,6 +1297,12 @@ const App: React.FC = () => {
                     ) : (
                         <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
                     )}
+                </Suspense>
+            )}
+
+            {tab === 'Privacy' && (
+                <Suspense fallback={<TabFallback />}>
+                    <PrivacyView />
                 </Suspense>
             )}
 

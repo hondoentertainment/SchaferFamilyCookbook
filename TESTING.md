@@ -78,6 +78,8 @@ src/
 | `npm run test:e2e:ui` | Playwright E2E with interactive UI |
 | `npm run test:e2e:desktop` | E2E Chromium only |
 
+**CI:** On push/PR to `main` or `master`, GitHub Actions runs `npm run test:run` then a separate job installs Playwright Chromium and runs `npm run test:e2e -- --project=chromium`.
+
 ## 📝 Writing Tests
 
 ### Test a Service

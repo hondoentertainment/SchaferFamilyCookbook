@@ -48,7 +48,7 @@
 - Admin shows **Recipe images** progress: total recipes, count with images, count missing. Suggests Fill Missing or local `npm run images:batch`.
 
 ### Avatar sets (Enhanced)
-- **Photos:** randomuser.me portraits (198). **Illustrated:** DiceBear avataaars (48). Avatar picker has tabs to switch between sets.
+- **Photos:** randomuser.me portraits (198). **Illustrated:** DiceBear avataaars (500 seeds). Avatar picker has tabs to switch between sets.
 
 ### Polish and finalization
 - Contrast: secondary text uses stone-500 for readability. Focus states and motion-reduce where appropriate.

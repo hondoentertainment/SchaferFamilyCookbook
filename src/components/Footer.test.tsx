@@ -30,6 +30,7 @@ describe('Footer', () => {
 
     it('should show profile button with avatar when logged in', () => {
         renderWithProviders(<Footer {...defaultProps} />);
+        expect(screen.getByRole('button', { name: 'Privacy' })).toBeInTheDocument();
         const profileBtn = screen.getByRole('button', { name: /view profile/i });
         expect(profileBtn).toBeInTheDocument();
         expect(profileBtn.querySelector('img')).toBeInTheDocument();

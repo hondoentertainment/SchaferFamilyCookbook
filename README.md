@@ -11,6 +11,7 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
 1. Install dependencies: `npm install`
 2. Create `.env.local` with (no `.env.example` in repo):
    - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
+   - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`).
 3. Run: `npm run dev`
 
 ### AI Features in Local Dev
@@ -38,15 +39,17 @@ npm run test:e2e        # E2E (chromium: --project=chromium)
 npm run smoke:prod      # Verify Vercel + GitHub Pages return 200 and expected content
 ```
 
-After push to `main`: CI and Deploy to GitHub Pages run automatically. Vercel deploys if connected. Verify env vars in Vercel: `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT`, `TWILIO_AUTH_TOKEN`.
+After push to `main`: CI runs lint, type-check, unit tests, build, then a **Playwright E2E** job (Chromium). Deploy to GitHub Pages runs from the deploy workflow. Vercel deploys if connected. Verify env vars in Vercel: `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT`, `TWILIO_AUTH_TOKEN`.
 
 ## Deploy (Vercel)
 
 1. Connect the repo to Vercel.
 2. Set environment variables:
    - `GEMINI_API_KEY` – required for AI features.
+   - `GEMINI_RATE_LIMIT_DISABLED` – set to `1` to turn off per-IP rate limiting on `/api/gemini` (default: **45 requests / 60s** per IP; override max with `GEMINI_RATE_LIMIT`).
    - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook and Firebase Admin.
    - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
+   - `VITE_SENTRY_DSN` – optional client error reporting (production only).
 3. Deploy.
 
 ## Deploy (GitHub Pages)
@@ -76,6 +79,11 @@ Located in `scripts/`:
 For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATEGY.md. Use: npm run images:dry-run, npm run images:batch, npm run images:resume.
 
 **Prompt rules:** `shared/recipeImagePrompts.mjs` defines canonical prompts for recipe images. Used by AdminView (single + bulk) and `generate-imagen-images.mjs`.
+
+## Security & backups
+
+- **Firestore / Storage rules:** `firebase/firestore.rules`, `firebase/storage.rules`. Deploy with Firebase CLI: `firebase deploy --only firestore:rules,storage:rules`. See **[docs/FIREBASE_SECURITY.md](docs/FIREBASE_SECURITY.md)** for tightening with Auth / App Check.
+- **Recipe JSON backup (local):** `npm run backup:recipes` copies `src/data/recipes.json` to `backups/recipes-<timestamp>.json` (folder is gitignored).
 
 ## Identity & Access
 

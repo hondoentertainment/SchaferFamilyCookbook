@@ -43,6 +43,7 @@ describe('Header', () => {
         expect(screen.getByText('Recipes')).toBeInTheDocument();
         expect(screen.getByText('A–Z')).toBeInTheDocument();
         expect(screen.getByText('Family Story')).toBeInTheDocument();
+        expect(screen.getByText('Privacy')).toBeInTheDocument();
     });
 
     it('should call setTab when a navigation button is clicked', () => {

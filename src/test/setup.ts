@@ -2,6 +2,12 @@ import '@testing-library/jest-dom';
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+vi.mock('@sentry/react', () => ({
+    init: vi.fn(),
+    captureException: vi.fn(),
+    browserTracingIntegration: vi.fn(() => ({})),
+}));
+
 // Cleanup after each test
 afterEach(() => {
     cleanup();

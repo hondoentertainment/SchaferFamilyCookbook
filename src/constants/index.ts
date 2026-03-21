@@ -21,10 +21,13 @@ export const HERITAGE_AVATARS: string[] = (() => {
     return avatars;
 })();
 
-/** Illustrated avatars from DiceBear (avataaars). 48 options. Used in avatar picker "Illustrated" set. */
+/** Number of illustrated DiceBear avatars (seeds 1..N). */
+export const ILLUSTRATED_AVATAR_COUNT = 500;
+
+/** Illustrated avatars from DiceBear (avataaars). Used in avatar picker "Illustrated" set. */
 export const ILLUSTRATED_AVATARS: string[] = (() => {
     const base = 'https://api.dicebear.com/7.x/avataaars/svg';
-    return Array.from({ length: 48 }, (_, i) => `${base}?seed=${i + 1}`);
+    return Array.from({ length: ILLUSTRATED_AVATAR_COUNT }, (_, i) => `${base}?seed=${i + 1}`);
 })();
 
 /** All avatar sets for the picker: [label, urls]. */

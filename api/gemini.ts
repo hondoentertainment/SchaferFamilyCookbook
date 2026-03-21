@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
+import { getClientIp, slidingWindowAllow, GEMINI_RATE_LIMIT } from './lib/rateLimit';
 import {
     buildLLMPromptText,
     normalizeDescription,
@@ -31,6 +32,15 @@ function isQuotaError(message: string): boolean {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    if (process.env.GEMINI_RATE_LIMIT_DISABLED !== '1') {
+        const ip = getClientIp(req);
+        if (!slidingWindowAllow(`gemini:${ip}`, GEMINI_RATE_LIMIT.max, GEMINI_RATE_LIMIT.windowMs)) {
+            return res.status(429).json({
+                error: 'Too many requests. Please wait a minute and try again.',
+            });
+        }
     }
 
     if (!API_KEY) {

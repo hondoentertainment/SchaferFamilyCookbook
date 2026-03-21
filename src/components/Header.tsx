@@ -10,6 +10,7 @@ const LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
 const EXTRA_TABS = [
     { id: 'Family Story', title: 'Family food history narrative' },
     { id: 'Contributors', title: 'Contributor directory' },
+    { id: 'Privacy', title: 'Privacy and data' },
 ] as const;
 
 type NavTab = { id: string; title: string; label?: string };
