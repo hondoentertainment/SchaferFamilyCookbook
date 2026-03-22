@@ -24,7 +24,8 @@
     "images:batch": "node scripts/generate-imagen-images.mjs --missing-only --limit 20",
     "images:resume": "node scripts/generate-imagen-images.mjs --missing-only --limit 20 --resume",
     "smoke:prod": "node scripts/smoke-prod.mjs",
-    "backup:recipes": "node scripts/backup-recipes-json.mjs"
+    "backup:recipes": "node scripts/backup-recipes-json.mjs",
+    "admin:set-claim": "node scripts/set-admin-claim.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.38.0",

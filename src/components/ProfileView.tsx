@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserProfile, Recipe, HistoryEntry, GalleryItem, Trivia, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
-import { AdminView } from './AdminView';
+import { AdminView, type FirebaseCustodianProps } from './AdminView';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 
@@ -22,6 +22,7 @@ export interface AdminSectionProps {
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
     defaultRecipeIds: string[];
+    firebaseCustodian?: FirebaseCustodianProps;
 }
 
 interface ProfileViewProps {
@@ -358,6 +359,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
                             onEditRecipe={adminSectionProps.onEditRecipe}
                             defaultRecipeIds={adminSectionProps.defaultRecipeIds}
+                            firebaseCustodian={adminSectionProps.firebaseCustodian}
                         />
                     </div>
                 </section>

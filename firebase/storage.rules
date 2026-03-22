@@ -1,21 +1,22 @@
 rules_version = '2';
 
 /**
- * Firebase Storage — family cookbook uploads (recipes, gallery).
- *
- * CURRENT: Open read/write when using client SDK without Auth (matches Firestore posture).
- * TO HARDEN: require `request.auth != null` on write; scope paths by uid or role claims.
- * See docs/FIREBASE_SECURITY.md
+ * Public read; uploads/deletes only for Firebase users with custom claim admin: true.
+ * @see docs/FIREBASE_SECURITY.md
  */
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
     match /recipes/{allPaths=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
     }
     match /gallery/{allPaths=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
     }
   }
 }

@@ -82,7 +82,7 @@ For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATE
 
 ## Security & backups
 
-- **Firestore / Storage rules:** `firebase/firestore.rules`, `firebase/storage.rules`. Deploy with Firebase CLI: `firebase deploy --only firestore:rules,storage:rules`. See **[docs/FIREBASE_SECURITY.md](docs/FIREBASE_SECURITY.md)** for tightening with Auth / App Check.
+- **Firestore / Storage rules:** **Public read**, **custodian-only write** (Firebase Auth + custom claim `admin`). Deploy: `firebase deploy --only firestore:rules,storage:rules`. Custodians use **Profile → Admin tools → Sign in with Google**; grant the claim once: `FIREBASE_SERVICE_ACCOUNT='<json>' npm run admin:set-claim -- <uid>`. Details: **[docs/FIREBASE_SECURITY.md](docs/FIREBASE_SECURITY.md)**.
 - **Recipe JSON backup (local):** `npm run backup:recipes` copies `src/data/recipes.json` to `backups/recipes-<timestamp>.json` (folder is gitignored).
 
 ## Identity & Access

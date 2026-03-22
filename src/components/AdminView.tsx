@@ -6,6 +6,14 @@ import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 
+/** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
+export interface FirebaseCustodianProps {
+    canWrite: boolean;
+    email: string | null;
+    onGoogleSignIn: () => Promise<void>;
+    onSignOut: () => Promise<void>;
+}
+
 interface AdminViewProps {
     editingRecipe: Recipe | null;
     clearEditing: () => void;
@@ -23,12 +31,14 @@ interface AdminViewProps {
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (r: Recipe) => void;
     defaultRecipeIds?: string[];
+    /** Set when provider is Firebase: gate cloud writes until Google sign-in + admin claim */
+    firebaseCustodian?: FirebaseCustodianProps;
 }
 
 export const AdminView: React.FC<AdminViewProps> = (props) => {
     const { toast, confirm } = useUI();
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
-    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe, defaultRecipeIds = [] } = props;
+    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe, defaultRecipeIds = [], firebaseCustodian } = props;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
@@ -60,6 +70,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [archivePhoneLocal, setArchivePhoneLocal] = useState('');
     const [isSavingArchivePhone, setIsSavingArchivePhone] = useState(false);
     const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
+    const [custodianBusy, setCustodianBusy] = useState(false);
 
     // Sync archive phone from dbStats
     useEffect(() => {
@@ -457,6 +468,66 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="max-w-7xl mx-auto px-6 py-12 space-y-12">
+                {firebaseCustodian && (
+                    <div
+                        role="region"
+                        aria-label="Custodian cloud sign-in"
+                        className={`rounded-[2rem] border p-6 md:p-8 ${firebaseCustodian.canWrite ? 'border-emerald-200 bg-emerald-50/80' : 'border-amber-200 bg-amber-50/90'}`}
+                    >
+                        {firebaseCustodian.canWrite ? (
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-emerald-900 font-serif">
+                                    <span className="font-black uppercase tracking-widest text-[10px] text-emerald-700 block mb-1">Cloud saves enabled</span>
+                                    Signed in as <span className="font-semibold">{firebaseCustodian.email || 'custodian'}</span>. Recipe, gallery, and trivia changes sync to the family Firebase project.
+                                </p>
+                                <button
+                                    type="button"
+                                    disabled={custodianBusy}
+                                    onClick={async () => {
+                                        setCustodianBusy(true);
+                                        try {
+                                            await firebaseCustodian.onSignOut();
+                                            toast('Signed out of custodian account', 'info');
+                                        } finally {
+                                            setCustodianBusy(false);
+                                        }
+                                    }}
+                                    className="shrink-0 px-6 py-3 rounded-full border border-emerald-300 text-emerald-900 text-[10px] font-black uppercase tracking-widest hover:bg-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-60"
+                                >
+                                    Sign out Google
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-amber-950 font-serif leading-relaxed">
+                                    <span className="font-black uppercase tracking-widest text-[10px] text-amber-800 block mb-2">Public archive · custodian sign-in required</span>
+                                    The cookbook is <strong>publicly readable</strong>. Saving edits to the cloud requires signing in with Google using an account your project owner has granted the{' '}
+                                    <code className="text-xs bg-white/60 px-1 rounded">admin</code> security role (custom claim). Ask your technical contact if saves are denied.
+                                </p>
+                                <button
+                                    type="button"
+                                    disabled={custodianBusy}
+                                    aria-busy={custodianBusy}
+                                    onClick={async () => {
+                                        setCustodianBusy(true);
+                                        try {
+                                            await firebaseCustodian.onGoogleSignIn();
+                                            toast('Signed in — if saves still fail, your account may need the admin claim.', 'success');
+                                        } catch (e) {
+                                            console.error(e);
+                                            toast('Google sign-in failed. Check browser popup settings and Firebase Auth (Google provider + authorized domains).', 'error');
+                                        } finally {
+                                            setCustodianBusy(false);
+                                        }
+                                    }}
+                                    className="px-8 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 disabled:opacity-60"
+                                >
+                                    {custodianBusy ? 'Opening Google…' : 'Sign in with Google (custodian)'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
                 {isAICooldownActive && (
                     <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-widest">
                         AI generation is cooling down due to quota limits. Try again in {formatCooldown(aiCooldownSecondsLeft)} or use default/manual images.

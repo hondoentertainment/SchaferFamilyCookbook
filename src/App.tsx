@@ -2,7 +2,14 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { useUI } from './context/UIContext';
 import { shouldToastImageError } from './utils/imageErrorToast';
+import { FirebaseError } from 'firebase/app';
 import { CloudArchive } from './services/db';
+import {
+    subscribeFirebaseCustodian,
+    signInCustodianWithGoogle,
+    signOutFirebaseCustodian,
+    type CustodianAuthState,
+} from './services/firebaseCustodianAuth';
 import { Header } from './components/Header';
 import { PLACEHOLDER_AVATAR } from './constants';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
@@ -404,6 +411,7 @@ const App: React.FC = () => {
     });
 
     const handleLogout = () => {
+        void signOutFirebaseCustodian();
         localStorage.removeItem('schafer_user');
         setCurrentUser(null);
         setTab('Recipes');
@@ -416,6 +424,8 @@ const App: React.FC = () => {
     });
 
     const [archivePhone, setArchivePhone] = useState(() => localStorage.getItem('schafer_archive_phone') || '');
+
+    const [custodianAuth, setCustodianAuth] = useState<CustodianAuthState>({ user: null, isAdmin: false });
 
     const [loginName, setLoginName] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -492,6 +502,14 @@ const App: React.FC = () => {
         const unsubPhone = CloudArchive.subscribeArchivePhone(setArchivePhone);
         return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); unsubPhone(); };
     }, []);
+
+    useEffect(() => {
+        if (CloudArchive.getProvider() !== 'firebase') {
+            setCustodianAuth({ user: null, isAdmin: false });
+            return;
+        }
+        return subscribeFirebaseCustodian(setCustodianAuth);
+    }, [dbStats.activeProvider, dbStats.isCloudActive]);
 
     // Deep-link handling: open recipe from #recipe/{id}
     useEffect(() => {
@@ -1333,7 +1351,12 @@ const App: React.FC = () => {
                                 setCurrentUser(updatedUser);
                                 localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
                                 await refreshLocalState();
-                            } catch {
+                            } catch (e) {
+                                if (e instanceof FirebaseError && e.code === 'permission-denied') {
+                                    throw new Error(
+                                        'The shared family directory is managed by custodians. Sign in with Google under Profile → Admin tools (if you are one), or ask a custodian to update your profile.'
+                                    );
+                                }
                                 throw new Error(CLOUD_ERROR_MSG);
                             }
                         }}
@@ -1414,6 +1437,16 @@ const App: React.FC = () => {
                             },
                             onEditRecipe: setEditingRecipe,
                             defaultRecipeIds: Array.from(defaultRecipeIds),
+                            ...(CloudArchive.getProvider() === 'firebase'
+                                ? {
+                                      firebaseCustodian: {
+                                          canWrite: custodianAuth.isAdmin,
+                                          email: custodianAuth.user?.email ?? null,
+                                          onGoogleSignIn: signInCustodianWithGoogle,
+                                          onSignOut: signOutFirebaseCustodian,
+                                      },
+                                  }
+                                : {}),
                         } : undefined}
                     />
                 </Suspense>

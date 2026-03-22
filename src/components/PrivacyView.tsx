@@ -44,9 +44,12 @@ export const PrivacyView: React.FC = () => {
                         Who can see it
                     </h2>
                     <p>
-                        {siteConfig.siteName} is intended for family use. Anyone with the site link can see content
-                        that is published on the app. Administrators control what is added or removed. This is not a
-                        substitute for medical, legal, or financial privacy requirements.
+                        {siteConfig.siteName} is intended for family use. When the family cloud is connected, the
+                        cookbook is typically <strong>publicly readable</strong> (anyone with the link can browse
+                        recipes and gallery). Only designated custodians—after signing in with Google and a server-side
+                        admin grant—can change cloud data. Name-based “login” only personalizes your view; it does not
+                        by itself authorize cloud writes. This is not a substitute for medical, legal, or financial
+                        privacy requirements.
                     </p>
                 </section>
                 <section aria-labelledby="privacy-contact">
