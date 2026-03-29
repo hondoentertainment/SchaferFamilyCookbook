@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Recipe modal', () => {
@@ -42,15 +42,14 @@ test.describe('Recipe modal', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 2000 });
   });
 
-  test('deep link opens recipe modal directly', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await loginAs(page, 'Alice');
-
+  test('deep link opens recipe modal directly via /recipes/:id', async ({ page }) => {
     const recipeId = 'imported_9mrpvyxve';
-    await page.goto('/#recipe/' + encodeURIComponent(recipeId));
-    await page.reload();
+    await page.goto('/recipes/' + encodeURIComponent(recipeId));
+
+    // Should redirect to login first since we cleared storage in beforeEach
+    // Log in again, then navigate to the deep link
+    await loginAs(page, 'Alice');
+    await page.goto('/recipes/' + encodeURIComponent(recipeId));
 
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole('dialog').getByRole('heading', { name: 'Festive Apple Dip' })).toBeVisible();

@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Recipes tab', () => {
@@ -10,6 +10,7 @@ test.describe('Recipes tab', () => {
   });
 
   test('displays hero section and recipe count', async ({ page }) => {
+    await expect(page).toHaveURL('/');
     await expect(page.getByText(/Preserving the/)).toBeVisible();
     await expect(page.getByText(/flavor/)).toBeVisible();
     await expect(page.getByText(/Recipes Archived/i)).toBeVisible();

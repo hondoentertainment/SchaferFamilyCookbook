@@ -3,6 +3,7 @@ import { Recipe, ContributorProfile, UserProfile } from '../../types';
 import * as geminiProxy from '../../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../../constants';
 import { useUI } from '../../context/UIContext';
+import { useDebounceAction } from '../../hooks';
 
 export interface RecipeFormProps {
     editingRecipe: Recipe | null;
@@ -146,22 +147,12 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
         } finally { setIsGeneratingImage(false); }
     };
 
-    const handleRecipeSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!recipeForm.title?.trim()) {
-            toast('Recipe title is required.', 'error');
-            return;
-        }
-        const ingredients = recipeForm.ingredients?.filter(Boolean) ?? [];
-        const instructions = recipeForm.instructions?.filter(Boolean) ?? [];
-        if (ingredients.length === 0 || instructions.length === 0) {
-            toast('Ingredients and instructions are required.', 'error');
-            return;
-        }
-        if (isSubmitting) return;
+    const debouncedSave = useDebounceAction(async () => {
         setIsSubmitting(true);
         try {
             const isUpdate = !!editingRecipe;
+            const ingredients = recipeForm.ingredients?.filter(Boolean) ?? [];
+            const instructions = recipeForm.instructions?.filter(Boolean) ?? [];
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
             await onSave({
                 ...recipeForm as Recipe,
@@ -183,6 +174,21 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
             setPreviewUrl(null);
             if (editingRecipe) clearEditing();
         } finally { setIsSubmitting(false); }
+    });
+
+    const handleRecipeSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!recipeForm.title?.trim()) {
+            toast('Recipe title is required.', 'error');
+            return;
+        }
+        const ingredients = recipeForm.ingredients?.filter(Boolean) ?? [];
+        const instructions = recipeForm.instructions?.filter(Boolean) ?? [];
+        if (ingredients.length === 0 || instructions.length === 0) {
+            toast('Ingredients and instructions are required.', 'error');
+            return;
+        }
+        await debouncedSave();
     };
 
     return (

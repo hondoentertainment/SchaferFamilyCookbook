@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GalleryItem, UserProfile, DBStats } from '../../types';
 import { useUI } from '../../context/UIContext';
+import { useDebounceAction } from '../../hooks';
 
 export interface GalleryUploaderProps {
     currentUser: UserProfile | null;

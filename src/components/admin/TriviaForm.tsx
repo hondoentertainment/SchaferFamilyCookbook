@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trivia, UserProfile } from '../../types';
 import { useUI } from '../../context/UIContext';
+import { useDebounceAction } from '../../hooks';
 
 export interface TriviaFormProps {
     trivia: Trivia[];
@@ -21,6 +22,20 @@ export const TriviaForm: React.FC<TriviaFormProps> = ({
     const [editingTrivia, setEditingTrivia] = useState<Trivia | null>(null);
     const [isTriviaSubmitting, setIsTriviaSubmitting] = useState(false);
 
+    const debouncedSave = useDebounceAction(async () => {
+        setIsTriviaSubmitting(true);
+        try {
+            await onSave({
+                ...(triviaForm as Trivia),
+                id: editingTrivia?.id || 't_' + Date.now(),
+                contributor: editingTrivia?.contributor || currentUser?.name || 'Unknown'
+            });
+            toast(editingTrivia ? 'Trivia updated' : 'Trivia added', 'success');
+            setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' });
+            setEditingTrivia(null);
+        } finally { setIsTriviaSubmitting(false); }
+    });
+
     return (
         <section className="space-y-6 animate-in fade-in">
             <h3 className="text-xl font-serif italic text-[#A0522D] flex items-center gap-3">
@@ -33,18 +48,7 @@ export const TriviaForm: React.FC<TriviaFormProps> = ({
                     toast('Question is required.', 'error');
                     return;
                 }
-                if (isTriviaSubmitting) return;
-                setIsTriviaSubmitting(true);
-                try {
-                    await onSave({
-                        ...(triviaForm as Trivia),
-                        id: editingTrivia?.id || 't_' + Date.now(),
-                        contributor: editingTrivia?.contributor || currentUser?.name || 'Unknown'
-                    });
-                    toast(editingTrivia ? 'Trivia updated' : 'Trivia added', 'success');
-                    setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' });
-                    setEditingTrivia(null);
-                } finally { setIsTriviaSubmitting(false); }
+                await debouncedSave();
             }} className="space-y-4">
                 <div>
                     <label htmlFor="admin-trivia-question" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Question</label>

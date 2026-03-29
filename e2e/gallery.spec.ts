@@ -10,7 +10,7 @@ test.describe('Gallery', () => {
   });
 
   test('shows empty state when no items', async ({ page }) => {
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
 
     await expect(page.getByRole('main', { name: /Family Gallery/i })).toBeVisible();
     await expect(page.getByText('The gallery awaits your memories')).toBeVisible();
@@ -18,20 +18,15 @@ test.describe('Gallery', () => {
   });
 
   test('shows text-to-archive instructions when no archive phone', async ({ page }) => {
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
 
     await expect(page.getByText(/Want to add photos\?/i)).toBeVisible();
     await expect(page.getByText(/Admins can enable text-to-archive/i)).toBeVisible();
   });
 
   test('shows archive phone when configured', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await loginAs(page, 'Alice');
     await page.evaluate(() => localStorage.setItem('schafer_archive_phone', '+15551234567'));
-    await page.reload();
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
 
     await expect(page.getByRole('heading', { name: 'Text your memories' })).toBeVisible();
     await expect(page.getByText(/\+15551234567/)).toBeVisible();
@@ -53,15 +48,13 @@ test.describe('Gallery', () => {
         ])
       );
     });
-    await page.reload();
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
 
     await expect(page.getByText('Summer picnic 2024')).toBeVisible();
     await expect(page.getByText(/Added by Alice/i)).toBeVisible();
   });
 
   test('opens lightbox when clicking image', async ({ page }) => {
-    await loginAs(page, 'Alice');
     await page.evaluate(() => {
       localStorage.setItem(
         'schafer_db_gallery',
@@ -77,8 +70,7 @@ test.describe('Gallery', () => {
         ])
       );
     });
-    await page.reload();
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
     await expect(page.getByText('Beach day')).toBeVisible({ timeout: 5000 });
 
     await page.getByRole('button', { name: /View full size: Beach day/i }).click();
@@ -103,8 +95,7 @@ test.describe('Gallery', () => {
         ])
       );
     });
-    await page.reload();
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
     await expect(page.getByText('Escape test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape test/i }).click();
 
@@ -129,8 +120,7 @@ test.describe('Gallery', () => {
         ])
       );
     });
-    await page.reload();
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.goto('/gallery');
     await expect(page.getByText('Escape key test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape key test/i }).click();
 
