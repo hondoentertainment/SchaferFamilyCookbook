@@ -384,7 +384,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                         {contributors.filter(c => c.role === 'admin').map(admin => (
                             <div key={admin.id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-md">
-                                <img src={admin.avatar} className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-stone-50 object-cover" alt={admin.name} onError={avatarOnError} />
+                                <img src={admin.avatar} width={80} height={80} className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-stone-50 object-cover" alt={admin.name} onError={avatarOnError} />
                                 <div className="text-center">
                                     <h4 className="font-serif italic text-[#2D4635] text-lg leading-none">{admin.name}</h4>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Legacy Custodian</span>

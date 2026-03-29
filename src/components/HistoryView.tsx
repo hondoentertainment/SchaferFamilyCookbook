@@ -247,6 +247,16 @@ export const HistoryView: React.FC = () => {
                 </article>
             </div>
 
+            {/* Mobile Print FAB */}
+            <button
+                type="button"
+                onClick={handlePrint}
+                className="fixed bottom-24 right-8 z-40 w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] bg-[#A0522D] text-white rounded-full shadow-xl flex items-center justify-center hover:bg-[#A0522D]/90 hover:scale-110 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#A0522D] print:hidden md:hidden mb-[env(safe-area-inset-bottom)] mr-[env(safe-area-inset-right)]"
+                aria-label="Print story"
+            >
+                <span className="text-xl leading-none" aria-hidden="true">🖨️</span>
+            </button>
+
             {/* Back to top FAB */}
             {showBackToTop && (
                 <button

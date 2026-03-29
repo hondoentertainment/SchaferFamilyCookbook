@@ -547,7 +547,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         { id: 'directory', label: '👥 Directory' },
                         { id: 'permissions', label: '🔐 Admins', restricted: true },
                     ]
-                        .filter(tab => !tab.restricted || isSuperAdmin)
+                        .filter(tab => !tab.restricted || isSuperAdminUser)
                         .map(tab => (
                             <button
                                 key={tab.id}
@@ -559,7 +559,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 tabIndex={activeSubtab === tab.id ? 0 : -1}
                                 onClick={() => setActiveSubtab(tab.id as typeof activeSubtab)}
                                 onKeyDown={(e) => {
-                                    const tabs = ['records', 'gallery', 'trivia', 'directory', ...(isSuperAdmin ? ['permissions'] as const : [])];
+                                    const tabs = ['records', 'gallery', 'trivia', 'directory', ...(isSuperAdminUser ? ['permissions'] as const : [])];
                                     const i = tabs.indexOf(activeSubtab);
                                     if (e.key === 'ArrowRight' && i < tabs.length - 1) {
                                         e.preventDefault();
@@ -577,7 +577,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 </div>
 
                 {/* Permissions & Admin Management */}
-                {activeSubtab === 'permissions' && isSuperAdmin && (
+                {activeSubtab === 'permissions' && isSuperAdminUser && (
                     <section id="admin-panel-permissions" role="tabpanel" aria-labelledby="admin-tab-permissions" className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-200 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
                         <div className="relative z-10">
@@ -1196,7 +1196,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             </h2>
 
                             {/* Merge Contributors Tool */}
-                            {isSuperAdmin && (
+                            {isSuperAdminUser && (
                                 <div className="mb-10 p-6 bg-orange-50/50 rounded-[2rem] border border-orange-200">
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D] mb-4 flex items-center gap-2">
                                         <span>🔀</span> Merge Contributors
@@ -1271,7 +1271,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     type="button"
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
-                                                        if (isSuperAdmin) {
+                                                        if (isSuperAdminUser) {
                                                             setPickerTarget({ name, avatar, id: profile?.id || 'c_' + Date.now(), role });
                                                         } else {
                                                             const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
@@ -1290,7 +1290,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         type="button"
                                                         onClick={async (e) => {
                                                             e.stopPropagation();
-                                                            if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                            if (!isSuperAdminUser) { toast("Only Super Admins can modify roles.", 'error'); return; }
                                                             if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) {
                                                                 await onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
                                                                 toast('Admin access revoked', 'success');
@@ -1305,7 +1305,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         type="button"
                                                         onClick={async (e) => {
                                                             e.stopPropagation();
-                                                            if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
+                                                            if (!isSuperAdminUser) { toast("Only Super Admins can modify roles.", 'error'); return; }
                                                             if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) {
                                                                 await onUpdateContributor({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
                                                                 toast('Contributor promoted', 'success');
@@ -1326,7 +1326,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 }
 
                 {
-                    pickerTarget && isSuperAdmin && (
+                    pickerTarget && isSuperAdminUser && (
                         <AvatarPicker
                             currentAvatar={pickerTarget.avatar}
                             onSelect={async (url) => {

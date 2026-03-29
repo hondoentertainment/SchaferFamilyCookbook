@@ -30,13 +30,10 @@
   "dependencies": {
     "@google/genai": "^1.38.0",
     "@sentry/react": "^9.47.1",
-    "busboy": "^1.6.0",
     "firebase": "^12.8.0",
-    "firebase-admin": "^13.6.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-router-dom": "^7.13.2",
-    "twilio": "^5.12.0"
+    "react-router-dom": "^7.13.2"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
@@ -51,6 +48,9 @@
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
     "@vercel/node": "^5.5.27",
+    "busboy": "^1.6.0",
+    "firebase-admin": "^13.6.0",
+    "twilio": "^5.12.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
