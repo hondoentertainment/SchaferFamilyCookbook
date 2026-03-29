@@ -16,6 +16,7 @@ import { LoginView } from './components/LoginView';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
 import { recordRecipeView, getRecentlyViewedEntries } from './utils/recentlyViewed';
+import { optimisticUpdate } from './utils/optimistic';
 import { hapticLight } from './utils/haptics';
 import { tabFromPath } from './router';
 import { TRIVIA_SEED } from './data/trivia_seed';
@@ -481,11 +482,23 @@ const App: React.FC = () => {
                                         recipes, trivia, contributors,
                                         dbStats: { ...dbStats, archivePhone },
                                         onAddRecipe: async (r, f) => {
-                                            try {
-                                                const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
-                                                await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
-                                                await refreshLocalState();
-                                            } catch { toast(CLOUD_ERROR_MSG, 'error'); }
+                                            const optimisticRecipe = { ...r, image: r.image || '' } as Recipe;
+                                            const currentRecipes = recipes;
+                                            const existingIdx = currentRecipes.findIndex(x => x.id === r.id);
+                                            const optimisticRecipes = existingIdx >= 0
+                                                ? currentRecipes.map(x => x.id === r.id ? optimisticRecipe : x)
+                                                : [...currentRecipes, optimisticRecipe];
+                                            await optimisticUpdate(
+                                                currentRecipes,
+                                                optimisticRecipes,
+                                                setRecipes,
+                                                async () => {
+                                                    const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
+                                                    await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser.name);
+                                                    await refreshLocalState();
+                                                },
+                                                () => toast(CLOUD_ERROR_MSG, 'error'),
+                                            );
                                         },
                                         onAddGallery: async (g, f) => {
                                             try {
