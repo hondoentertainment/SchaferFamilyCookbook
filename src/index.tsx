@@ -6,6 +6,7 @@ import { UIProvider } from './context/UIContext';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initSentry } from './monitoring/sentry';
+import { reportWebVitals } from './utils/performance';
 
 initSentry();
 
@@ -19,3 +20,5 @@ root.render(
         </UIProvider>
     </ErrorBoundary>
 );
+
+reportWebVitals();

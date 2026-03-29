@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/react';
 
 /**
- * Optional error monitoring. Set VITE_SENTRY_DSN in Vercel / .env.production.local.
+ * Optional error monitoring with performance tracking.
+ * Set VITE_SENTRY_DSN in Vercel / .env.production.local.
  */
 export function initSentry(): void {
     if (!import.meta.env.PROD) return;
@@ -11,8 +12,15 @@ export function initSentry(): void {
     Sentry.init({
         dsn,
         environment: import.meta.env.MODE,
-        integrations: [Sentry.browserTracingIntegration()],
-        tracesSampleRate: 0.05,
+        integrations: [
+            Sentry.browserTracingIntegration(),
+            Sentry.browserProfilingIntegration(),
+        ],
+        // Performance: sample 20% of transactions in production
+        tracesSampleRate: 0.2,
+        // Error tracking stays at 100%
+        // Propagate traces to our API routes
+        tracePropagationTargets: [/\/api\//],
         replaysSessionSampleRate: 0,
         replaysOnErrorSampleRate: 0,
     });

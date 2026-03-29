@@ -10,13 +10,37 @@ service firebase.storage {
       return request.auth != null && request.auth.token.admin == true;
     }
 
-    match /recipes/{allPaths=**} {
+    // Only allow image and video MIME types
+    function isAllowedContentType() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('video/.*');
+    }
+
+    // Max 25 MB for images
+    function isImageWithinSizeLimit() {
+      return request.resource.contentType.matches('image/.*')
+          && request.resource.size < 25 * 1024 * 1024;
+    }
+
+    // Max 100 MB for videos
+    function isVideoWithinSizeLimit() {
+      return request.resource.contentType.matches('video/.*')
+          && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    function isValidUpload() {
+      return isAllowedContentType()
+          && (isImageWithinSizeLimit() || isVideoWithinSizeLimit());
+    }
+
+    // Only allow uploads into expected directories
+    match /recipe-images/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isValidUpload();
     }
     match /gallery/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isValidUpload();
     }
   }
 }

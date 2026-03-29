@@ -20,6 +20,7 @@ import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from '
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
+import { isSuperAdmin } from './config/site';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -399,7 +400,7 @@ const App: React.FC = () => {
         try {
             const u = JSON.parse(s);
             // Super Admin Auto-assign
-            if (u.name.toLowerCase() === 'kyle' || u.email === 'hondo4185@gmail.com') {
+            if (isSuperAdmin(u.name) || isSuperAdmin(u.email)) {
                 u.role = 'admin';
             } else if (!u.role) {
                 u.role = (u.name.toLowerCase() === 'admin' ? 'admin' : 'user');
@@ -551,7 +552,7 @@ const App: React.FC = () => {
         const existing = contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
 
         // Super Admin Detection
-        const isSuper = name.toLowerCase() === 'kyle' || name.toLowerCase() === 'hondo4185@gmail.com';
+        const isSuper = isSuperAdmin(name);
         const email = isSuper && name.includes('@') ? name : (existing?.email);
 
         const u: UserProfile = {

@@ -198,6 +198,8 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                     <div className="relative inline-block mb-6">
                                         <img
                                             src={avatarUrl}
+                                            width={112}
+                                            height={112}
                                             className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 border-8 border-white shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
                                             alt={`${stat.name}'s avatar`}
                                             onError={(e) => { handleAvatarError(stat.name); avatarOnError(e); }}

@@ -87,7 +87,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
                     <div className="relative group">
-                        <img src={avatar} className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} />
+                        <img src={avatar} width={192} height={192} className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} />
                         <button
                             onClick={() => setShowPicker(true)}
                             className="absolute bottom-4 right-4 w-12 h-12 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-xl"
@@ -180,6 +180,8 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             >
                                 <img
                                     src={recipe.image}
+                                    width={80}
+                                    height={80}
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     loading="lazy"
@@ -218,6 +220,8 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             >
                                 <img
                                     src={recipe.image}
+                                    width={80}
+                                    height={80}
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     loading="lazy"
@@ -252,6 +256,8 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             <div key={recipe.id} className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all">
                                 <img
                                     src={recipe.image}
+                                    width={80}
+                                    height={80}
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     loading="lazy"

@@ -6,6 +6,11 @@ rules_version = '2';
  * Set claims with Admin SDK, e.g. npm run admin:set-claim -- <uid>
  * Twilio MMS webhook uses Admin SDK and bypasses these rules.
  *
+ * RATE LIMITING NOTE: Firestore Security Rules cannot enforce rate limiting.
+ * To protect against abuse, configure Firebase App Check and use Cloud Functions
+ * with a rate-limiting middleware (e.g., express-rate-limit backed by Firestore
+ * or Redis) for any sensitive write paths.
+ *
  * @see docs/FIREBASE_SECURITY.md
  */
 service cloud.firestore {
@@ -14,29 +19,56 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.admin == true;
     }
 
+    // Validate document size (~1 MB cap expressed as field count + string length heuristic).
+    // Firestore itself enforces a 1 MiB per-document limit, but this rule rejects
+    // obviously oversized payloads at the rules layer before the write is committed.
+    function isReasonableSize() {
+      return request.resource.size() < 1048576; // 1 MB
+    }
+
+    // Validate that `created_at`, if present, is a valid timestamp.
+    function hasValidTimestamp() {
+      return !('created_at' in request.resource.data)
+          || request.resource.data.created_at is timestamp;
+    }
+
     match /recipes/{recipeId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() && isReasonableSize() && hasValidTimestamp();
+      allow delete: if isAdmin();
     }
     match /trivia/{id} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() && isReasonableSize() && hasValidTimestamp();
+      allow delete: if isAdmin();
     }
     match /gallery/{id} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() && isReasonableSize() && hasValidTimestamp();
+      allow delete: if isAdmin();
     }
+
+    // SENSITIVE DATA NOTE: The `contributors` collection may contain PII
+    // (phone, email). Firestore Security Rules cannot do field-level filtering
+    // on reads. We still allow public reads so the client can display names and
+    // avatars, but we STRONGLY RECOMMEND using a Cloud Function (e.g.,
+    // `getPublicContributors`) that strips sensitive fields (phone, email)
+    // before returning data to non-admin callers. The client should prefer
+    // calling that function instead of reading this collection directly.
     match /contributors/{id} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() && isReasonableSize() && hasValidTimestamp();
+      allow delete: if isAdmin();
     }
     match /history/{id} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() && isReasonableSize() && hasValidTimestamp();
+      allow delete: if isAdmin();
     }
     match /config/{id} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() && isReasonableSize() && hasValidTimestamp();
+      allow delete: if isAdmin();
     }
   }
 }

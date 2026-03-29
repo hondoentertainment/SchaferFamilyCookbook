@@ -5,6 +5,7 @@ import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
+import { isSuperAdmin } from '../config/site';
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -87,7 +88,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         r.contributor?.toLowerCase().includes(recipeSearch.toLowerCase())
     );
 
-    const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
+    const isSuperAdminUser = isSuperAdmin(currentUser?.name) || isSuperAdmin(currentUser?.email);
 
 
 
