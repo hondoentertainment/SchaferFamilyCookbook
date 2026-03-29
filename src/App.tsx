@@ -30,6 +30,7 @@ import {
     HistorySkeleton,
     ProfileSkeleton,
 } from './components/Skeletons';
+import { OfflineBanner } from './components/OfflineBanner';
 
 /* ---- Lazy route views ---- */
 const RecipeGrid = lazy(() => import('./components/RecipeGrid').then(m => ({ default: m.RecipeGrid })));
@@ -257,6 +258,14 @@ const App: React.FC = () => {
         return map[activeTab] ?? 'Recipes';
     }, [activeTab]);
 
+    const offlineContextMessage = useMemo(() => {
+        const path = location.pathname;
+        if (path === '/gallery') return 'Gallery may be incomplete';
+        if (path === '/trivia') return "Scores won't sync until reconnected";
+        if (path === '/' || path.startsWith('/recipes')) return 'Showing cached recipes';
+        return undefined;
+    }, [location.pathname]);
+
     /* ---- Login gate ---- */
     if (!currentUser) {
         return <LoginView onLogin={handleLogin} contributors={contributors} />;
@@ -268,6 +277,7 @@ const App: React.FC = () => {
             <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                 Skip to main content
             </a>
+            <OfflineBanner contextMessage={offlineContextMessage} />
             <Header currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
             {/* Initial load skeleton */}
