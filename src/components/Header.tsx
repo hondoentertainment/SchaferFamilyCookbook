@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile, DBStats } from '../types';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
+import { tabFromPath, pathFromTab } from '../router';
 
 const LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
@@ -24,14 +26,18 @@ const ALL_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
 ];
 
 interface HeaderProps {
-    activeTab: string;
-    setTab: (t: string) => void;
     currentUser: UserProfile | null;
     dbStats: DBStats;
     onLogout: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, dbStats: _dbStats, onLogout }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const activeTab = tabFromPath(location.pathname);
+
+    const goTo = (tab: string) => navigate(pathFromTab(tab));
+
     const [moreOpen, setMoreOpen] = useState(false);
     const moreRef = useRef<HTMLDivElement>(null);
 
@@ -58,8 +64,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         role="button"
                         tabIndex={0}
                         className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:rounded-lg min-h-11 min-w-11 md:min-h-0 md:min-w-0 justify-center md:justify-start -m-2 p-2 md:m-0 md:p-0"
-                        onClick={() => { hapticLight(); setTab('Recipes'); }}
-                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Recipes'); } }}
+                        onClick={() => { hapticLight(); goTo('Recipes'); }}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); goTo('Recipes'); } }}
                         aria-label="Go to Recipes"
                     >
                         <img src={LOGO_URL} className="w-8 h-8 sm:w-9 sm:h-9 md:w-8 md:h-8 rounded-full object-cover ring-1 ring-stone-100" alt="" />
@@ -77,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                     id={`tab-${id}`}
                                     onClick={() => {
                                         hapticLight();
-                                        setTab(id);
+                                        goTo(id);
                                         document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                                     }}
                                     title={title}
@@ -115,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                         key={id}
                                         role="menuitem"
                                         aria-current={activeTab === id ? 'page' : undefined}
-                                        onClick={() => { hapticLight(); setTab(id); setMoreOpen(false); }}
+                                        onClick={() => { hapticLight(); goTo(id); setMoreOpen(false); }}
                                         className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wider transition-colors first:rounded-t-2xl last:rounded-b-2xl ${activeTab === id ? 'bg-[#2D4635] text-white' : 'text-stone-600 hover:bg-stone-50'}`}
                                     >
                                         {id}
@@ -135,8 +141,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 data-testid="nav-profile"
                                 aria-current={activeTab === 'Profile' ? 'page' : undefined}
                                 className={`flex items-center gap-2 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center px-2 ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200'}`}
-                                onClick={() => { hapticLight(); setTab('Profile'); }}
-                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Profile'); } }}
+                                onClick={() => { hapticLight(); goTo('Profile'); }}
+                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); goTo('Profile'); } }}
                                 aria-label={`${currentUser.name}, view profile`}
                             >
                                 <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
