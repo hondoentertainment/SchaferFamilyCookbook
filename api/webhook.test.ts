@@ -157,14 +157,14 @@ describe('webhook', () => {
         expect(r.send.mock.calls[0][0]).toContain('no media detected');
     });
 
-    it('should return 200 with no-media TwiML when From is missing', async () => {
+    it('should return 200 with invalid sender TwiML when From is missing', async () => {
         const handler = (await import('./webhook')).default;
         const r = res();
         await handler({
             method: 'POST',
             body: { NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/123', Body: 'test' }
         } as any, r as any);
-        expect(r.send.mock.calls[0][0]).toContain('no media detected');
+        expect(r.send.mock.calls[0][0]).toContain('invalid sender number');
     });
 
     it('should return 403 when TWILIO_AUTH_TOKEN is set and signature is invalid', async () => {

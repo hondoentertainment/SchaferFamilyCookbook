@@ -7,8 +7,27 @@ type TimestampBucket = number[];
 
 const buckets = new Map<string, TimestampBucket>();
 
+const MAX_BUCKET_ENTRIES = 10_000;
+
+/** Evict entries older than windowMs when the map grows too large. */
+function evictStaleBuckets(windowMs: number): void {
+    if (buckets.size <= MAX_BUCKET_ENTRIES) return;
+    const now = Date.now();
+    const cutoff = now - windowMs;
+    for (const [key, times] of buckets) {
+        // Remove the bucket if all its timestamps are older than the window
+        if (times.length === 0 || times[times.length - 1]! < cutoff) {
+            buckets.delete(key);
+        }
+    }
+}
+
 export function slidingWindowAllow(key: string, maxRequests: number, windowMs: number): boolean {
     const now = Date.now();
+
+    // Prevent unbounded memory growth: evict stale entries when map is too large
+    evictStaleBuckets(windowMs);
+
     let times = buckets.get(key);
     if (!times) {
         times = [];

@@ -44,12 +44,17 @@ export const HistoryView: React.FC = () => {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
+    const getScrollBehavior = (): ScrollBehavior => {
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        return prefersReducedMotion ? 'instant' as ScrollBehavior : 'smooth';
+    };
+
     const scrollToSection = (id: string) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById(id)?.scrollIntoView({ behavior: getScrollBehavior(), block: 'start' });
     };
 
     const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: getScrollBehavior() });
     };
 
     const handlePrint = () => {

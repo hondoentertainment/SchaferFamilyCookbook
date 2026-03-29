@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Recipe } from '../types';
 import { scaleIngredients } from '../utils/scaleIngredients';
 import { useFocusTrap } from '../utils/focusTrap';
+import { useUI } from '../context/UIContext';
 
 const SWIPE_THRESHOLD = 50;
 
@@ -11,6 +12,7 @@ interface CookModeViewProps {
 }
 
 export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) => {
+    const { toast } = useUI();
     const [stepIndex, setStepIndex] = useState(0);
     const [scaleTo, setScaleTo] = useState(typeof recipe.servings === 'number' ? recipe.servings : 4);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +50,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                     wakeLock = await (navigator as any).wakeLock.request('screen');
                 }
             } catch {
-                /* ignore */
+                toast('Could not keep screen awake. Your device may lock during cooking.', 'info');
             }
         };
         requestWakeLock();

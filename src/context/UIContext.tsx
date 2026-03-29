@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { hapticSuccess, hapticError } from '../utils/haptics';
 import { useFocusTrap } from '../utils/focusTrap';
+import { TIMING } from '../constants/theme';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -18,7 +19,7 @@ interface ConfirmOptions {
 }
 
 interface UIContextValue {
-    toast: (message: string, type?: ToastType) => void;
+    toast: (message: string, type?: ToastType, duration?: number) => void;
     confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
 }
 
@@ -39,14 +40,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     } | null>(null);
     const toastIdRef = useRef(0);
 
-    const toast = useCallback((message: string, type: ToastType = 'info') => {
+    const toast = useCallback((message: string, type: ToastType = 'info', duration: number = TIMING.toastDurationMs) => {
         const id = ++toastIdRef.current;
         if (type === 'success') hapticSuccess();
         else if (type === 'error') hapticError();
         setToasts(prev => [...prev, { id, message, type }]);
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id));
-        }, 4000);
+        }, duration);
     }, []);
 
     const confirm = useCallback((message: string, options: ConfirmOptions = {}) => {

@@ -56,12 +56,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'generateContent') {
             const text = typeof body.text === 'string' ? body.text : '';
             if (!text) return res.status(400).json({ error: 'Missing text' });
+            if (text.length > 10000) {
+                return res.status(400).json({ error: 'Text exceeds maximum length of 10000 characters' });
+            }
             const response = await ai.models.generateContent({
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text }] }]
             });
-            const result = (response as any).text;
-            return res.status(200).json({ text: result ?? '' });
+            const result = typeof response.text === 'string' ? response.text : '';
+            return res.status(200).json({ text: result });
         }
 
         if (action === 'generateImage') {
@@ -69,13 +72,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ? (body.recipe as RecipeInput)
                 : undefined;
             if (!recipe?.title) return res.status(400).json({ error: 'Missing recipe' });
+            if (typeof recipe.title !== 'string') {
+                return res.status(400).json({ error: 'recipe.title must be a string' });
+            }
+            if (recipe.category !== undefined && typeof recipe.category !== 'string') {
+                return res.status(400).json({ error: 'recipe.category must be a string' });
+            }
+            if (recipe.ingredients !== undefined && !Array.isArray(recipe.ingredients)) {
+                return res.status(400).json({ error: 'recipe.ingredients must be an array' });
+            }
+            if (recipe.instructions !== undefined && !Array.isArray(recipe.instructions)) {
+                return res.status(400).json({ error: 'recipe.instructions must be an array' });
+            }
 
             const promptText = buildLLMPromptText(recipe);
             const contentResp = await ai.models.generateContent({
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text: promptText }] }]
             });
-            const raw = (contentResp as any).text;
+            const raw = typeof contentResp.text === 'string' ? contentResp.text : '';
             const description = normalizeDescription(raw, recipe);
 
             const imageResp = await ai.models.generateContent({
@@ -104,6 +119,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'magicImport') {
             const rawText = typeof body.rawText === 'string' ? body.rawText : '';
             if (!rawText) return res.status(400).json({ error: 'Missing rawText' });
+            if (rawText.length > 50000) {
+                return res.status(400).json({ error: 'rawText exceeds maximum length of 50000 characters' });
+            }
             const response = await ai.models.generateContent({
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text: `Recipe text: ${rawText}` }] }],
@@ -124,8 +142,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                 }
             });
-            const result = (response as any).text;
-            return res.status(200).json({ json: result ?? '{}' });
+            const result = typeof response.text === 'string' ? response.text : '{}';
+            return res.status(200).json({ json: result });
         }
 
         return res.status(400).json({ error: `Unknown action: ${action}` });

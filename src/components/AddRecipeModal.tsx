@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Recipe, ContributorProfile, UserProfile } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
@@ -25,15 +25,27 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
     const [aiCooldownUntil, setAiCooldownUntil] = useState<number>(0);
     const [aiCooldownSecondsLeft, setAiCooldownSecondsLeft] = useState(0);
 
+    const previewUrlRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (!recipeFile) {
             setPreviewUrl(null);
             return;
         }
         const url = URL.createObjectURL(recipeFile);
+        previewUrlRef.current = url;
         setPreviewUrl(url);
         return () => URL.revokeObjectURL(url);
     }, [recipeFile]);
+
+    // Clean up any lingering object URLs on unmount
+    useEffect(() => {
+        return () => {
+            if (previewUrlRef.current && previewUrlRef.current.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrlRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (!aiCooldownUntil) {
@@ -128,10 +140,17 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         setIsGeneratingImage(true);
         try {
             const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipeForm);
-            const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
+            let file: File;
+            try {
+                file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
+            } catch (conversionError) {
+                toast('Failed to process the generated image. Try uploading a photo instead.', 'error');
+                return;
+            }
             setRecipeFile(file);
             setImageSourceForCurrent(imageSource);
-            setPreviewUrl(URL.createObjectURL(file));
+            // Revoke previous object URL before creating a new one
+            setPreviewUrl(prev => { if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
         } catch (e: unknown) {
             handleAIError(e, 'Failed to generate image: ${message}. Try uploading a photo instead.');
         } finally { setIsGeneratingImage(false); }
@@ -208,7 +227,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         )}
                         <div className="relative group">
                             <label htmlFor="add-recipe-image-upload" className="block cursor-pointer">
-                                <input id="add-recipe-image-upload" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Upload recipe image" />
+                                <input id="add-recipe-image-upload" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; if (f && f.size > 10 * 1024 * 1024) { toast('Image must be under 10 MB.', 'error'); e.target.value = ''; return; } setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Upload recipe image" />
                                 <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
                                     <span className="text-lg">📁</span>
                                     <span className="text-[10px] font-black uppercase tracking-widest">{recipeFile ? recipeFile.name : 'Upload Heritage Photo'}</span>
