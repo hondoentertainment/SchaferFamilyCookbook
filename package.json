@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:desktop": "playwright test --project=chromium",
-    "lint": "eslint src api --report-unused-disable-directives --max-warnings 100",
+    "lint": "eslint src api --report-unused-disable-directives --max-warnings 95",
     "lint:fix": "eslint src api --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
