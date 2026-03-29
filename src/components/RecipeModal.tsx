@@ -66,6 +66,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const modalRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [imageBroken, setImageBroken] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
     const [scaleFlash, setScaleFlash] = useState(false);
     const scaleInitRef = useRef(true);
     const hasValidImage =
@@ -116,6 +117,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         const base = typeof recipe.servings === 'number' ? recipe.servings : 4;
         setScaleTo(base);
         setImageBroken(false);
+        setImageLoading(true);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
 
@@ -298,6 +300,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <span className="text-xl">›</span>
                             </button>
                         )}
+                        {(prevRecipe || nextRecipe) && onNavigate && (
+                            <span className="hidden md:flex items-center text-[10px] text-stone-400 tracking-wider font-medium select-none pointer-events-none" aria-hidden="true">
+                                ← → to navigate
+                            </span>
+                        )}
                         <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2" aria-label={`Share recipe: ${shareTitle}`} title={shareTitle}>
                             <span className="text-xl">⎘</span>
                         </button>
@@ -344,14 +351,19 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     >
                         {hasValidImage ? (
                             <>
+                                {imageLoading && (
+                                    <div className="absolute inset-0 animate-pulse bg-stone-200" />
+                                )}
                                 <img
                                     src={recipe.image}
                                     width={800}
                                     height={600}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                                     alt={recipe.title}
                                     loading="lazy"
+                                    onLoad={() => setImageLoading(false)}
                                     onError={() => {
+                                        setImageLoading(false);
                                         setImageBroken(true);
                                         if (shouldToastImageError(recipe.id)) {
                                             toast('Some recipe images couldn\'t be loaded', 'info');
