@@ -28,7 +28,8 @@ export function subscribeFirebaseCustodian(callback: (s: CustodianAuthState) => 
         try {
             const r = await user.getIdTokenResult(true);
             callback({ user, isAdmin: r.claims.admin === true });
-        } catch {
+        } catch (e) {
+            console.warn('Failed to fetch admin claims for user:', user.email, e);
             callback({ user, isAdmin: false });
         }
     });

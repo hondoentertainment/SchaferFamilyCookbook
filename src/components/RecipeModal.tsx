@@ -62,6 +62,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+    const lightboxRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [imageBroken, setImageBroken] = useState(false);
@@ -74,6 +75,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         (recipe?.imageSource == null && !!recipe?.image?.includes?.('pollinations.ai'));
 
     useFocusTrap(true, modalRef);
+    useFocusTrap(lightboxOpen, lightboxRef);
 
     useEffect(() => {
         closeButtonRef.current?.focus();
@@ -82,7 +84,6 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     // Esc: close lightbox first when open, otherwise close modal
     useEffect(() => {
         if (!lightboxOpen) return;
-        lightboxCloseRef.current?.focus();
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setLightboxOpen(false);
         };
@@ -205,6 +206,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             />
             {lightboxOpen && (
                 <div
+                    ref={lightboxRef}
                     role="dialog"
                     aria-modal="true"
                     aria-label="Enlarged recipe image"

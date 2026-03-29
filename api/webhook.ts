@@ -57,6 +57,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { Body, From, MediaUrl0, NumMedia } = req.body;
 
     // 1. Basic Validation
+
+    // Validate E.164 phone number format
+    if (typeof From !== 'string' || !/^\+[1-9]\d{1,14}$/.test(From)) {
+        const twiml = new twilio.twiml.MessagingResponse();
+        twiml.message('archive keeper: invalid sender number.');
+        res.setHeader('Content-Type', 'text/xml');
+        return res.status(200).send(twiml.toString());
+    }
+
+    // Validate caption length
+    if (typeof Body === 'string' && Body.length > 500) {
+        const twiml = new twilio.twiml.MessagingResponse();
+        twiml.message('archive keeper: caption is too long. please keep it under 500 characters.');
+        res.setHeader('Content-Type', 'text/xml');
+        return res.status(200).send(twiml.toString());
+    }
+
     if (!From || parseInt(NumMedia) === 0 || !MediaUrl0) {
         const twiml = new twilio.twiml.MessagingResponse();
         twiml.message('archive keeper: no media detected. please text a photo or video to preserve it.');
@@ -68,7 +85,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const db = admin.firestore();
         const bucket = admin.storage().bucket();
 
-        // 2. Identify Contributor (phone in E.164; try From and normalized variants)
+        // 2. Identify Contributor
+        // Matching strategy: try the exact E.164 number first, then a variant with/without
+        // the leading '+'. This handles contributors who may have stored their phone number
+        // in either format in the database.
         const normalizedFrom = From.replace(/\s/g, '');
         const variants = [normalizedFrom, normalizedFrom.startsWith('+') ? normalizedFrom.slice(1) : `+${normalizedFrom}`];
         let contributorName = 'MMS Submission';
@@ -86,8 +106,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ? { headers: { Authorization: mediaAuthHeader } }
             : undefined);
         if (!response.ok) throw new Error('Failed to download media from Twilio');
-        const buffer = Buffer.from(await response.arrayBuffer());
+
+        // Validate file type - only allow image and video MIME types
         const contentType = response.headers.get('content-type') || 'image/jpeg';
+        if (!contentType.startsWith('image/') && !contentType.startsWith('video/')) {
+            const twiml = new twilio.twiml.MessagingResponse();
+            twiml.message('archive keeper: unsupported file type. please send a photo or video.');
+            res.setHeader('Content-Type', 'text/xml');
+            return res.status(200).send(twiml.toString());
+        }
+
+        // Validate file size - reject files larger than 25MB
+        const contentLength = response.headers.get('content-length');
+        const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+        if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
+            const twiml = new twilio.twiml.MessagingResponse();
+            twiml.message('archive keeper: file is too large. please send media under 25MB.');
+            res.setHeader('Content-Type', 'text/xml');
+            return res.status(200).send(twiml.toString());
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
         const extension = contentType.split('/')[1] || 'jpg';
 
         // 4. Upload to Firebase Storage

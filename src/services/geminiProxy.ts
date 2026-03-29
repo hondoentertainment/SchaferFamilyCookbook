@@ -40,5 +40,14 @@ export async function generateImage(recipe: Partial<Recipe>): Promise<GeneratedR
 
 export async function magicImport(rawText: string): Promise<Record<string, unknown>> {
     const { json } = await post<{ json: string }>({ action: 'magicImport', rawText });
-    return JSON.parse(json || '{}') as Record<string, unknown>;
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(json || '{}');
+    } catch {
+        throw new Error('Failed to parse recipe JSON from server response');
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('Unexpected response shape: expected a JSON object');
+    }
+    return parsed as Record<string, unknown>;
 }

@@ -5,12 +5,49 @@ import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '.
 import defaultRecipes from '../data/recipes.json';
 import { CATEGORY_IMAGES } from '../constants';
 
+async function retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxAttempts = 3,
+    initialDelayMs = 1000
+): Promise<T> {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            if (attempt === maxAttempts - 1) throw err;
+            await new Promise(r => setTimeout(r, initialDelayMs * Math.pow(2, attempt)));
+        }
+    }
+    throw new Error('Retry exhausted');
+}
+
+function validateRecipe(data: unknown): data is Recipe {
+    if (typeof data !== 'object' || data === null) return false;
+    const record = data as Record<string, unknown>;
+    const requiredStringFields: (keyof Recipe)[] = ['id', 'title', 'contributor', 'category', 'image'];
+    for (const field of requiredStringFields) {
+        if (typeof record[field] !== 'string') {
+            console.warn(`validateRecipe: missing or invalid string field "${field}"`, record);
+            return false;
+        }
+    }
+    const requiredArrayFields: (keyof Recipe)[] = ['ingredients', 'instructions'];
+    for (const field of requiredArrayFields) {
+        if (!Array.isArray(record[field])) {
+            console.warn(`validateRecipe: missing or invalid array field "${field}"`, record);
+            return false;
+        }
+    }
+    return true;
+}
+
 function safeParseArray<T>(raw: string | null): T[] {
     if (!raw) return [];
     try {
         const parsed = JSON.parse(raw);
         return Array.isArray(parsed) ? parsed as T[] : [];
-    } catch {
+    } catch (e) {
+        console.warn('safeParseArray: failed to parse JSON', e);
         return [];
     }
 }
@@ -70,49 +107,67 @@ export const CloudArchive = {
     },
 
     // Real-time Subscriptions
-    subscribeRecipes(callback: (recipes: Recipe[]) => void) {
+    subscribeRecipes(callback: (recipes: Recipe[]) => void, onError?: (error: Error) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'recipes'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(doc => doc.data() as Recipe));
+            const recipes = snapshot.docs
+                .map(doc => doc.data())
+                .filter(validateRecipe);
+            callback(recipes);
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeRecipes error:', error);
         });
     },
 
-    subscribeTrivia(callback: (trivia: Trivia[]) => void) {
+    subscribeTrivia(callback: (trivia: Trivia[]) => void, onError?: (error: Error) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'trivia'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as Trivia));
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeTrivia error:', error);
         });
     },
 
-    subscribeGallery(callback: (items: GalleryItem[]) => void) {
+    subscribeGallery(callback: (items: GalleryItem[]) => void, onError?: (error: Error) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'gallery'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as GalleryItem));
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeGallery error:', error);
         });
     },
 
-    subscribeHistory(callback: (history: HistoryEntry[]) => void) {
+    subscribeHistory(callback: (history: HistoryEntry[]) => void, onError?: (error: Error) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'history'), orderBy('timestamp', 'desc'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as HistoryEntry));
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeHistory error:', error);
         });
     },
 
     /** Archive phone for Twilio MMS - synced via Firestore when Firebase is active. */
-    subscribeArchivePhone(callback: (phone: string) => void) {
+    subscribeArchivePhone(callback: (phone: string) => void, onError?: (error: Error) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
         return onSnapshot(doc(fb.db, 'config', 'settings'), (snapshot) => {
             const data = snapshot.data();
             callback(data?.archivePhone || localStorage.getItem('schafer_archive_phone') || '');
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeArchivePhone error:', error);
         });
     },
 
@@ -145,8 +200,10 @@ export const CloudArchive = {
 
         const fileName = `${Date.now()}_${file.name.replace(/[^a-z0-9.]/gi, '_')}`;
         const storageRef = ref(fb.storage, `${folder}/${fileName}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        return await getDownloadURL(snapshot.ref);
+        return await retryWithBackoff(async () => {
+            const snapshot = await uploadBytes(storageRef, file);
+            return await getDownloadURL(snapshot.ref);
+        });
     },
 
     // Bulk upload multiple files
@@ -318,12 +375,15 @@ export const CloudArchive = {
         }
     },
 
-    subscribeContributors(callback: (profiles: ContributorProfile[]) => void) {
+    subscribeContributors(callback: (profiles: ContributorProfile[]) => void, onError?: (error: Error) => void) {
         const fb = this.getFirebase();
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'contributors'));
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(doc => doc.data() as ContributorProfile));
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeContributors error:', error);
         });
     },
 
