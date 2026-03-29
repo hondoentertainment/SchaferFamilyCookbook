@@ -268,7 +268,12 @@ const App: React.FC = () => {
 
     /* ---- Login gate ---- */
     if (!currentUser) {
-        return <LoginView onLogin={handleLogin} contributors={contributors} />;
+        return (
+            <>
+                <OfflineBanner />
+                <LoginView onLogin={handleLogin} contributors={contributors} />
+            </>
+        );
     }
 
     /* ---- Shared layout shell ---- */
