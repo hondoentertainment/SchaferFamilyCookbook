@@ -29,6 +29,19 @@ export async function loginAsAdmin(
 }
 
 /**
+ * Navigate to a route path after login.
+ * Use this instead of clicking tab buttons.
+ */
+export async function navigateTo(
+  page: import('@playwright/test').Page,
+  path: string
+): Promise<void> {
+  await page.goto(path);
+  // Allow route transition to settle
+  await page.waitForLoadState('domcontentloaded');
+}
+
+/**
  * Extended test with logged-in admin
  */
 export const test = base.extend<{ adminPage: import('@playwright/test').Page }>({
