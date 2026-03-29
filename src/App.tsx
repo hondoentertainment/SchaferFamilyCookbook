@@ -383,6 +383,7 @@ const App: React.FC = () => {
     const { toast } = useUI();
     const [tab, setTab] = useState('Recipes');
     const [isDataLoading, setIsDataLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [gallery, setGallery] = useState<GalleryItem[]>([]);
     const [trivia, setTrivia] = useState<Trivia[]>([]);
@@ -476,7 +477,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const provider = CloudArchive.getProvider();
         if (provider !== 'firebase' || !CloudArchive.getFirebase()) {
-            refreshLocalState().then(() => setIsDataLoading(false));
+            refreshLocalState().then(() => { setIsDataLoading(false); setIsInitialLoad(false); });
             // Auto-seed trivia if empty in local mode
             if (provider === 'local') {
                 CloudArchive.getTrivia()
@@ -494,6 +495,7 @@ const App: React.FC = () => {
         const unsubR = CloudArchive.subscribeRecipes(r => {
             setRecipes(r);
             setIsDataLoading(false);
+            setIsInitialLoad(false);
         });
         const unsubT = CloudArchive.subscribeTrivia(setTrivia);
         const unsubG = CloudArchive.subscribeGallery(setGallery);
@@ -943,7 +945,25 @@ const App: React.FC = () => {
             </a>
             <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
 
-            <div id="main-content" tabIndex={-1} aria-live="polite">
+            {isInitialLoad && (
+                <div className="max-w-[1600px] mx-auto px-6 py-8 md:py-12 space-y-10" aria-label="Loading content" role="status">
+                    {/* Header placeholder */}
+                    <div className="rounded-[3rem] bg-stone-200 animate-pulse h-48 md:h-64" />
+                    {/* Recipe card grid skeleton */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="space-y-3">
+                                <div className="aspect-[3/4] rounded-[2rem] bg-stone-200 animate-pulse" />
+                                <div className="h-4 bg-stone-200 rounded animate-pulse w-3/4" />
+                                <div className="h-3 bg-stone-200 rounded animate-pulse w-1/2" />
+                            </div>
+                        ))}
+                    </div>
+                    <span className="sr-only">Loading recipes and content...</span>
+                </div>
+            )}
+
+            <div id="main-content" tabIndex={-1} aria-live="polite" className={isInitialLoad ? 'hidden' : undefined}>
             {showAddRecipeModal && currentUser?.role === 'admin' && (
                 <Suspense fallback={null}>
                     <AddRecipeModal

@@ -11,7 +11,31 @@ interface ContributorsViewProps {
     onSelectContributor: (name: string) => void;
     /** Optional: called when user taps "Browse recipes" in empty state */
     onGoToRecipes?: () => void;
+    isDataLoading?: boolean;
 }
+
+const ContributorsSkeleton: React.FC = () => (
+    <section className="max-w-7xl mx-auto py-12 px-6">
+        <div className="animate-pulse space-y-10">
+            <div className="space-y-4">
+                <div className="h-10 bg-stone-200 rounded w-1/3" />
+                <div className="h-5 bg-stone-100 rounded w-2/5" />
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10 list-none p-0 m-0">
+                {[0, 1, 2, 3].map(i => (
+                    <li key={i}>
+                        <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-stone-100 shadow-sm text-center h-full flex flex-col items-center">
+                            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-200 mb-6" />
+                            <div className="h-6 bg-stone-200 rounded w-2/3 mb-2" />
+                            <div className="h-3 bg-stone-100 rounded w-1/3 mb-6" />
+                            <div className="h-10 bg-stone-100 rounded-full w-full mt-auto" />
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    </section>
+);
 
 interface ContributorStats {
     name: string;
@@ -29,7 +53,8 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
     trivia = [],
     contributors,
     onSelectContributor,
-    onGoToRecipes
+    onGoToRecipes,
+    isDataLoading
 }) => {
     const [search, setSearch] = useState('');
     const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
@@ -88,6 +113,10 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
     };
 
     const hasContributors = stats.length > 0;
+
+    if (isDataLoading && contributors.length === 0) {
+        return <ContributorsSkeleton />;
+    }
 
     return (
         <section
