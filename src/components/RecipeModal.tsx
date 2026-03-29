@@ -184,25 +184,6 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(buildRecipeSchema(recipe)) }}
             />
 
-            <RecipeImage
-                recipe={recipe}
-                imageLoading={imageLoading}
-                onImageLoad={() => setImageLoading(false)}
-                imageBroken={imageBroken}
-                onImageError={() => {
-                    setImageLoading(false);
-                    setImageBroken(true);
-                    if (shouldToastImageError(recipe.id)) {
-                        toast('Some recipe images couldn\'t be loaded', 'info');
-                    }
-                }}
-                isAIGenerated={isAIGenerated}
-                hasValidImage={hasValidImage}
-                lightboxOpen={lightboxOpen}
-                onLightboxOpen={() => setLightboxOpen(true)}
-                onLightboxClose={() => setLightboxOpen(false)}
-            />
-
             <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
                 <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
