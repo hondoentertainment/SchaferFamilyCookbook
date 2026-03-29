@@ -44,9 +44,9 @@ export const HistoryView: React.FC = () => {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
-    const getScrollBehavior = (): ScrollBehavior => {
+    const getScrollBehavior = (): 'auto' | 'smooth' => {
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        return prefersReducedMotion ? 'instant' as ScrollBehavior : 'smooth';
+        return prefersReducedMotion ? 'auto' : 'smooth';
     };
 
     const scrollToSection = (id: string) => {

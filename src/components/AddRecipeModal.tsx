@@ -143,7 +143,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
             let file: File;
             try {
                 file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
-            } catch (conversionError) {
+            } catch {
                 toast('Failed to process the generated image. Try uploading a photo instead.', 'error');
                 return;
             }
