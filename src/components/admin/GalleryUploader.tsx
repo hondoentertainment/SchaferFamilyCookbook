@@ -39,27 +39,30 @@ export const GalleryUploader: React.FC<GalleryUploaderProps> = ({
         }
     }, [isSubmitting, uploadProgress.current, uploadProgress.total]);
 
-    const handleGallerySubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!galleryFile) {
-            toast('Please select a photo or video to upload.', 'error');
-            return;
-        }
-        if (isSubmitting) return;
+    const debouncedUpload = useDebounceAction(async () => {
         setIsSubmitting(true);
         try {
-            const isVideo = galleryFile.type.startsWith('video/');
+            const isVideo = galleryFile!.type.startsWith('video/');
             await onUpload({
                 id: 'g' + Date.now(),
                 type: isVideo ? 'video' : 'image',
                 url: '',
                 caption: galleryForm.caption || (isVideo ? 'Family Video' : 'Family Memory'),
                 contributor: currentUser?.name || 'Family'
-            }, galleryFile);
+            }, galleryFile!);
             toast('Gallery updated', 'success');
             setGalleryForm({ caption: '' });
             setGalleryFile(null);
         } finally { setIsSubmitting(false); }
+    });
+
+    const handleGallerySubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!galleryFile) {
+            toast('Please select a photo or video to upload.', 'error');
+            return;
+        }
+        await debouncedUpload();
     };
 
     const handleBulkGalleryUpload = async () => {

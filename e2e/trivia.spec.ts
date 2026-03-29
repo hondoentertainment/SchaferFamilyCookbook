@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const loginAndOpenTrivia = async (
   page: import('@playwright/test').Page,
@@ -23,7 +23,7 @@ const loginAndOpenTrivia = async (
   await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill('Alice');
   await page.getByRole('button', { name: /Enter The Archive/i }).click();
   await page.getByPlaceholder(/Search by title/i).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: 'Trivia' }).click();
+  await page.goto('/trivia');
 };
 
 test.describe('Trivia', () => {
@@ -33,6 +33,7 @@ test.describe('Trivia', () => {
     await expect(
       page.getByRole('heading', { name: /Family Heritage Quiz|The Quiz Archive is Empty/i }).first()
     ).toBeVisible({ timeout: 5000 });
+    await expect(page).toHaveURL('/trivia');
   });
 
   test('shows start screen and begins quiz when trivia exists', async ({ page }) => {

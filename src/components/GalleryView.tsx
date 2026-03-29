@@ -5,6 +5,7 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
 import { useUI } from '../context/UIContext';
 import { CloudArchive } from '../services/db';
+import { RetryError } from './RetryError';
 
 const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
@@ -204,6 +205,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     const { toast } = useUI();
     const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
     const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState<GalleryItem | null>(null);
+    const [galleryError, setGalleryError] = useState<string | null>(null);
+    const [failedDeleteId, setFailedDeleteId] = useState<string | null>(null);
 
     return (
         <main id="main-content" className="max-w-7xl mx-auto py-12 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
@@ -336,6 +339,28 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                         />
                     )}
 
+                    {galleryError && (
+                        <div className="mb-8">
+                            <RetryError
+                                message={galleryError}
+                                onRetry={async () => {
+                                    setGalleryError(null);
+                                    if (failedDeleteId) {
+                                        try {
+                                            await CloudArchive.deleteGalleryItem(failedDeleteId);
+                                            await onRefreshLocal();
+                                            setFailedDeleteId(null);
+                                        } catch {
+                                            setGalleryError('Failed to remove gallery item. Please try again.');
+                                        }
+                                    } else {
+                                        await onRefreshLocal();
+                                    }
+                                }}
+                            />
+                        </div>
+                    )}
+
                     {galleryDeleteConfirm && (
                         <GalleryDeleteConfirmDialog
                             item={galleryDeleteConfirm}
@@ -346,8 +371,11 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                                 try {
                                     await CloudArchive.deleteGalleryItem(id);
                                     await onRefreshLocal();
+                                    setGalleryError(null);
+                                    setFailedDeleteId(null);
                                 } catch {
-                                    toast(CLOUD_ERROR_MSG, 'error');
+                                    setFailedDeleteId(id);
+                                    setGalleryError('Failed to remove gallery item. Please try again.');
                                 }
                             }}
                         />

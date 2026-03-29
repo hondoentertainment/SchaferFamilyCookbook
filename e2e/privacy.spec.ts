@@ -9,8 +9,9 @@ test.describe('Privacy', () => {
     await loginAs(page, 'Alice');
   });
 
-  test('Privacy tab shows policy heading', async ({ page }) => {
-    await page.getByRole('button', { name: 'Privacy' }).first().click();
+  test('Privacy page shows policy heading', async ({ page }) => {
+    await page.goto('/privacy');
+    await expect(page).toHaveURL('/privacy');
     await expect(page.getByRole('heading', { name: /Privacy & data/i })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/What this site stores/i)).toBeVisible();
   });

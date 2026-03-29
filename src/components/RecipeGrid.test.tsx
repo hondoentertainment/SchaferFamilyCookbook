@@ -72,7 +72,8 @@ describe('RecipeGrid', () => {
     it('filters by category', () => {
         renderWithProviders(<RecipeGrid {...defaultProps} />);
 
-        const categorySelect = screen.getByLabelText(/filter by category/i);
+        // Use the desktop select (has id="recipe-category"), since there's also a mobile one
+        const categorySelect = document.getElementById('recipe-category')!;
         fireEvent.change(categorySelect, { target: { value: 'Dessert' } });
 
         expect(screen.getByText('Apple Pie')).toBeInTheDocument();

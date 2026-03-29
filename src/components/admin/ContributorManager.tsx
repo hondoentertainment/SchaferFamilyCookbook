@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Recipe, Trivia, ContributorProfile } from '../../types';
 import { AvatarPicker } from '../AvatarPicker';
 import { useUI } from '../../context/UIContext';
+import { useDebounceAction } from '../../hooks';
 
 export interface ContributorManagerProps {
     contributors: ContributorProfile[];
@@ -26,6 +27,10 @@ export const ContributorManager: React.FC<ContributorManagerProps> = ({
     const [mergeTo, setMergeTo] = useState('');
     const [isMerging, setIsMerging] = useState(false);
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
+
+    const debouncedSave = useDebounceAction(async (profile: ContributorProfile) => {
+        await onSave(profile);
+    });
 
     const handleMergeContributors = async () => {
         if (!mergeFrom.trim() || !mergeTo.trim()) { toast('Please enter both contributor names.', 'error'); return; }
@@ -128,7 +133,7 @@ export const ContributorManager: React.FC<ContributorManagerProps> = ({
                                         const phone = prompt(`Enter phone number for ${name} (e.g. +1234567890):`, profile?.phone || '');
                                         if (phone !== null) {
                                             const updatedProfile = profile ? { ...profile, phone } : { id: 'c_' + Date.now(), name, avatar, role: 'user', phone };
-                                            await onSave(updatedProfile as ContributorProfile);
+                                            await debouncedSave(updatedProfile as ContributorProfile);
                                             toast('Contributor updated', 'success');
                                         }
                                     }}
@@ -145,7 +150,7 @@ export const ContributorManager: React.FC<ContributorManagerProps> = ({
                                         } else {
                                             const url = prompt(`Enter new avatar URL for ${name}:`, avatar);
                                             if (url) {
-                                                await onSave({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
+                                                await debouncedSave({ id: profile?.id || 'c_' + Date.now(), name, avatar: url, role });
                                                 toast('Avatar updated', 'success');
                                             }
                                         }
@@ -161,7 +166,7 @@ export const ContributorManager: React.FC<ContributorManagerProps> = ({
                                             e.stopPropagation();
                                             if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
                                             if (await confirm(`Revoke admin access for ${name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) {
-                                                await onSave({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
+                                                await debouncedSave({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'user' });
                                                 toast('Admin access revoked', 'success');
                                             }
                                         }}
@@ -176,7 +181,7 @@ export const ContributorManager: React.FC<ContributorManagerProps> = ({
                                             e.stopPropagation();
                                             if (!isSuperAdmin) { toast("Only Super Admins (Kyle) can modify roles.", 'error'); return; }
                                             if (await confirm(`Promote ${name} to Administrator?`, { confirmLabel: 'Promote' })) {
-                                                await onSave({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
+                                                await debouncedSave({ id: profile?.id || 'c_' + Date.now(), name, avatar, role: 'admin' });
                                                 toast('Contributor promoted', 'success');
                                             }
                                         }}
@@ -195,7 +200,7 @@ export const ContributorManager: React.FC<ContributorManagerProps> = ({
                 <AvatarPicker
                     currentAvatar={pickerTarget.avatar}
                     onSelect={async (url) => {
-                        await onSave({
+                        await debouncedSave({
                             ...pickerTarget,
                             avatar: url
                         });

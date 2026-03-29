@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAs, loginAsAdmin } from './fixtures';
 
 test.describe('Admin (non-admin user)', () => {
@@ -24,8 +24,7 @@ test.describe('Admin (non-admin user)', () => {
         ])
       );
     });
-    await page.reload();
-    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.goto('/profile');
 
     await expect(page.getByText(/Meet your Administrators/i)).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/These family members help maintain the archive/i)).toBeVisible();
@@ -46,8 +45,7 @@ test.describe('Admin (non-admin user)', () => {
         ])
       );
     });
-    await page.reload();
-    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.goto('/profile');
 
     await expect(page.getByText(/Legacy Custodian/i)).toBeVisible({ timeout: 5000 });
   });
@@ -62,7 +60,7 @@ test.describe('Admin (admin user)', () => {
   });
 
   const goToAdminTools = async (page: import('@playwright/test').Page) => {
-    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.goto('/profile');
     await page.getByRole('button', { name: /Open Admin Tools/i }).click();
   };
 
@@ -110,6 +108,7 @@ test.describe('Admin (admin user)', () => {
   });
 
   test('admin quick-edit button appears on recipe cards', async ({ page }) => {
+    await page.goto('/');
     const recipeCard = page.locator('[role="button"][aria-label*="View recipe:"]').first();
     await recipeCard.hover();
 
