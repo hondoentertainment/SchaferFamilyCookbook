@@ -6,11 +6,39 @@ interface AlphabeticalIndexProps {
     onSelect: (r: Recipe) => void;
     /** Optional: called when user taps "Browse recipes" in empty state */
     onGoToRecipes?: () => void;
+    isDataLoading?: boolean;
 }
+
+const AlphabeticalIndexSkeleton: React.FC = () => (
+    <div className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
+        <div className="hidden md:block w-20">
+            <div className="animate-pulse h-[600px] bg-stone-100 rounded-full w-10 mx-auto" />
+        </div>
+        <div className="md:hidden animate-pulse mb-4">
+            <div className="h-12 bg-stone-100 rounded-full w-full" />
+        </div>
+        <div className="flex-1 space-y-20 animate-pulse">
+            <div className="h-10 bg-stone-200 rounded w-1/3" />
+            {[0, 1, 2].map(i => (
+                <div key={i} className="space-y-8">
+                    <div className="h-14 bg-stone-100 rounded w-12 border-b border-stone-100 pb-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[0, 1].map(j => (
+                            <div key={j} className="p-6 bg-white rounded-[2rem] border border-stone-100">
+                                <div className="h-5 bg-stone-200 rounded w-3/4 mb-2" />
+                                <div className="h-3 bg-stone-100 rounded w-1/2" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
 
 const LETTERS = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
 
-export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, onSelect, onGoToRecipes }) => {
+export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, onSelect, onGoToRecipes, isDataLoading }) => {
     const [activeLetter, setActiveLetter] = useState<string>(LETTERS[0]);
 
     const grouped = useMemo(() => {
@@ -59,6 +87,10 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
         return () => window.removeEventListener('scroll', onScroll);
     }, [activeLetters.join(',')]);
 
+    if (isDataLoading && recipes.length === 0) {
+        return <AlphabeticalIndexSkeleton />;
+    }
+
     const letterButtonClass = (active: boolean, inView: boolean) =>
         `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 min-w-[2.75rem] min-h-[2.75rem] ${active ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white' : 'text-stone-200'} ${inView ? 'ring-2 ring-[#2D4635] ring-offset-2 ring-offset-white' : ''}`;
 
@@ -68,7 +100,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
             <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 backdrop-blur-sm pb-2 border-b border-stone-100">
                 <div className="px-4 pt-3 flex items-center justify-between gap-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Jump by letter</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Swipe for more →</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Scroll for more →</p>
                 </div>
                 <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex flex-nowrap gap-1.5 justify-start py-2 min-w-max">
@@ -78,7 +110,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                                 onClick={() => scrollToLetter(l)}
                                 disabled={!activeLetters.includes(l)}
                                 aria-current={activeLetters.includes(l) && activeLetter === l ? 'true' : undefined}
-                                className={`${letterButtonClass(activeLetters.includes(l), activeLetters.includes(l) && activeLetter === l)} w-8 h-8 md:w-9 md:h-9`}
+                                className={`${letterButtonClass(activeLetters.includes(l), activeLetters.includes(l) && activeLetter === l)} w-10 h-10 md:w-9 md:h-9`}
                                 aria-label={activeLetters.includes(l) ? `Jump to recipes starting with ${l}${activeLetter === l ? ' (current section)' : ''}` : `No recipes starting with ${l}`}
                             >
                                 {l}

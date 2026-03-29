@@ -66,6 +66,9 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const modalRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [imageBroken, setImageBroken] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
+    const [scaleFlash, setScaleFlash] = useState(false);
+    const scaleInitRef = useRef(true);
     const hasValidImage =
         !!recipe?.image &&
         !imageBroken &&
@@ -114,8 +117,25 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         const base = typeof recipe.servings === 'number' ? recipe.servings : 4;
         setScaleTo(base);
         setImageBroken(false);
+        setImageLoading(true);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
+
+    // Flash ingredients when scale changes (skip initial mount)
+    useEffect(() => {
+        if (scaleInitRef.current) {
+            scaleInitRef.current = false;
+            return;
+        }
+        setScaleFlash(true);
+        const timer = setTimeout(() => setScaleFlash(false), 300);
+        return () => clearTimeout(timer);
+    }, [scaleTo]);
+
+    // Reset init ref when recipe changes so first scale sync doesn't flash
+    useEffect(() => {
+        scaleInitRef.current = true;
+    }, [recipe?.id]);
 
     // Arrow keys: prev/next recipe
     useEffect(() => {
@@ -280,6 +300,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <span className="text-xl">›</span>
                             </button>
                         )}
+                        {(prevRecipe || nextRecipe) && onNavigate && (
+                            <span className="hidden md:flex items-center text-[10px] text-stone-400 tracking-wider font-medium select-none pointer-events-none" aria-hidden="true">
+                                ← → to navigate
+                            </span>
+                        )}
                         <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2" aria-label={`Share recipe: ${shareTitle}`} title={shareTitle}>
                             <span className="text-xl">⎘</span>
                         </button>
@@ -326,14 +351,19 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     >
                         {hasValidImage ? (
                             <>
+                                {imageLoading && (
+                                    <div className="absolute inset-0 animate-pulse bg-stone-200" />
+                                )}
                                 <img
                                     src={recipe.image}
                                     width={800}
                                     height={600}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                                     alt={recipe.title}
                                     loading="lazy"
+                                    onLoad={() => setImageLoading(false)}
                                     onError={() => {
+                                        setImageLoading(false);
                                         setImageBroken(true);
                                         if (shouldToastImageError(recipe.id)) {
                                             toast('Some recipe images couldn\'t be loaded', 'info');
@@ -386,7 +416,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             </nav>
                             <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
                             <h2 id="recipe-modal-title" className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
-                            <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
+                            <div className="flex flex-wrap gap-3 text-xs md:text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-[#A0522D]">👤</span>
                                     <span>By {recipe.contributor}</span>
@@ -423,7 +453,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         </div>
 
                         {/* Ingredients Section */}
-                        <div className="print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50">
+                        <div className={`print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50 transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`}>
                             <div className="flex flex-wrap items-center justify-between gap-4">
                                 <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
                                     <span className="text-2xl">🥘</span>

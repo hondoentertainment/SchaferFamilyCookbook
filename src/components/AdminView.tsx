@@ -435,7 +435,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             return;
         }
 
-        const ok = await confirm(`Merge ${recipesToUpdate.length} recipes from "${fromName}" into "${toName}"?`, { title: 'Merge Contributors', confirmLabel: 'Merge' });
+        const ok = await confirm(`Are you sure you want to merge ${recipesToUpdate.length} recipes from "${fromName}" into "${toName}"? This cannot be undone.`, { title: 'Confirm Merge', variant: 'danger', confirmLabel: 'Merge', cancelLabel: 'Cancel' });
         if (!ok) return;
 
         setIsMerging(true);
@@ -769,7 +769,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             </button>
                                                             <button
                                                                 onClick={async () => {
-                                                                    if (await confirm(`Delete "${r.title}"? This cannot be undone.`, { variant: 'danger', confirmLabel: 'Delete' })) onDeleteRecipe(r.id);
+                                                                    if (await confirm(`Are you sure you want to delete "${r.title}"?`, { title: 'Confirm Delete', variant: 'danger', confirmLabel: 'Delete', cancelLabel: 'Keep' })) onDeleteRecipe(r.id);
                                                                 }}
                                                                 className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold uppercase hover:bg-red-100 flex items-center justify-center"
                                                                 aria-label={`Delete ${r.title}`}
@@ -1166,7 +1166,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 </div>
                                                 <button
                                                     onClick={async () => {
-                                                        const ok = await confirm(`Delete "${t.question}"? This cannot be undone.`, { variant: 'danger', confirmLabel: 'Delete', title: 'Delete Trivia' });
+                                                        const ok = await confirm(`Are you sure you want to delete "${t.question}"?`, { title: 'Confirm Delete', variant: 'danger', confirmLabel: 'Delete', cancelLabel: 'Keep' });
                                                         if (ok) {
                                                             await onDeleteTrivia(t.id);
                                                             toast('Trivia deleted', 'success');
