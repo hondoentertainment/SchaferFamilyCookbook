@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../types';
 import { hapticLight } from '../utils/haptics';
 import { avatarOnError } from '../utils/avatarFallback';
+import { tabFromPath, pathFromTab } from '../router';
 
 const MAIN_TABS = [
     { id: 'Recipes', label: 'Recipes', icon: '📖' },
@@ -11,14 +13,17 @@ const MAIN_TABS = [
 ] as const;
 
 interface BottomNavProps {
-    activeTab: string;
-    setTab: (t: string) => void;
     currentUser: UserProfile | null;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, currentUser }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ currentUser }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const activeTab = tabFromPath(location.pathname);
+
     if (!currentUser) return null;
 
+    const goTo = (tab: string) => navigate(pathFromTab(tab));
     const tabs = MAIN_TABS;
 
     return (
@@ -33,7 +38,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         key={id}
                         onClick={() => {
                             hapticLight();
-                            setTab(id);
+                            goTo(id);
                         }}
                         aria-current={activeTab === id ? 'page' : undefined}
                         className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-colors touch-manipulation active:scale-95 motion-reduce:transition-none ${activeTab === id
@@ -58,7 +63,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                     data-testid="bottom-nav-profile"
                     onClick={() => {
                         hapticLight();
-                        setTab('Profile');
+                        goTo('Profile');
                     }}
                     aria-current={activeTab === 'Profile' ? 'page' : undefined}
                     className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${activeTab === 'Profile' ? 'text-[#2D4635] bg-[#2D4635]/8' : 'text-stone-500'

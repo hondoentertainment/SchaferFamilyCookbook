@@ -1,15 +1,21 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../types';
+import { tabFromPath, pathFromTab } from '../router';
 
 interface FooterProps {
-    activeTab: string;
-    setTab: (t: string) => void;
     currentUser: UserProfile | null;
     className?: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser, className = '' }) => {
+export const Footer: React.FC<FooterProps> = ({ currentUser, className = '' }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const activeTab = tabFromPath(location.pathname);
+
     if (!currentUser) return null;
+
+    const goTo = (tab: string) => navigate(pathFromTab(tab));
 
     return (
         <footer
@@ -20,7 +26,7 @@ export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser, 
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-center gap-3 flex-wrap">
                 <button
                     type="button"
-                    onClick={() => setTab('Privacy')}
+                    onClick={() => goTo('Privacy')}
                     className={`px-3 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[2.75rem] ${
                         activeTab === 'Privacy'
                             ? 'bg-[#2D4635] text-white shadow-lg'
@@ -31,7 +37,7 @@ export const Footer: React.FC<FooterProps> = ({ activeTab, setTab, currentUser, 
                     Privacy
                 </button>
                 <button
-                    onClick={() => setTab('Profile')}
+                    onClick={() => goTo('Profile')}
                     className={`flex items-center gap-2 px-3 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[2.75rem] ${
                         activeTab === 'Profile'
                             ? 'bg-[#2D4635] text-white shadow-lg'
