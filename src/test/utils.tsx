@@ -1,5 +1,6 @@
 import { render, RenderOptions } from '@testing-library/react';
 import { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
 import { UIProvider } from '../context/UIContext';
 
@@ -80,14 +81,17 @@ export const setupLocalStorage = () => {
     };
 };
 
-// Custom render with providers (UIProvider for toast/confirm)
+// Custom render with providers (UIProvider for toast/confirm, MemoryRouter for routing)
 export const renderWithProviders = (
     ui: ReactElement,
-    options?: Omit<RenderOptions, 'wrapper'>
+    options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[] }
 ) => {
+    const { initialEntries = ['/'], ...renderOptions } = options ?? {};
     return render(
-        <UIProvider>{ui}</UIProvider>,
-        { ...options }
+        <MemoryRouter initialEntries={initialEntries}>
+            <UIProvider>{ui}</UIProvider>
+        </MemoryRouter>,
+        { ...renderOptions }
     );
 };
 

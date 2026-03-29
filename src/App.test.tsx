@@ -47,7 +47,7 @@ describe('Gallery', () => {
 
     it('should show empty state when gallery has no items', async () => {
         await loginAndNavigateToGallery();
-        expect(screen.getByRole('main', { name: /family gallery/i })).toBeInTheDocument();
+        expect(await screen.findByRole('main', { name: /family gallery/i }, { timeout: 3000 })).toBeInTheDocument();
         expect(screen.getByText('The gallery awaits your memories')).toBeInTheDocument();
         expect(screen.getByText(/be the first to add a photo or video/i)).toBeInTheDocument();
     });

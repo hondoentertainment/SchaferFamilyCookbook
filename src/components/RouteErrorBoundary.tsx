@@ -30,6 +30,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
     }
 
     render(): ReactNode {
+        const self = this as React.Component<Props, State>;
         if (this.state.hasError) {
             return (
                 <div
@@ -40,8 +41,8 @@ export class RouteErrorBoundary extends Component<Props, State> {
                         ⚠️
                     </span>
                     <h2 className="text-xl font-serif italic text-[#2D4635] mb-2">
-                        {this.props.label
-                            ? `Something went wrong loading ${this.props.label}`
+                        {self.props.label
+                            ? `Something went wrong loading ${self.props.label}`
                             : 'Something went wrong'}
                     </h2>
                     <p className="text-stone-500 mb-6 max-w-md">
@@ -50,13 +51,13 @@ export class RouteErrorBoundary extends Component<Props, State> {
                     <button
                         type="button"
                         className="px-6 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
-                        onClick={() => this.setState({ hasError: false })}
+                        onClick={() => self.setState({ hasError: false })}
                     >
                         Try again
                     </button>
                 </div>
             );
         }
-        return this.props.children;
+        return self.props.children;
     }
 }

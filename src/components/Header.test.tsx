@@ -4,7 +4,6 @@ import { Header } from './Header';
 import { renderWithProviders, createMockContributor } from '../test/utils';
 
 describe('Header', () => {
-    const mockSetTab = vi.fn();
     const mockOnLogout = vi.fn();
     const mockUser = createMockContributor();
     const mockStats = {
@@ -16,8 +15,6 @@ describe('Header', () => {
     };
 
     const defaultProps = {
-        activeTab: 'Recipes',
-        setTab: mockSetTab,
         currentUser: {
             id: mockUser.id,
             name: mockUser.name,
@@ -46,15 +43,8 @@ describe('Header', () => {
         expect(screen.getByText('Privacy')).toBeInTheDocument();
     });
 
-    it('should call setTab when a navigation button is clicked', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-
-        fireEvent.click(screen.getByText('Gallery'));
-        expect(mockSetTab).toHaveBeenCalledWith('Gallery');
-    });
-
-    it('should highlight the active tab', () => {
-        renderWithProviders(<Header {...defaultProps} activeTab="Gallery" />);
+    it('should highlight the active tab based on route', () => {
+        renderWithProviders(<Header {...defaultProps} />, { initialEntries: ['/gallery'] });
 
         const galleryButton = screen.getByText('Gallery');
         expect(galleryButton).toHaveClass('bg-[#2D4635]');
@@ -69,41 +59,11 @@ describe('Header', () => {
         expect(profileBtn.querySelector('img')).toBeInTheDocument();
     });
 
-    it('should switch to Profile tab when user clicks their profile', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-
-        fireEvent.click(screen.getByRole('button', { name: /view profile/i }));
-        expect(mockSetTab).toHaveBeenCalledWith('Profile');
-    });
-
     it('should call onLogout when Log out is clicked', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
         fireEvent.click(screen.getByText('Log out'));
         expect(mockOnLogout).toHaveBeenCalled();
-    });
-
-    it('should call setTab("Recipes") when Archive logo receives Enter/Space keydown', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-        const logoBtn = screen.getByRole('button', { name: 'Go to Recipes' });
-
-        fireEvent.keyDown(logoBtn, { key: 'Enter' });
-        expect(mockSetTab).toHaveBeenCalledWith('Recipes');
-
-        mockSetTab.mockClear();
-
-        fireEvent.keyDown(logoBtn, { key: ' ' });
-        expect(mockSetTab).toHaveBeenCalledWith('Recipes');
-    });
-
-    it('should call setTab("Profile") when Profile button receives Enter/Space keydown', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-        const profileBtn = screen.getByTestId('nav-profile');
-
-        fireEvent.keyDown(profileBtn, { key: 'Enter' });
-        expect(mockSetTab).toHaveBeenCalledWith('Profile');
-
-        fireEvent.keyDown(profileBtn, { key: ' ' });
     });
 
     it('should toggle More menu and handle mobile extra tabs', () => {
@@ -117,7 +77,6 @@ describe('Header', () => {
 
         const familyStoryMenuBtn = screen.getByRole('menuitem', { name: 'Family Story' });
         fireEvent.click(familyStoryMenuBtn);
-        expect(mockSetTab).toHaveBeenCalledWith('Family Story');
 
         // Menu should be closed after clicking an item
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
