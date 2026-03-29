@@ -17,8 +17,9 @@ export const PrivacyView: React.FC = () => {
     useEffect(() => {
         const onScroll = () => {
             const scrollTop = window.scrollY + 120;
+            type SectionId = (typeof SECTIONS)[number]['id'];
             const sections = SECTIONS.map(({ id }) => ({ id, el: document.getElementById(id) })).filter(
-                (s): s is { id: string; el: HTMLElement } => !!s.el
+                (s): s is { id: SectionId; el: HTMLElement } => !!s.el
             );
             for (let i = sections.length - 1; i >= 0; i--) {
                 const top = sections[i].el.getBoundingClientRect().top + window.scrollY;
