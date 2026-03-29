@@ -66,6 +66,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const modalRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [imageBroken, setImageBroken] = useState(false);
+    const [scaleFlash, setScaleFlash] = useState(false);
+    const scaleInitRef = useRef(true);
     const hasValidImage =
         !!recipe?.image &&
         !imageBroken &&
@@ -116,6 +118,22 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         setImageBroken(false);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
+
+    // Flash ingredients when scale changes (skip initial mount)
+    useEffect(() => {
+        if (scaleInitRef.current) {
+            scaleInitRef.current = false;
+            return;
+        }
+        setScaleFlash(true);
+        const timer = setTimeout(() => setScaleFlash(false), 300);
+        return () => clearTimeout(timer);
+    }, [scaleTo]);
+
+    // Reset init ref when recipe changes so first scale sync doesn't flash
+    useEffect(() => {
+        scaleInitRef.current = true;
+    }, [recipe?.id]);
 
     // Arrow keys: prev/next recipe
     useEffect(() => {
@@ -386,7 +404,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             </nav>
                             <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
                             <h2 id="recipe-modal-title" className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
-                            <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
+                            <div className="flex flex-wrap gap-3 text-xs md:text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-[#A0522D]">👤</span>
                                     <span>By {recipe.contributor}</span>
@@ -423,7 +441,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         </div>
 
                         {/* Ingredients Section */}
-                        <div className="print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50">
+                        <div className={`print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50 transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`}>
                             <div className="flex flex-wrap items-center justify-between gap-4">
                                 <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
                                     <span className="text-2xl">🥘</span>

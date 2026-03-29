@@ -387,9 +387,6 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 </div>
                 <div className="text-xs font-black text-stone-300">Score: {score}</div>
             </div>
-            {!isAnswered && (
-                <p className="text-[10px] text-stone-400 uppercase tracking-widest text-center">Tip: use keys 1-4 to answer</p>
-            )}
 
             {/* Progress Bar */}
             <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden shadow-inner">
@@ -473,6 +470,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                         );
                     })}
                 </div>
+                <p className="text-center text-stone-400 text-xs mt-4 hidden md:block">Press 1–{currentQuestion.options.length} to answer</p>
 
                 {isAnswered && (
                     <div className="mt-12 pt-10 border-t border-stone-50 animate-in fade-in slide-in-from-top-4 duration-500 text-center space-y-8">

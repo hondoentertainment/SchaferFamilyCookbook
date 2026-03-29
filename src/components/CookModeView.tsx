@@ -169,6 +169,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                         <p className="text-xl md:text-3xl font-serif italic leading-relaxed">
                             {currentStep}
                         </p>
+                        <p className="text-white/30 text-xs mt-6 md:hidden">← swipe →</p>
                     </div>
                 </div>
             ) : null}
