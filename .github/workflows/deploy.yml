@@ -1,7 +1,9 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -17,8 +19,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -27,9 +32,6 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run lint
-      - run: npm run type-check
-      - run: npm run test:run
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
