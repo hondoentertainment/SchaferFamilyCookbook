@@ -574,7 +574,9 @@ const App: React.FC = () => {
 
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r => {
-            const matchS = r.title.toLowerCase().includes(search.toLowerCase());
+            const q = search.toLowerCase();
+            const matchS = r.title.toLowerCase().includes(q) ||
+                r.ingredients.some(ing => ing.toLowerCase().includes(q));
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || r.contributor === contributor;
             return matchS && matchC && matchA;
@@ -786,7 +788,7 @@ const App: React.FC = () => {
                             <div className="w-32 h-32 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-5xl border-2 border-dashed border-stone-200">🖼️</div>
                             <div className="space-y-3">
                                 <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
-                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.</p>
+                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">{archivePhone ? `Text a photo or video to ${archivePhone} to add it to the gallery.` : 'Ask a family custodian to enable text-to-archive in Profile → Admin Tools → Gallery, or to upload photos directly.'}</p>
                             </div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Share the moments that matter</p>
                         </div>
@@ -1035,13 +1037,13 @@ const App: React.FC = () => {
                     <div className="sticky top-16 md:top-24 z-30 space-y-4">
                         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                             <div className="relative flex-1">
-                                <label htmlFor="recipe-search" className="sr-only">Search recipes by title</label>
+                                <label htmlFor="recipe-search" className="sr-only">Search recipes by title or ingredient</label>
                                 <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
                                 <input
                                     id="recipe-search"
                                     type="text"
-                                    placeholder="Search by title..."
-                                    aria-label="Search recipes by title"
+                                    placeholder="Search by title or ingredient..."
+                                    aria-label="Search recipes by title or ingredient"
                                     className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
@@ -1156,7 +1158,7 @@ const App: React.FC = () => {
                             <div className="space-y-6">
                                 {favRecipes.length > 0 && (
                                     <section aria-label="Favorite recipes">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">❤️ Favorites</h3>
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">❤️ Favorites <span className="text-stone-400">({favRecipes.length})</span></h3>
                                         <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                                             {favRecipes.map((r) => (
                                                 <button
@@ -1178,7 +1180,7 @@ const App: React.FC = () => {
                                 )}
                                 {recentRecipes.length > 0 && (
                                     <section aria-label="Recently viewed recipes">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">👁 Recently viewed</h3>
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">👁 Recently viewed <span className="text-stone-400">({recentRecipes.length})</span></h3>
                                         <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                                             {recentRecipes.map((r) => (
                                                 <button
@@ -1333,7 +1335,7 @@ const App: React.FC = () => {
                             <ContributorsSkeleton />
                         </div>
                     ) : (
-                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
+                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); toast(`Showing recipes by ${c}`, 'info'); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
                     )}
                 </Suspense>
             )}

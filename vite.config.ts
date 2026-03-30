@@ -78,13 +78,13 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           icons: [
             {
-              src: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=192',
+              src: 'icon-192.jpg',
               sizes: '192x192',
               type: 'image/jpeg',
               purpose: 'any maskable',
             },
             {
-              src: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=512',
+              src: 'icon-512.jpg',
               sizes: '512x512',
               type: 'image/jpeg',
               purpose: 'any maskable',

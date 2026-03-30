@@ -49,7 +49,7 @@ describe('Gallery', () => {
         await loginAndNavigateToGallery();
         expect(screen.getByRole('main', { name: /family gallery/i })).toBeInTheDocument();
         expect(screen.getByText('The gallery awaits your memories')).toBeInTheDocument();
-        expect(screen.getByText(/be the first to add a photo or video/i)).toBeInTheDocument();
+        expect(screen.getByText(/custodian/i)).toBeInTheDocument();
     });
 
     it('should show gallery items when data exists', async () => {

@@ -202,7 +202,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
                 <span className="text-6xl">📖</span>
                 <h2 className="text-3xl font-serif italic text-[#2D4635]">The Quiz Archive is Empty</h2>
-                <p className="text-stone-400 max-w-md italic">Please add some trivia questions via Profile → Admin Tools to begin your family legacy challenge.</p>
+                <p className="text-stone-400 max-w-md italic">No trivia questions yet. Ask a family custodian to add questions via Profile → Admin Tools, or sign in as an admin to create them yourself.</p>
             </div>
         );
     }
