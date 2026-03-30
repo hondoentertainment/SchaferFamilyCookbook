@@ -50,8 +50,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             console.warn('Twilio webhook: invalid signature');
             return res.status(403).json({ error: 'Invalid signature' });
         }
-    } else if (process.env.NODE_ENV === 'production') {
-        console.warn('Twilio webhook: TWILIO_AUTH_TOKEN not set; requests are not validated');
+    } else {
+        console.error('Twilio webhook: TWILIO_AUTH_TOKEN not set; rejecting request');
+        return res.status(503).json({ error: 'Webhook not configured' });
     }
 
     const { Body, From, MediaUrl0, NumMedia } = req.body;
@@ -171,7 +172,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.setHeader('Content-Type', 'text/xml');
         return res.status(200).send(twiml.toString());
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('MMS Webhook Error:', error);
         const twiml = new twilio.twiml.MessagingResponse();
         twiml.message('archive keeper: error preserving memory. please try again later.');

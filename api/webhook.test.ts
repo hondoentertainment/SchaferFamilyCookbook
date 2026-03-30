@@ -107,12 +107,14 @@ function res() {
     };
 }
 
+const defaultHeaders = { 'x-twilio-signature': 'valid_sig', host: 'localhost:3000' };
+
 describe('webhook', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.resetModules();
-        vi.stubEnv('TWILIO_AUTH_TOKEN', '');
-        vi.stubEnv('TWILIO_ACCOUNT_SID', '');
+        vi.stubEnv('TWILIO_AUTH_TOKEN', 'test_token');
+        vi.stubEnv('TWILIO_ACCOUNT_SID', 'AC_test');
         vi.stubEnv('NODE_ENV', 'test');
         mockState.validateRequest = true;
         mockState.contributorSnap = { empty: true, docs: [] };
@@ -139,6 +141,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '0', Body: 'test' }
         } as any, r as any);
         expect(r.setHeader).toHaveBeenCalledWith('Content-Type', 'text/xml');
@@ -151,6 +154,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', Body: 'test' }
         } as any, r as any);
         expect(r.setHeader).toHaveBeenCalledWith('Content-Type', 'text/xml');
@@ -162,6 +166,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/123', Body: 'test' }
         } as any, r as any);
         expect(r.send.mock.calls[0][0]).toContain('invalid sender number');
@@ -187,6 +192,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'my caption' }
         } as any, r as any);
         expect(r.status).toHaveBeenCalledWith(200);
@@ -231,6 +237,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'caption' }
         } as any, r as any);
         expect(r.send.mock.calls[0][0]).toContain('jane doe');
@@ -245,6 +252,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: '' }
         } as any, r as any);
         const galleryPayload = mockGallerySet.mock.calls[0][0];
@@ -258,6 +266,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
         } as any, r as any);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
@@ -271,6 +280,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
         } as any, r as any);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
@@ -283,6 +293,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
         } as any, r as any);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
@@ -295,6 +306,7 @@ describe('webhook', () => {
         const r = res();
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
         } as any, r as any);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
@@ -304,10 +316,25 @@ describe('webhook', () => {
         const handler = (await import('./webhook')).default;
         await handler({
             method: 'POST',
+            headers: defaultHeaders,
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1' }
         } as any, res() as any);
         const galleryPayload = mockGallerySet.mock.calls[0][0];
         expect(galleryPayload.caption).toBe('Preserved via MMS');
+    });
+
+    it('should return 503 when TWILIO_AUTH_TOKEN is not set', async () => {
+        vi.stubEnv('TWILIO_AUTH_TOKEN', '');
+        vi.resetModules();
+        const handler = (await import('./webhook')).default;
+        const r = res();
+        await handler({
+            method: 'POST',
+            headers: defaultHeaders,
+            body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
+        } as any, r as any);
+        expect(r.status).toHaveBeenCalledWith(503);
+        expect(r.json).toHaveBeenCalledWith({ error: 'Webhook not configured' });
     });
 
     it('should pass signature validation when TWILIO_AUTH_TOKEN set and validateRequest returns true', async () => {

@@ -61,7 +61,7 @@ const defaultConfig: SiteConfig = {
   accent: '#A0522D',
   background: '#FDFBF7',
   establishedYear: 'Est. 2024',
-  superAdminIdentifiers: ['kyle', 'hondo4185@gmail.com'],
+  superAdminIdentifiers: (import.meta.env.VITE_SUPER_ADMINS || '').split(',').map((s: string) => s.trim()).filter(Boolean),
   categories: ['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'],
   loginCopy: {
     title: 'Identify Yourself',

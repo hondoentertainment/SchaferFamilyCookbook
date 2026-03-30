@@ -14,7 +14,7 @@ export function initSentry(): void {
         integrations: [Sentry.browserTracingIntegration()],
         tracesSampleRate: 0.05,
         replaysSessionSampleRate: 0,
-        replaysOnErrorSampleRate: 0,
+        replaysOnErrorSampleRate: 0.1,
     });
 }
 

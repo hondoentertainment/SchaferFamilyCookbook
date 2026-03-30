@@ -19,6 +19,12 @@ export default defineConfig({
                 '**/mockData',
                 'dist/',
             ],
+            thresholds: {
+                lines: 45,
+                functions: 40,
+                branches: 35,
+                statements: 45,
+            },
         },
         include: ['src/**/*.{test,spec}.{ts,tsx}', 'api/**/*.{test,spec}.{ts,tsx}'],
     },

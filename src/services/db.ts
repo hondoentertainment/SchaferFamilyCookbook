@@ -127,7 +127,15 @@ export const CloudArchive = {
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'trivia'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(doc => doc.data() as Trivia));
+            const trivia = snapshot.docs
+                .map(doc => doc.data())
+                .filter((d): d is Trivia =>
+                    typeof d === 'object' && d !== null &&
+                    typeof (d as Record<string, unknown>).id === 'string' &&
+                    typeof (d as Record<string, unknown>).question === 'string' &&
+                    Array.isArray((d as Record<string, unknown>).options)
+                );
+            callback(trivia);
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeTrivia error:', error);
@@ -139,7 +147,15 @@ export const CloudArchive = {
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'gallery'), orderBy('created_at', 'desc'));
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(doc => doc.data() as GalleryItem));
+            const items = snapshot.docs
+                .map(doc => doc.data())
+                .filter((d): d is GalleryItem =>
+                    typeof d === 'object' && d !== null &&
+                    typeof (d as Record<string, unknown>).id === 'string' &&
+                    typeof (d as Record<string, unknown>).url === 'string' &&
+                    (d as Record<string, unknown>).type === 'image' || (d as Record<string, unknown>).type === 'video'
+                );
+            callback(items);
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeGallery error:', error);
@@ -151,7 +167,15 @@ export const CloudArchive = {
         if (!fb) return () => { };
         const q = query(collection(fb.db, 'history'), orderBy('timestamp', 'desc'));
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(doc => doc.data() as HistoryEntry));
+            const history = snapshot.docs
+                .map(doc => doc.data())
+                .filter((d): d is HistoryEntry =>
+                    typeof d === 'object' && d !== null &&
+                    typeof (d as Record<string, unknown>).id === 'string' &&
+                    typeof (d as Record<string, unknown>).contributor === 'string' &&
+                    typeof (d as Record<string, unknown>).timestamp === 'string'
+                );
+            callback(history);
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeHistory error:', error);
