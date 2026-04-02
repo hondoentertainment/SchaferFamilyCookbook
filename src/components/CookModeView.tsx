@@ -106,7 +106,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         return () => {
             wakeLock?.release?.();
         };
-    }, []);
+    }, [toast]);
 
     // On mount: check cache status and auto-cache the image
     useEffect(() => {
@@ -315,20 +315,23 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                 <span className="text-white/60 text-xs uppercase tracking-widest">
                     {stepIndex + 1} / {totalSteps}
                 </span>
-                <button
-                    onClick={() =>
-                        setStepIndex((i) => (isLast ? i : i + 1))
-                    }
-                    disabled={isLast}
-                    className={`min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all ${
-                        isLast
-                            ? 'opacity-30 cursor-not-allowed'
-                            : 'bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90 active:scale-95'
-                    }`}
-                    aria-label={isLast ? 'Last step' : 'Next step'}
-                >
-                    Next →
-                </button>
+                {isLast ? (
+                    <button
+                        onClick={onClose}
+                        className="min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90 active:scale-95"
+                        aria-label="Done cooking"
+                    >
+                        Done ✓
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => setStepIndex((i) => i + 1)}
+                        className="min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90 active:scale-95"
+                        aria-label="Next step"
+                    >
+                        Next →
+                    </button>
+                )}
             </div>
         </div>
     );

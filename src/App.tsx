@@ -784,7 +784,7 @@ const App: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            disabled={isLoggingIn}
+                            disabled={isLoggingIn || !loginName.trim()}
                             aria-busy={isLoggingIn}
                             className="w-full py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
@@ -933,7 +933,7 @@ const App: React.FC = () => {
                                             {currentUser?.role === 'admin' && (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setGalleryDeleteConfirm(item); }}
-                                                    className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
+                                                    className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
                                                     aria-label={`Remove "${item.caption}" from gallery`}
                                                     title="Remove from gallery"
                                                 >

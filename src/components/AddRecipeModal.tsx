@@ -215,7 +215,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                 </div>
                 <form onSubmit={handleRecipeSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block" id="archival-image-label">Archival Image</span>
                         {previewUrl && (
                             <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner">
                                 <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" onError={(e) => { (e.target as HTMLImageElement).src = getDefaultImageForCategory(recipeForm.category); }} />
