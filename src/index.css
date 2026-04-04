@@ -8,3 +8,135 @@
   --font-serif: 'Playfair Display', serif;
   --font-sans: 'Lato', sans-serif;
 }
+
+/* ===== Dark Mode ===== */
+:root {
+  --bg-primary: #FDFBF7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f4;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #a8a29e;
+  --border-color: #e7e5e4;
+  --border-subtle: #f5f5f4;
+  --card-bg: #ffffff;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  --input-bg: #fafaf9;
+  --overlay-bg: rgba(28, 25, 23, 0.6);
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --toast-bg: #ffffff;
+  --skeleton-from: #e7e5e4;
+  --skeleton-to: #d6d3d1;
+  color-scheme: light;
+}
+
+.dark {
+  --bg-primary: #0c0a09;
+  --bg-secondary: #1c1917;
+  --bg-tertiary: #292524;
+  --text-primary: #fafaf9;
+  --text-secondary: #a8a29e;
+  --text-muted: #78716c;
+  --border-color: #292524;
+  --border-subtle: #1c1917;
+  --card-bg: #1c1917;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  --input-bg: #292524;
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --header-bg: rgba(28, 25, 23, 0.9);
+  --toast-bg: #292524;
+  --skeleton-from: #292524;
+  --skeleton-to: #1c1917;
+  color-scheme: dark;
+}
+
+/* ===== High Contrast Mode ===== */
+.high-contrast {
+  --text-primary: #000000;
+  --text-secondary: #1c1917;
+  --border-color: #78716c;
+}
+.high-contrast.dark {
+  --text-primary: #ffffff;
+  --text-secondary: #e7e5e4;
+  --border-color: #a8a29e;
+}
+
+/* ===== Font Size Scaling ===== */
+[data-font-size="small"] { font-size: 14px; }
+[data-font-size="medium"] { font-size: 16px; }
+[data-font-size="large"] { font-size: 18px; }
+
+/* ===== Dark mode overrides for common patterns ===== */
+.dark .bg-white { background-color: var(--card-bg) !important; }
+.dark .bg-white\/80 { background-color: rgba(28, 25, 23, 0.8) !important; }
+.dark .bg-white\/90 { background-color: rgba(28, 25, 23, 0.9) !important; }
+.dark .bg-white\/95 { background-color: rgba(28, 25, 23, 0.95) !important; }
+.dark .bg-\[\#FDFBF7\] { background-color: var(--bg-primary) !important; }
+.dark .bg-stone-50 { background-color: var(--bg-tertiary) !important; }
+.dark .bg-stone-100 { background-color: #292524 !important; }
+.dark .bg-stone-200 { background-color: #44403c !important; }
+.dark .text-stone-800 { color: var(--text-primary) !important; }
+.dark .text-stone-700 { color: var(--text-primary) !important; }
+.dark .text-stone-600 { color: var(--text-secondary) !important; }
+.dark .text-stone-500 { color: var(--text-muted) !important; }
+.dark .text-stone-400 { color: var(--text-muted) !important; }
+.dark .text-stone-300 { color: #78716c !important; }
+.dark .border-stone-100 { border-color: var(--border-color) !important; }
+.dark .border-stone-200 { border-color: var(--border-color) !important; }
+.dark .placeholder\:text-stone-300::placeholder { color: var(--text-muted) !important; }
+.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3) !important; }
+.dark .shadow-2xl { box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4) !important; }
+.dark .shadow-md { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2) !important; }
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.15) !important; }
+.dark .ring-stone-100 { --tw-ring-color: var(--border-color) !important; }
+
+/* Dark mode for emerald/green backgrounds */
+.dark .bg-emerald-50 { background-color: #052e16 !important; }
+.dark .border-emerald-100 { border-color: #14532d !important; }
+.dark .text-emerald-800 { color: #6ee7b7 !important; }
+.dark .text-emerald-700 { color: #6ee7b7 !important; }
+.dark .text-emerald-600\/80 { color: rgba(52, 211, 153, 0.8) !important; }
+
+/* Dark mode for red/error backgrounds */
+.dark .bg-red-50 { background-color: #450a0a !important; }
+.dark .border-red-200 { border-color: #7f1d1d !important; }
+.dark .text-red-800 { color: #fca5a5 !important; }
+
+/* Dark mode backdrop blur header */
+.dark .backdrop-blur-md { backdrop-filter: blur(12px) !important; }
+
+/* Animations */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-slide-in {
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--skeleton-from) 25%, var(--skeleton-to) 50%, var(--skeleton-from) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Card hover lift effect */
+.card-hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-slide-in { animation: none; }
+  .animate-shimmer { animation: none; }
+  .card-hover-lift:hover { transform: none; }
+}

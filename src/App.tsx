@@ -12,6 +12,9 @@ import {
 } from './services/firebaseCustodianAuth';
 import { Header } from './components/Header';
 import { PLACEHOLDER_AVATAR } from './constants';
+import { getAverageRating, isFamilyApproved } from './utils/ratings';
+import { STORAGE_KEYS } from './constants/storage';
+import { addActivity } from './utils/activityFeed';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
@@ -28,6 +31,8 @@ const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ d
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
 const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ default: m.TriviaView })));
 const PrivacyView = lazy(() => import('./components/PrivacyView').then(m => ({ default: m.PrivacyView })));
+const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthrough').then(m => ({ default: m.OnboardingWalkthrough })));
+const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -441,6 +446,8 @@ const App: React.FC = () => {
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
 
     const handleSetTab = (newTab: string) => {
         setTab(newTab);
@@ -564,6 +571,10 @@ const App: React.FC = () => {
         localStorage.setItem('schafer_user', JSON.stringify(u));
         setCurrentUser(u);
         setIsLoggingIn(false);
+        // Show onboarding for first-time users
+        if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
+            setShowOnboarding(true);
+        }
     };
 
     // Helper to get avatar
@@ -574,7 +585,13 @@ const App: React.FC = () => {
 
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r => {
-            const matchS = r.title.toLowerCase().includes(search.toLowerCase());
+            const q = search.toLowerCase();
+            const matchS = !q ||
+                r.title.toLowerCase().includes(q) ||
+                r.ingredients.some(ing => ing.toLowerCase().includes(q)) ||
+                r.instructions.some(step => step.toLowerCase().includes(q)) ||
+                (r.notes?.toLowerCase().includes(q) ?? false) ||
+                r.contributor.toLowerCase().includes(q);
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || r.contributor === contributor;
             return matchS && matchC && matchA;
@@ -646,6 +663,9 @@ const App: React.FC = () => {
         hapticLight();
         const name = recipes.find(r => r.id === id)?.title ?? 'Recipe';
         toast(next.has(id) ? `Added "${name}" to favorites` : `Removed "${name}" from favorites`, next.has(id) ? 'success' : 'info');
+        if (next.has(id) && currentUser) {
+            addActivity('favorite_added', currentUser.name, `favorited "${name}"`);
+        }
     };
 
     const clearRecipeFilters = () => {
@@ -995,6 +1015,7 @@ const App: React.FC = () => {
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
                         breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
+                        currentUserName={currentUser?.name}
                     />
                 </Suspense>
             )}
@@ -1011,19 +1032,36 @@ const App: React.FC = () => {
             {tab === 'Recipes' && (
                 <main className="max-w-[1600px] mx-auto pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] py-8 md:py-12 space-y-12">
                     {/* Hero Section */}
-                    <div className="relative rounded-[3rem] overflow-hidden bg-[#2D4635] text-white p-8 md:p-20 shadow-2xl">
-                        <div className="relative z-10 max-w-2xl space-y-6">
-                            <span className="inline-block px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-emerald-100">
-                                Est. 2024 • The Schafer Collection
-                            </span>
-                            <h1 className="text-5xl md:text-7xl font-serif italic leading-[0.9]">
-                                Preserving the <span className="text-[#F4A460]">flavor</span> of our family history.
-                            </h1>
-                            <div className="flex gap-4 pt-4">
-                                <div className="h-px bg-white/20 flex-1 my-auto" />
-                                <p className="text-emerald-100/60 text-xs uppercase tracking-widest">
-                                    {dbStats.recipeCount} Recipes Archived
-                                </p>
+                    <div className="relative rounded-[3rem] overflow-hidden bg-[#2D4635] text-white shadow-2xl">
+                        {/* Featured recipe background image */}
+                        {(() => {
+                            const featured = sortedRecipes.find(r => r.image && isValidImageUrl(r.image));
+                            return featured ? (
+                                <div className="absolute inset-0">
+                                    <img src={featured.image} alt="" className="w-full h-full object-cover opacity-20" aria-hidden />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#2D4635] via-[#2D4635]/90 to-[#2D4635]/60" />
+                                </div>
+                            ) : null;
+                        })()}
+                        <div className="relative z-10 p-8 md:p-20">
+                            <div className="max-w-2xl space-y-6">
+                                <span className="inline-block px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-emerald-100">
+                                    Est. 2024 • The Schafer Collection
+                                </span>
+                                <h1 className="text-5xl md:text-7xl font-serif italic leading-[0.9]">
+                                    Preserving the <span className="text-[#F4A460]">flavor</span> of our family history.
+                                </h1>
+                                <div className="flex flex-wrap gap-4 pt-4 items-center">
+                                    <div className="h-px bg-white/20 flex-1 my-auto hidden md:block" />
+                                    <p className="text-emerald-100/60 text-xs uppercase tracking-widest">
+                                        {dbStats.recipeCount} Recipes Archived
+                                    </p>
+                                    {Array.from(favoriteIds).length > 0 && (
+                                        <span className="text-emerald-100/40 text-xs uppercase tracking-widest">
+                                            • {Array.from(favoriteIds).length} Favorites
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -1035,13 +1073,13 @@ const App: React.FC = () => {
                     <div className="sticky top-16 md:top-24 z-30 space-y-4">
                         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                             <div className="relative flex-1">
-                                <label htmlFor="recipe-search" className="sr-only">Search recipes by title</label>
+                                <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
                                 <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
                                 <input
                                     id="recipe-search"
                                     type="text"
-                                    placeholder="Search by title..."
-                                    aria-label="Search recipes by title"
+                                    placeholder="Search recipes, ingredients..."
+                                    aria-label="Search recipes, ingredients, or instructions"
                                     className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
@@ -1231,11 +1269,22 @@ const App: React.FC = () => {
                                         <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                             <div className="flex justify-between items-center mb-2 opacity-80">
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
+                                                {isFamilyApproved(recipe.id) && (
+                                                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-300 flex items-center gap-1">⭐ Approved</span>
+                                                )}
                                             </div>
                                             <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
-                                            <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity delay-100 flex items-center gap-1">
-                                                By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block object-cover align-middle" alt={recipe.contributor} onError={avatarOnError} /> {recipe.contributor}
-                                            </p>
+                                            <div className="flex items-center gap-3 mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity delay-100">
+                                                <p className="text-[10px] text-stone-300 uppercase tracking-widest flex items-center gap-1">
+                                                    By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block object-cover align-middle" alt={recipe.contributor} onError={avatarOnError} /> {recipe.contributor}
+                                                </p>
+                                                {recipe.prepTime && (
+                                                    <span className="text-[9px] text-stone-400">⏱ {recipe.prepTime}</span>
+                                                )}
+                                                {getAverageRating(recipe.id) > 0 && (
+                                                    <span className="text-[9px] text-amber-400">★ {getAverageRating(recipe.id).toFixed(1)}</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1354,6 +1403,7 @@ const App: React.FC = () => {
                         recentRecipes={getRecentlyViewedEntries()
                             .map(e => recipes.find(r => r.id === e.id))
                             .filter((r): r is Recipe => !!r)}
+                        allRecipes={recipes}
                         onViewRecipe={(r) => handleSelectRecipe(r)}
                         onUpdateProfile={async (name, avatar) => {
                             const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
@@ -1471,6 +1521,28 @@ const App: React.FC = () => {
                     />
                 </Suspense>
             )}
+            {/* Onboarding Walkthrough */}
+            {showOnboarding && (
+                <Suspense fallback={null}>
+                    <OnboardingWalkthrough onComplete={() => setShowOnboarding(false)} />
+                </Suspense>
+            )}
+
+            {/* Contributor Spotlight */}
+            {spotlightContributor && (
+                <Suspense fallback={null}>
+                    <ContributorSpotlight
+                        contributor={spotlightContributor}
+                        recipes={recipes}
+                        onViewRecipe={(r) => {
+                            setSpotlightContributor(null);
+                            handleSelectRecipe(r);
+                        }}
+                        onClose={() => setSpotlightContributor(null)}
+                    />
+                </Suspense>
+            )}
+
             <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
             </div>
         </div>

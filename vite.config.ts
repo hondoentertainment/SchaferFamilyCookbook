@@ -131,6 +131,15 @@ export default defineConfig(({ mode }) => {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
+            {
+              urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'avatar-images-cache',
+                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 90 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
           ],
         },
       }),

@@ -6,8 +6,10 @@ import { UIProvider } from './context/UIContext';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initSentry } from './monitoring/sentry';
+import { initializeTheme } from './utils/theme';
 
 initSentry();
+initializeTheme();
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

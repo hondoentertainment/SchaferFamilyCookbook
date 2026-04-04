@@ -7,6 +7,12 @@ import { shouldToastImageError } from '../utils/imageErrorToast';
 import { useFocusTrap } from '../utils/focusTrap';
 import { scaleIngredients } from '../utils/scaleIngredients';
 import { hapticLight } from '../utils/haptics';
+import { StarRating } from './StarRating';
+import { RecipeNotes } from './RecipeNotes';
+import { ShareRecipe } from './ShareRecipe';
+import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
+import { getAllCollections, addToCollection } from '../utils/collections';
+import { addActivity } from '../utils/activityFeed';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -31,7 +37,93 @@ interface RecipeModalProps {
     onStartCook?: () => void;
     /** Optional breadcrumb context (e.g. "Recipes", "A–Z") when opened from deep link or other section */
     breadcrumbContext?: string;
+    /** Current user name for ratings/notes */
+    currentUserName?: string;
 }
+
+const RatingSection: React.FC<{ recipeId: string; recipeTitle: string; currentUserName: string }> = ({ recipeId, recipeTitle, currentUserName }) => {
+    const [avg, setAvg] = useState(() => getAverageRating(recipeId));
+    const [count, setCount] = useState(() => getRatingCount(recipeId));
+    const [userRating, setUserRating] = useState(() => getUserRating(recipeId, currentUserName));
+    const [approved, setApproved] = useState(() => isFamilyApproved(recipeId));
+
+    const handleRate = (stars: number) => {
+        setRating(recipeId, currentUserName, stars);
+        setAvg(getAverageRating(recipeId));
+        setCount(getRatingCount(recipeId));
+        setUserRating(stars);
+        setApproved(isFamilyApproved(recipeId));
+        addActivity('recipe_rated', currentUserName, `rated "${recipeTitle}" ${stars} stars`);
+    };
+
+    return (
+        <div className="space-y-3 print:hidden">
+            <div className="flex flex-wrap items-center gap-4">
+                <div className="space-y-1">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Rate This Recipe</h4>
+                    <StarRating rating={userRating || avg} onRate={currentUserName ? handleRate : undefined} readOnly={!currentUserName} showCount={count} />
+                </div>
+                {approved && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200 dark:border-amber-800 animate-fade-slide-in">
+                        ⭐ Family Approved
+                    </span>
+                )}
+            </div>
+            {count > 0 && (
+                <p className="text-xs text-stone-400">{avg.toFixed(1)} avg from {count} rating{count !== 1 ? 's' : ''}</p>
+            )}
+        </div>
+    );
+};
+
+const AddToCollectionSection: React.FC<{ recipeId: string }> = ({ recipeId }) => {
+    const { toast } = useUI();
+    const [collections, setCollections] = useState(() => getAllCollections());
+    const [open, setOpen] = useState(false);
+
+    if (collections.length === 0) return null;
+
+    const handleAdd = (colId: string, colName: string) => {
+        addToCollection(colId, recipeId);
+        setCollections(getAllCollections());
+        toast(`Added to "${colName}"`, 'success');
+        setOpen(false);
+    };
+
+    return (
+        <div className="print:hidden">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400 transition-colors min-h-11"
+            >
+                <span>📚</span> Add to Collection
+            </button>
+            {open && (
+                <div className="mt-2 bg-white dark:bg-[var(--card-bg)] rounded-xl border border-stone-200 dark:border-[var(--border-color)] shadow-lg p-2 space-y-1 animate-fade-slide-in">
+                    {collections.map((col) => {
+                        const alreadyIn = col.recipeIds.includes(recipeId);
+                        return (
+                            <button
+                                key={col.id}
+                                type="button"
+                                onClick={() => !alreadyIn && handleAdd(col.id, col.name)}
+                                disabled={alreadyIn}
+                                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors ${
+                                    alreadyIn ? 'text-stone-400 cursor-default' : 'hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] text-stone-700 dark:text-stone-300'
+                                }`}
+                            >
+                                <span>{col.icon}</span>
+                                <span className="flex-1 truncate">{col.name}</span>
+                                {alreadyIn && <span className="text-[10px] text-emerald-500">Added</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const SCROLL_THRESHOLD = 200;
 
@@ -44,6 +136,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     onToggleFavorite,
     onStartCook,
     breadcrumbContext = 'Recipes',
+    currentUserName = '',
 }) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -558,6 +651,25 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <p className="italic text-stone-600 text-sm md:text-base leading-relaxed pl-9">
                                     {recipe.notes}
                                 </p>
+                            </div>
+                        )}
+
+                        {/* Rating & Family Approved Badge */}
+                        <RatingSection recipeId={recipe.id} recipeTitle={recipe.title} currentUserName={currentUserName} />
+
+                        {/* Share Options */}
+                        <div className="space-y-2 print:hidden">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Share This Recipe</h4>
+                            <ShareRecipe recipe={recipe} />
+                        </div>
+
+                        {/* Add to Collection */}
+                        <AddToCollectionSection recipeId={recipe.id} />
+
+                        {/* Family Notes */}
+                        {currentUserName && (
+                            <div className="print:hidden">
+                                <RecipeNotes recipeId={recipe.id} recipeTitle={recipe.title} currentUserName={currentUserName} />
                             </div>
                         )}
                     </div>

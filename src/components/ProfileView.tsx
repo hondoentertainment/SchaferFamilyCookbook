@@ -5,6 +5,9 @@ import { AvatarPicker } from './AvatarPicker';
 import { AdminView, type FirebaseCustodianProps } from './AdminView';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
+import { PreferencesPanel } from './PreferencesPanel';
+import { CollectionsView } from './CollectionsView';
+import { ActivityFeed } from './ActivityFeed';
 
 export interface AdminSectionProps {
     editingRecipe: Recipe | null;
@@ -31,6 +34,7 @@ interface ProfileViewProps {
     userHistory: HistoryEntry[];
     favoriteRecipes: Recipe[];
     recentRecipes: Recipe[];
+    allRecipes: Recipe[];
     onViewRecipe: (recipe: Recipe) => void;
     onUpdateProfile: (name: string, avatar: string) => Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
@@ -40,7 +44,7 @@ interface ProfileViewProps {
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [] } = props;
+    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, allRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [] } = props;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
@@ -195,8 +199,10 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             </button>
                         ))}
                         {favoriteRecipes.length === 0 && (
-                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
-                                <p className="text-stone-400 font-serif italic text-lg">Your favorite recipes will appear here when you save them.</p>
+                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem] space-y-4">
+                                <span className="text-5xl block">🤍</span>
+                                <p className="text-stone-400 font-serif italic text-lg">No favorites yet</p>
+                                <p className="text-sm text-stone-400 max-w-xs mx-auto">Tap the heart on any recipe card to save it here for quick access.</p>
                             </div>
                         )}
                     </div>
@@ -319,6 +325,35 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                 </section>
             </div>
 
+
+            {/* Collections, Preferences & Activity Feed */}
+            <div className="grid lg:grid-cols-3 gap-12">
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-50 flex items-center justify-center not-italic text-xl md:text-2xl">📚</span>
+                        Collections
+                    </h3>
+                    <CollectionsView
+                        recipes={allRecipes}
+                        currentUserName={currentUser.name}
+                        onViewRecipe={onViewRecipe}
+                    />
+                </section>
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-50 flex items-center justify-center not-italic text-xl md:text-2xl">🎨</span>
+                        Preferences
+                    </h3>
+                    <PreferencesPanel />
+                </section>
+                <section className="space-y-6 md:space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-amber-50 flex items-center justify-center not-italic text-xl md:text-2xl">📢</span>
+                        Family Activity
+                    </h3>
+                    <ActivityFeed maxItems={10} />
+                </section>
+            </div>
 
             {showAdminSection && adminSectionProps && (
                 <section
