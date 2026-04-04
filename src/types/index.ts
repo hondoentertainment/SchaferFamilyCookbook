@@ -79,3 +79,37 @@ export interface HistoryEntry {
   itemName: string;
   timestamp: string;
 }
+
+export interface RecipeRating {
+  recipeId: string;
+  userName: string;
+  rating: number; // 1-5
+  timestamp: string;
+}
+
+export interface RecipeNote {
+  id: string;
+  recipeId: string;
+  userName: string;
+  text: string;
+  timestamp: string;
+}
+
+export interface RecipeCollection {
+  id: string;
+  name: string;
+  description?: string;
+  recipeIds: string[];
+  createdBy: string;
+  icon: string;
+  timestamp: string;
+}
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type FontSize = 'small' | 'medium' | 'large';
+
+export interface UserPreferences {
+  theme: ThemeMode;
+  fontSize: FontSize;
+  highContrast: boolean;
+}

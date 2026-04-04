@@ -12,4 +12,12 @@ export const STORAGE_KEYS = {
   favorites: 'schafer_favorites',
   recentlyViewed: 'schafer_recently_viewed',
   triviaScores: 'schafer_trivia_scores',
+  ratings: 'schafer_ratings',
+  notes: 'schafer_notes',
+  collections: 'schafer_collections',
+  theme: 'schafer_theme',
+  fontSize: 'schafer_font_size',
+  highContrast: 'schafer_high_contrast',
+  onboardingDone: 'schafer_onboarding_done',
+  activityFeed: 'schafer_activity_feed',
 } as const;
