@@ -40,13 +40,9 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
   const handleShare = async () => {
     hapticLight();
     const text = formatRecipeText();
-    const shareData: ShareData = {
-      title: recipe.title,
-      text: text,
-    };
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({ title: recipe.title, text });
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           toast('Share failed', 'error');

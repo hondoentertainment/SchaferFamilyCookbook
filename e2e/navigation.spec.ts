@@ -12,10 +12,10 @@ test.describe('Tab navigation', () => {
   test('shows all main nav tabs', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Recipes' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'A–Z' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Gallery' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Trivia' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Gallery' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trivia' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Family Story' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Contributors' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Contributors' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /view profile/i }).first()).toBeVisible();
   });
 
@@ -30,7 +30,7 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Gallery tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.getByRole('button', { name: 'Gallery' }).first().click();
     await expect(page.getByRole('heading', { name: 'Family Gallery' })).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Want to add photos?' }).or(
@@ -40,7 +40,7 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Trivia tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Trivia' }).click();
+    await page.getByRole('button', { name: 'Trivia' }).first().click();
     await expect(
       page.getByRole('heading', { name: 'Family Heritage Quiz' }).or(
         page.getByText('Quiz Archive is Empty')
@@ -49,7 +49,7 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Family Story tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Family Story' }).click();
+    await page.getByRole('button', { name: 'Family Story' }).first().click();
     await expect(
       page.getByRole('heading', { name: /Schafer.*Oehler|Family Food History/ }).or(
         page.getByText('Our family has been involved')
@@ -58,12 +58,12 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Contributors tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Contributors' }).click();
+    await page.getByRole('button', { name: 'Contributors' }).first().click();
     await expect(page.getByRole('heading', { name: 'The Contributors' })).toBeVisible({ timeout: 5000 });
   });
 
   test('Contributors tab loads after login and shows expected content', async ({ page }) => {
-    await page.getByRole('button', { name: 'Contributors' }).click();
+    await page.getByRole('button', { name: 'Contributors' }).first().click();
     await expect(page.getByRole('heading', { name: 'The Contributors' })).toBeVisible({ timeout: 5000 });
     await expect(
       page.getByPlaceholder('Search contributors…').or(page.getByRole('button', { name: 'Browse recipes' }))
@@ -82,7 +82,7 @@ test.describe('Tab navigation', () => {
   });
 
   test('logo link returns to Recipes', async ({ page }) => {
-    await page.getByRole('button', { name: 'Gallery' }).click();
+    await page.getByRole('button', { name: 'Gallery' }).first().click();
     await page.getByRole('button', { name: /Go to Recipes/i }).click();
     await expect(page.getByPlaceholder(/Search by title/)).toBeVisible();
   });

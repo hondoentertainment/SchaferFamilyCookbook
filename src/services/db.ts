@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, collection, setDoc, doc, deleteDoc, query, orderBy, onSnapshot, Firestore } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, deleteDoc, query, orderBy, limit, onSnapshot, Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
-import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
+import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, TriviaScore } from '../types';
 import defaultRecipes from '../data/recipes.json';
 import { CATEGORY_IMAGES } from '../constants';
 
@@ -402,6 +402,29 @@ export const CloudArchive = {
 
     async getHistory(): Promise<HistoryEntry[]> {
         return safeParseArray<HistoryEntry>(localStorage.getItem('schafer_db_history'));
-    }
+    },
+
+    /** Trivia leaderboard — family-wide scores via Firestore when available. */
+    subscribeTriviaScores(
+        callback: (scores: TriviaScore[]) => void,
+        onError?: (error: Error) => void,
+        max = 25,
+    ) {
+        const fb = this.getFirebase();
+        if (!fb) return () => { };
+        const q = query(collection(fb.db, 'triviaScores'), orderBy('percentage', 'desc'), limit(max));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => d.data() as TriviaScore));
+        }, (error) => {
+            if (onError) onError(error);
+            else console.error('subscribeTriviaScores error:', error);
+        });
+    },
+
+    async addTriviaScoreCloud(entry: TriviaScore): Promise<void> {
+        const fb = this.getFirebase();
+        if (!fb) throw new Error('Firebase not configured');
+        await setDoc(doc(fb.db, 'triviaScores', entry.id), entry);
+    },
 };
 

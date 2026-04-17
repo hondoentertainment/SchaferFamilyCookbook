@@ -33,6 +33,7 @@ const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ def
 const PrivacyView = lazy(() => import('./components/PrivacyView').then(m => ({ default: m.PrivacyView })));
 const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthrough').then(m => ({ default: m.OnboardingWalkthrough })));
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
+const GroceryView = lazy(() => import('./components/GroceryView').then(m => ({ default: m.GroceryView })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -270,6 +271,102 @@ const GalleryDeleteConfirmDialog: React.FC<{ item: GalleryItem; onClose: () => v
     );
 };
 
+const GalleryEditDialog: React.FC<{
+    item: GalleryItem;
+    onClose: () => void;
+    onSave: (updated: GalleryItem) => void | Promise<void>;
+}> = ({ item, onClose, onSave }) => {
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [caption, setCaption] = useState(item.caption || '');
+    const initialDate = (() => {
+        if (!item.created_at) return '';
+        const d = new Date(item.created_at);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toISOString().slice(0, 10);
+    })();
+    const [dateStr, setDateStr] = useState(initialDate);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useFocusTrap(true, containerRef);
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            const updated: GalleryItem = {
+                ...item,
+                caption: caption.trim() || item.caption,
+                created_at: dateStr ? new Date(dateStr).toISOString() : item.created_at,
+            };
+            await onSave(updated);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gallery-edit-title"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+            onClick={onClose}
+        >
+            <form
+                ref={containerRef}
+                onSubmit={handleSubmit}
+                className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200 space-y-5"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h3 id="gallery-edit-title" className="text-xl font-serif italic text-[#2D4635]">Edit gallery item</h3>
+                <div className="space-y-2">
+                    <label htmlFor="gallery-edit-caption" className="text-[10px] font-black uppercase tracking-widest text-stone-500">Caption</label>
+                    <input
+                        id="gallery-edit-caption"
+                        type="text"
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        className="w-full p-3 border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label htmlFor="gallery-edit-date" className="text-[10px] font-black uppercase tracking-widest text-stone-500">Date</label>
+                    <input
+                        id="gallery-edit-date"
+                        type="date"
+                        value={dateStr}
+                        onChange={(e) => setDateStr(e.target.value)}
+                        className="w-full p-3 border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                    />
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="min-h-11 px-5 py-3 rounded-full text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isSaving}
+                        aria-busy={isSaving}
+                        className="min-h-11 px-5 py-3 rounded-full text-[10px] font-black uppercase tracking-widest text-white bg-[#2D4635] hover:bg-[#24382b] transition-colors disabled:opacity-70"
+                    >
+                        {isSaving ? 'Saving...' : 'Save changes'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
 const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({ item, onClose }) => {
     const closeRef = React.useRef<HTMLButtonElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
@@ -398,6 +495,7 @@ const App: React.FC = () => {
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
     const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
     const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState<GalleryItem | null>(null);
+    const [galleryEditTarget, setGalleryEditTarget] = useState<GalleryItem | null>(null);
     const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
         const s = localStorage.getItem('schafer_user');
         if (!s) return null;
@@ -873,14 +971,24 @@ const App: React.FC = () => {
                                                 <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
                                             </div>
                                             {currentUser?.role === 'admin' && (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setGalleryDeleteConfirm(item); }}
-                                                    className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
-                                                    aria-label={`Remove "${item.caption}" from gallery`}
-                                                    title="Remove from gallery"
-                                                >
-                                                    ✕
-                                                </button>
+                                                <div className="flex items-center">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setGalleryEditTarget(item); }}
+                                                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-[#2D4635] opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
+                                                        aria-label={`Edit caption for "${item.caption}"`}
+                                                        title="Edit caption and date"
+                                                    >
+                                                        ✎
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setGalleryDeleteConfirm(item); }}
+                                                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
+                                                        aria-label={`Remove "${item.caption}" from gallery`}
+                                                        title="Remove from gallery"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </article>
@@ -906,6 +1014,24 @@ const App: React.FC = () => {
                                         try {
                                             await CloudArchive.deleteGalleryItem(id);
                                             await refreshLocalState();
+                                        } catch {
+                                            toast(CLOUD_ERROR_MSG, 'error');
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            {/* Gallery caption/date edit */}
+                            {galleryEditTarget && (
+                                <GalleryEditDialog
+                                    item={galleryEditTarget}
+                                    onClose={() => setGalleryEditTarget(null)}
+                                    onSave={async (updated) => {
+                                        try {
+                                            await CloudArchive.upsertGalleryItem(updated);
+                                            await refreshLocalState();
+                                            toast('Gallery item updated', 'success');
+                                            setGalleryEditTarget(null);
                                         } catch {
                                             toast(CLOUD_ERROR_MSG, 'error');
                                         }
@@ -1393,6 +1519,12 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
+            {tab === 'Grocery' && (
+                <Suspense fallback={<TabFallback />}>
+                    <GroceryView onClose={() => handleSetTab('Recipes')} />
+                </Suspense>
+            )}
+
             {tab === 'Profile' && currentUser && (
                 <Suspense fallback={<ProfileSkeleton />}>
                     <ProfileView
@@ -1405,6 +1537,7 @@ const App: React.FC = () => {
                             .filter((r): r is Recipe => !!r)}
                         allRecipes={recipes}
                         onViewRecipe={(r) => handleSelectRecipe(r)}
+                        onOpenGroceryList={() => handleSetTab('Grocery')}
                         onUpdateProfile={async (name, avatar) => {
                             const existing = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
                             const profileToUpdate = {

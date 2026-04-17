@@ -5,6 +5,7 @@ import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
+import { exportRecipesJson, exportRecipesCsv } from '../utils/recipeExport';
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -648,6 +649,32 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <h2 className="text-3xl font-serif italic text-[#2D4635]">
                                 {activeSubtab === 'records' ? 'Manage Recipes' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
                             </h2>
+                            {activeSubtab === 'records' && managedRecipes.length > 0 && (
+                                <div className="flex gap-2" role="group" aria-label="Export recipes">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            exportRecipesJson(managedRecipes);
+                                            toast(`Exported ${managedRecipes.length} recipes as JSON`, 'success');
+                                        }}
+                                        className="px-4 py-3 bg-white border border-stone-200 rounded-full text-[10px] font-black uppercase tracking-widest text-stone-700 hover:bg-stone-50 transition-colors"
+                                        aria-label="Download all recipes as JSON backup"
+                                    >
+                                        ⬇ JSON
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            exportRecipesCsv(managedRecipes);
+                                            toast(`Exported ${managedRecipes.length} recipes as CSV`, 'success');
+                                        }}
+                                        className="px-4 py-3 bg-white border border-stone-200 rounded-full text-[10px] font-black uppercase tracking-widest text-stone-700 hover:bg-stone-50 transition-colors"
+                                        aria-label="Download all recipes as CSV spreadsheet"
+                                    >
+                                        ⬇ CSV
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 gap-16">

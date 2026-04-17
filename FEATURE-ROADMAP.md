@@ -37,15 +37,17 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ### 1. Finish Mobile UX Polish
 - [x] **Vibration API** (Trivia correct/incorrect, nav taps, toast)
-- [ ] **Fix failing E2E tests** – Several Playwright tests show as modified/failing; stabilize before next release (Run npm run test:e2e; fix or quarantine flaky tests)
+- [x] **Fix failing E2E tests** – Stabilized with `.first()` disambiguation on duplicate tab buttons; fixed duplicate share-button unit test; removed `ShareData` lint error
+- [x] **Cook Mode swipe gestures** – Left/right swipe already wired in CookModeView
 
 ### 2. Quick Wins
 - [x] **Profile integration** – Add "Favorites" and "Recently Viewed" sections to Profile so users see their own activity
-- [ ] **Index tab on BottomNav** – Consider whether Index deserves a spot in mobile bottom nav (currently only Recipes, Index, Gallery, Trivia, Profile, Admin)
+- [x] **Index tab on BottomNav** – Shipped as "A–Z" tab on the bottom nav
 - [x] **Recipe deep-link sharing** – Improve share copy (e.g., "Open in Schafer Cookbook: [recipe name]") (share copy improved)
+- [x] **OG share card metadata** – Dynamic `og:title/description/image` on recipe open; default tags in `index.html`
 
 ### 3. Technical Debt
-- [ ] **CI reliability** – Ensure `npm run ci` passes consistently; consider excluding or fixing flaky Playwright tests (Run npm run test:e2e; fix or quarantine flaky tests)
+- [x] **CI reliability** – `npm run ci` passes (lint, type-check, 189 unit tests, build)
 - [x] **Git clean-up** – Decide whether `playwright-report/` and `test-results/` belong in `.gitignore`
 
 ---
@@ -53,26 +55,26 @@ A strategic roadmap for the next phases of development, informed by the current 
 ## Short-Term Roadmap (Sprint 1–2: 1–2 months)
 
 ### Phase 1: Discovery & Engagement
-| Feature | Description | Effort |
-|---------|-------------|--------|
-| **Favorites in Profile** | Show user's favorited recipes on Profile; quick access to "My Favorites" | S |
-| **Recently Viewed in Profile** | Show recently viewed recipes on Profile with "Clear" option | S |
-| **Grocery List** | "Add to Grocery List" from Recipe modal; persist in localStorage; simple list view | M |
-| **Cook Mode improvements** | Swipe gestures (left/right) for step navigation on mobile | S |
+| Feature | Description | Effort | Status |
+|---------|-------------|--------|--------|
+| **Favorites in Profile** | Show user's favorited recipes on Profile; quick access to "My Favorites" | S | ✅ |
+| **Recently Viewed in Profile** | Show recently viewed recipes on Profile with "Clear" option | S | ✅ |
+| **Grocery List** | "Add to Grocery List" from Recipe modal; persist in localStorage; simple list view | M | ✅ |
+| **Cook Mode improvements** | Swipe gestures (left/right) for step navigation on mobile | S | ✅ |
 
 ### Phase 2: Social & Sharing
-| Feature | Description | Effort |
-|---------|-------------|--------|
-| **Trivia Leaderboard (cloud)** | Persist trivia scores to Firestore; show family-wide top scores | M |
-| **Recipe share card** | Generate an OG-style image for sharing (e.g., title + contributor + site branding) | M |
-| **“Send to family” flow** | Copy link + optional pre-filled SMS/email template | S |
+| Feature | Description | Effort | Status |
+|---------|-------------|--------|--------|
+| **Trivia Leaderboard (cloud)** | Persist trivia scores to Firestore; show family-wide top scores | M | ✅ |
+| **Recipe share card (meta)** | Dynamic OG meta on recipe open; image-based card still backlog | M | ✅ (meta) |
+| **“Send to family” flow** | Copy link + optional pre-filled SMS/email template | S | ✅ (SMS/copy/share in ShareRecipe) |
 
 ### Phase 3: Admin & Content
-| Feature | Description | Effort |
-|---------|-------------|--------|
-| **Bulk export** | Export recipes (JSON/CSV) for backup or migration | S |
-| **Gallery date/caption editing** | Allow admins to edit caption and date on existing gallery items | S |
-| **Family Story CMS** | Make Family Story sections editable via Admin (Firestore-backed) | L |
+| Feature | Description | Effort | Status |
+|---------|-------------|--------|--------|
+| **Bulk export** | Export recipes (JSON/CSV) for backup or migration | S | ✅ |
+| **Gallery date/caption editing** | Allow admins to edit caption and date on existing gallery items | S | ✅ |
+| **Family Story CMS** | Make Family Story sections editable via Admin (Firestore-backed) | L | — |
 
 ---
 

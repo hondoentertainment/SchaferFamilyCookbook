@@ -13,6 +13,8 @@ import { ShareRecipe } from './ShareRecipe';
 import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
 import { getAllCollections, addToCollection } from '../utils/collections';
 import { addActivity } from '../utils/activityFeed';
+import { addGroceryItems } from '../utils/groceryList';
+import { setRecipeMeta, resetMeta } from '../utils/metaTags';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -213,6 +215,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         setImageLoading(true);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
+
+    // Update page title and OG meta tags while recipe modal is open (improves share previews and deep-link context).
+    useEffect(() => {
+        if (!recipe) return;
+        setRecipeMeta(recipe);
+        return () => resetMeta();
+    }, [recipe?.id]);
 
     // Flash ingredients when scale changes (skip initial mount)
     useEffect(() => {
@@ -587,6 +596,23 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         aria-label="Copy ingredients to clipboard"
                                     >
                                         Copy ingredients
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const added = addGroceryItems(displayedIngredients, {
+                                                recipeId: recipe.id,
+                                                recipeTitle: recipe.title,
+                                            });
+                                            const newCount = added.length - displayedIngredients.length < 0
+                                                ? added.length
+                                                : displayedIngredients.length;
+                                            toast(`Added ${newCount} item${newCount === 1 ? '' : 's'} to grocery list`, 'success');
+                                        }}
+                                        className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-[#2D4635] hover:bg-[#3d5745] rounded-full transition-colors"
+                                        aria-label="Add ingredients to grocery list"
+                                    >
+                                        🛒 Add to grocery
                                     </button>
                                 </div>
                             </div>

@@ -23,7 +23,7 @@ const loginAndOpenTrivia = async (
   await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill('Alice');
   await page.getByRole('button', { name: /Enter The Archive/i }).click();
   await page.getByPlaceholder(/Search by title/i).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: 'Trivia' }).click();
+  await page.getByRole('button', { name: 'Trivia' }).first().click();
 };
 
 test.describe('Trivia', () => {

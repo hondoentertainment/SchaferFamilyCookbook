@@ -38,5 +38,19 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    /**
+     * Trivia scores — family-wide leaderboard.
+     * Anyone can submit a score; only admins can prune or edit.
+     * App enforces MAX_ENTRIES client-side.
+     */
+    match /triviaScores/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.playerName is string
+                    && request.resource.data.score is number
+                    && request.resource.data.totalQuestions is number
+                    && request.resource.data.percentage is number
+                    && request.resource.data.timestamp is string;
+      allow update, delete: if isAdmin();
+    }
   }
 }

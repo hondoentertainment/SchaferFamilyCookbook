@@ -38,13 +38,14 @@ interface ProfileViewProps {
     onViewRecipe: (recipe: Recipe) => void;
     onUpdateProfile: (name: string, avatar: string) => Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
+    onOpenGroceryList?: () => void;
     /** For admin users: admin props */
     adminSectionProps?: AdminSectionProps;
     contributors?: ContributorProfile[];
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, allRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [] } = props;
+    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, allRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, onOpenGroceryList, adminSectionProps, contributors = [] } = props;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
@@ -141,6 +142,16 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     {currentUser.role === 'admin' ? '🏆 Legacy Custodian' : '👤 Family Member'}
                                 </span>
                             </div>
+                            {onOpenGroceryList && (
+                                <button
+                                    type="button"
+                                    onClick={onOpenGroceryList}
+                                    className="px-8 py-4 bg-white border border-stone-200 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-stone-50 transition-colors flex items-center gap-2"
+                                >
+                                    <span aria-hidden>🛒</span>
+                                    Grocery list
+                                </button>
+                            )}
                         </div>
 
                         {showAdminSection && (

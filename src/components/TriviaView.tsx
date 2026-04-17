@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trivia, UserProfile } from '../types';
 import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
 import { hapticSuccess, hapticError } from '../utils/haptics';
+import { CloudArchive } from '../services/db';
 import type { TriviaScore } from '../types';
 
 const FEEDBACK_DELAY_MS = 1500;
@@ -14,11 +15,14 @@ interface TriviaViewProps {
     onDeleteTrivia: (id: string) => void;
 }
 
-function Scoreboard({ scores, highlightId }: { scores: TriviaScore[]; highlightId?: string }) {
+function Scoreboard({ scores, highlightId, isCloud }: { scores: TriviaScore[]; highlightId?: string; isCloud?: boolean }) {
     if (scores.length === 0) return null;
     return (
         <div className="bg-white/80 backdrop-blur-sm rounded-[2rem] p-6 border border-stone-100 shadow-lg">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-4">🏆 Legacy Scoreboard</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-4 flex items-center justify-between">
+                <span>🏆 Legacy Scoreboard</span>
+                {isCloud && <span className="text-[9px] text-[#2D4635] font-medium normal-case tracking-normal">☁ Family-wide</span>}
+            </h4>
             <ol className="space-y-2 max-h-48 overflow-y-auto">
                 {scores.map((s, i) => (
                     <li
@@ -69,6 +73,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const [answerLog, setAnswerLog] = useState<Array<{ selectedOption: string; isCorrect: boolean }>>([]);
     const [scoreboard, setScoreboard] = useState<TriviaScore[]>(() => getTriviaScores());
     const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
+    const [isCloudLeaderboard, setIsCloudLeaderboard] = useState(false);
     const [ariaAnnouncement, setAriaAnnouncement] = useState('');
     const [feedbackCountdownMs, setFeedbackCountdownMs] = useState(0);
     const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,6 +170,23 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
     useEffect(() => () => clearAutoAdvance(), [clearAutoAdvance]);
 
+    // Subscribe to cloud leaderboard when Firebase is active; otherwise fall back to local scores.
+    useEffect(() => {
+        if (CloudArchive.getProvider() !== 'firebase') return;
+        const unsub = CloudArchive.subscribeTriviaScores(
+            (cloudScores) => {
+                setIsCloudLeaderboard(true);
+                setScoreboard(cloudScores);
+            },
+            (err) => {
+                console.warn('Trivia leaderboard falling back to local:', err);
+                setIsCloudLeaderboard(false);
+            },
+            25,
+        );
+        return () => { try { unsub(); } catch { /* noop */ } };
+    }, []);
+
     useEffect(() => {
         if (!isAnswered || feedbackCountdownMs <= 0) return;
         const interval = setInterval(() => {
@@ -226,7 +248,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-8">Prove your status as a legacy keeper</p>
                 </div>
                 <div className="mt-12 max-w-md mx-auto">
-                    <Scoreboard scores={scoreboard} />
+                    <Scoreboard scores={scoreboard} isCloud={isCloudLeaderboard} />
                 </div>
             </div>
         );
@@ -342,7 +364,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 )}
 
                 <div className="max-w-md mx-auto">
-                    <Scoreboard scores={scoreboard} highlightId={lastSavedScoreId} />
+                    <Scoreboard scores={scoreboard} highlightId={lastSavedScoreId} isCloud={isCloudLeaderboard} />
                 </div>
 
                 <div className="flex flex-col items-center gap-6">

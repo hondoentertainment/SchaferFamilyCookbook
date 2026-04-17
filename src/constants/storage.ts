@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   ratings: 'schafer_ratings',
   notes: 'schafer_notes',
   collections: 'schafer_collections',
+  grocery: 'schafer_grocery_list',
   theme: 'schafer_theme',
   fontSize: 'schafer_font_size',
   highContrast: 'schafer_high_contrast',
