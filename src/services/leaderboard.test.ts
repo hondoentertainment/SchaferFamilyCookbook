@@ -99,7 +99,7 @@ describe('leaderboard service', () => {
             expect(payload.score).toBe(4);
             expect(payload.total).toBe(5);
             expect(payload.percentage).toBe(80);
-            expect(payload.completedAt).toEqual({ __serverTimestamp: true });
+            expect(payload.completedAt).toEqual({ __type: 'serverTimestamp' });
         });
 
         it('omits avatarKey when none provided and defaults empty userId to anonymous', async () => {

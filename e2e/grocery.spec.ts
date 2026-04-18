@@ -60,7 +60,7 @@ test.describe('Grocery list', () => {
 
         // Clear all (confirm)
         await page.getByRole('button', { name: /^Clear all$/i }).click();
-        await expect(page.getByRole('dialog', { name: /confirm/i })).toBeVisible();
+        await expect(page.getByRole('dialog', { name: /Clear grocery list\?/i })).toBeVisible();
         // Click the dialog's confirm button (labelled "Clear all")
         await page
             .getByRole('dialog')
