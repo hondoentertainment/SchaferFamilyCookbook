@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
+import { useFocusTrap } from '../utils/focusTrap';
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -22,11 +23,17 @@ interface AdminViewProps {
     contributors: ContributorProfile[];
     currentUser: UserProfile | null;
     dbStats: DBStats;
+    /** Existing gallery items; used by the Gallery subtab to list items with Edit/Delete controls. */
+    gallery?: GalleryItem[];
     onAddRecipe: (r: Recipe, file?: File) => Promise<void>;
     onAddGallery: (g: GalleryItem, file?: File) => Promise<void>;
     onAddTrivia: (t: Trivia) => Promise<void>;
     onDeleteTrivia: (id: string) => void | Promise<void>;
     onDeleteRecipe: (id: string) => void;
+    /** Optional for non-gallery callers; required to enable Delete in the Gallery subtab list. */
+    onDeleteGalleryItem?: (id: string) => void | Promise<void>;
+    /** Optional for non-gallery callers; required to enable Edit in the Gallery subtab list. */
+    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date }) => Promise<void>;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (r: Recipe) => void;
@@ -38,7 +45,7 @@ interface AdminViewProps {
 export const AdminView: React.FC<AdminViewProps> = (props) => {
     const { toast, confirm } = useUI();
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
-    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onUpdateContributor, onUpdateArchivePhone, onEditRecipe, defaultRecipeIds = [], firebaseCustodian } = props;
+    const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, gallery = [], onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onDeleteGalleryItem, onUpdateGalleryItem, onUpdateContributor, onUpdateArchivePhone, onEditRecipe, defaultRecipeIds = [], firebaseCustodian } = props;
     const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
@@ -71,6 +78,75 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isSavingArchivePhone, setIsSavingArchivePhone] = useState(false);
     const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
     const [custodianBusy, setCustodianBusy] = useState(false);
+    const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null);
+    const [galleryEditCaption, setGalleryEditCaption] = useState('');
+    const [galleryEditDate, setGalleryEditDate] = useState('');
+    const [isSavingGalleryEdit, setIsSavingGalleryEdit] = useState(false);
+    const galleryEditModalRef = useRef<HTMLDivElement>(null);
+
+    useFocusTrap(!!editingGalleryItem, galleryEditModalRef);
+
+    useEffect(() => {
+        if (!editingGalleryItem) return;
+        setGalleryEditCaption(editingGalleryItem.caption || '');
+        setGalleryEditDate(editingGalleryItem.created_at
+            ? new Date(editingGalleryItem.created_at).toISOString().slice(0, 10)
+            : '');
+    }, [editingGalleryItem]);
+
+    useEffect(() => {
+        if (!editingGalleryItem) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !isSavingGalleryEdit) setEditingGalleryItem(null);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [editingGalleryItem, isSavingGalleryEdit]);
+
+    const handleSaveGalleryEdit = async () => {
+        if (!editingGalleryItem || !onUpdateGalleryItem) return;
+        const trimmed = galleryEditCaption.trim();
+        const patch: { caption?: string; date?: Date } = {};
+        if (trimmed !== (editingGalleryItem.caption || '')) patch.caption = trimmed;
+        if (galleryEditDate) {
+            const parsed = new Date(galleryEditDate + 'T00:00:00');
+            if (!isNaN(parsed.getTime())) {
+                const existing = editingGalleryItem.created_at
+                    ? new Date(editingGalleryItem.created_at).toISOString().slice(0, 10)
+                    : '';
+                if (galleryEditDate !== existing) patch.date = parsed;
+            }
+        }
+        if (!patch.caption && !patch.date) {
+            setEditingGalleryItem(null);
+            return;
+        }
+        setIsSavingGalleryEdit(true);
+        try {
+            await onUpdateGalleryItem(editingGalleryItem.id, patch);
+            toast('Gallery item updated', 'success');
+            setEditingGalleryItem(null);
+        } catch {
+            toast("Couldn't save. Check your connection and try again.", 'error');
+        } finally {
+            setIsSavingGalleryEdit(false);
+        }
+    };
+
+    const handleDeleteGalleryItemClick = async (item: GalleryItem) => {
+        if (!onDeleteGalleryItem) return;
+        const ok = await confirm(`Remove "${item.caption || 'this memory'}" from the gallery?`, {
+            title: 'Delete Gallery Item',
+            confirmLabel: 'Delete'
+        });
+        if (!ok) return;
+        try {
+            await Promise.resolve(onDeleteGalleryItem(item.id));
+            toast('Gallery item removed', 'success');
+        } catch {
+            toast("Couldn't delete. Check your connection and try again.", 'error');
+        }
+    };
 
     // Sync archive phone from dbStats
     useEffect(() => {
@@ -1089,6 +1165,134 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Existing Gallery Items - Edit / Delete */}
+                                    {gallery.length > 0 && (onUpdateGalleryItem || onDeleteGalleryItem) && (
+                                        <div className="mt-8 pt-8 border-t border-stone-200">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] mb-4 flex items-center gap-2">
+                                                <span>🗂️</span> Manage Gallery ({gallery.length})
+                                            </h4>
+                                            <ul className="space-y-3" aria-label="Existing gallery items">
+                                                {gallery.map(item => {
+                                                    const createdLabel = item.created_at
+                                                        ? new Date(item.created_at).toLocaleDateString()
+                                                        : '—';
+                                                    return (
+                                                        <li
+                                                            key={item.id}
+                                                            className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-stone-100"
+                                                        >
+                                                            {item.type === 'video' ? (
+                                                                <div className="w-16 h-16 rounded-xl bg-stone-800 flex items-center justify-center text-white text-xl flex-shrink-0" aria-hidden="true">▶</div>
+                                                            ) : (
+                                                                <img src={item.url} alt="" aria-hidden="true" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-stone-100" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }} />
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium text-stone-800 truncate">{item.caption || <span className="italic text-stone-400">No caption</span>}</p>
+                                                                <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">{createdLabel} · {item.contributor || 'Unknown'}</p>
+                                                            </div>
+                                                            <div className="flex gap-2 flex-shrink-0">
+                                                                {onUpdateGalleryItem && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setEditingGalleryItem(item)}
+                                                                        className="px-4 py-2 min-h-[2.75rem] rounded-xl bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e301f] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                                                        aria-label={`Edit "${item.caption || 'gallery item'}"`}
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                )}
+                                                                {onDeleteGalleryItem && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDeleteGalleryItemClick(item)}
+                                                                        className="px-4 py-2 min-h-[2.75rem] rounded-xl bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+                                                                        aria-label={`Delete "${item.caption || 'gallery item'}"`}
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Gallery Edit Modal */}
+                                    {editingGalleryItem && (
+                                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
+                                        <div
+                                            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                                            role="dialog"
+                                            aria-modal="true"
+                                            aria-labelledby="gallery-edit-modal-title"
+                                            onClick={() => { if (!isSavingGalleryEdit) setEditingGalleryItem(null); }}
+                                        >
+                                            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+                                            <div
+                                                ref={galleryEditModalRef}
+                                                className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200"
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <h4 id="gallery-edit-modal-title" className="text-lg font-serif italic text-[#2D4635]">Edit Gallery Item</h4>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingGalleryItem(null)}
+                                                        disabled={isSavingGalleryEdit}
+                                                        className="w-10 h-10 min-w-[2.5rem] min-h-[2.5rem] flex items-center justify-center rounded-full text-stone-400 hover:text-stone-800 hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635]"
+                                                        aria-label="Cancel edit"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="gallery-edit-caption" className="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Caption</label>
+                                                    <input
+                                                        id="gallery-edit-caption"
+                                                        type="text"
+                                                        value={galleryEditCaption}
+                                                        onChange={e => setGalleryEditCaption(e.target.value)}
+                                                        className="w-full p-3 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                                                        placeholder="Caption"
+                                                        disabled={isSavingGalleryEdit}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="gallery-edit-date" className="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Date</label>
+                                                    <input
+                                                        id="gallery-edit-date"
+                                                        type="date"
+                                                        value={galleryEditDate}
+                                                        onChange={e => setGalleryEditDate(e.target.value)}
+                                                        className="w-full p-3 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                                                        disabled={isSavingGalleryEdit}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-3 pt-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingGalleryItem(null)}
+                                                        disabled={isSavingGalleryEdit}
+                                                        className="flex-1 py-3 rounded-full bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635]"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleSaveGalleryEdit}
+                                                        disabled={isSavingGalleryEdit}
+                                                        aria-busy={isSavingGalleryEdit}
+                                                        className="flex-1 py-3 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                                    >
+                                                        {isSavingGalleryEdit ? 'Saving...' : 'Save'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </section>
                             )}
 

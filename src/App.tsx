@@ -867,6 +867,14 @@ const App: React.FC = () => {
                                             />
                                         )}
                                         <p className="font-serif italic text-stone-800 text-lg px-2 line-clamp-3">{item.caption}</p>
+                                        {item.created_at && (
+                                            <time
+                                                dateTime={item.created_at}
+                                                className="block px-2 mt-1 text-[10px] uppercase tracking-widest text-stone-400"
+                                            >
+                                                {new Date(item.created_at).toLocaleDateString()}
+                                            </time>
+                                        )}
                                         <div className="flex justify-between items-center mt-4 px-2">
                                             <div className="flex items-center gap-2">
                                                 <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full object-cover" alt={item.contributor} onError={avatarOnError} />
@@ -1442,6 +1450,35 @@ const App: React.FC = () => {
                             trivia,
                             contributors,
                             dbStats: { ...dbStats, archivePhone },
+                            gallery,
+                            onDeleteGalleryItem: async (id) => {
+                                try {
+                                    await CloudArchive.deleteGalleryItem(id);
+                                    setGallery(prev => prev.filter(g => g.id !== id));
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                    throw new Error(CLOUD_ERROR_MSG);
+                                }
+                            },
+                            onUpdateGalleryItem: async (id, patch) => {
+                                try {
+                                    await CloudArchive.updateGalleryItem(id, patch);
+                                    setGallery(prev => prev.map(g => {
+                                        if (g.id !== id) return g;
+                                        const next: GalleryItem = { ...g };
+                                        if (typeof patch.caption === 'string') next.caption = patch.caption;
+                                        if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
+                                            next.created_at = patch.date.toISOString();
+                                        }
+                                        return next;
+                                    }));
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                    throw new Error(CLOUD_ERROR_MSG);
+                                }
+                            },
                             onAddRecipe: async (r, f) => {
                                 try {
                                     const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
