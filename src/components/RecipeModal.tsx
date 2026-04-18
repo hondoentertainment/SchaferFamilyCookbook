@@ -15,6 +15,7 @@ import { getAllCollections, addToCollection } from '../utils/collections';
 import { addActivity } from '../utils/activityFeed';
 import { addGroceryItems } from '../utils/groceryList';
 import { setRecipeMeta, resetMeta } from '../utils/metaTags';
+import { getRelatedRecipes } from '../utils/recipeSimilarity';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -41,6 +42,10 @@ interface RecipeModalProps {
     breadcrumbContext?: string;
     /** Current user name for ratings/notes */
     currentUserName?: string;
+    /** Full recipe library used to compute "You might also like" suggestions */
+    allRecipes?: Recipe[];
+    /** Invoked when a suggested recipe card is clicked */
+    onSelectRecipe?: (recipe: Recipe) => void;
 }
 
 const RatingSection: React.FC<{ recipeId: string; recipeTitle: string; currentUserName: string }> = ({ recipeId, recipeTitle, currentUserName }) => {
@@ -139,6 +144,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     onStartCook,
     breadcrumbContext = 'Recipes',
     currentUserName = '',
+    allRecipes,
+    onSelectRecipe,
 }) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -149,6 +156,10 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const displayedIngredients = useMemo(
         () => (recipe ? scaleIngredients(recipe.ingredients, scaleFactor) : []),
         [recipe, scaleFactor]
+    );
+    const relatedRecipes = useMemo(
+        () => (recipe && allRecipes && allRecipes.length > 0 ? getRelatedRecipes(recipe, allRecipes, 3) : []),
+        [recipe, allRecipes]
     );
 
     const navIndex = recipe ? recipeList.findIndex((r) => r.id === recipe.id) : -1;
@@ -697,6 +708,67 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             <div className="print:hidden">
                                 <RecipeNotes recipeId={recipe.id} recipeTitle={recipe.title} currentUserName={currentUserName} />
                             </div>
+                        )}
+
+                        {/* You might also like */}
+                        {allRecipes && allRecipes.length > 0 && relatedRecipes.length > 0 && (
+                            <section
+                                aria-labelledby="related-recipes-heading"
+                                className="print:hidden space-y-4 pt-2"
+                            >
+                                <h3
+                                    id="related-recipes-heading"
+                                    className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2"
+                                >
+                                    <span className="text-2xl">🍽️</span>
+                                    <span>You might also like</span>
+                                </h3>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {relatedRecipes.map((related) => {
+                                        const hasRelImage =
+                                            !!related.image &&
+                                            (related.image.startsWith('/recipe-images/') ||
+                                                related.image.startsWith('http://') ||
+                                                related.image.startsWith('https://'));
+                                        return (
+                                            <li key={related.id}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onSelectRecipe?.(related)}
+                                                    aria-label={`Open recipe: ${related.title} by ${related.contributor}`}
+                                                    className="group w-full text-left bg-white/70 hover:bg-white border border-stone-200/70 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex items-stretch gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                                >
+                                                    <div className="w-20 h-20 shrink-0 bg-stone-100 relative overflow-hidden">
+                                                        {hasRelImage ? (
+                                                            <img
+                                                                src={related.image}
+                                                                alt=""
+                                                                loading="lazy"
+                                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2D4635]/70 to-[#A0522D]/70 text-white text-2xl">
+                                                                {CATEGORY_ICONS[related.category] || '🍽️'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 py-2 pr-3 flex flex-col justify-center">
+                                                        <span className="block text-[9px] font-black uppercase tracking-widest text-[#A0522D]">
+                                                            {related.category}
+                                                        </span>
+                                                        <span className="block text-sm font-serif italic text-[#2D4635] leading-snug truncate">
+                                                            {related.title}
+                                                        </span>
+                                                        <span className="block text-[10px] text-stone-500 truncate">
+                                                            By {related.contributor}
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </section>
                         )}
                     </div>
                     {showScrollToTop && (

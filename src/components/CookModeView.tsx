@@ -3,6 +3,7 @@ import { Recipe } from '../types';
 import { scaleIngredients } from '../utils/scaleIngredients';
 import { useFocusTrap } from '../utils/focusTrap';
 import { useUI } from '../context/UIContext';
+import { speak, cancelSpeech, isSpeechSupported } from '../utils/speech';
 
 const SWIPE_THRESHOLD = 50;
 
@@ -15,6 +16,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const { toast } = useUI();
     const [stepIndex, setStepIndex] = useState(0);
     const [scaleTo, setScaleTo] = useState(typeof recipe.servings === 'number' ? recipe.servings : 4);
+    const [voiceOn, setVoiceOn] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const touchStartX = useRef<number>(0);
     const touchStartY = useRef<number>(0);
@@ -68,6 +70,37 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [onClose, goPrev, goNext]);
+
+    // Voice read-aloud: speak the current step whenever it changes (or when
+    // first enabled). Step 0 reads the ingredient list; other steps read the
+    // instruction text.
+    useEffect(() => {
+        if (!voiceOn) return;
+        let text: string;
+        if (stepIndex === 0) {
+            text = ingredients.length > 0
+                ? `Ingredients. ${ingredients.join(', ')}.`
+                : 'Ingredients.';
+        } else {
+            text = currentStep ?? '';
+        }
+        speak(text);
+    }, [voiceOn, stepIndex, currentStep, ingredients]);
+
+    // Cancel any in-flight speech on unmount.
+    useEffect(() => {
+        return () => {
+            cancelSpeech();
+        };
+    }, []);
+
+    const toggleVoice = useCallback(() => {
+        setVoiceOn((on) => {
+            const next = !on;
+            if (!next) cancelSpeech();
+            return next;
+        });
+    }, []);
 
     const handleTouchStart = (e: React.TouchEvent) => {
         touchStartX.current = e.touches[0].clientX;
@@ -188,9 +221,28 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                 >
                     ← Prev
                 </button>
-                <span className="text-white/60 text-xs uppercase tracking-widest">
-                    {stepIndex + 1} / {totalSteps}
-                </span>
+                <div className="flex items-center gap-3">
+                    {isSpeechSupported() && (
+                        <button
+                            onClick={toggleVoice}
+                            aria-pressed={voiceOn}
+                            aria-label="Toggle voice read-aloud"
+                            className={`min-h-[2.75rem] min-w-[2.75rem] px-4 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-1 ${
+                                voiceOn
+                                    ? 'bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90'
+                                    : 'bg-white/10 hover:bg-white/20 text-white'
+                            }`}
+                        >
+                            <span aria-hidden>{voiceOn ? '🔊' : '🔈'}</span>
+                            <span className="hidden sm:inline uppercase tracking-widest text-xs">
+                                {voiceOn ? 'On' : 'Read'}
+                            </span>
+                        </button>
+                    )}
+                    <span className="text-white/60 text-xs uppercase tracking-widest">
+                        {stepIndex + 1} / {totalSteps}
+                    </span>
+                </div>
                 <button
                     onClick={() =>
                         setStepIndex((i) => (isLast ? i : i + 1))

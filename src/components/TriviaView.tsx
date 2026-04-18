@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trivia, UserProfile } from '../types';
 import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
+import { getStreak, recordQuizCompletion } from '../utils/triviaStreaks';
 import { hapticSuccess, hapticError } from '../utils/haptics';
 import { CloudArchive } from '../services/db';
 import type { TriviaScore } from '../types';
@@ -72,6 +73,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const [reviewIndex, setReviewIndex] = useState(0);
     const [answerLog, setAnswerLog] = useState<Array<{ selectedOption: string; isCorrect: boolean }>>([]);
     const [scoreboard, setScoreboard] = useState<TriviaScore[]>(() => getTriviaScores());
+    const [streak, setStreak] = useState(() => getStreak(currentUser.name));
     const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
     const [isCloudLeaderboard, setIsCloudLeaderboard] = useState(false);
     const [ariaAnnouncement, setAriaAnnouncement] = useState('');
@@ -107,6 +109,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
         setLastSavedScoreId(undefined);
         setAriaAnnouncement('');
         setScoreboard(getTriviaScores());
+        setStreak(getStreak(currentUser.name));
     };
 
     const goBackToResults = () => {
@@ -162,6 +165,12 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             });
             setScoreboard(updated);
             setLastSavedScoreId(newId);
+            const updatedStreak = recordQuizCompletion(currentUser.name);
+            setStreak({
+                current: updatedStreak.current,
+                best: updatedStreak.best,
+                lastDate: updatedStreak.lastDate,
+            });
             setShowResults(true);
             const msg = percentage >= 90 ? 'You know the family well!' : percentage >= 70 ? 'Great job!' : 'Keep exploring the archive!';
             setAriaAnnouncement(`Quiz complete. You scored ${finalScore} out of ${questions.length}, ${percentage} percent. ${msg}`);
@@ -238,6 +247,16 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <p className="text-stone-400 font-serif max-w-lg mx-auto italic text-lg leading-relaxed">
                         Test your knowledge of the Schafer / Oehler legacy through {questions.length} questions curated from our history and recipes.
                     </p>
+                    {streak.current > 0 && (
+                        <div className="mt-4 flex justify-center">
+                            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-stone-100 rounded-full shadow-sm text-[10px] font-black uppercase tracking-widest text-[#2D4635]">
+                                <span aria-hidden="true">🔥</span>
+                                <span>{streak.current}-day streak</span>
+                                <span className="text-stone-300">·</span>
+                                <span className="text-[#A0522D]">Best {streak.best}</span>
+                            </span>
+                        </div>
+                    )}
                     <button
                         onClick={startQuiz}
                         className="mt-8 px-12 py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all"
@@ -332,6 +351,17 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                         <span className="text-4xl font-black tabular-nums">{percentage}%</span>
                         <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">{score}/{questions.length}</span>
                     </div>
+                    {streak.current > 0 && (
+                        <div className="flex justify-center">
+                            <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-stone-100 rounded-full shadow-sm text-[10px] font-black uppercase tracking-widest text-[#2D4635]">
+                                <span aria-hidden="true">🔥</span>
+                                <span>{streak.current}-day streak</span>
+                                {streak.current === streak.best && streak.current > 1 && (
+                                    <span className="text-[#A0522D]">(Personal Best!)</span>
+                                )}
+                            </span>
+                        </div>
+                    )}
                     <h2 className="text-5xl font-serif italic text-[#2D4635] animate-in fade-in slide-in-from-bottom-2 duration-500">Legacy Challenge Complete</h2>
                     <p className="text-stone-500 font-serif italic text-xl">
                         You scored <span className="text-[#2D4635] font-bold">{score}</span> out of <span className="font-bold text-stone-700">{questions.length}</span> questions.

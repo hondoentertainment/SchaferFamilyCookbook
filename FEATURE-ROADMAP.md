@@ -95,18 +95,18 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Grocery list sync** | Optional cloud backup for grocery list | M |
 
 ### Offline & PWA
-| Feature | Description | Effort |
-|---------|-------------|--------|
-| **Offline recipe view** | Cache selected recipes for offline Cook Mode | M |
-| **Install prompt** | Show "Add to Home Screen" prompt after key actions (e.g., first recipe view) | S |
-| **Background sync** | Queue gallery uploads when offline; sync when back online | M |
+| Feature | Description | Effort | Status |
+|---------|-------------|--------|--------|
+| **Offline recipe view** | Cache selected recipes for offline Cook Mode | M | — |
+| **Install prompt** | Show "Add to Home Screen" prompt after key actions (e.g., first recipe view) | S | ✅ |
+| **Background sync** | Queue gallery uploads when offline; sync when back online | M | — |
 
 ### Content & Discovery
-| Feature | Description | Effort |
-|---------|-------------|--------|
-| **Recipe suggestions** | "You might also like" based on category/contributor | S |
-| **Featured recipes** | Admin-curated "Featured" section on Recipes tab | S |
-| **Search enhancements** | Search by ingredient; fuzzy search | M |
+| Feature | Description | Effort | Status |
+|---------|-------------|--------|--------|
+| **Recipe suggestions** | "You might also like" based on category/contributor/ingredient overlap | S | ✅ |
+| **Featured recipes** | Admin-curated "Featured" section on Recipes tab | S | — |
+| **Search enhancements** | Search by ingredient; fuzzy search | M | — |
 
 ---
 
@@ -123,12 +123,12 @@ A strategic roadmap for the next phases of development, informed by the current 
 - OAuth (Google) for easier onboarding
 
 ### AI & Automation
-- **Voice read-aloud** for Cook Mode instructions
+- ✅ **Voice read-aloud** for Cook Mode instructions (Web Speech API)
 - **Ingredient substitution suggestions** (e.g., "No buttermilk? Use milk + lemon")
 - **Recipe parsing from photo** – OCR a handwritten recipe, AI structures it
 
 ### Gamification & Engagement
-- **Trivia streaks** – Reward consistent quiz attempts
+- ✅ **Trivia streaks** – localStorage-backed daily streak with personal best
 - **Contribution badges** – "First recipe", "10 recipes", "Gallery curator"
 - **Family milestones** – "100 recipes archived" celebration
 

@@ -18,6 +18,7 @@ import { addActivity } from './utils/activityFeed';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
+import { InstallPrompt } from './components/InstallPrompt';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
@@ -1142,6 +1143,8 @@ const App: React.FC = () => {
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
                         breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
+                        allRecipes={recipes}
+                        onSelectRecipe={handleNavigateToRecipe}
                     />
                 </Suspense>
             )}
@@ -1677,6 +1680,7 @@ const App: React.FC = () => {
             )}
 
             <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+            <InstallPrompt />
             </div>
         </div>
     );
