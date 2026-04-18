@@ -19,6 +19,7 @@ const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ d
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
+import { useUserPrefsSync } from './services/useUserPrefsSync';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
@@ -444,6 +445,15 @@ const App: React.FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
+
+    // Cloud-sync favorites + ratings under the user's identity slug. On login
+    // we merge remote into local (favorites union; remote-wins ratings) and
+    // refresh React state. Subsequent local changes debounce-write up to
+    // Firestore. Silently no-ops for guests or when cloud is unavailable.
+    useUserPrefsSync(currentUser?.name, {
+        onHydrated: () => setFavoriteIds(getFavoriteIds()),
+    });
+
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);

@@ -27,9 +27,11 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     setDoc: vi.fn(),
     doc: vi.fn(),
+    getDoc: vi.fn(() => Promise.resolve({ exists: () => false, data: () => undefined })),
     deleteDoc: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
+    serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
     onSnapshot: vi.fn((q, callback) => {
         callback({ docs: [] });
         return vi.fn(); // unsubscribe function
