@@ -3,8 +3,140 @@ import { Trivia, UserProfile } from '../types';
 import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
 import { hapticSuccess, hapticError } from '../utils/haptics';
 import type { TriviaScore } from '../types';
+import {
+    submitScore,
+    getTopScores,
+    isLeaderboardAvailable,
+    type LeaderboardEntry,
+} from '../services/leaderboard';
 
 const FEEDBACK_DELAY_MS = 1500;
+const LEADERBOARD_LIMIT = 10;
+
+type LeaderboardStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unavailable';
+
+function FamilyLeaderboard({
+    entries,
+    status,
+    error,
+    onRefresh,
+    highlightUserId,
+}: {
+    entries: LeaderboardEntry[];
+    status: LeaderboardStatus;
+    error?: string;
+    onRefresh: () => void;
+    highlightUserId?: string;
+}) {
+    const [open, setOpen] = useState(true);
+    const headerId = 'family-leaderboard-heading';
+
+    return (
+        <section
+            aria-labelledby={headerId}
+            data-testid="family-leaderboard"
+            className="bg-white/90 dark:bg-stone-900/80 backdrop-blur-sm rounded-[2rem] border border-stone-100 dark:border-stone-800 shadow-lg overflow-hidden"
+        >
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                aria-expanded={open}
+                aria-controls="family-leaderboard-panel"
+                className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left hover:bg-stone-50/80 dark:hover:bg-stone-800/60 transition-colors"
+            >
+                <span id={headerId} className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-300">
+                    🏆 Family Leaderboard
+                </span>
+                <span aria-hidden="true" className="text-stone-400 dark:text-stone-500 text-xs">
+                    {open ? '▾' : '▸'}
+                </span>
+            </button>
+
+            {open && (
+                <div
+                    id="family-leaderboard-panel"
+                    className="px-6 pb-6 pt-2 border-t border-stone-100 dark:border-stone-800"
+                >
+                    {status === 'unavailable' && (
+                        <p className="text-sm font-serif italic text-stone-400 dark:text-stone-500 py-4" role="status">
+                            Leaderboard unavailable offline.
+                        </p>
+                    )}
+
+                    {status === 'loading' && (
+                        <ul className="space-y-2 py-2" aria-label="Loading top scores" aria-busy="true">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <li
+                                    key={i}
+                                    className="h-10 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse"
+                                />
+                            ))}
+                        </ul>
+                    )}
+
+                    {status === 'error' && (
+                        <div className="py-4 text-sm text-stone-500 dark:text-stone-400 space-y-3" role="alert">
+                            <p className="font-serif italic">
+                                {error || 'Could not load the leaderboard.'}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={onRefresh}
+                                className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-[#A0C4A0] hover:underline"
+                            >
+                                Try again
+                            </button>
+                        </div>
+                    )}
+
+                    {status === 'ready' && entries.length === 0 && (
+                        <p className="text-sm font-serif italic text-stone-400 dark:text-stone-500 py-4">
+                            No scores yet — be the first to set the pace!
+                        </p>
+                    )}
+
+                    {status === 'ready' && entries.length > 0 && (
+                        <ol className="space-y-2 max-h-72 overflow-y-auto" aria-label="Top family scores">
+                            {entries.map((row, i) => {
+                                const isMe = highlightUserId && row.userId === highlightUserId;
+                                return (
+                                    <li
+                                        key={row.id}
+                                        className={`flex justify-between items-center py-2 px-3 rounded-xl text-sm ${
+                                            isMe
+                                                ? 'bg-[#2D4635]/10 dark:bg-[#A0C4A0]/10 border border-[#2D4635]/30 dark:border-[#A0C4A0]/30 font-medium'
+                                                : ''
+                                        }`}
+                                    >
+                                        <span className="flex items-center gap-3 min-w-0">
+                                            <span className="text-stone-400 dark:text-stone-500 w-6 text-right font-mono shrink-0">
+                                                {i + 1}.
+                                            </span>
+                                            <span className="font-serif truncate text-stone-700 dark:text-stone-200">
+                                                {row.displayName}
+                                            </span>
+                                            {isMe && (
+                                                <span className="text-[10px] uppercase tracking-widest text-[#A0522D] dark:text-[#F4A460] shrink-0">
+                                                    (You)
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className="font-mono font-bold text-[#2D4635] dark:text-[#A0C4A0] shrink-0 ml-2">
+                                            {row.score}/{row.total}
+                                            <span className="ml-2 text-stone-400 dark:text-stone-500 text-xs">
+                                                {row.percentage}%
+                                            </span>
+                                        </span>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    )}
+                </div>
+            )}
+        </section>
+    );
+}
 
 interface TriviaViewProps {
     trivia: Trivia[];
@@ -71,6 +203,32 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
     const [ariaAnnouncement, setAriaAnnouncement] = useState('');
     const [feedbackCountdownMs, setFeedbackCountdownMs] = useState(0);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [leaderboardStatus, setLeaderboardStatus] = useState<LeaderboardStatus>('idle');
+    const [leaderboardError, setLeaderboardError] = useState<string | undefined>(undefined);
+
+    const refreshLeaderboard = useCallback(async () => {
+        if (!isLeaderboardAvailable()) {
+            setLeaderboardStatus('unavailable');
+            setLeaderboard([]);
+            return;
+        }
+        setLeaderboardStatus('loading');
+        setLeaderboardError(undefined);
+        try {
+            const rows = await getTopScores(LEADERBOARD_LIMIT);
+            setLeaderboard(rows);
+            setLeaderboardStatus('ready');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to load leaderboard.';
+            setLeaderboardError(msg);
+            setLeaderboardStatus('error');
+        }
+    }, []);
+
+    useEffect(() => {
+        void refreshLeaderboard();
+    }, [refreshLeaderboard]);
     const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const scoreRef = useRef(score);
@@ -160,6 +318,25 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             setShowResults(true);
             const msg = percentage >= 90 ? 'You know the family well!' : percentage >= 70 ? 'Great job!' : 'Keep exploring the archive!';
             setAriaAnnouncement(`Quiz complete. You scored ${finalScore} out of ${questions.length}, ${percentage} percent. ${msg}`);
+
+            // Fire-and-forget submit to the family leaderboard. Local scoreboard is
+            // our source of truth offline, so swallow errors here and surface them
+            // via the leaderboard panel state instead.
+            if (questions.length > 0 && isLeaderboardAvailable()) {
+                submitScore({
+                    userId: currentUser.id,
+                    displayName: currentUser.name,
+                    avatarKey: currentUser.picture,
+                    score: finalScore,
+                    total: questions.length,
+                })
+                    .then(() => refreshLeaderboard())
+                    .catch((err) => {
+                        const message = err instanceof Error ? err.message : 'Failed to submit score.';
+                        setLeaderboardError(message);
+                        setLeaderboardStatus('error');
+                    });
+            }
         }
     };
 
@@ -225,7 +402,14 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <p className="text-[10px] text-stone-400 uppercase tracking-widest">Tip: press 1-4 on your keyboard to answer quickly</p>
                     <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-8">Prove your status as a legacy keeper</p>
                 </div>
-                <div className="mt-12 max-w-md mx-auto">
+                <div className="mt-12 max-w-md mx-auto space-y-6">
+                    <FamilyLeaderboard
+                        entries={leaderboard}
+                        status={leaderboardStatus}
+                        error={leaderboardError}
+                        onRefresh={() => { void refreshLeaderboard(); }}
+                        highlightUserId={currentUser.id}
+                    />
                     <Scoreboard scores={scoreboard} />
                 </div>
             </div>
@@ -341,7 +525,14 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     </div>
                 )}
 
-                <div className="max-w-md mx-auto">
+                <div className="max-w-md mx-auto space-y-6">
+                    <FamilyLeaderboard
+                        entries={leaderboard}
+                        status={leaderboardStatus}
+                        error={leaderboardError}
+                        onRefresh={() => { void refreshLeaderboard(); }}
+                        highlightUserId={currentUser.id}
+                    />
                     <Scoreboard scores={scoreboard} highlightId={lastSavedScoreId} />
                 </div>
 

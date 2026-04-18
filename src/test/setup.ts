@@ -26,12 +26,32 @@ vi.mock('firebase/firestore', () => ({
     getFirestore: vi.fn(() => ({})),
     collection: vi.fn(),
     setDoc: vi.fn(),
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
+    getDocs: vi.fn(() => Promise.resolve({ docs: [] })),
     doc: vi.fn(),
     getDoc: vi.fn(() => Promise.resolve({ exists: () => false, data: () => undefined })),
     deleteDoc: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
+    limit: vi.fn(),
     serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
+    Timestamp: class MockTimestamp {
+        seconds: number;
+        nanoseconds: number;
+        constructor(seconds: number, nanoseconds: number) {
+            this.seconds = seconds;
+            this.nanoseconds = nanoseconds;
+        }
+        toDate() {
+            return new Date(this.seconds * 1000 + Math.floor(this.nanoseconds / 1e6));
+        }
+        static fromDate(d: Date) {
+            return new (this as unknown as { new (s: number, n: number): unknown })(
+                Math.floor(d.getTime() / 1000),
+                0
+            );
+        }
+    },
     onSnapshot: vi.fn((q, callback) => {
         callback({ docs: [] });
         return vi.fn(); // unsubscribe function
