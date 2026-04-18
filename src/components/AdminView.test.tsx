@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { AdminView } from './AdminView';
 import {
     renderWithProviders,
     createMockRecipe,
     createMockTrivia,
     createMockContributor,
+    createMockGalleryItem,
     waitFor
 } from '../test/utils';
 
@@ -220,6 +221,74 @@ describe('AdminView', () => {
         expect(mockOnAddTrivia).toHaveBeenCalledWith(
             expect.objectContaining({ question: 'Test Question?', options: ['A', 'B', '', ''], answer: 'A' })
         );
+    });
+
+    it('should open gallery edit modal, update caption, and call onUpdateGalleryItem', async () => {
+        const mockOnUpdateGalleryItem = vi.fn().mockResolvedValue(undefined);
+        const mockOnDeleteGalleryItem = vi.fn().mockResolvedValue(undefined);
+        const galleryItem = createMockGalleryItem({
+            id: 'g1',
+            caption: 'Old Caption',
+            created_at: '2020-01-15T00:00:00.000Z'
+        });
+        renderWithProviders(
+            <AdminView
+                {...defaultProps}
+                gallery={[galleryItem]}
+                onUpdateGalleryItem={mockOnUpdateGalleryItem}
+                onDeleteGalleryItem={mockOnDeleteGalleryItem}
+            />
+        );
+        fireEvent.click(screen.getByText('🖼️ Gallery'));
+
+        // Edit button appears for existing items
+        const editBtn = screen.getByRole('button', { name: /Edit "Old Caption"/i });
+        fireEvent.click(editBtn);
+
+        // Modal with caption + date inputs
+        const dialog = await screen.findByRole('dialog', { name: /Edit Gallery Item/i });
+        expect(dialog).toBeInTheDocument();
+
+        const captionInput = screen.getByLabelText(/^Caption$/) as HTMLInputElement;
+        expect(captionInput.value).toBe('Old Caption');
+        fireEvent.change(captionInput, { target: { value: 'New Caption' } });
+
+        const dateInput = screen.getByLabelText(/^Date$/) as HTMLInputElement;
+        expect(dateInput.value).toBe('2020-01-15');
+
+        fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
+
+        await waitFor(() => {
+            expect(mockOnUpdateGalleryItem).toHaveBeenCalledWith(
+                'g1',
+                expect.objectContaining({ caption: 'New Caption' })
+            );
+        });
+    });
+
+    it('should show Delete button in gallery subtab list and call onDeleteGalleryItem after confirm', async () => {
+        const mockOnUpdateGalleryItem = vi.fn().mockResolvedValue(undefined);
+        const mockOnDeleteGalleryItem = vi.fn().mockResolvedValue(undefined);
+        const galleryItem = createMockGalleryItem({ id: 'g1', caption: 'Bye' });
+        renderWithProviders(
+            <AdminView
+                {...defaultProps}
+                gallery={[galleryItem]}
+                onUpdateGalleryItem={mockOnUpdateGalleryItem}
+                onDeleteGalleryItem={mockOnDeleteGalleryItem}
+            />
+        );
+        fireEvent.click(screen.getByText('🖼️ Gallery'));
+
+        const deleteBtn = screen.getByRole('button', { name: /Delete "Bye"/i });
+        fireEvent.click(deleteBtn);
+
+        const confirmBtn = await screen.findByRole('button', { name: 'Delete' });
+        fireEvent.click(confirmBtn);
+
+        await waitFor(() => {
+            expect(mockOnDeleteGalleryItem).toHaveBeenCalledWith('g1');
+        });
     });
 
     it('should trigger merge contributors if superadmin', async () => {
