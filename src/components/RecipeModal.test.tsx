@@ -134,7 +134,9 @@ describe('RecipeModal', () => {
 
     it('should show share button with accessible label containing recipe title', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
-        const shareBtn = screen.getByRole('button', { name: /Share recipe/i });
+        // Multiple share affordances exist (top-bar + <ShareRecipe>); target the
+        // title-bearing one specifically.
+        const shareBtn = screen.getByRole('button', { name: /Share recipe:.*Test Recipe/i });
         expect(shareBtn).toBeInTheDocument();
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);

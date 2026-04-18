@@ -40,6 +40,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
   const handleShare = async () => {
     hapticLight();
     const text = formatRecipeText();
+    // eslint-disable-next-line no-undef -- ShareData is a DOM lib type; eslint env lacks it
     const shareData: ShareData = {
       title: recipe.title,
       text: text,

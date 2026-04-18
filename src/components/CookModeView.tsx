@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Recipe } from '../types';
 import { scaleIngredients } from '../utils/scaleIngredients';
 import { useFocusTrap } from '../utils/focusTrap';
+import { useSwipe } from '../utils/useSwipe';
+import { hapticLight } from '../utils/haptics';
 import { useUI } from '../context/UIContext';
 
-const SWIPE_THRESHOLD = 50;
+const SWIPE_HINT_KEY = 'cookMode.swipeHintSeen';
 
 interface CookModeViewProps {
     recipe: Recipe;
@@ -16,8 +18,13 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const [stepIndex, setStepIndex] = useState(0);
     const [scaleTo, setScaleTo] = useState(typeof recipe.servings === 'number' ? recipe.servings : 4);
     const containerRef = useRef<HTMLDivElement>(null);
-    const touchStartX = useRef<number>(0);
-    const touchStartY = useRef<number>(0);
+    const [showSwipeHint, setShowSwipeHint] = useState<boolean>(() => {
+        try {
+            return typeof localStorage !== 'undefined' && !localStorage.getItem(SWIPE_HINT_KEY);
+        } catch {
+            return false;
+        }
+    });
 
     const baseServings = typeof recipe.servings === 'number' ? recipe.servings : 4;
     const scaleFactor = baseServings > 0 ? scaleTo / baseServings : 1;
@@ -28,12 +35,40 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const isFirst = stepIndex === 0;
     const isLast = stepIndex === totalSteps - 1;
 
+    const dismissSwipeHint = useCallback(() => {
+        setShowSwipeHint(false);
+        try {
+            localStorage.setItem(SWIPE_HINT_KEY, '1');
+        } catch {
+            /* localStorage unavailable — ignore */
+        }
+    }, []);
+
     const goPrev = useCallback(() => {
         if (!isFirst) setStepIndex((i) => i - 1);
     }, [isFirst]);
     const goNext = useCallback(() => {
         if (!isLast) setStepIndex((i) => i + 1);
     }, [isLast]);
+
+    const onSwipeNext = useCallback(() => {
+        if (isLast) return;
+        setStepIndex((i) => i + 1);
+        hapticLight();
+        dismissSwipeHint();
+    }, [isLast, dismissSwipeHint]);
+    const onSwipePrev = useCallback(() => {
+        if (isFirst) return;
+        setStepIndex((i) => i - 1);
+        hapticLight();
+        dismissSwipeHint();
+    }, [isFirst, dismissSwipeHint]);
+
+    const swipeHandlers = useSwipe({
+        onSwipeLeft: onSwipeNext,
+        onSwipeRight: onSwipePrev,
+        threshold: 50,
+    });
 
     useFocusTrap(true, containerRef);
 
@@ -69,21 +104,6 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [onClose, goPrev, goNext]);
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-        touchStartX.current = e.touches[0].clientX;
-        touchStartY.current = e.touches[0].clientY;
-    };
-    const handleTouchEnd = (e: React.TouchEvent) => {
-        const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-        const absX = Math.abs(deltaX);
-        const absY = Math.abs(deltaY);
-        if (absX >= SWIPE_THRESHOLD && absX > absY) {
-            if (deltaX > 0) goPrev();
-            else goNext();
-        }
-    };
-
     return (
         <div
             ref={containerRef}
@@ -110,12 +130,29 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                 <div className="w-12" aria-hidden />
             </header>
 
+            {showSwipeHint && (
+                <div
+                    className="shrink-0 bg-[#F4A460]/15 text-[#F4A460] text-xs text-center py-2 px-4 md:hidden flex items-center justify-center gap-3 border-b border-[#F4A460]/20"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <span>Tip: Swipe left/right to navigate</span>
+                    <button
+                        type="button"
+                        onClick={dismissSwipeHint}
+                        className="text-[#F4A460]/80 hover:text-[#F4A460] underline text-xs"
+                        aria-label="Dismiss swipe tip"
+                    >
+                        Got it
+                    </button>
+                </div>
+            )}
+
             {/* Step 0: Ingredients */}
             {stepIndex === 0 ? (
                 <div
                     className="flex-1 overflow-y-auto px-6 py-8 md:px-12 md:py-12"
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
+                    {...swipeHandlers}
                 >
                     <div className="max-w-2xl mx-auto space-y-6">
                         <h2 className="text-2xl md:text-3xl font-serif italic text-[#F4A460] mb-6">
@@ -157,8 +194,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
             ) : currentStep ? (
                 <div
                     className="flex-1 flex flex-col items-center justify-center px-6 py-12 md:px-12 touch-pan-y"
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
+                    {...swipeHandlers}
                 >
                     <div className="max-w-2xl w-full text-center">
                         <div className="mb-8 flex justify-center">
