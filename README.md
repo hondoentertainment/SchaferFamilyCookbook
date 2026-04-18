@@ -50,7 +50,20 @@ After push to `main`: CI runs lint, type-check, unit tests, build, then a **Play
    - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook and Firebase Admin.
    - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
    - `VITE_SENTRY_DSN` – optional client error reporting (production only).
+   - `VITE_SHARE_BASE` – optional. Base URL (no trailing slash) the client uses for share links, e.g. `https://schafer-cookbook.vercel.app`. When set, the share UI copies `${VITE_SHARE_BASE}/share/recipe/<id>`, which the Vercel rewrite sends to `/api/share?id=<id>`. That endpoint returns HTML with `og:image` → `/api/og?recipeId=<id>` (a 1200×630 PNG rendered by `sharp`) plus a meta-refresh to the SPA hash route. This is what makes iMessage / WhatsApp / Slack / Discord show a rich recipe preview card. When unset (e.g. GitHub Pages), share links fall back to the plain `#recipe/<id>` hash URL.
 3. Deploy.
+
+### Share card (`/api/og`)
+
+The serverless `api/og.ts` endpoint renders a 1200×630 PNG share card for any recipe. It reads `src/data/recipes.json`, loads the recipe image from `public/recipe-images/` (or fetches it if the image is an absolute URL), and composites the title, contributor, category, and site branding using SVG text overlay via `sharp`. If the recipe image cannot be loaded, it falls back to a clean wordmark-only composition on the parchment/forest palette.
+
+Test locally:
+
+```bash
+curl -o og.png 'http://localhost:3000/api/og?recipeId=749d8765'
+```
+
+The share landing route `/share/recipe/<id>` (implemented in `api/share.ts`) serves an HTML document with full Open Graph + Twitter Card meta tags for crawlers, and a `<meta http-equiv="refresh">` that redirects human visitors to `/#recipe/<id>`.
 
 ## Deploy (GitHub Pages)
 
