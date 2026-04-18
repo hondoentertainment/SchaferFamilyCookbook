@@ -101,6 +101,34 @@ test.describe('Trivia', () => {
     await expect(page.getByRole('heading', { name: /Legacy Challenge Complete/i })).toBeVisible({ timeout: 5000 });
   });
 
+  test('family leaderboard panel is visible after finishing a quiz', async ({ page }) => {
+    // Offline/local mode — leaderboard should render its shell with an
+    // "Unavailable offline" message since Firebase isn't configured.
+    await loginAndOpenTrivia(page, [
+      {
+        id: 't1',
+        question: 'Leaderboard Q?',
+        options: ['Alpha', 'Beta', 'Gamma', 'Delta'],
+        answer: 'Alpha',
+        contributor: 'Admin',
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    // Visible on the start screen as well.
+    await expect(page.getByTestId('family-leaderboard')).toBeVisible();
+    await expect(page.getByText(/Family Leaderboard/i).first()).toBeVisible();
+
+    await page.getByRole('button', { name: /Begin The Challenge/i }).click();
+    await page.getByRole('button', { name: /A: Alpha/ }).click();
+
+    await expect(page.getByRole('heading', { name: /Legacy Challenge Complete/i })).toBeVisible({ timeout: 5000 });
+    // Panel shell still present on the results screen.
+    await expect(page.getByTestId('family-leaderboard')).toBeVisible();
+    // In offline mode we should also surface the unavailable copy.
+    await expect(page.getByText(/Leaderboard unavailable offline/i)).toBeVisible();
+  });
+
   test('keyboard 1-4 selects option', async ({ page }) => {
     await loginAndOpenTrivia(page, [
       {
