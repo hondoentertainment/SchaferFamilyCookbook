@@ -13,6 +13,7 @@ import { ShareRecipe } from './ShareRecipe';
 import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
 import { getAllCollections, addToCollection } from '../utils/collections';
 import { addActivity } from '../utils/activityFeed';
+import { addItems as addGroceryItems, getItems as getGroceryItems } from '../utils/groceryList';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -311,6 +312,29 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         window.print();
     };
 
+    const handleAddToGroceryList = () => {
+        const rows = displayedIngredients
+            .map((text) => ({
+                text,
+                recipeId: recipe.id,
+                recipeTitle: recipe.title,
+            }))
+            .filter((r) => r.text.trim().length > 0);
+        if (rows.length === 0) {
+            toast('No ingredients to add', 'info');
+            return;
+        }
+        const prevCount = getGroceryItems().length;
+        const next = addGroceryItems(rows);
+        const added = Math.max(0, next.length - prevCount);
+        hapticLight();
+        if (added === 0) {
+            toast('All ingredients are already on your Grocery List', 'info');
+        } else {
+            toast(`Added ${added} item${added === 1 ? '' : 's'} to Grocery List`, 'success');
+        }
+    };
+
     return (
         <>
             <script
@@ -398,6 +422,15 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 ← → to navigate
                             </span>
                         )}
+                        <button
+                            onClick={handleAddToGroceryList}
+                            className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                            aria-label="Add ingredients to grocery list"
+                            title="Add to Grocery List"
+                            data-testid="recipe-modal-add-to-grocery"
+                        >
+                            <span className="text-xl">🛒</span>
+                        </button>
                         <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2" aria-label={`Share recipe: ${shareTitle}`} title={shareTitle}>
                             <span className="text-xl">⎘</span>
                         </button>

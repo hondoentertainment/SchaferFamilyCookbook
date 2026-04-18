@@ -8,6 +8,7 @@ const LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
 )}`;
 
 const EXTRA_TABS = [
+    { id: 'Grocery List', title: 'Your shopping list of recipe ingredients' },
     { id: 'Family Story', title: 'Family food history narrative' },
     { id: 'Contributors', title: 'Contributor directory' },
     { id: 'Privacy', title: 'Privacy and data' },
