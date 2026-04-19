@@ -9,6 +9,7 @@ import {
     createMockGalleryItem,
     waitFor
 } from '../test/utils';
+import * as featuredService from '../services/featured';
 
 describe('AdminView', () => {
     const mockOnAddRecipe = vi.fn();
@@ -327,6 +328,64 @@ describe('AdminView', () => {
         } finally {
             createElementSpy.mockRestore();
         }
+    });
+
+    describe('Featured Recipes curation', () => {
+        let getFeaturedIdsSpy: ReturnType<typeof vi.spyOn>;
+        let setFeaturedIdsSpy: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            getFeaturedIdsSpy = vi.spyOn(featuredService, 'getFeaturedIds').mockResolvedValue([]);
+            setFeaturedIdsSpy = vi.spyOn(featuredService, 'setFeaturedIds').mockResolvedValue();
+        });
+
+        it('renders the Featured Recipes panel with current entries', async () => {
+            getFeaturedIdsSpy.mockResolvedValue(['r1']);
+            renderWithProviders(<AdminView {...defaultProps} />);
+            await screen.findByText(/1 \/ 8/);
+            // The featured list should show the resolved recipe title.
+            expect(screen.getAllByText('Apple Pie').length).toBeGreaterThan(0);
+        });
+
+        it('adds a recipe via the Add featured button', async () => {
+            renderWithProviders(<AdminView {...defaultProps} />);
+            await screen.findByText(/0 \/ 8/);
+
+            const select = screen.getByLabelText(/Add featured recipe/i);
+            fireEvent.change(select, { target: { value: 'r1' } });
+            fireEvent.click(screen.getByRole('button', { name: /Add featured/i }));
+
+            expect(screen.getByText(/1 \/ 8/)).toBeInTheDocument();
+            expect(screen.getByText(/Unsaved changes/i)).toBeInTheDocument();
+        });
+
+        it('removes a featured recipe via the × button', async () => {
+            getFeaturedIdsSpy.mockResolvedValue(['r1']);
+            renderWithProviders(<AdminView {...defaultProps} />);
+            await screen.findByText(/1 \/ 8/);
+
+            const removeBtn = screen.getByRole('button', { name: /Remove Apple Pie from featured/i });
+            fireEvent.click(removeBtn);
+            expect(screen.getByText(/0 \/ 8/)).toBeInTheDocument();
+            expect(screen.getByText(/No featured recipes yet/i)).toBeInTheDocument();
+        });
+
+        it('calls setFeaturedIds on save and clears dirty state', async () => {
+            renderWithProviders(<AdminView {...defaultProps} />);
+            await screen.findByText(/0 \/ 8/);
+
+            fireEvent.change(screen.getByLabelText(/Add featured recipe/i), { target: { value: 'r1' } });
+            fireEvent.click(screen.getByRole('button', { name: /Add featured/i }));
+
+            fireEvent.click(screen.getByRole('button', { name: /Save featured/i }));
+
+            await waitFor(() => {
+                expect(setFeaturedIdsSpy).toHaveBeenCalledWith(['r1']);
+            });
+            await waitFor(() => {
+                expect(screen.getByText(/All changes saved/i)).toBeInTheDocument();
+            });
+        });
     });
 
     it('should trigger merge contributors if superadmin', async () => {
