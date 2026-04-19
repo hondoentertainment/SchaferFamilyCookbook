@@ -5,6 +5,7 @@ import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
+import { recipesToJson, recipesToCsv, downloadFile } from '../utils/recipeExport';
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -167,6 +168,27 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setRecipeFile(null);
         setPreviewUrl(defaultImage);
         setRecipeForm(prev => ({ ...prev, image: defaultImage, imageSource: undefined }));
+    };
+
+    const handleExportRecipes = (format: 'json' | 'csv') => {
+        try {
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const filename = `schafer-recipes-${dateStr}.${format}`;
+            const data = format === 'json'
+                ? recipesToJson(managedRecipes)
+                : recipesToCsv(managedRecipes);
+            const mimeType = format === 'json'
+                ? 'application/json;charset=utf-8'
+                : 'text/csv;charset=utf-8';
+            const ok = downloadFile(filename, mimeType, data);
+            if (!ok) {
+                toast('Export is not supported in this browser.', 'error');
+                return;
+            }
+            toast(`Exported ${managedRecipes.length} recipe${managedRecipes.length === 1 ? '' : 's'} as ${format.toUpperCase()}.`, 'success');
+        } catch (err) {
+            toast(`Export failed: ${(err as Error)?.message || 'unknown error'}.`, 'error');
+        }
     };
 
     const useDefaultImageForRecipe = async (recipe: Recipe) => {
@@ -660,6 +682,39 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <span className="text-sm font-bold text-emerald-700">{successMessage}</span>
                                         </div>
                                     )}
+
+                                    {/* Bulk Export Panel */}
+                                    <div className="bg-stone-50 rounded-3xl border border-stone-100 p-6">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                            <div>
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Export</h4>
+                                                <p className="text-sm font-serif text-[#2D4635] mt-1">
+                                                    Download all {managedRecipes.length} recipe{managedRecipes.length === 1 ? '' : 's'} for backup or sharing.
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleExportRecipes('json')}
+                                                    disabled={managedRecipes.length === 0}
+                                                    className="px-4 py-2 bg-[#2D4635] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    aria-label="Download all recipes as JSON"
+                                                >
+                                                    ⬇️ Download JSON
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleExportRecipes('csv')}
+                                                    disabled={managedRecipes.length === 0}
+                                                    className="px-4 py-2 bg-white text-[#2D4635] border border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-stone-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    aria-label="Download all recipes as CSV"
+                                                >
+                                                    ⬇️ Download CSV
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
 
                                     {/* Edit Mode Banner */}
                                     {editingRecipe && (

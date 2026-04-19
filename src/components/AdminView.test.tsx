@@ -222,6 +222,44 @@ describe('AdminView', () => {
         );
     });
 
+    it('should render Export buttons and trigger a download when JSON is clicked', () => {
+        const createObjectURLMock = vi.fn(() => 'blob:mock');
+        const revokeObjectURLMock = vi.fn();
+        vi.stubGlobal('URL', {
+            createObjectURL: createObjectURLMock,
+            revokeObjectURL: revokeObjectURLMock,
+        });
+
+        const anchorClicks: HTMLAnchorElement[] = [];
+        const originalCreateElement = document.createElement.bind(document);
+        const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+            const el = originalCreateElement(tag);
+            if (tag === 'a') {
+                (el as HTMLAnchorElement).click = vi.fn(() => {
+                    anchorClicks.push(el as HTMLAnchorElement);
+                }) as unknown as () => void;
+            }
+            return el;
+        }) as typeof document.createElement);
+
+        try {
+            renderWithProviders(<AdminView {...defaultProps} />);
+
+            const jsonBtn = screen.getByRole('button', { name: /Download all recipes as JSON/i });
+            const csvBtn = screen.getByRole('button', { name: /Download all recipes as CSV/i });
+            expect(jsonBtn).toBeInTheDocument();
+            expect(csvBtn).toBeInTheDocument();
+
+            fireEvent.click(jsonBtn);
+
+            expect(createObjectURLMock).toHaveBeenCalledTimes(1);
+            expect(anchorClicks).toHaveLength(1);
+            expect(anchorClicks[0].download).toMatch(/^schafer-recipes-\d{4}-\d{2}-\d{2}\.json$/);
+        } finally {
+            createElementSpy.mockRestore();
+        }
+    });
+
     it('should trigger merge contributors if superadmin', async () => {
         const superAdminUser = { ...defaultProps.currentUser!, name: 'Kyle' };
         renderWithProviders(<AdminView {...defaultProps} currentUser={superAdminUser} />);

@@ -134,7 +134,7 @@ describe('RecipeModal', () => {
 
     it('should show share button with accessible label containing recipe title', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
-        const shareBtn = screen.getByRole('button', { name: /Share recipe/i });
+        const shareBtn = screen.getByRole('button', { name: /Share recipe: Open in/i });
         expect(shareBtn).toBeInTheDocument();
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);
