@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trivia, UserProfile } from '../types';
 import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
 import { hapticSuccess, hapticError } from '../utils/haptics';
+import { recordCompletion as recordStreakCompletion } from '../utils/triviaStreaks';
 import type { TriviaScore } from '../types';
 
 const FEEDBACK_DELAY_MS = 1500;
@@ -69,6 +70,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const [answerLog, setAnswerLog] = useState<Array<{ selectedOption: string; isCorrect: boolean }>>([]);
     const [scoreboard, setScoreboard] = useState<TriviaScore[]>(() => getTriviaScores());
     const [lastSavedScoreId, setLastSavedScoreId] = useState<string | undefined>();
+    const [streakAfterFinish, setStreakAfterFinish] = useState<number>(0);
     const [ariaAnnouncement, setAriaAnnouncement] = useState('');
     const [feedbackCountdownMs, setFeedbackCountdownMs] = useState(0);
     const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,6 +102,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
         setReviewIndex(0);
         setAnswerLog([]);
         setLastSavedScoreId(undefined);
+        setStreakAfterFinish(0);
         setAriaAnnouncement('');
         setScoreboard(getTriviaScores());
     };
@@ -157,6 +160,8 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             });
             setScoreboard(updated);
             setLastSavedScoreId(newId);
+            const streakState = recordStreakCompletion();
+            setStreakAfterFinish(streakState.currentStreak);
             setShowResults(true);
             const msg = percentage >= 90 ? 'You know the family well!' : percentage >= 70 ? 'Great job!' : 'Keep exploring the archive!';
             setAriaAnnouncement(`Quiz complete. You scored ${finalScore} out of ${questions.length}, ${percentage} percent. ${msg}`);
@@ -317,6 +322,18 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <p className="text-lg font-serif text-[#F4A460] font-medium animate-in fade-in duration-700 delay-300">
                         {celebratoryMessage}
                     </p>
+                    {streakAfterFinish > 0 && (
+                        <div
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-orange-50 text-[#A0522D] rounded-full border border-orange-100 animate-in fade-in zoom-in duration-500 delay-500"
+                            role="status"
+                            aria-label={`Current trivia streak: ${streakAfterFinish} day${streakAfterFinish === 1 ? '' : 's'}`}
+                        >
+                            <span aria-hidden="true">🔥</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                {streakAfterFinish}-Day Streak
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {answerLog.length > 0 && (
