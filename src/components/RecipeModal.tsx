@@ -13,6 +13,7 @@ import { ShareRecipe } from './ShareRecipe';
 import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
 import { getAllCollections, addToCollection } from '../utils/collections';
 import { addActivity } from '../utils/activityFeed';
+import { getSuggestions } from '../utils/recipeSuggestions';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -39,7 +40,55 @@ interface RecipeModalProps {
     breadcrumbContext?: string;
     /** Current user name for ratings/notes */
     currentUserName?: string;
+    /** Full recipe list used to compute "You might also like" suggestions. Optional for back-compat. */
+    allRecipes?: Recipe[];
+    /** Invoked when the user clicks a suggestion card. Falls back to `window.location.hash` if omitted. */
+    onSelectRecipe?: (recipe: Recipe) => void;
 }
+
+const SuggestionCard: React.FC<{ recipe: Recipe; onSelect: (r: Recipe) => void }> = ({ recipe, onSelect }) => {
+    const [broken, setBroken] = useState(false);
+    const hasValidImage =
+        !!recipe.image &&
+        !broken &&
+        (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http://') || recipe.image.startsWith('https://'));
+    const handleActivate = () => onSelect(recipe);
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={handleActivate}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleActivate();
+                }
+            }}
+            aria-label={`View recipe: ${recipe.title}`}
+            className="group cursor-pointer text-left rounded-2xl overflow-hidden bg-white/70 border border-stone-200/70 shadow-sm hover:shadow-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+        >
+            <div className="relative aspect-[4/3] bg-stone-200 overflow-hidden">
+                {hasValidImage ? (
+                    <img
+                        src={recipe.image}
+                        alt={recipe.title}
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={() => setBroken(true)}
+                    />
+                ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/70 to-[#A0522D]/70 flex items-center justify-center text-3xl text-white/90">
+                        {CATEGORY_ICONS[recipe.category] || '🍽️'}
+                    </div>
+                )}
+            </div>
+            <div className="p-3">
+                <p className="text-sm font-serif italic text-[#2D4635] truncate group-hover:text-[#A0522D] transition-colors">{recipe.title}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-1 truncate">By {recipe.contributor}</p>
+            </div>
+        </div>
+    );
+};
 
 const RatingSection: React.FC<{ recipeId: string; recipeTitle: string; currentUserName: string }> = ({ recipeId, recipeTitle, currentUserName }) => {
     const [avg, setAvg] = useState(() => getAverageRating(recipeId));
@@ -137,6 +186,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     onStartCook,
     breadcrumbContext = 'Recipes',
     currentUserName = '',
+    allRecipes,
+    onSelectRecipe,
 }) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -152,6 +203,20 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const navIndex = recipe ? recipeList.findIndex((r) => r.id === recipe.id) : -1;
     const prevRecipe = navIndex > 0 ? recipeList[navIndex - 1] : null;
     const nextRecipe = navIndex >= 0 && navIndex < recipeList.length - 1 ? recipeList[navIndex + 1] : null;
+
+    const suggestions = useMemo(() => {
+        if (!recipe || !allRecipes || allRecipes.length <= 1) return [];
+        return getSuggestions(recipe, allRecipes, 3);
+    }, [recipe, allRecipes]);
+
+    const handleSelectSuggestion = (rec: Recipe) => {
+        hapticLight();
+        if (onSelectRecipe) {
+            onSelectRecipe(rec);
+        } else {
+            window.location.hash = `#recipe/${rec.id}`;
+        }
+    };
 
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
@@ -671,6 +736,27 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             <div className="print:hidden">
                                 <RecipeNotes recipeId={recipe.id} recipeTitle={recipe.title} currentUserName={currentUserName} />
                             </div>
+                        )}
+
+                        {/* You might also like */}
+                        {suggestions.length > 0 && (
+                            <section
+                                aria-labelledby="recipe-modal-suggestions-title"
+                                className="print:hidden pt-2 border-t border-stone-200/70"
+                            >
+                                <h3
+                                    id="recipe-modal-suggestions-title"
+                                    className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2 mb-4 mt-6"
+                                >
+                                    <span className="text-2xl">🍽️</span>
+                                    <span>You might also like</span>
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {suggestions.map((rec) => (
+                                        <SuggestionCard key={rec.id} recipe={rec} onSelect={handleSelectSuggestion} />
+                                    ))}
+                                </div>
+                            </section>
                         )}
                     </div>
                     {showScrollToTop && (

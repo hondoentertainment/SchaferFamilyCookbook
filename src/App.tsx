@@ -1016,6 +1016,8 @@ const App: React.FC = () => {
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
                         breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
+                        allRecipes={recipes}
+                        onSelectRecipe={handleNavigateToRecipe}
                     />
                 </Suspense>
             )}

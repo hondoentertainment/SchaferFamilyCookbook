@@ -73,4 +73,19 @@ test.describe('Recipe modal', () => {
 
     await expect(page.getByRole('button', { name: /Print recipe/i })).toBeVisible({ timeout: 2000 });
   });
+
+  test('shows "You might also like" suggestions', async ({ page }) => {
+    await page.getByRole('button', { name: /View recipe:/i }).first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    const suggestionsHeading = page.getByRole('heading', { name: /you might also like/i });
+    await suggestionsHeading.scrollIntoViewIfNeeded();
+    await expect(suggestionsHeading).toBeVisible({ timeout: 3000 });
+
+    const firstSuggestion = page
+      .getByRole('dialog')
+      .getByRole('button', { name: /^View recipe:/i })
+      .first();
+    await expect(firstSuggestion).toBeVisible();
+  });
 });

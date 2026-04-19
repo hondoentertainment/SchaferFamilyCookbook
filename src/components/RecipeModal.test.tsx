@@ -139,4 +139,48 @@ describe('RecipeModal', () => {
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);
     });
+
+    describe('You might also like', () => {
+        it('renders the section when allRecipes provides candidates', () => {
+            const current = createMockRecipe();
+            const other1 = createMockRecipe({ id: 'r2', title: 'Sibling Main', category: 'Main', contributor: 'Test User' });
+            const other2 = createMockRecipe({ id: 'r3', title: 'Zucchini Side', category: 'Side' });
+            renderWithProviders(
+                <RecipeModal {...defaultProps} recipe={current} allRecipes={[current, other1, other2]} />
+            );
+            expect(screen.getByRole('heading', { name: /you might also like/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /view recipe: sibling main/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /view recipe: zucchini side/i })).toBeInTheDocument();
+        });
+
+        it('hides the section when only the current recipe is in allRecipes', () => {
+            const current = createMockRecipe();
+            renderWithProviders(
+                <RecipeModal {...defaultProps} recipe={current} allRecipes={[current]} />
+            );
+            expect(screen.queryByRole('heading', { name: /you might also like/i })).not.toBeInTheDocument();
+        });
+
+        it('hides the section when allRecipes is not provided', () => {
+            renderWithProviders(<RecipeModal {...defaultProps} />);
+            expect(screen.queryByRole('heading', { name: /you might also like/i })).not.toBeInTheDocument();
+        });
+
+        it('invokes onSelectRecipe when a suggestion is clicked', () => {
+            const current = createMockRecipe();
+            const sibling = createMockRecipe({ id: 'r2', title: 'Sibling Main', category: 'Main' });
+            const onSelectRecipe = vi.fn();
+            renderWithProviders(
+                <RecipeModal
+                    {...defaultProps}
+                    recipe={current}
+                    allRecipes={[current, sibling]}
+                    onSelectRecipe={onSelectRecipe}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: /view recipe: sibling main/i }));
+            expect(onSelectRecipe).toHaveBeenCalledTimes(1);
+            expect(onSelectRecipe.mock.calls[0][0].id).toBe('r2');
+        });
+    });
 });
