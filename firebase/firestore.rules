@@ -70,14 +70,18 @@ service cloud.firestore {
     }
 
     // Family trivia leaderboard: world-readable (public within site),
-    // append-only creates with shape validation. No update/delete from client.
+    // append-only creates with shape validation. Writes require Firebase Auth
+    // (anonymous is fine) and the document's userId must match the caller's
+    // auth uid — this prevents clients from spoofing other users' entries.
+    // No update/delete from client.
     match /triviaScores/{id} {
       allow read: if true;
       allow create: if
+        request.auth != null &&
+        request.resource.data.userId == request.auth.uid &&
         request.resource.data.displayName is string &&
         request.resource.data.displayName.size() > 0 &&
         request.resource.data.displayName.size() <= 80 &&
-        request.resource.data.userId is string &&
         request.resource.data.score is number &&
         request.resource.data.total is number &&
         request.resource.data.total > 0 &&

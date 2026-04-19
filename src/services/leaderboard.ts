@@ -9,6 +9,7 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { CloudArchive } from './db';
+import { ensureAnonUser } from './anonAuth';
 
 export interface LeaderboardEntry {
     id: string;
@@ -78,8 +79,16 @@ export async function submitScore(input: SubmitScoreInput): Promise<void> {
         throw new Error('submitScore: score must be between 0 and total');
     }
 
+    // Firestore rules require request.auth.uid == request.resource.data.userId,
+    // so we fully override the caller-supplied userId with the anonymous auth
+    // uid. The caller's local user id stays in their own scoreboard entry.
+    const user = await ensureAnonUser();
+    if (!user) {
+        throw new Error('Leaderboard unavailable: anonymous auth failed.');
+    }
+
     const payload: Record<string, unknown> = {
-        userId: input.userId || 'anonymous',
+        userId: user.uid,
         displayName,
         score: input.score,
         total: input.total,

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { submitScore, getTopScores, isLeaderboardAvailable } from './leaderboard';
 import { CloudArchive } from './db';
+import { _resetAnonAuthForTests } from './anonAuth';
 import { setupLocalStorage } from '../test/utils';
 
 describe('leaderboard service', () => {
@@ -10,7 +11,19 @@ describe('leaderboard service', () => {
         CloudArchive._firebaseApp = null;
         CloudArchive._firestore = null;
         CloudArchive._storage = null;
+        _resetAnonAuthForTests();
         vi.clearAllMocks();
+
+        // Restore default auth mocks (cleared by vi.clearAllMocks above).
+        const auth = await import('firebase/auth');
+        vi.mocked(auth.getAuth).mockReturnValue({ currentUser: null } as unknown as ReturnType<typeof auth.getAuth>);
+        vi.mocked(auth.signInAnonymously).mockResolvedValue({
+            user: { uid: 'anon-test-uid', isAnonymous: true },
+        } as unknown as Awaited<ReturnType<typeof auth.signInAnonymously>>);
+        vi.mocked(auth.onAuthStateChanged).mockImplementation(((_auth: unknown, cb: (u: unknown) => void) => {
+            Promise.resolve().then(() => cb(null));
+            return () => {};
+        }) as typeof auth.onAuthStateChanged);
     });
 
     function activateFirebase() {
@@ -94,7 +107,9 @@ describe('leaderboard service', () => {
             const args = vi.mocked(firestore.addDoc).mock.calls[0];
             const payload = args[1] as Record<string, unknown>;
             expect(payload.displayName).toBe('Alice');
-            expect(payload.userId).toBe('u1');
+            // userId must match the anonymous auth uid — the caller-supplied
+            // value is overridden to satisfy the Firestore rule.
+            expect(payload.userId).toBe('anon-test-uid');
             expect(payload.avatarKey).toBe('cat');
             expect(payload.score).toBe(4);
             expect(payload.total).toBe(5);
@@ -102,7 +117,7 @@ describe('leaderboard service', () => {
             expect(payload.completedAt).toEqual({ __type: 'serverTimestamp' });
         });
 
-        it('omits avatarKey when none provided and defaults empty userId to anonymous', async () => {
+        it('omits avatarKey when none provided and still uses auth uid', async () => {
             activateFirebase();
             const firestore = await import('firebase/firestore');
             await submitScore({
@@ -113,8 +128,63 @@ describe('leaderboard service', () => {
             });
             const args = vi.mocked(firestore.addDoc).mock.calls[0];
             const payload = args[1] as Record<string, unknown>;
-            expect(payload.userId).toBe('anonymous');
+            expect(payload.userId).toBe('anon-test-uid');
             expect('avatarKey' in payload).toBe(false);
+        });
+
+        it('awaits anonymous auth before writing', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const auth = await import('firebase/auth');
+
+            let resolveSignIn: (v: { user: { uid: string } }) => void = () => {};
+            const signInPromise = new Promise<{ user: { uid: string } }>((r) => {
+                resolveSignIn = r;
+            });
+            vi.mocked(auth.signInAnonymously).mockReturnValueOnce(
+                signInPromise as unknown as ReturnType<typeof auth.signInAnonymously>,
+            );
+
+            const pending = submitScore({
+                userId: 'u1',
+                displayName: 'Alice',
+                score: 1,
+                total: 2,
+            });
+            // Flush microtasks so signInAnonymously has been invoked but its
+            // promise is still pending. addDoc must not be called yet.
+            await new Promise((r) => setTimeout(r, 0));
+            expect(firestore.addDoc).not.toHaveBeenCalled();
+
+            resolveSignIn({ user: { uid: 'late-uid' } });
+            await pending;
+
+            const args = vi.mocked(firestore.addDoc).mock.calls[0];
+            const payload = args[1] as Record<string, unknown>;
+            expect(payload.userId).toBe('late-uid');
+        });
+
+        it('throws when anonymous auth fails (e.g. offline)', async () => {
+            activateFirebase();
+            const auth = await import('firebase/auth');
+            // Simulate getAuth returning nothing useful / sign-in throwing.
+            vi.mocked(auth.signInAnonymously).mockRejectedValueOnce(
+                new Error('network down'),
+            );
+            // And ensure the persisted-state path also resolves to null.
+            vi.mocked(auth.onAuthStateChanged).mockImplementationOnce(((_a: unknown, cb: (u: unknown) => void) => {
+                Promise.resolve().then(() => cb(null));
+                return () => {};
+            }) as typeof auth.onAuthStateChanged);
+
+            await expect(
+                submitScore({
+                    userId: 'u1',
+                    displayName: 'Alice',
+                    score: 1,
+                    total: 2,
+                }),
+            ).rejects.toThrow(/anonymous auth failed/i);
         });
     });
 
