@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, HistoryEntry, GalleryItem, Trivia, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
-import { AdminView, type FirebaseCustodianProps } from './AdminView';
+import type { FirebaseCustodianProps } from './AdminView';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 import { PreferencesPanel } from './PreferencesPanel';
 import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
+
+// AdminView is large (~100 KB source) and only rendered for admin users.
+// Lazy-load to keep it out of the ProfileView/main chunk for everyone else.
+const AdminView = lazy(() => import('./AdminView').then(m => ({ default: m.AdminView })));
 
 export interface AdminSectionProps {
     editingRecipe: Recipe | null;
@@ -377,25 +381,27 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     </div>
 
                     <div className="rounded-[2rem] bg-white/80 p-2 md:p-4 shadow-inner ring-1 ring-white/60">
-                        <AdminView
-                            editingRecipe={adminSectionProps.editingRecipe}
-                            clearEditing={adminSectionProps.clearEditing}
-                            recipes={adminSectionProps.recipes}
-                            trivia={adminSectionProps.trivia}
-                            contributors={adminSectionProps.contributors}
-                            currentUser={currentUser}
-                            dbStats={adminSectionProps.dbStats}
-                            onAddRecipe={adminSectionProps.onAddRecipe}
-                            onAddGallery={adminSectionProps.onAddGallery}
-                            onAddTrivia={adminSectionProps.onAddTrivia}
-                            onDeleteTrivia={adminSectionProps.onDeleteTrivia}
-                            onDeleteRecipe={adminSectionProps.onDeleteRecipe}
-                            onUpdateContributor={adminSectionProps.onUpdateContributor}
-                            onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
-                            onEditRecipe={adminSectionProps.onEditRecipe}
-                            defaultRecipeIds={adminSectionProps.defaultRecipeIds}
-                            firebaseCustodian={adminSectionProps.firebaseCustodian}
-                        />
+                        <Suspense fallback={<div className="py-12 text-center text-stone-500 font-serif italic">Loading admin tools…</div>}>
+                            <AdminView
+                                editingRecipe={adminSectionProps.editingRecipe}
+                                clearEditing={adminSectionProps.clearEditing}
+                                recipes={adminSectionProps.recipes}
+                                trivia={adminSectionProps.trivia}
+                                contributors={adminSectionProps.contributors}
+                                currentUser={currentUser}
+                                dbStats={adminSectionProps.dbStats}
+                                onAddRecipe={adminSectionProps.onAddRecipe}
+                                onAddGallery={adminSectionProps.onAddGallery}
+                                onAddTrivia={adminSectionProps.onAddTrivia}
+                                onDeleteTrivia={adminSectionProps.onDeleteTrivia}
+                                onDeleteRecipe={adminSectionProps.onDeleteRecipe}
+                                onUpdateContributor={adminSectionProps.onUpdateContributor}
+                                onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
+                                onEditRecipe={adminSectionProps.onEditRecipe}
+                                defaultRecipeIds={adminSectionProps.defaultRecipeIds}
+                                firebaseCustodian={adminSectionProps.firebaseCustodian}
+                            />
+                        </Suspense>
                     </div>
                 </section>
             )}
