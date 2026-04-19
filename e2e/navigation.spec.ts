@@ -21,7 +21,7 @@ test.describe('Tab navigation', () => {
 
   test('navigates to Recipes tab by default', async ({ page }) => {
     await expect(page.getByText(/Preserving the/)).toBeVisible();
-    await expect(page.getByPlaceholder(/Search by title/)).toBeVisible();
+    await expect(page.getByPlaceholder(/Search recipes/i)).toBeVisible();
   });
 
   test('navigates to Index tab', async ({ page }) => {
@@ -84,6 +84,6 @@ test.describe('Tab navigation', () => {
   test('logo link returns to Recipes', async ({ page }) => {
     await page.getByRole('button', { name: 'Gallery' }).click();
     await page.getByRole('button', { name: /Go to Recipes/i }).click();
-    await expect(page.getByPlaceholder(/Search by title/)).toBeVisible();
+    await expect(page.getByPlaceholder(/Search recipes/i)).toBeVisible();
   });
 });

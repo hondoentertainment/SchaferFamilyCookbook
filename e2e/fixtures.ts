@@ -16,7 +16,7 @@ export async function loginAs(
   await page.getByRole('button', { name: /Enter The Archive/i }).click();
 
   // Wait for recipes to load (indicates we're past login)
-  await page.getByPlaceholder(/Search by title/i).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByPlaceholder(/Search recipes/i).waitFor({ state: 'visible', timeout: 15000 });
 }
 
 /**
