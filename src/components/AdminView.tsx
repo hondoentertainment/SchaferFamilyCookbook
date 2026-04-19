@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
+import { getFeaturedIds, setFeaturedIds, FEATURED_LIMIT } from '../services/featured';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
@@ -71,6 +72,56 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isSavingArchivePhone, setIsSavingArchivePhone] = useState(false);
     const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
     const [custodianBusy, setCustodianBusy] = useState(false);
+
+    // Featured recipes curation state
+    const [featuredIds, setFeaturedIdsState] = useState<string[]>([]);
+    const [featuredDirty, setFeaturedDirty] = useState(false);
+    const [featuredLoaded, setFeaturedLoaded] = useState(false);
+    const [featuredSaving, setFeaturedSaving] = useState(false);
+    const [featuredAddId, setFeaturedAddId] = useState('');
+
+    useEffect(() => {
+        let cancelled = false;
+        getFeaturedIds().then(ids => {
+            if (cancelled) return;
+            setFeaturedIdsState(ids);
+            setFeaturedLoaded(true);
+        }).catch(() => {
+            if (!cancelled) setFeaturedLoaded(true);
+        });
+        return () => { cancelled = true; };
+    }, []);
+
+    const handleFeaturedAdd = () => {
+        if (!featuredAddId) return;
+        if (featuredIds.includes(featuredAddId)) return;
+        if (featuredIds.length >= FEATURED_LIMIT) {
+            toast(`Featured limit reached (${FEATURED_LIMIT}). Remove one first.`, 'info');
+            return;
+        }
+        setFeaturedIdsState([...featuredIds, featuredAddId]);
+        setFeaturedDirty(true);
+        setFeaturedAddId('');
+    };
+
+    const handleFeaturedRemove = (id: string) => {
+        setFeaturedIdsState(featuredIds.filter(x => x !== id));
+        setFeaturedDirty(true);
+    };
+
+    const handleFeaturedSave = async () => {
+        setFeaturedSaving(true);
+        try {
+            await setFeaturedIds(featuredIds);
+            setFeaturedDirty(false);
+            toast('Featured recipes saved.', 'success');
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'unknown error';
+            toast(`Couldn't save featured recipes: ${msg}`, 'error');
+        } finally {
+            setFeaturedSaving(false);
+        }
+    };
 
     // Sync archive phone from dbStats
     useEffect(() => {
@@ -781,6 +832,101 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 ))}
                                             </div>
                                         </div>
+                                    )}
+
+                                    {!editingRecipe && featuredLoaded && (
+                                        <section aria-labelledby="featured-admin-heading" className="p-6 bg-amber-50/60 rounded-3xl border border-amber-200/60 space-y-4">
+                                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                                                <div>
+                                                    <h4 id="featured-admin-heading" className="text-sm font-serif italic text-[#2D4635] font-bold flex items-center gap-2">
+                                                        <span aria-hidden>⭐</span> Featured Recipes
+                                                    </h4>
+                                                    <p className="text-xs text-stone-500 mt-1">
+                                                        Choose up to {FEATURED_LIMIT} recipes to spotlight at the top of the Recipes tab.
+                                                    </p>
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                                    {featuredIds.length} / {FEATURED_LIMIT}
+                                                </span>
+                                            </div>
+
+                                            {featuredIds.length === 0 ? (
+                                                <p className="text-xs italic text-stone-500">No featured recipes yet. Add one below.</p>
+                                            ) : (
+                                                <ul className="space-y-2" aria-label="Currently featured recipes">
+                                                    {featuredIds.map(id => {
+                                                        const r = recipes.find(x => x.id === id);
+                                                        return (
+                                                            <li key={id} className="flex items-center justify-between gap-3 bg-white rounded-2xl border border-stone-100 px-3 py-2">
+                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden flex-shrink-0">
+                                                                        {r?.image && <img src={r.image} alt="" className="w-full h-full object-cover" width={40} height={40} loading="lazy" />}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-serif font-bold text-[#2D4635] truncate">
+                                                                            {r ? r.title : <span className="italic text-stone-400">Unknown recipe ({id})</span>}
+                                                                        </p>
+                                                                        {r && <p className="text-[10px] uppercase tracking-widest text-[#A0522D]">{r.category}</p>}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleFeaturedRemove(id)}
+                                                                    className="min-w-[2.25rem] min-h-[2.25rem] px-3 rounded-full bg-red-50 text-red-600 border border-red-100 text-xs font-bold hover:bg-red-100 flex items-center justify-center"
+                                                                    aria-label={`Remove ${r?.title ?? id} from featured`}
+                                                                >
+                                                                    ×
+                                                                </button>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            )}
+
+                                            <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+                                                <label htmlFor="featured-add-select" className="sr-only">Add featured recipe</label>
+                                                <select
+                                                    id="featured-add-select"
+                                                    value={featuredAddId}
+                                                    onChange={e => setFeaturedAddId(e.target.value)}
+                                                    disabled={featuredIds.length >= FEATURED_LIMIT}
+                                                    className="flex-1 px-4 py-3 bg-white border border-stone-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/20 disabled:opacity-60"
+                                                >
+                                                    <option value="">
+                                                        {featuredIds.length >= FEATURED_LIMIT ? `Limit reached (${FEATURED_LIMIT})` : 'Select a recipe to feature…'}
+                                                    </option>
+                                                    {recipes
+                                                        .filter(r => !featuredIds.includes(r.id))
+                                                        .slice()
+                                                        .sort((a, b) => a.title.localeCompare(b.title))
+                                                        .map(r => (
+                                                            <option key={r.id} value={r.id}>{r.title} — {r.category}</option>
+                                                        ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleFeaturedAdd}
+                                                    disabled={!featuredAddId || featuredIds.length >= FEATURED_LIMIT}
+                                                    className="min-h-[2.75rem] px-5 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                                                >
+                                                    Add featured
+                                                </button>
+                                            </div>
+
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="text-[10px] uppercase tracking-widest text-stone-400">
+                                                    {featuredDirty ? 'Unsaved changes' : 'All changes saved'}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleFeaturedSave}
+                                                    disabled={!featuredDirty || featuredSaving}
+                                                    className="min-h-[2.75rem] px-6 py-3 bg-amber-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-amber-600 disabled:opacity-50"
+                                                >
+                                                    {featuredSaving ? 'Saving…' : 'Save featured'}
+                                                </button>
+                                            </div>
+                                        </section>
                                     )}
 
                                     {!editingRecipe && (

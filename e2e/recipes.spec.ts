@@ -34,4 +34,24 @@ test.describe('Recipes tab', () => {
     await page.getByPlaceholder(/Search by title/).fill('xyznonexistent123');
     await expect(page.getByText(/No recipes match your current filters/i)).toBeVisible({ timeout: 3000 });
   });
+
+  test('featured strip renders from localStorage fallback', async ({ page }) => {
+    // Seed featured ids before login so fallback kicks in without Firebase.
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('schafer_featured_ids', JSON.stringify(['749d8765']));
+    });
+    await page.reload();
+    await loginAs(page, 'Alice');
+
+    // Re-seed after loginAs clears storage, then reload so the effect re-runs.
+    await page.evaluate(() => {
+      localStorage.setItem('schafer_featured_ids', JSON.stringify(['749d8765']));
+    });
+    await page.reload();
+
+    const featured = page.getByTestId('featured-recipes');
+    await expect(featured).toBeVisible({ timeout: 5000 });
+    await expect(featured.getByText(/Festive Apple Dip/i)).toBeVisible();
+  });
 });

@@ -27,9 +27,11 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     setDoc: vi.fn(),
     doc: vi.fn(),
+    getDoc: vi.fn(() => Promise.resolve({ exists: () => false, data: () => undefined })),
     deleteDoc: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
+    serverTimestamp: vi.fn(() => 'SERVER_TS'),
     onSnapshot: vi.fn((q, callback) => {
         callback({ docs: [] });
         return vi.fn(); // unsubscribe function
@@ -42,6 +44,26 @@ vi.mock('firebase/storage', () => ({
     uploadBytes: vi.fn(),
     getDownloadURL: vi.fn(() => Promise.resolve('https://example.com/image.jpg')),
 }));
+
+// Minimal firebase/auth mock. The default behavior returns a stable anonymous
+// user from signInAnonymously and immediately fires onAuthStateChanged with
+// null (no persisted user) so individual tests can override as needed via
+// vi.mocked(...).mockImplementationOnce(...).
+vi.mock('firebase/auth', () => {
+    const mockUser = { uid: 'anon-test-uid', isAnonymous: true };
+    return {
+        getAuth: vi.fn(() => ({ currentUser: null })),
+        signInAnonymously: vi.fn(() => Promise.resolve({ user: mockUser })),
+        onAuthStateChanged: vi.fn((_auth, cb) => {
+            // Fire asynchronously with no user; tests can override.
+            Promise.resolve().then(() => cb(null));
+            return () => {};
+        }),
+        GoogleAuthProvider: vi.fn(),
+        signInWithPopup: vi.fn(() => Promise.resolve({ user: mockUser })),
+        signOut: vi.fn(() => Promise.resolve()),
+    };
+});
 
 // Mock Google GenAI (package exports GoogleGenAI)
 vi.mock('@google/genai', () => ({

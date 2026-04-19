@@ -33,6 +33,7 @@ const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ def
 const PrivacyView = lazy(() => import('./components/PrivacyView').then(m => ({ default: m.PrivacyView })));
 const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthrough').then(m => ({ default: m.OnboardingWalkthrough })));
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
+const FeaturedRecipes = lazy(() => import('./components/FeaturedRecipes').then(m => ({ default: m.FeaturedRecipes })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -1175,6 +1176,13 @@ const App: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Featured Recipes (admin-curated) */}
+                    {!isDataLoading && recipes.length > 0 && (
+                        <Suspense fallback={null}>
+                            <FeaturedRecipes recipes={recipes} onSelect={handleNavigateToRecipe} />
+                        </Suspense>
+                    )}
 
                     {/* Quick-access: Recently viewed & Favorites */}
                     {!isDataLoading && recipes.length > 0 && (() => {
