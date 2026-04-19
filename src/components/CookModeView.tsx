@@ -4,9 +4,31 @@ import { scaleIngredients } from '../utils/scaleIngredients';
 import { useFocusTrap } from '../utils/focusTrap';
 import { useSwipe } from '../utils/useSwipe';
 import { hapticLight } from '../utils/haptics';
+import { useSpeech } from '../utils/useSpeech';
 import { useUI } from '../context/UIContext';
 
 const SWIPE_HINT_KEY = 'cookMode.swipeHintSeen';
+const VOICE_PREF_KEY = 'cookMode.voicePref';
+type VoicePref = 'enabled' | 'disabled';
+
+function readVoicePref(): VoicePref {
+    try {
+        if (typeof localStorage === 'undefined') return 'disabled';
+        const v = localStorage.getItem(VOICE_PREF_KEY);
+        return v === 'enabled' ? 'enabled' : 'disabled';
+    } catch {
+        return 'disabled';
+    }
+}
+
+function writeVoicePref(pref: VoicePref): void {
+    try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(VOICE_PREF_KEY, pref);
+    } catch {
+        // ignore quota / privacy mode errors
+    }
+}
 
 interface CookModeViewProps {
     recipe: Recipe;
@@ -43,6 +65,38 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
             /* localStorage unavailable — ignore */
         }
     }, []);
+
+    // Voice read-aloud
+    const { speak, cancel: cancelSpeak, speaking, supported: speechSupported } = useSpeech();
+    const [voicePref, setVoicePref] = useState<VoicePref>(() => readVoicePref());
+    const voicePrefRef = useRef<VoicePref>(voicePref);
+    voicePrefRef.current = voicePref;
+
+    const currentInstruction = stepIndex === 0
+        ? `Ingredients. ${ingredients.join('. ')}`
+        : (currentStep ?? '');
+
+    const toggleVoice = useCallback(() => {
+        if (!speechSupported) return;
+        if (voicePref === 'enabled') {
+            cancelSpeak();
+            setVoicePref('disabled');
+            writeVoicePref('disabled');
+        } else {
+            setVoicePref('enabled');
+            writeVoicePref('enabled');
+            if (currentInstruction) speak(currentInstruction);
+        }
+    }, [speechSupported, voicePref, cancelSpeak, speak, currentInstruction]);
+
+    // Auto-cancel + re-speak on step change (only if voice was already enabled).
+    useEffect(() => {
+        if (!speechSupported) return;
+        cancelSpeak();
+        if (voicePrefRef.current === 'enabled' && currentInstruction) {
+            speak(currentInstruction);
+        }
+    }, [stepIndex, currentInstruction, speechSupported, cancelSpeak, speak]);
 
     const goPrev = useCallback(() => {
         if (!isFirst) setStepIndex((i) => i - 1);
@@ -224,9 +278,37 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                 >
                     ← Prev
                 </button>
-                <span className="text-white/60 text-xs uppercase tracking-widest">
-                    {stepIndex + 1} / {totalSteps}
-                </span>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={toggleVoice}
+                        disabled={!speechSupported}
+                        title={
+                            !speechSupported
+                                ? 'Voice read-aloud not supported in this browser'
+                                : voicePref === 'enabled'
+                                    ? 'Stop reading'
+                                    : 'Read step aloud'
+                        }
+                        aria-label={
+                            voicePref === 'enabled' || speaking
+                                ? 'Stop reading'
+                                : 'Read step aloud'
+                        }
+                        aria-pressed={voicePref === 'enabled'}
+                        className={`min-h-[3rem] min-w-[3rem] w-12 h-12 rounded-full flex items-center justify-center text-xl transition-colors ${
+                            !speechSupported
+                                ? 'opacity-30 cursor-not-allowed bg-white/10'
+                                : voicePref === 'enabled'
+                                    ? 'bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90 active:scale-95'
+                                    : 'bg-white/10 hover:bg-white/20 active:scale-95'
+                        }`}
+                    >
+                        <span aria-hidden>{voicePref === 'enabled' ? '🔇' : '🔊'}</span>
+                    </button>
+                    <span className="text-white/60 text-xs uppercase tracking-widest">
+                        {stepIndex + 1} / {totalSteps}
+                    </span>
+                </div>
                 <button
                     onClick={() =>
                         setStepIndex((i) => (isLast ? i : i + 1))
