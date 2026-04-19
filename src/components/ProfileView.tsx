@@ -8,6 +8,9 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { PreferencesPanel } from './PreferencesPanel';
 import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
+import { computeBadges } from '../utils/badges';
+import { getStreak } from '../utils/triviaStreaks';
+import { getTriviaScores } from '../utils/triviaScoreboard';
 
 // AdminView is large (~100 KB source) and only rendered for admin users.
 // Lazy-load to keep it out of the ProfileView/main chunk for everyone else.
@@ -48,10 +51,12 @@ interface ProfileViewProps {
     /** For admin users: admin props */
     adminSectionProps?: AdminSectionProps;
     contributors?: ContributorProfile[];
+    /** Number of gallery items the user has uploaded (for badges). Optional. */
+    userGalleryCount?: number;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, allRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [] } = props;
+    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, allRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [], userGalleryCount = 0 } = props;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
@@ -90,6 +95,20 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
         const timer = window.setTimeout(scrollToAdminSection, 0);
         return () => window.clearTimeout(timer);
     }, [showAdminSection, adminSectionProps?.editingRecipe]);
+
+    const achievementInputs = React.useMemo(() => {
+        const streak = getStreak();
+        const triviaCompletions = getTriviaScores().filter(s => s.playerName === currentUser.name).length;
+        return {
+            recipesContributed: userRecipes.length,
+            galleryUploaded: userGalleryCount,
+            triviaCompletions,
+            longestStreak: streak.longest,
+            currentUser,
+        };
+    }, [userRecipes.length, userGalleryCount, currentUser]);
+    const badges = React.useMemo(() => computeBadges(achievementInputs), [achievementInputs]);
+    const earnedCount = badges.filter(b => b.earned).length;
 
     return (
         <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-12 md:space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -172,6 +191,41 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         )}
                     </div>
                 </div>
+            </section>
+
+            {/* Achievements */}
+            <section className="space-y-6 md:space-y-8" aria-label="Achievements">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-yellow-50 flex items-center justify-center not-italic text-xl md:text-2xl">🏅</span>
+                        Achievements
+                    </h3>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+                        {earnedCount} / {badges.length} earned
+                    </span>
+                </div>
+                <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                    {badges.map(badge => (
+                        <li
+                            key={badge.id}
+                            className={`p-4 rounded-2xl border flex flex-col items-center gap-2 text-center transition-all ${
+                                badge.earned
+                                    ? 'bg-white border-stone-100 shadow-sm'
+                                    : 'bg-stone-50 border-stone-100 opacity-60 grayscale'
+                            }`}
+                            title={badge.earned ? badge.label : badge.hint}
+                            aria-label={`${badge.label}: ${badge.earned ? 'earned' : 'locked'}${badge.hint ? `. ${badge.hint}` : ''}`}
+                        >
+                            <span className="text-3xl" aria-hidden="true">{badge.emoji}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#2D4635]">{badge.label}</span>
+                            {badge.earned ? (
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Earned</span>
+                            ) : (
+                                <span className="text-[9px] font-serif italic text-stone-400 line-clamp-2">{badge.hint}</span>
+                            )}
+                        </li>
+                    ))}
+                </ul>
             </section>
 
             <div className="grid lg:grid-cols-2 gap-12">
