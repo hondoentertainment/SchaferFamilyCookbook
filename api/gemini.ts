@@ -146,6 +146,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ json: result });
         }
 
+        if (action === 'parseRecipeFromImage') {
+            const imageBase64 = typeof body.imageBase64 === 'string' ? body.imageBase64 : '';
+            const mimeType = typeof body.mimeType === 'string' ? body.mimeType : 'image/jpeg';
+            if (!imageBase64) return res.status(400).json({ error: 'Missing imageBase64' });
+            // Server-side guard: base64 length ~= 4/3 of byte length. Reject anything > ~14MB encoded (~10MB raw).
+            if (imageBase64.length > 14 * 1024 * 1024) {
+                return res.status(413).json({ error: 'Image too large. Please use a photo under 10 MB.' });
+            }
+            if (!/^image\/(jpeg|jpg|png|webp|heic|heif)$/i.test(mimeType)) {
+                return res.status(400).json({ error: 'Unsupported image type. Use JPEG, PNG, WebP, or HEIC.' });
+            }
+
+            const visionPrompt = [
+                'You are a meticulous recipe scribe. The image is a photo of a handwritten recipe card,',
+                'a printed cookbook page, or a typed recipe. Read every legible word and extract the',
+                'recipe into structured JSON matching the provided schema.',
+                '',
+                'Rules:',
+                '- title: the recipe name as written. If unclear, your best guess.',
+                '- ingredients: one entry per ingredient line, preserving quantities and units (e.g. "1 cup flour").',
+                '- instructions: one entry per step, in order. Split run-on prose into discrete steps.',
+                '- prepTime / cookTime: short strings like "15 min" or "1 hr" when present, else omit.',
+                '- calories: estimated total per recipe as a number when present, else omit.',
+                '- notes: any heirloom context, attribution, or non-instruction commentary (e.g. "From Grandma Schafer, 1972").',
+                '- contributor: if the card is signed or attributed (e.g. "Mom\'s recipe", "by Aunt Mary"), put the name here. Else omit.',
+                '- category: best fit from Breakfast | Main | Dessert | Side | Appetizer | Bread | Dip/Sauce | Snack.',
+                '',
+                'Return ONLY JSON. Do not wrap in Markdown fences. Do not add commentary.'
+            ].join('\n');
+
+            const response = await ai.models.generateContent({
+                model: TEXT_MODEL,
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: visionPrompt },
+                        { inlineData: { mimeType, data: imageBase64 } }
+                    ]
+                }],
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: 'OBJECT',
+                        properties: {
+                            title: { type: 'STRING' },
+                            category: { type: 'STRING' },
+                            contributor: { type: 'STRING' },
+                            ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
+                            instructions: { type: 'ARRAY', items: { type: 'STRING' } },
+                            prepTime: { type: 'STRING' },
+                            cookTime: { type: 'STRING' },
+                            calories: { type: 'NUMBER' },
+                            notes: { type: 'STRING' }
+                        }
+                    }
+                }
+            });
+            const result = typeof response.text === 'string' ? response.text : '{}';
+            return res.status(200).json({ json: result });
+        }
+
         return res.status(400).json({ error: `Unknown action: ${action}` });
     } catch (err: unknown) {
         console.error('Gemini API error:', err);

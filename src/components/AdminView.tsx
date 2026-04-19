@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
@@ -71,6 +71,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isSavingArchivePhone, setIsSavingArchivePhone] = useState(false);
     const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
     const [custodianBusy, setCustodianBusy] = useState(false);
+    const [isOcrLoading, setIsOcrLoading] = useState(false);
+    const ocrFileInputRef = useRef<HTMLInputElement | null>(null);
 
     // Sync archive phone from dbStats
     useEffect(() => {
@@ -213,6 +215,43 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             console.error(e);
             handleAIError(e, 'AI Analysis failed: ${message}');
         } finally { setIsMagicLoading(false); }
+    };
+
+    const handleOcrButtonClick = () => {
+        if (isOcrLoading || isAICooldownActive) return;
+        ocrFileInputRef.current?.click();
+    };
+
+    const handleOcrFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        // Reset input so the same file can be picked again later
+        e.target.value = '';
+        if (!file) return;
+        if (file.size > geminiProxy.RECIPE_OCR_MAX_BYTES) {
+            toast('Image must be under 10 MB. Try a smaller photo.', 'error');
+            return;
+        }
+        setIsOcrLoading(true);
+        try {
+            const parsed = await geminiProxy.parseRecipeFromImage(file);
+            setRecipeForm(prev => ({ ...prev, ...parsed }));
+            // Drop into edit mode so the prefilled form is visible.
+            onEditRecipe({
+                ...(parsed as Recipe),
+                id: 'r' + Date.now(),
+                contributor: parsed.contributor || currentUser?.name || 'Family',
+                category: parsed.category || 'Main',
+                image: '',
+                ingredients: parsed.ingredients || [],
+                instructions: parsed.instructions || [],
+            });
+            toast('Recipe imported from photo. Review and save.', 'success');
+        } catch (err: unknown) {
+            console.error(err);
+            handleAIError(err, 'Photo OCR failed: ${message}');
+        } finally {
+            setIsOcrLoading(false);
+        }
     };
 
     const handleVisualSourcing = async () => {
@@ -533,6 +572,21 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         AI generation is cooling down due to quota limits. Try again in {formatCooldown(aiCooldownSecondsLeft)} or use default/manual images.
                     </div>
                 )}
+                {isOcrLoading && (
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                    >
+                        <div className="bg-white rounded-3xl px-8 py-6 shadow-2xl flex items-center gap-4">
+                            <span className="text-2xl" aria-hidden="true">📷</span>
+                            <div>
+                                <p className="text-sm font-bold text-[#2D4635]">Reading recipe photo…</p>
+                                <p className="text-xs text-stone-500">Gemini Vision is transcribing the card.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Sub-navigation bar */}
                 <div
                     role="tablist"
@@ -785,6 +839,38 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                     {!editingRecipe && (
                                         <div className="space-y-4">
+                                            {/* AI Import (Photo OCR) */}
+                                            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">AI import</h4>
+                                                <p className="text-xs text-stone-500 mb-3">
+                                                    Snap a photo of a handwritten card or cookbook page; Gemini Vision will read it and prefill the recipe form.
+                                                </p>
+                                                <div className="flex gap-3 flex-wrap">
+                                                    <input
+                                                        ref={ocrFileInputRef}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        capture="environment"
+                                                        onChange={handleOcrFileChange}
+                                                        className="hidden"
+                                                        aria-hidden="true"
+                                                        tabIndex={-1}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleOcrButtonClick}
+                                                        disabled={isOcrLoading || isAICooldownActive}
+                                                        aria-busy={isOcrLoading}
+                                                        className="flex-1 min-w-[200px] py-4 bg-[#2D4635]/10 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#2D4635]/20 shadow-sm disabled:opacity-50 hover:bg-[#2D4635]/20 transition-all"
+                                                    >
+                                                        {isAICooldownActive
+                                                            ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}`
+                                                            : isOcrLoading
+                                                                ? 'Reading photo…'
+                                                                : '📷 Import from Photo'}
+                                                    </button>
+                                                </div>
+                                            </div>
                                             {/* Recipe images progress */}
                                             <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Recipe images</h4>

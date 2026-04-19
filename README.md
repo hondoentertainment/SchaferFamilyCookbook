@@ -10,7 +10,7 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
 
 1. Install dependencies: `npm install`
 2. Create `.env.local` with (no `.env.example` in repo):
-   - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
+   - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen, **Recipe OCR from Photo**). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables. Custodians can snap a photo of a handwritten card or cookbook page from **Admin → Recipes → 📷 Import from Photo** and Gemini Vision prefills the recipe form.
    - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`).
 3. Run: `npm run dev`
 
