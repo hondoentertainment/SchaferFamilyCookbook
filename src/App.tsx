@@ -24,6 +24,7 @@ import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from '
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
+import { searchRecipes } from './utils/recipeSearch';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -595,17 +596,14 @@ const App: React.FC = () => {
     };
 
     const filteredRecipes = useMemo(() => {
-        return recipes.filter(r => {
-            const q = search.toLowerCase();
-            const matchS = !q ||
-                r.title.toLowerCase().includes(q) ||
-                r.ingredients.some(ing => ing.toLowerCase().includes(q)) ||
-                r.instructions.some(step => step.toLowerCase().includes(q)) ||
-                (r.notes?.toLowerCase().includes(q) ?? false) ||
-                r.contributor.toLowerCase().includes(q);
+        // Apply fuzzy search across title/ingredients/contributor/notes/category
+        // first; an empty / whitespace-only query returns all recipes (preserves
+        // existing UX). Then chain the category/contributor filters (AND).
+        const searched = searchRecipes(recipes, search);
+        return searched.filter(r => {
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || r.contributor === contributor;
-            return matchS && matchC && matchA;
+            return matchC && matchA;
         });
     }, [recipes, search, category, contributor]);
 
@@ -1094,13 +1092,13 @@ const App: React.FC = () => {
                     <div className="sticky top-16 md:top-24 z-30 space-y-4">
                         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                             <div className="relative flex-1">
-                                <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
+                                <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, contributors</label>
                                 <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
                                 <input
                                     id="recipe-search"
                                     type="text"
-                                    placeholder="Search recipes, ingredients..."
-                                    aria-label="Search recipes, ingredients, or instructions"
+                                    placeholder="Search recipes, ingredients, contributors…"
+                                    aria-label="Search recipes, ingredients, contributors"
                                     className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
