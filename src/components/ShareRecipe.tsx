@@ -40,7 +40,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
   const handleShare = async () => {
     hapticLight();
     const text = formatRecipeText();
-    const shareData: ShareData = {
+    const shareData = {
       title: recipe.title,
       text: text,
     };

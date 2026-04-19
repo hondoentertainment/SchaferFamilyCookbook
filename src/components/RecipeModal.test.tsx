@@ -134,7 +134,10 @@ describe('RecipeModal', () => {
 
     it('should show share button with accessible label containing recipe title', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
-        const shareBtn = screen.getByRole('button', { name: /Share recipe/i });
+        // RecipeModal renders both a header copy-link share button (with the
+        // recipe title in its aria-label) and a separate ShareRecipe button.
+        // We assert specifically against the header one whose label embeds the title.
+        const shareBtn = screen.getByRole('button', { name: /Open in .*: Test Recipe/i });
         expect(shareBtn).toBeInTheDocument();
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);
