@@ -7,6 +7,13 @@ rules_version = '2';
  * Twilio MMS webhook uses Admin SDK and bypasses these rules.
  *
  * @see docs/FIREBASE_SECURITY.md
+ *
+ * --- Production hardening audit (see PRODUCTION_HARDENING.md) ---
+ * Reviewed every collection: all reads are intentionally public (this is a
+ * family-archive site shared via link). All writes require admin claim.
+ * No per-document size/shape validation today — recommendation: add
+ * `request.resource.data.keys().hasOnly([...])` allowlists to prevent
+ * an admin (or compromised admin token) from accidentally bloating docs.
  */
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -14,33 +21,47 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.admin == true;
     }
 
+    // AUDIT: public-read OK (recipes are the archive). Admin-only writes OK.
+    // Recommendation: cap ingredients/instructions array length (e.g. <= 200).
     match /recipes/{recipeId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // AUDIT: public-read OK (trivia surfaced in UI). Admin-only writes OK.
     match /trivia/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // AUDIT: public-read OK (gallery is shown to all visitors). Admin-only writes OK.
+    // Recommendation: validate `url` is firebasestorage / data: only — block
+    // arbitrary external image URLs that could be used for tracking pixels.
     match /gallery/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // AUDIT: contributor profiles are intentionally public (names, avatars).
+    // Recommendation: ensure no PII (emails, phone) is stored here.
     match /contributors/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // AUDIT: history feed is admin-managed; public-read OK.
+    // Recommendation: enforce server-side TTL or admin pruning to bound size.
     match /history/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // AUDIT: config/settings holds archivePhone (Twilio MMS) — public-read.
+    // The phone is not secret (it's the public-facing inbound number) so OK,
+    // but consider moving any future server secrets out of /config and into
+    // env vars / Secret Manager.
     match /config/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     /**
-     * Per-user preferences (favorites + ratings) keyed by display-name slug.
+     * Per-user preferences (favorites + ratings + grocery list) keyed by display-name slug.
      *
      * This app uses a custom name-based identity (see src/App.tsx / 'schafer_user');
      * only custodians have Firebase Auth. For non-custodians we cannot match
@@ -94,5 +115,8 @@ service cloud.firestore {
         request.resource.data.completedAt == request.time;
       allow update, delete: if false;
     }
+
+    // AUDIT: no fall-through `match /{document=**}` — implicit deny is correct.
+    // All collections are explicitly enumerated above.
   }
 }

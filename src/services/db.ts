@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, collection, setDoc, doc, deleteDoc, updateDoc, query, orderBy, onSnapshot, Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
+import { captureException } from '@sentry/react';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
 import defaultRecipes from '../data/recipes.json';
 import { CATEGORY_IMAGES } from '../constants';
@@ -102,6 +103,7 @@ export const CloudArchive = {
             return { app: this._firebaseApp, db: this._firestore, storage: this._storage };
         } catch (e) {
             console.error('Firebase connection failed:', e);
+            captureException(e, { tags: { area: 'db', op: 'getFirebase' } });
             return null;
         }
     },
@@ -219,6 +221,7 @@ export const CloudArchive = {
                 }
             } catch (e) {
                 console.error(`Failed to upload ${file.name}:`, e);
+                captureException(e, { tags: { area: 'db', op: 'uploadFiles' }, extra: { fileName: file.name } });
             }
         }
 
