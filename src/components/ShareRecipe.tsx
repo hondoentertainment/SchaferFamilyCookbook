@@ -40,7 +40,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
   const handleShare = async () => {
     hapticLight();
     const text = formatRecipeText();
-    const shareData: ShareData = {
+    const shareData = {
       title: recipe.title,
       text: text,
     };
@@ -71,7 +71,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
         type="button"
         onClick={handleShare}
         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400 transition-colors min-h-11"
-        aria-label="Share recipe"
+        aria-label="Share via system"
       >
         <span aria-hidden>📤</span>
         Share

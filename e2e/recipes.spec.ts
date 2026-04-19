@@ -16,7 +16,7 @@ test.describe('Recipes tab', () => {
   });
 
   test('search filter narrows recipes', async ({ page }) => {
-    await page.getByPlaceholder(/Search by title/).fill('Festive');
+    await page.getByPlaceholder(/Search by title|Search recipes/).first().fill('Festive');
     await expect(page.getByRole('button', { name: /View recipe: Festive/i })).toBeVisible({ timeout: 3000 });
   });
 
@@ -31,7 +31,7 @@ test.describe('Recipes tab', () => {
   });
 
   test('empty filter shows empty message', async ({ page }) => {
-    await page.getByPlaceholder(/Search by title/).fill('xyznonexistent123');
+    await page.getByPlaceholder(/Search by title|Search recipes/).first().fill('xyznonexistent123');
     await expect(page.getByText(/No recipes match your current filters/i)).toBeVisible({ timeout: 3000 });
   });
 });

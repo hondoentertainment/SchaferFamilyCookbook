@@ -52,8 +52,8 @@ export const PreferencesPanel: React.FC = () => {
       </h3>
 
       {/* Theme */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-stone-600 dark:text-stone-400">Theme</label>
+      <div className="space-y-2" role="group" aria-labelledby="prefs-theme-label">
+        <span id="prefs-theme-label" className="text-xs font-bold text-stone-600 dark:text-stone-400">Theme</span>
         <div className="flex gap-2">
           {themeOptions.map((opt) => (
             <button
@@ -75,8 +75,8 @@ export const PreferencesPanel: React.FC = () => {
       </div>
 
       {/* Font Size */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-stone-600 dark:text-stone-400">Text Size</label>
+      <div className="space-y-2" role="group" aria-labelledby="prefs-fontsize-label">
+        <span id="prefs-fontsize-label" className="text-xs font-bold text-stone-600 dark:text-stone-400">Text Size</span>
         <div className="flex gap-2">
           {fontOptions.map((opt, i) => (
             <button
@@ -108,12 +108,14 @@ export const PreferencesPanel: React.FC = () => {
           type="button"
           role="switch"
           aria-checked={highContrast}
+          aria-label="High contrast mode"
           onClick={() => handleHighContrast(!highContrast)}
           className={`relative w-12 h-7 rounded-full transition-colors ${
             highContrast ? 'bg-[#2D4635]' : 'bg-stone-300 dark:bg-stone-600'
           }`}
         >
           <span
+            aria-hidden="true"
             className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
               highContrast ? 'translate-x-5' : 'translate-x-0'
             }`}

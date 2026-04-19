@@ -26,6 +26,7 @@ import { hapticLight } from './utils/haptics';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
+const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({ default: m.MealPlanView })));
 const ContributorsView = lazy(() => import('./components/ContributorsView').then(m => ({ default: m.ContributorsView })));
 const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
@@ -1014,7 +1015,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', 'Meal Plan': 'Meal Plan', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
                 </Suspense>
@@ -1247,17 +1248,7 @@ const App: React.FC = () => {
                             {sortedRecipes.map(recipe => (
                                 <div
                                     key={recipe.id}
-                                    onClick={() => handleSelectRecipe(recipe)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            handleSelectRecipe(recipe);
-                                        }
-                                    }}
-                                    tabIndex={0}
-                                    role="button"
-                                    aria-label={`View recipe: ${recipe.title}`}
-                                    className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
+                                    className="group relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-within:ring-2 focus-within:ring-[#2D4635] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7]"
                                 >
                                     {/* Affiliated recipe image or placeholder */}
                                     <RecipeCardImage recipe={recipe} />
@@ -1265,7 +1256,7 @@ const App: React.FC = () => {
                                     <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
 
                                     {/* Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none">
                                         <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                             <div className="flex justify-between items-center mb-2 opacity-80">
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
@@ -1288,6 +1279,17 @@ const App: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    {/* Card-wide click target. Sits beneath the floating action
+                                        buttons (favorite / admin edit) which use higher z-index,
+                                        so they remain independently clickable without nesting
+                                        interactive controls inside this button. */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelectRecipe(recipe)}
+                                        aria-label={`View recipe: ${recipe.title}`}
+                                        className="absolute inset-0 z-10 cursor-pointer focus:outline-none"
+                                    />
+
                                     {/* Favorite button */}
                                     <button
                                         onClick={(e) => {
@@ -1302,7 +1304,7 @@ const App: React.FC = () => {
                                         title={favoriteIds.has(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
                                         aria-label={favoriteIds.has(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
                                     >
-                                        <span className="text-lg">{favoriteIds.has(recipe.id) ? '❤️' : '🤍'}</span>
+                                        <span className="text-lg" aria-hidden="true">{favoriteIds.has(recipe.id) ? '❤️' : '🤍'}</span>
                                     </button>
                                     {/* Admin Quick-Action Button */}
                                     {currentUser?.role === 'admin' && (
@@ -1317,7 +1319,7 @@ const App: React.FC = () => {
                                             title="Edit with AI"
                                             aria-label={`Edit ${recipe.title} with AI`}
                                         >
-                                            ✨
+                                            <span aria-hidden="true">✨</span>
                                         </button>
                                     )}
                                 </div>
@@ -1365,6 +1367,12 @@ const App: React.FC = () => {
             {tab === 'Index' && (
                 <Suspense fallback={<IndexSkeleton />}>
                     <AlphabeticalIndex recipes={recipes} onSelect={handleSelectRecipe} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
+                </Suspense>
+            )}
+
+            {tab === 'Meal Plan' && (
+                <Suspense fallback={<TabFallback />}>
+                    <MealPlanView recipes={recipes} onSelectRecipe={handleSelectRecipe} />
                 </Suspense>
             )}
 

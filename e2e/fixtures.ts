@@ -13,10 +13,21 @@ export async function loginAs(
   await page.reload();
 
   await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill(name);
+  // Pre-mark the first-run onboarding as complete so the walkthrough
+  // overlay doesn't intercept clicks in tests (it covers the whole screen
+  // at z-[400]).
+  await page.evaluate(() =>
+    localStorage.setItem('schafer_onboarding_done', 'true')
+  );
   await page.getByRole('button', { name: /Enter The Archive/i }).click();
 
-  // Wait for recipes to load (indicates we're past login)
-  await page.getByPlaceholder(/Search by title/i).waitFor({ state: 'visible', timeout: 15000 });
+  // Wait for recipes to load (indicates we're past login).
+  // The placeholder text has evolved over time; accept either the legacy
+  // "Search by title" or the current "Search recipes, ingredients..." copy.
+  await page
+    .getByPlaceholder(/Search by title|Search recipes/i)
+    .first()
+    .waitFor({ state: 'visible', timeout: 15000 });
 }
 
 /**
