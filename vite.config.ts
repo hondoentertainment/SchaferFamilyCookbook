@@ -66,6 +66,12 @@ export default defineConfig(({ mode }) => {
         },
       }),
       VitePWA({
+        // 'autoUpdate' silently takes control and reloads once new assets are
+        // precached. We intentionally do NOT surface a "Refresh" toast —
+        // vite-plugin-pwa auto-handles the reload, and custom prompts caused
+        // race conditions with in-flight autoUpdate flows in prior tests.
+        // Switch to 'prompt' + `useRegisterSW({ onNeedRefresh })` if we ever
+        // want an explicit "Updated content available" toast.
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'recipe-images/*'],
         manifest: {
@@ -92,6 +98,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          // App shell (`/`, `/index.html`) and hashed JS/CSS stay precached via globPatterns.
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
           globIgnores: ['**/recipe-images/**'],
           runtimeCaching: [
@@ -113,12 +120,46 @@ export default defineConfig(({ mode }) => {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
+            // Recipe images on local /recipe-images/** — offline-friendly.
+            {
+              urlPattern: /\/recipe-images\/.*\.(?:jpg|jpeg|png|webp)$/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'recipe-images',
+                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            // Broader fallback for any other /recipe-images/* asset (svg, avif, etc.).
             {
               urlPattern: /\/recipe-images\/.*/i,
               handler: 'CacheFirst',
               options: {
                 cacheName: 'recipe-images-cache',
                 expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            // Recipes JSON (recipes.json or /data/recipes*.json) — NetworkFirst so
+            // freshly published recipes win when online, cache fallback offline.
+            {
+              urlPattern: /\/(?:data\/)?recipes.*\.json$/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'recipes-json',
+                networkTimeoutSeconds: 3,
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 7 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            // Short-TTL NetworkFirst for OG/share API routes.
+            {
+              urlPattern: /\/api\/(?:og|share)(?:\/.*)?$/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-og-share',
+                networkTimeoutSeconds: 3,
+                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
                 cacheableResponse: { statuses: [0, 200] },
               },
             },

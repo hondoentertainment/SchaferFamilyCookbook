@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
@@ -7,6 +7,8 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initSentry } from './monitoring/sentry';
 import { initializeTheme } from './utils/theme';
+
+const InstallPrompt = lazy(() => import('./components/InstallPrompt'));
 
 initSentry();
 initializeTheme();
@@ -18,6 +20,9 @@ root.render(
         <UIProvider>
             <OfflineBanner />
             <App />
+            <Suspense fallback={null}>
+                <InstallPrompt />
+            </Suspense>
         </UIProvider>
     </ErrorBoundary>
 );
