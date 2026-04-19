@@ -19,6 +19,7 @@ type NavTab = { id: string; title: string; label?: string };
 const ALL_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
     { id: 'Recipes', title: 'Browse recipes with filters', label: 'Recipes' },
     { id: 'Index', title: 'Browse recipes A–Z', label: 'A–Z' },
+    { id: 'Meal Plan', title: 'Plan recipes for the week', label: 'Meal Plan' },
     { id: 'Gallery', title: 'Family photos and videos', label: 'Gallery' },
     { id: 'Trivia', title: 'Family trivia quiz', label: 'Trivia' },
     ...EXTRA_TABS.map((t) => ({ ...t, label: t.id })),
