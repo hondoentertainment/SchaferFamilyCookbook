@@ -146,6 +146,13 @@ describe('AdminView', () => {
         expect(screen.getByText('🔄 Regenerate All (Imagen)')).toBeInTheDocument();
     });
 
+    it('should render the Import from Photo (OCR) button on the Records subtab', () => {
+        renderWithProviders(<AdminView {...defaultProps} />);
+        expect(screen.getByRole('button', { name: /Import from Photo/i })).toBeInTheDocument();
+        // The hint copy should also appear so admins know what this does.
+        expect(screen.getByText(/Gemini Vision/i)).toBeInTheDocument();
+    });
+
     it('should show Recipe images progress when recipes are passed', () => {
         const recipesWithMixedImages = [
             createMockRecipe({ id: 'r1', title: 'With Image', image: 'https://example.com/a.jpg', imageSource: 'upload' }),
