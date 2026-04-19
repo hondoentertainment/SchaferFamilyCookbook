@@ -116,4 +116,81 @@ test.describe('Admin (admin user)', () => {
     const editBtn = recipeCard.getByRole('button', { name: /Edit .* with AI/i });
     await expect(editBtn).toBeVisible({ timeout: 3000 });
   });
+
+  test('admin can edit a gallery item caption and date', async ({ page }) => {
+    // Seed a gallery item in local storage, then open the admin Gallery subtab.
+    // Persistence is asserted via localStorage in local provider mode (Firebase
+    // emulator not available in CI); an e2e against a live project is a TODO.
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'schafer_db_gallery',
+        JSON.stringify([
+          {
+            id: 'g-edit-1',
+            type: 'image',
+            url: 'https://via.placeholder.com/400x300',
+            caption: 'Original Caption',
+            contributor: 'Kyle',
+            created_at: '2020-06-01T00:00:00.000Z',
+          },
+        ])
+      );
+    });
+    await page.reload();
+    await goToAdminTools(page);
+
+    await page.getByRole('tab', { name: /Gallery/i }).click();
+
+    // Click the Edit button in the list
+    await page.getByRole('button', { name: /Edit "Original Caption"/i }).click();
+
+    const dialog = page.getByRole('dialog', { name: /Edit Gallery Item/i });
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+
+    const captionInput = dialog.getByLabel(/^Caption$/);
+    await captionInput.fill('Updated Caption');
+
+    const dateInput = dialog.getByLabel(/^Date$/);
+    await dateInput.fill('2021-09-20');
+
+    await dialog.getByRole('button', { name: /^Save$/ }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 5000 });
+
+    // Optimistic UI: the list reflects the new caption
+    await expect(page.getByText('Updated Caption')).toBeVisible({ timeout: 5000 });
+
+    // Round-trip via localStorage (local provider mode)
+    const stored = await page.evaluate(() => localStorage.getItem('schafer_db_gallery'));
+    expect(stored).toContain('Updated Caption');
+    expect(stored).toContain('2021-09-20');
+    // TODO: also assert Firestore persistence via emulator when available.
+  });
+
+  test('gallery edit modal closes on Escape', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'schafer_db_gallery',
+        JSON.stringify([
+          {
+            id: 'g-edit-2',
+            type: 'image',
+            url: 'https://via.placeholder.com/400x300',
+            caption: 'Escape test',
+            contributor: 'Kyle',
+            created_at: '2020-06-01T00:00:00.000Z',
+          },
+        ])
+      );
+    });
+    await page.reload();
+    await goToAdminTools(page);
+    await page.getByRole('tab', { name: /Gallery/i }).click();
+
+    await page.getByRole('button', { name: /Edit "Escape test"/i }).click();
+    const dialog = page.getByRole('dialog', { name: /Edit Gallery Item/i });
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible({ timeout: 5000 });
+  });
 });

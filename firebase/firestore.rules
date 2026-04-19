@@ -38,5 +38,53 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+
+    /**
+     * Per-user preferences (favorites + ratings) keyed by display-name slug.
+     *
+     * This app uses a custom name-based identity (see src/App.tsx / 'schafer_user');
+     * only custodians have Firebase Auth. For non-custodians we cannot match
+     * request.auth.uid to the slug, so writes are open within this collection.
+     * The data stored here is low-risk personalization (not secrets). Reads are
+     * allowed for everyone to unblock future social features (e.g. aggregate
+     * ratings). Custodians (admin) retain full control for moderation.
+     *
+     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, updatedAt: Timestamp }
+     */
+    match /userPrefs/{userId} {
+      allow read: if true;
+      allow create, update: if
+        isAdmin() ||
+        (
+          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'updatedAt']) &&
+          (
+            !('favorites' in request.resource.data) ||
+            request.resource.data.favorites is list
+          ) &&
+          (
+            !('ratings' in request.resource.data) ||
+            request.resource.data.ratings is map
+          )
+        );
+      allow delete: if isAdmin();
+    }
+
+    // Family trivia leaderboard: world-readable (public within site),
+    // append-only creates with shape validation. No update/delete from client.
+    match /triviaScores/{id} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.displayName is string &&
+        request.resource.data.displayName.size() > 0 &&
+        request.resource.data.displayName.size() <= 80 &&
+        request.resource.data.userId is string &&
+        request.resource.data.score is number &&
+        request.resource.data.total is number &&
+        request.resource.data.total > 0 &&
+        request.resource.data.score >= 0 &&
+        request.resource.data.score <= request.resource.data.total &&
+        request.resource.data.completedAt == request.time;
+      allow update, delete: if false;
+    }
   }
 }

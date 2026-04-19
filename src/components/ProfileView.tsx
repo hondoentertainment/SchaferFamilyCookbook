@@ -16,11 +16,14 @@ export interface AdminSectionProps {
     trivia: Trivia[];
     contributors: ContributorProfile[];
     dbStats: DBStats;
+    gallery?: GalleryItem[];
     onAddRecipe: (r: Recipe, file?: File) => Promise<void>;
     onAddGallery: (g: GalleryItem, file?: File) => Promise<void>;
     onAddTrivia: (t: Trivia) => Promise<void>;
     onDeleteTrivia: (id: string) => void | Promise<void>;
     onDeleteRecipe: (id: string) => void;
+    onDeleteGalleryItem?: (id: string) => void | Promise<void>;
+    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date }) => Promise<void>;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;
@@ -385,11 +388,14 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             contributors={adminSectionProps.contributors}
                             currentUser={currentUser}
                             dbStats={adminSectionProps.dbStats}
+                            gallery={adminSectionProps.gallery}
                             onAddRecipe={adminSectionProps.onAddRecipe}
                             onAddGallery={adminSectionProps.onAddGallery}
                             onAddTrivia={adminSectionProps.onAddTrivia}
                             onDeleteTrivia={adminSectionProps.onDeleteTrivia}
                             onDeleteRecipe={adminSectionProps.onDeleteRecipe}
+                            onDeleteGalleryItem={adminSectionProps.onDeleteGalleryItem}
+                            onUpdateGalleryItem={adminSectionProps.onUpdateGalleryItem}
                             onUpdateContributor={adminSectionProps.onUpdateContributor}
                             onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
                             onEditRecipe={adminSectionProps.onEditRecipe}

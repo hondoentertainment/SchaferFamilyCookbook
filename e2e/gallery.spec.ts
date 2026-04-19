@@ -45,7 +45,10 @@ test.describe('Gallery', () => {
           {
             id: 'g1',
             type: 'image',
-            url: 'https://via.placeholder.com/400x300',
+            // Tiny valid 1x1 PNG data URL so GalleryImage doesn't fall back
+            // to the "Preview unavailable" div (which removes the button).
+            url:
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
             caption: 'Summer picnic 2024',
             contributor: 'Alice',
             created_at: new Date().toISOString(),
@@ -69,7 +72,10 @@ test.describe('Gallery', () => {
           {
             id: 'g2',
             type: 'image',
-            url: 'https://via.placeholder.com/400x300',
+            // Tiny valid 1x1 PNG data URL so GalleryImage doesn't fall back
+            // to the "Preview unavailable" div (which removes the button).
+            url:
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
             caption: 'Beach day',
             contributor: 'Bob',
             created_at: new Date().toISOString(),
@@ -95,7 +101,10 @@ test.describe('Gallery', () => {
           {
             id: 'g3',
             type: 'image',
-            url: 'https://via.placeholder.com/400x300',
+            // Tiny valid 1x1 PNG data URL so GalleryImage doesn't fall back
+            // to the "Preview unavailable" div (which removes the button).
+            url:
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
             caption: 'Escape test',
             contributor: 'Alice',
             created_at: new Date().toISOString(),
@@ -121,7 +130,10 @@ test.describe('Gallery', () => {
           {
             id: 'g4',
             type: 'image',
-            url: 'https://via.placeholder.com/400x300',
+            // Tiny valid 1x1 PNG data URL so GalleryImage doesn't fall back
+            // to the "Preview unavailable" div (which removes the button).
+            url:
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
             caption: 'Escape key test',
             contributor: 'Alice',
             created_at: new Date().toISOString(),

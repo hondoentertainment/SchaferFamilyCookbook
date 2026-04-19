@@ -1,3 +1,5 @@
+import { notifyPrefsChanged } from '../services/userPrefsSync';
+
 const STORAGE_KEY = 'schafer_favorites';
 
 export function getFavoriteIds(): Set<string> {
@@ -13,6 +15,7 @@ export function getFavoriteIds(): Set<string> {
 
 export function setFavoriteIds(ids: Set<string>): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+    notifyPrefsChanged();
 }
 
 /** Toggle favorite state; returns the new Set of favorite ids. */

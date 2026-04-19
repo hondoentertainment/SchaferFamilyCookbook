@@ -1,7 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { TriviaView } from './TriviaView';
 import { renderWithProviders, createMockTrivia, createMockContributor } from '../test/utils';
+import * as leaderboard from '../services/leaderboard';
+
+vi.mock('../services/leaderboard', async () => {
+    const actual = await vi.importActual<typeof import('../services/leaderboard')>(
+        '../services/leaderboard'
+    );
+    return {
+        ...actual,
+        submitScore: vi.fn(async () => undefined),
+        getTopScores: vi.fn(async () => []),
+        isLeaderboardAvailable: vi.fn(() => false),
+    };
+});
 
 describe('TriviaView', () => {
     const mockOnAddTrivia = vi.fn();
@@ -39,6 +52,9 @@ describe('TriviaView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.removeItem('schafer_trivia_scores');
+        vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(false);
+        vi.mocked(leaderboard.getTopScores).mockResolvedValue([]);
+        vi.mocked(leaderboard.submitScore).mockResolvedValue(undefined);
     });
 
     it('should render start screen when quiz has not started', () => {
@@ -134,5 +150,80 @@ describe('TriviaView', () => {
 
         expect(screen.getByText(/Legacy Scoreboard/)).toBeInTheDocument();
         expect(screen.getByText(/Scores saved to the family scoreboard/)).toBeInTheDocument();
+    });
+
+    it('renders leaderboard panel shell on the start screen', () => {
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        expect(screen.getByTestId('family-leaderboard')).toBeInTheDocument();
+        expect(screen.getByText(/Family Leaderboard/)).toBeInTheDocument();
+    });
+
+    it('shows offline/unavailable message when Firebase is not configured', async () => {
+        vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(false);
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        await waitFor(() =>
+            expect(screen.getByText(/Leaderboard unavailable offline/i)).toBeInTheDocument()
+        );
+        expect(leaderboard.getTopScores).not.toHaveBeenCalled();
+    });
+
+    it('renders top scores from the mock leaderboard', async () => {
+        vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(true);
+        vi.mocked(leaderboard.getTopScores).mockResolvedValueOnce([
+            {
+                id: 's1',
+                userId: 'u1',
+                displayName: 'Grandma Joan',
+                score: 5,
+                total: 5,
+                percentage: 100,
+                completedAt: '2026-04-17T10:00:00.000Z',
+            },
+            {
+                id: 's2',
+                userId: 'u2',
+                displayName: 'Cousin Alex',
+                score: 3,
+                total: 5,
+                percentage: 60,
+                completedAt: '2026-04-17T10:05:00.000Z',
+            },
+        ]);
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        await waitFor(() => expect(screen.getByText('Grandma Joan')).toBeInTheDocument());
+        expect(screen.getByText('Cousin Alex')).toBeInTheDocument();
+        expect(screen.getByText('5/5')).toBeInTheDocument();
+    });
+
+    it('submits to the leaderboard when the quiz completes and Firebase is available', async () => {
+        vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(true);
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        fireEvent.click(screen.getByText('Love'));
+        fireEvent.click(screen.getByText('Next Archival Record'));
+        fireEvent.click(screen.getByText('45 min'));
+        fireEvent.click(screen.getByText('Finish Archive Challenge'));
+
+        await waitFor(() => expect(leaderboard.submitScore).toHaveBeenCalledTimes(1));
+        const call = vi.mocked(leaderboard.submitScore).mock.calls[0][0];
+        expect(call.displayName).toBe(mockUser.name);
+        expect(call.userId).toBe(mockUser.id);
+        expect(call.score).toBe(2);
+        expect(call.total).toBe(2);
+    });
+
+    it('shows an error state when leaderboard submit fails', async () => {
+        vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(true);
+        vi.mocked(leaderboard.submitScore).mockRejectedValueOnce(new Error('permission-denied'));
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        fireEvent.click(screen.getByText('Love'));
+        fireEvent.click(screen.getByText('Next Archival Record'));
+        fireEvent.click(screen.getByText('45 min'));
+        fireEvent.click(screen.getByText('Finish Archive Challenge'));
+
+        await waitFor(() => expect(screen.getByText(/permission-denied/)).toBeInTheDocument());
     });
 });

@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from '../constants/storage';
+import { notifyPrefsChanged } from '../services/userPrefsSync';
 import type { RecipeRating, RecipeNote } from '../types';
 
 // --- Ratings ---
@@ -42,6 +43,7 @@ export function setRating(recipeId: string, userName: string, rating: number): R
     all.push(entry);
   }
   localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify(all));
+  notifyPrefsChanged();
   return all;
 }
 

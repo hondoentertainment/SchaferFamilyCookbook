@@ -19,6 +19,7 @@ const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ d
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
+import { useUserPrefsSync } from './services/useUserPrefsSync';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
@@ -33,6 +34,7 @@ const TriviaView = lazy(() => import('./components/TriviaView').then(m => ({ def
 const PrivacyView = lazy(() => import('./components/PrivacyView').then(m => ({ default: m.PrivacyView })));
 const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthrough').then(m => ({ default: m.OnboardingWalkthrough })));
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
+const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -444,6 +446,15 @@ const App: React.FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
+
+    // Cloud-sync favorites + ratings under the user's identity slug. On login
+    // we merge remote into local (favorites union; remote-wins ratings) and
+    // refresh React state. Subsequent local changes debounce-write up to
+    // Firestore. Silently no-ops for guests or when cloud is unavailable.
+    useUserPrefsSync(currentUser?.name, {
+        onHydrated: () => setFavoriteIds(getFavoriteIds()),
+    });
+
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
@@ -867,6 +878,14 @@ const App: React.FC = () => {
                                             />
                                         )}
                                         <p className="font-serif italic text-stone-800 text-lg px-2 line-clamp-3">{item.caption}</p>
+                                        {item.created_at && (
+                                            <time
+                                                dateTime={item.created_at}
+                                                className="block px-2 mt-1 text-[10px] uppercase tracking-widest text-stone-400"
+                                            >
+                                                {new Date(item.created_at).toLocaleDateString()}
+                                            </time>
+                                        )}
                                         <div className="flex justify-between items-center mt-4 px-2">
                                             <div className="flex items-center gap-2">
                                                 <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full object-cover" alt={item.contributor} onError={avatarOnError} />
@@ -1014,7 +1033,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => setCookModeRecipe(selectedRecipe)}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', 'Grocery List': 'Grocery List' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
                 </Suspense>
@@ -1393,6 +1412,14 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
+            {tab === 'Grocery List' && (
+                <Suspense fallback={<TabFallback />}>
+                    <main id="main-content-grocery" role="main" aria-label="Grocery list" tabIndex={-1}>
+                        <GroceryListView />
+                    </main>
+                </Suspense>
+            )}
+
             {tab === 'Profile' && currentUser && (
                 <Suspense fallback={<ProfileSkeleton />}>
                     <ProfileView
@@ -1442,6 +1469,35 @@ const App: React.FC = () => {
                             trivia,
                             contributors,
                             dbStats: { ...dbStats, archivePhone },
+                            gallery,
+                            onDeleteGalleryItem: async (id) => {
+                                try {
+                                    await CloudArchive.deleteGalleryItem(id);
+                                    setGallery(prev => prev.filter(g => g.id !== id));
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                    throw new Error(CLOUD_ERROR_MSG);
+                                }
+                            },
+                            onUpdateGalleryItem: async (id, patch) => {
+                                try {
+                                    await CloudArchive.updateGalleryItem(id, patch);
+                                    setGallery(prev => prev.map(g => {
+                                        if (g.id !== id) return g;
+                                        const next: GalleryItem = { ...g };
+                                        if (typeof patch.caption === 'string') next.caption = patch.caption;
+                                        if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
+                                            next.created_at = patch.date.toISOString();
+                                        }
+                                        return next;
+                                    }));
+                                    await refreshLocalState();
+                                } catch {
+                                    toast(CLOUD_ERROR_MSG, 'error');
+                                    throw new Error(CLOUD_ERROR_MSG);
+                                }
+                            },
                             onAddRecipe: async (r, f) => {
                                 try {
                                     const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;

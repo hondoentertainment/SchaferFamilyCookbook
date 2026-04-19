@@ -48,8 +48,24 @@ test.describe('Recipe modal', () => {
     await page.reload();
     await loginAs(page, 'Alice');
 
-    const recipeId = 'imported_9mrpvyxve';
-    await page.goto('/#recipe/' + encodeURIComponent(recipeId));
+    // Dynamically look up the id for Festive Apple Dip from the rendered
+    // recipe cards so the test does not depend on a specific seed id that
+    // may change if recipes.json is reorganised.
+    const festiveCard = page.getByRole('button', { name: /View recipe: Festive Apple Dip/i });
+    await festiveCard.waitFor({ state: 'visible', timeout: 5000 });
+    // Click the card to trigger the hash update, then read the hash.
+    await festiveCard.click();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+    const recipeId = await page.evaluate(() => {
+      const m = window.location.hash.match(/^#recipe\/(.+)$/);
+      return m ? decodeURIComponent(m[1]) : null;
+    });
+    expect(recipeId).toBeTruthy();
+    // Close modal, then navigate directly via hash to simulate deep-link entry.
+    await page.getByRole('button', { name: /Close recipe/i }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 2000 });
+
+    await page.goto('/#recipe/' + encodeURIComponent(recipeId!));
     await page.reload();
 
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });

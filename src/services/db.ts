@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, collection, setDoc, doc, deleteDoc, query, orderBy, onSnapshot, Firestore } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, deleteDoc, updateDoc, query, orderBy, onSnapshot, Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
 import defaultRecipes from '../data/recipes.json';
@@ -246,6 +246,34 @@ export const CloudArchive = {
         } else {
             const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
             localStorage.setItem('schafer_db_gallery', JSON.stringify(current.filter((g: any) => g.id !== id)));
+        }
+    },
+
+    /**
+     * Update select fields on an existing gallery item.
+     * - `caption` stores as-is.
+     * - `date` accepts a Date; persisted as ISO string on `created_at` so sort order reflects the edit.
+     */
+    async updateGalleryItem(id: string, patch: { caption?: string; date?: Date }): Promise<void> {
+        const payload: Record<string, unknown> = {};
+        if (typeof patch.caption === 'string') payload.caption = patch.caption;
+        if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
+            payload.created_at = patch.date.toISOString();
+        }
+        if (Object.keys(payload).length === 0) return;
+
+        const provider = this.getProvider();
+        if (provider === 'firebase') {
+            const fb = this.getFirebase();
+            if (!fb) return;
+            await updateDoc(doc(fb.db, 'gallery', id), payload);
+        } else {
+            const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
+            const index = current.findIndex((g) => g.id === id);
+            if (index > -1) {
+                current[index] = { ...current[index], ...(payload as Partial<GalleryItem>) };
+                localStorage.setItem('schafer_db_gallery', JSON.stringify(current));
+            }
         }
     },
 

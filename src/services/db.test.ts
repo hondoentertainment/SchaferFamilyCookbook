@@ -161,6 +161,36 @@ describe('CloudArchive', () => {
             const foundItem = gallery.find(g => g.id === 'gallery-to-delete');
             expect(foundItem).toBeUndefined();
         });
+
+        it('should update caption and date on an existing gallery item (local mode)', async () => {
+            const item = createMockGalleryItem({ id: 'gallery-edit-1', caption: 'Old' });
+            await CloudArchive.upsertGalleryItem(item);
+
+            const newDate = new Date('2020-05-15T00:00:00Z');
+            await CloudArchive.updateGalleryItem('gallery-edit-1', { caption: 'New', date: newDate });
+
+            const gallery = await CloudArchive.getGallery();
+            const found = gallery.find(g => g.id === 'gallery-edit-1');
+            expect(found?.caption).toBe('New');
+            expect(found?.created_at).toBe(newDate.toISOString());
+        });
+
+        it('should no-op updateGalleryItem when patch is empty', async () => {
+            const item = createMockGalleryItem({ id: 'gallery-edit-2', caption: 'Keep' });
+            await CloudArchive.upsertGalleryItem(item);
+
+            await CloudArchive.updateGalleryItem('gallery-edit-2', {});
+
+            const gallery = await CloudArchive.getGallery();
+            const found = gallery.find(g => g.id === 'gallery-edit-2');
+            expect(found?.caption).toBe('Keep');
+        });
+
+        it('should ignore unknown id on updateGalleryItem (local mode)', async () => {
+            await CloudArchive.updateGalleryItem('does-not-exist', { caption: 'x' });
+            const gallery = await CloudArchive.getGallery();
+            expect(gallery.find(g => g.id === 'does-not-exist')).toBeUndefined();
+        });
     });
 
     describe('History Management', () => {
@@ -256,6 +286,15 @@ describe('CloudArchive', () => {
             expect(setDoc).toHaveBeenCalled();
             await CloudArchive.deleteGalleryItem('fb-gallery');
             expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('should call updateDoc with caption/date payload when editing gallery item in firebase mode', async () => {
+            const { updateDoc } = await import('firebase/firestore');
+            const when = new Date('2022-07-04T00:00:00Z');
+            await CloudArchive.updateGalleryItem('fb-gallery-edit', { caption: 'Freedom', date: when });
+            expect(updateDoc).toHaveBeenCalledTimes(1);
+            const args = (updateDoc as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+            expect(args[1]).toMatchObject({ caption: 'Freedom', created_at: when.toISOString() });
         });
 
         it('should call generic onSnapshot for subscriptions', async () => {
