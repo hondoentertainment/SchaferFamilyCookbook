@@ -9,6 +9,10 @@ import {
 } from './userPrefsSync';
 import { getFavoriteIds } from '../utils/favorites';
 import { getAllRatings } from '../utils/ratings';
+import {
+    getItems as getGroceryItems,
+    GROCERY_LIST_STORAGE_KEY,
+} from '../utils/groceryList';
 import { STORAGE_KEYS } from '../constants/storage';
 import type { RecipeRating } from '../types';
 import { CloudArchive } from './db';
@@ -26,7 +30,8 @@ function readLocalPrefs(userName: string): UserPrefsPayload {
             ratings[r.recipeId] = r.rating;
         }
     }
-    return { favorites, ratings };
+    const groceryList = getGroceryItems();
+    return { favorites, ratings, groceryList };
 }
 
 /**
@@ -57,6 +62,13 @@ function applyMergedPrefsToLocal(userName: string, merged: UserPrefsPayload): vo
         timestamp: nowIso,
     }));
     localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify([...others, ...mineMerged]));
+
+    // Grocery list: write directly to its storage key. Other tabs/components
+    // see it via the existing `storage` event subscription in groceryList.ts.
+    localStorage.setItem(
+        GROCERY_LIST_STORAGE_KEY,
+        JSON.stringify(merged.groceryList ?? []),
+    );
 }
 
 export interface UseUserPrefsSyncOptions {
@@ -104,7 +116,11 @@ export function useUserPrefsSync(
             if (!remote) {
                 // No remote doc yet — push current local up so future devices see it.
                 const local = readLocalPrefs(userName);
-                if (local.favorites.length > 0 || Object.keys(local.ratings).length > 0) {
+                if (
+                    local.favorites.length > 0 ||
+                    Object.keys(local.ratings).length > 0 ||
+                    (local.groceryList?.length ?? 0) > 0
+                ) {
                     writerRef.current?.schedule(userId, local);
                 }
                 return;
@@ -119,7 +135,9 @@ export function useUserPrefsSync(
             const mergedAddedRatings = Object.keys(merged.ratings).some(
                 (k) => !(k in remote.ratings)
             );
-            if (mergedAddedFavs || mergedAddedRatings) {
+            const mergedAddedGrocery =
+                (merged.groceryList?.length ?? 0) !== (remote.groceryList?.length ?? 0);
+            if (mergedAddedFavs || mergedAddedRatings || mergedAddedGrocery) {
                 writerRef.current?.schedule(userId, merged);
             }
         })();

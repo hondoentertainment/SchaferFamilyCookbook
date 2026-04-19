@@ -71,6 +71,33 @@ describe('userPrefsSync', () => {
             expect(merged.favorites).toEqual([]);
             expect(merged.ratings).toEqual({});
         });
+
+        it('unions grocery list items by recipeId+text and prefers newer addedAt', () => {
+            const merged = mergePrefs(
+                {
+                    favorites: [],
+                    ratings: {},
+                    groceryList: [
+                        { id: 'l1', text: 'Eggs', recipeId: 'r1', recipeTitle: 'Cake', checked: false, addedAt: 100 },
+                        { id: 'l2', text: 'Milk', checked: false, addedAt: 200 },
+                    ],
+                },
+                {
+                    favorites: [],
+                    ratings: {},
+                    groceryList: [
+                        { id: 'r1', text: 'eggs', recipeId: 'r1', recipeTitle: 'Cake', checked: true, addedAt: 300 },
+                        { id: 'r2', text: 'Sugar', checked: false, addedAt: 50 },
+                    ],
+                }
+            );
+            // 3 distinct items by dedup-key: (r1::eggs), (::milk), (::sugar)
+            expect(merged.groceryList).toHaveLength(3);
+            const eggs = merged.groceryList!.find((i) => i.text === 'eggs' || i.text === 'Eggs');
+            // Newer addedAt (300) wins → checked === true (the remote version).
+            expect(eggs?.checked).toBe(true);
+            expect(eggs?.addedAt).toBe(300);
+        });
     });
 
     describe('fetchRemotePrefs (no firebase configured)', () => {
@@ -154,6 +181,36 @@ describe('userPrefsSync', () => {
             const result = await fetchRemotePrefs('grandma-joan');
             expect(result).toBeNull();
         });
+
+        it('parses a groceryList field, filtering malformed entries', async () => {
+            const firestore = await import('firebase/firestore');
+            vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({
+                    favorites: [],
+                    ratings: {},
+                    groceryList: [
+                        { id: 'a', text: 'Bread', checked: false, addedAt: 1 },
+                        { id: 'b', text: 12345, checked: true, addedAt: 2 }, // bad text
+                        null,
+                        { id: 'c', text: 'Milk', recipeId: 'r1', recipeTitle: 'Smoothie', checked: true, addedAt: 3 },
+                    ],
+                }),
+            } as unknown as Awaited<ReturnType<typeof import('firebase/firestore').getDoc>>);
+            const result = await fetchRemotePrefs('grandma-joan');
+            expect(result?.groceryList).toHaveLength(2);
+            expect(result?.groceryList?.map((i) => i.text)).toEqual(['Bread', 'Milk']);
+        });
+
+        it('returns groceryList: [] when the field is missing or wrong shape', async () => {
+            const firestore = await import('firebase/firestore');
+            vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({ favorites: ['r1'], ratings: {} }),
+            } as unknown as Awaited<ReturnType<typeof import('firebase/firestore').getDoc>>);
+            const result = await fetchRemotePrefs('grandma-joan');
+            expect(result?.groceryList).toEqual([]);
+        });
     });
 
     describe('writeRemotePrefs (firebase configured)', () => {
@@ -187,6 +244,33 @@ describe('userPrefsSync', () => {
             vi.mocked(firestore.setDoc).mockRejectedValueOnce(new Error('network down'));
             const ok = await writeRemotePrefs('grandma-joan', { favorites: [], ratings: {} });
             expect(ok).toBe(false);
+        });
+
+        it('persists groceryList in the doc payload', async () => {
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockResolvedValueOnce(undefined as unknown as void);
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: [],
+                ratings: {},
+                groceryList: [
+                    { id: 'a', text: 'Bread', checked: false, addedAt: 1 },
+                ],
+            });
+            expect(ok).toBe(true);
+            const [, payload] = setDocSpy.mock.calls[setDocSpy.mock.calls.length - 1];
+            const typed = payload as { groceryList: Array<{ text: string }> };
+            expect(typed.groceryList).toHaveLength(1);
+            expect(typed.groceryList[0].text).toBe('Bread');
+        });
+
+        it('defaults groceryList to [] when payload omits it', async () => {
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockResolvedValueOnce(undefined as unknown as void);
+            await writeRemotePrefs('grandma-joan', { favorites: [], ratings: {} });
+            const [, payload] = setDocSpy.mock.calls[setDocSpy.mock.calls.length - 1];
+            expect((payload as { groceryList: unknown[] }).groceryList).toEqual([]);
         });
     });
 

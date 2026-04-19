@@ -56,7 +56,7 @@ service cloud.firestore {
       allow create, update: if
         isAdmin() ||
         (
-          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'updatedAt']) &&
+          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'groceryList', 'updatedAt']) &&
           (
             !('favorites' in request.resource.data) ||
             request.resource.data.favorites is list
@@ -64,6 +64,10 @@ service cloud.firestore {
           (
             !('ratings' in request.resource.data) ||
             request.resource.data.ratings is map
+          ) &&
+          (
+            !('groceryList' in request.resource.data) ||
+            request.resource.data.groceryList is list
           )
         );
       allow delete: if isAdmin();

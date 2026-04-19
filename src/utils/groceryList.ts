@@ -56,6 +56,15 @@ function saveItems(items: GroceryItem[]): void {
         // ignore quota / disabled storage
     }
     emitChange();
+    notifyPrefsChangedSafe();
+}
+
+// Lazy import to avoid a hard dependency on the sync layer when it isn't
+// loaded (keeps bundle clean for tests that don't touch firestore).
+function notifyPrefsChangedSafe(): void {
+    void import('../services/userPrefsSync')
+        .then((m) => m.notifyPrefsChanged())
+        .catch(() => {});
 }
 
 /** Return the current grocery list (most-recently-added first). */

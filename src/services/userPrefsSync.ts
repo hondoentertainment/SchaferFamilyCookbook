@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { CloudArchive } from './db';
 import { Sentry } from '../monitoring/sentry';
+import type { GroceryItem } from '../utils/groceryList';
 
 // --- Local-change notification bus ---------------------------------------
 // Components mutate local state through utils/favorites.ts and utils/ratings.ts.
@@ -46,6 +47,8 @@ export function notifyPrefsChanged(): void {
 export interface UserPrefsPayload {
     favorites: string[];
     ratings: Record<string, number>;
+    /** Optional in payloads passed by older callers; treated as [] when missing. */
+    groceryList?: GroceryItem[];
 }
 
 /**
@@ -111,7 +114,26 @@ export async function fetchRemotePrefs(userId: string): Promise<UserPrefsPayload
                 ratings[k] = Math.max(1, Math.min(5, v));
             }
         }
-        return { favorites, ratings };
+        const groceryListIn = Array.isArray(data?.groceryList) ? data!.groceryList : [];
+        const groceryList: GroceryItem[] = groceryListIn
+            .filter(
+                (x): x is GroceryItem =>
+                    !!x &&
+                    typeof x === 'object' &&
+                    typeof (x as GroceryItem).id === 'string' &&
+                    typeof (x as GroceryItem).text === 'string' &&
+                    typeof (x as GroceryItem).checked === 'boolean' &&
+                    typeof (x as GroceryItem).addedAt === 'number',
+            )
+            .map((x) => ({
+                id: x.id,
+                text: x.text,
+                recipeId: typeof x.recipeId === 'string' ? x.recipeId : undefined,
+                recipeTitle: typeof x.recipeTitle === 'string' ? x.recipeTitle : undefined,
+                checked: x.checked,
+                addedAt: x.addedAt,
+            }));
+        return { favorites, ratings, groceryList };
     } catch (err) {
         logSyncError('fetchRemotePrefs', err);
         return null;
@@ -135,6 +157,7 @@ export async function writeRemotePrefs(
             {
                 favorites: [...new Set(payload.favorites)],
                 ratings: payload.ratings,
+                groceryList: payload.groceryList ?? [],
                 updatedAt: serverTimestamp(),
             },
             { merge: true }
@@ -153,6 +176,9 @@ export async function writeRemotePrefs(
  *     the user explicitly set them on some device — last writer wins is
  *     implicit via updatedAt, but the cheap merge is "prefer remote value
  *     when present; otherwise keep local").
+ *   - groceryList: union by dedup-key (recipeId + normalized text). When the
+ *     same item exists on both sides, the version with the newer `addedAt`
+ *     wins (so check-state edits propagate).
  */
 export function mergePrefs(
     local: UserPrefsPayload,
@@ -163,9 +189,23 @@ export function mergePrefs(
     for (const [recipeId, rating] of Object.entries(remote.ratings)) {
         ratings[recipeId] = rating;
     }
+
+    const dedupKey = (it: GroceryItem) =>
+        `${it.recipeId ?? ''}::${it.text.trim().toLowerCase()}`;
+    const merged = new Map<string, GroceryItem>();
+    for (const it of local.groceryList ?? []) merged.set(dedupKey(it), it);
+    for (const it of remote.groceryList ?? []) {
+        const key = dedupKey(it);
+        const existing = merged.get(key);
+        if (!existing || it.addedAt > existing.addedAt) {
+            merged.set(key, it);
+        }
+    }
+
     return {
         favorites: [...favSet],
         ratings,
+        groceryList: [...merged.values()],
     };
 }
 
