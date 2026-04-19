@@ -158,6 +158,7 @@ describe('userPrefsSync', () => {
             expect(result).toEqual({
                 favorites: ['r1', 'r2'],
                 ratings: { r1: 5, r2: 3 },
+                groceryList: [],
             });
         });
 
