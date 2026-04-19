@@ -23,6 +23,10 @@ const loginAndOpenTrivia = async (
   await page.reload();
 
   await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill('Alice');
+  // Skip first-run onboarding overlay so it doesn't intercept clicks.
+  await page.evaluate(() =>
+    localStorage.setItem('schafer_onboarding_done', 'true')
+  );
   await page.getByRole('button', { name: /Enter The Archive/i }).click();
   await page
     .getByRole('textbox', { name: /Search recipes, ingredients/i })

@@ -110,7 +110,12 @@ test.describe('Admin (admin user)', () => {
   });
 
   test('admin quick-edit button appears on recipe cards', async ({ page }) => {
-    const recipeCard = page.locator('[role="button"][aria-label*="View recipe:"]').first();
+    // Find the recipe-card container by looking up from the View-recipe button.
+    // The card wrapper is no longer interactive itself; it hosts a child <button>
+    // that opens the recipe and sibling action buttons (favorite, edit).
+    const viewBtn = page.locator('button[aria-label^="View recipe:"]').first();
+    await viewBtn.scrollIntoViewIfNeeded();
+    const recipeCard = viewBtn.locator('xpath=ancestor::div[contains(@class, "group")][1]');
     await recipeCard.hover();
 
     const editBtn = recipeCard.getByRole('button', { name: /Edit .* with AI/i });

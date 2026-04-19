@@ -21,6 +21,12 @@ export async function loginAs(
   await page.reload();
 
   await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill(name);
+  // Pre-mark the first-run onboarding as complete so the walkthrough
+  // overlay doesn't intercept clicks in tests (it covers the whole screen
+  // at z-[400]).
+  await page.evaluate(() =>
+    localStorage.setItem('schafer_onboarding_done', 'true')
+  );
   await page.getByRole('button', { name: /Enter The Archive/i }).click();
 
   // Wait for recipes to load (indicates we're past login).
