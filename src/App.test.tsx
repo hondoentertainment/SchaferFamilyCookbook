@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import App from './App';
 import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithProviders } from './test/utils';
 
@@ -14,6 +14,19 @@ function loginAndNavigateToGallery(_initialTab = 'Recipes') {
         const galleryBtns = screen.getAllByRole('button', { name: /^Gallery$/i });
         fireEvent.click(galleryBtns[0]);
     });
+}
+
+function renderRecipesAsAdmin(recipes = [createMockRecipe()]) {
+    localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
+    localStorage.setItem('schafer_user', JSON.stringify({
+        id: 'admin-1',
+        name: 'kyle',
+        picture: 'https://example.com/avatar.jpg',
+        role: 'admin',
+        email: 'kyle@example.com',
+    }));
+    renderWithProviders(<App />);
+    return screen.findByText(recipes[0].title, {}, { timeout: 3000 });
 }
 
 describe('App', () => {
@@ -36,6 +49,45 @@ describe('App', () => {
         fireEvent.click(screen.getByText('Enter The Archive'));
         await screen.findByText('Test Recipe', {}, { timeout: 3000 });
         expect(screen.getAllByRole('button', { name: /^Recipes$/i }).length).toBeGreaterThan(0);
+    });
+
+    it('lets admins add a recipe from the Recipes page and shows a success banner', async () => {
+        await renderRecipesAsAdmin();
+
+        fireEvent.click(screen.getByRole('button', { name: '+ Add New Recipe' }));
+
+        expect(await screen.findByRole('dialog', { name: 'Add New Recipe' })).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Recipe Title'), { target: { value: 'Sunday Roast' } });
+        fireEvent.change(screen.getByPlaceholderText('Ingredients (one per line)'), { target: { value: 'Potatoes\nBeef' } });
+        fireEvent.change(screen.getByPlaceholderText('Instructions (one per line)'), { target: { value: 'Prep\nRoast' } });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add Recipe' }));
+
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog', { name: 'Add New Recipe' })).not.toBeInTheDocument();
+        });
+        expect(await screen.findByText('Recipe added to the archive: Sunday Roast')).toBeInTheDocument();
+        expect(await screen.findByText('Sunday Roast')).toBeInTheDocument();
+    });
+
+    it('lets admins open the edit entry point from Recipes and save updates', async () => {
+        await renderRecipesAsAdmin([createMockRecipe({ id: 'recipe-1', title: 'Test Recipe' })]);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit recipe: Test Recipe' }));
+
+        expect(await screen.findByRole('dialog', { name: 'Edit Recipe' })).toBeInTheDocument();
+        const titleInput = await screen.findByLabelText('Recipe Title');
+        expect(titleInput).toHaveValue('Test Recipe');
+
+        fireEvent.change(titleInput, { target: { value: 'Updated Recipe' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Update Recipe' }));
+
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog', { name: 'Edit Recipe' })).not.toBeInTheDocument();
+        });
+        expect(await screen.findByText('Recipe updated: Updated Recipe')).toBeInTheDocument();
+        expect(await screen.findByText('Updated Recipe')).toBeInTheDocument();
     });
 });
 

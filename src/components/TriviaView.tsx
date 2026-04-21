@@ -439,7 +439,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     </div>
                 )}
 
-                <div className="grid gap-3 md:gap-4" role="group" aria-label="Answer options">
+                <div className="grid gap-3 md:gap-4" role="radiogroup" aria-label="Answer options">
                     {currentQuestion.options.map((opt, i) => {
                         const isCorrect = opt === currentQuestion.answer;
                         const isSelected = selectedOption === opt;
@@ -454,11 +454,12 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                         return (
                             <button
                                 key={i}
+                                role="radio"
                                 ref={el => { optionRefs.current[i] = el; }}
                                 disabled={isAnswered}
                                 onClick={() => handleOptionSelect(opt)}
                                 className={`p-4 md:p-6 text-left rounded-2xl md:rounded-3xl transition-all font-serif text-base md:text-lg flex justify-between items-center group/btn relative overflow-hidden ${buttonStyles}`}
-                                aria-pressed={isSelected}
+                                aria-checked={isSelected}
                                 aria-label={`${String.fromCharCode(65 + i)}: ${opt}${isAnswered ? (isCorrect ? ' (Correct answer)' : isSelected ? ' (Your answer - incorrect)' : '') : ''}`}
                             >
                                 <span className="relative z-10 flex items-center gap-3">

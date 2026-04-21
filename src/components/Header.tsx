@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
     const navTabs = ALL_NAV_TABS;
 
     return (
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-100 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+        <header className="sticky top-0 z-50 bg-[#FDFBF7]/70 backdrop-blur-xl border-b border-[#2D4635]/5 pt-[env(safe-area-inset-top)] shadow-[0_4px_30px_rgba(45,70,53,0.05)] transition-all duration-300">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 flex items-center justify-between gap-2 min-h-[3.5rem] md:min-h-0">
                 <div className="flex items-center gap-2 sm:gap-3 md:gap-8 min-w-0 flex-1">
                     <div

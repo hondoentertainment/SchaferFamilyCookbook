@@ -440,9 +440,21 @@ const App: React.FC = () => {
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [recipeModalDraft, setRecipeModalDraft] = useState<Recipe | null>(null);
+    const [recipeBannerMessage, setRecipeBannerMessage] = useState<string | null>(null);
 
     const handleSetTab = (newTab: string) => {
         setTab(newTab);
+    };
+
+    const openAddRecipeModal = (recipe?: Recipe) => {
+        setRecipeModalDraft(recipe ?? null);
+        setShowAddRecipeModal(true);
+    };
+
+    const closeAddRecipeModal = () => {
+        setRecipeModalDraft(null);
+        setShowAddRecipeModal(false);
     };
 
     const defaultRecipeIds = useMemo(
@@ -653,6 +665,12 @@ const App: React.FC = () => {
         setSortBy('title-asc');
     };
 
+    useEffect(() => {
+        if (!recipeBannerMessage) return;
+        const timer = window.setTimeout(() => setRecipeBannerMessage(null), 4000);
+        return () => window.clearTimeout(timer);
+    }, [recipeBannerMessage]);
+
     if (!currentUser) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-6">
@@ -790,7 +808,7 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
+                            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8 stagger-entrance" role="list">
                                 {gallery.map(item => (
                                     <article key={item.id} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl" role="listitem">
                                         {item.type === 'video' ? (
@@ -948,18 +966,27 @@ const App: React.FC = () => {
                 <Suspense fallback={null}>
                     <AddRecipeModal
                         onAddRecipe={async (r, f) => {
+                            const isUpdate = recipes.some(existingRecipe => existingRecipe.id === r.id);
                             try {
                                 const url = f ? await CloudArchive.uploadFile(f, 'recipes') : r.image;
                                 await CloudArchive.upsertRecipe({ ...r, image: url || r.image }, currentUser!.name);
                                 await refreshLocalState();
-                                setShowAddRecipeModal(false);
+                                closeAddRecipeModal();
+                                setRecipeBannerMessage(
+                                    isUpdate
+                                        ? `Recipe updated: ${r.title}`
+                                        : `Recipe added to the archive: ${r.title}`
+                                );
+                                return true;
                             } catch {
                                 toast(CLOUD_ERROR_MSG, 'error');
+                                return false;
                             }
                         }}
-                        onClose={() => setShowAddRecipeModal(false)}
+                        onClose={closeAddRecipeModal}
                         contributors={contributors}
                         currentUser={currentUser}
+                        initialRecipe={recipeModalDraft}
                     />
                 </Suspense>
             )}
@@ -1044,7 +1071,7 @@ const App: React.FC = () => {
                                 {currentUser?.role === 'admin' && (
                                     <button
                                         type="button"
-                                        onClick={() => setShowAddRecipeModal(true)}
+                                        onClick={() => openAddRecipeModal()}
                                         className="min-h-[2.75rem] px-5 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors whitespace-nowrap"
                                     >
                                         + Add
@@ -1073,7 +1100,7 @@ const App: React.FC = () => {
                                 {currentUser?.role === 'admin' && (
                                     <button
                                         type="button"
-                                        onClick={() => setShowAddRecipeModal(true)}
+                                        onClick={() => openAddRecipeModal()}
                                         className="px-6 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors min-h-[2.75rem] whitespace-nowrap"
                                     >
                                         + Add New Recipe
@@ -1117,6 +1144,23 @@ const App: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {recipeBannerMessage && (
+                        <div className="flex items-start justify-between gap-4 rounded-[2rem] border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm" role="status" aria-live="polite">
+                            <div className="flex items-start gap-3">
+                                <span className="text-emerald-600 text-lg" aria-hidden="true">✓</span>
+                                <p className="text-sm font-bold text-emerald-800">{recipeBannerMessage}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setRecipeBannerMessage(null)}
+                                className="text-[10px] font-black uppercase tracking-widest text-emerald-700"
+                                aria-label="Dismiss recipe status"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    )}
 
                     {/* Quick-access: Recently viewed & Favorites */}
                     {!isDataLoading && recipes.length > 0 && (() => {
@@ -1185,7 +1229,7 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 stagger-entrance">
                             {sortedRecipes.map(recipe => (
                                 <div
                                     key={recipe.id}
@@ -1199,7 +1243,7 @@ const App: React.FC = () => {
                                     tabIndex={0}
                                     role="button"
                                     aria-label={`View recipe: ${recipe.title}`}
-                                    className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
+                                    className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-lg hover:shadow-[0_20px_40px_rgba(45,70,53,0.12)] hover:-translate-y-1 transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
                                 >
                                     {/* Affiliated recipe image or placeholder */}
                                     <RecipeCardImage recipe={recipe} />
@@ -1240,15 +1284,13 @@ const App: React.FC = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setEditingRecipe(recipe);
-                                                handleSetTab('Profile');
-                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                openAddRecipeModal(recipe);
                                             }}
                                             className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
-                                            title="Edit with AI"
-                                            aria-label={`Edit ${recipe.title} with AI`}
+                                            title="Edit recipe"
+                                            aria-label={`Edit recipe: ${recipe.title}`}
                                         >
-                                            ✨
+                                            ✏️
                                         </button>
                                     )}
                                 </div>
@@ -1281,7 +1323,7 @@ const App: React.FC = () => {
                                 ) : currentUser?.role === 'admin' && (
                                     <button
                                         type="button"
-                                        onClick={() => setShowAddRecipeModal(true)}
+                                        onClick={() => openAddRecipeModal()}
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
                                     >
                                         Add New Recipe

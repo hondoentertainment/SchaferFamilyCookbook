@@ -23,7 +23,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
 
     return (
         <nav
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-100 shadow-[0_-1px_0_rgba(0,0,0,0.04)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pt-px"
+            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FDFBF7]/70 backdrop-blur-xl border-t border-[#2D4635]/5 shadow-[0_-4px_30px_rgba(45,70,53,0.05)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pt-px transition-all duration-300"
             role="navigation"
             aria-label="Main navigation"
         >

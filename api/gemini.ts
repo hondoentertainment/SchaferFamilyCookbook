@@ -128,6 +128,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ json: result ?? '{}' });
         }
 
+        if (action === 'magicImportBulk') {
+            const rawText = typeof body.rawText === 'string' ? body.rawText : '';
+            if (!rawText) return res.status(400).json({ error: 'Missing rawText' });
+            const response = await ai.models.generateContent({
+                model: TEXT_MODEL,
+                contents: [{ role: 'user', parts: [{ text: `Multiple recipes text: ${rawText}` }] }],
+                config: {
+                    systemInstruction: 'Analyze this text containing one or more recipes and extract an ARRAY of structured JSON data objects. For each recipe, provide: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime, calories (number - estimated total).',
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: 'ARRAY',
+                        items: {
+                            type: 'OBJECT',
+                            properties: {
+                                title: { type: 'STRING' },
+                                category: { type: 'STRING' },
+                                ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
+                                instructions: { type: 'ARRAY', items: { type: 'STRING' } },
+                                prepTime: { type: 'STRING' },
+                                cookTime: { type: 'STRING' },
+                                calories: { type: 'NUMBER' }
+                            }
+                        }
+                    }
+                }
+            });
+            const result = (response as any).text;
+            return res.status(200).json({ json: result ?? '[]' });
+        }
+
         return res.status(400).json({ error: `Unknown action: ${action}` });
     } catch (err: unknown) {
         console.error('Gemini API error:', err);

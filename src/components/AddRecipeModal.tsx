@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Recipe, ContributorProfile, UserProfile } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CATEGORY_IMAGES } from '../constants';
 import { useUI } from '../context/UIContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 interface AddRecipeModalProps {
-    onAddRecipe: (r: Recipe, file?: File) => Promise<void>;
+    onAddRecipe: (r: Recipe, file?: File) => Promise<boolean>;
     onClose: () => void;
     contributors: ContributorProfile[];
     currentUser: UserProfile | null;
+    initialRecipe?: Recipe | null;
 }
 
-export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onClose, contributors, currentUser }) => {
+export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onClose, contributors, currentUser, initialRecipe = null }) => {
     const { toast } = useUI();
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
-    const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
+    const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>(initialRecipe ?? { title: '', category: 'Main', ingredients: [], instructions: [] });
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
     const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'nano-banana' | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -24,16 +26,28 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [aiCooldownUntil, setAiCooldownUntil] = useState<number>(0);
     const [aiCooldownSecondsLeft, setAiCooldownSecondsLeft] = useState(0);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const titleInputRef = useRef<HTMLInputElement>(null);
+    const isEditing = !!initialRecipe;
+
+    useFocusTrap(true, panelRef);
+
+    useEffect(() => {
+        setRecipeForm(initialRecipe ?? { title: '', category: 'Main', ingredients: [], instructions: [] });
+        setRecipeFile(null);
+        setImageSourceForCurrent(null);
+        setPreviewUrl(initialRecipe?.image || null);
+    }, [initialRecipe]);
 
     useEffect(() => {
         if (!recipeFile) {
-            setPreviewUrl(null);
+            if (!initialRecipe) setPreviewUrl(null);
             return;
         }
         const url = URL.createObjectURL(recipeFile);
         setPreviewUrl(url);
         return () => URL.revokeObjectURL(url);
-    }, [recipeFile]);
+    }, [initialRecipe, recipeFile]);
 
     useEffect(() => {
         if (!aiCooldownUntil) {
@@ -153,7 +167,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         setIsSubmitting(true);
         try {
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
-            await onAddRecipe({
+            const didSave = await onAddRecipe({
                 ...recipeForm as Recipe,
                 id: recipeForm.id || 'r' + Date.now(),
                 contributor: recipeForm.contributor || currentUser?.name || 'Family',
@@ -162,8 +176,13 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                 ingredients,
                 instructions
             }, recipeFile || undefined);
-            toast('Recipe saved', 'success');
-            onClose();
+            if (didSave && !isEditing) {
+                setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
+                setRecipeFile(null);
+                setImageSourceForCurrent(null);
+                setPreviewUrl(null);
+                setRawText('');
+            }
         } finally { setIsSubmitting(false); }
     };
 
@@ -179,15 +198,30 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         return () => document.removeEventListener('keydown', onEscape);
     }, [onClose]);
 
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, []);
+
+    useEffect(() => {
+        const focusTimer = window.setTimeout(() => {
+            titleInputRef.current?.focus();
+        }, 0);
+        return () => window.clearTimeout(focusTimer);
+    }, []);
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="add-recipe-modal-title" onClick={handleBackdropClick}>
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-[max(1rem,env(safe-area-inset-top,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]" role="dialog" aria-modal="true" aria-labelledby="add-recipe-modal-title" onClick={handleBackdropClick}>
+            <div ref={panelRef} className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-start mb-6">
-                    <h2 id="add-recipe-modal-title" className="text-2xl font-serif italic text-[#2D4635]">Add New Recipe</h2>
+                    <h2 id="add-recipe-modal-title" className="text-2xl font-serif italic text-[#2D4635]">{isEditing ? 'Edit Recipe' : 'Add New Recipe'}</h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-10 h-10 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500"
+                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
                         aria-label="Close"
                     >
                         ✕
@@ -233,7 +267,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                     </div>
                     <div>
                         <label htmlFor="add-recipe-title-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Recipe Title</label>
-                        <input id="add-recipe-title-input" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
+                        <input ref={titleInputRef} id="add-recipe-title-input" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
                     </div>
                     <div>
                         <label htmlFor="add-recipe-contributor" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Contributed By</label>
@@ -278,7 +312,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                     </div>
                     <div className="flex gap-4 pt-4">
                         <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
-                            {isSubmitting ? 'Saving...' : 'Add Recipe'}
+                            {isSubmitting ? 'Saving...' : isEditing ? 'Update Recipe' : 'Add Recipe'}
                         </button>
                         <button type="button" onClick={onClose} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">
                             Cancel

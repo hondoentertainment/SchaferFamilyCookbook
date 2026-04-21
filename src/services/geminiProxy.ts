@@ -42,3 +42,8 @@ export async function magicImport(rawText: string): Promise<Record<string, unkno
     const { json } = await post<{ json: string }>({ action: 'magicImport', rawText });
     return JSON.parse(json || '{}') as Record<string, unknown>;
 }
+
+export async function magicImportBulk(rawText: string): Promise<Record<string, unknown>[]> {
+    const { json } = await post<{ json: string }>({ action: 'magicImportBulk', rawText });
+    return JSON.parse(json || '[]') as Record<string, unknown>[];
+}

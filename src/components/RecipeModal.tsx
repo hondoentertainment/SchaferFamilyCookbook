@@ -234,8 +234,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             )}
 
             <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
-                <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
-                <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
+                <div className="absolute inset-0 bg-[#2D4635]/60 backdrop-blur-xl" onClick={onClose} aria-hidden="true" />
+                <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-[0_30px_60px_rgba(45,70,53,0.3)] relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
                     <button
                         onClick={onClose}
                         className="absolute top-2 left-2 z-10 md:hidden px-4 py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600"
@@ -328,7 +328,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     src={recipe.image}
                                     width={800}
                                     height={600}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className="w-full h-full object-cover animate-ken-burns"
                                     alt={recipe.title}
                                     loading="lazy"
                                     onError={() => {
@@ -382,8 +382,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <span aria-hidden className="mx-1.5">›</span>
                                 <span className="text-stone-600 font-medium">{recipe.title}</span>
                             </nav>
-                            <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
-                            <h2 id="recipe-modal-title" className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
+                            <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-[0.2em] bg-[#A0522D]/10 px-4 py-1.5 rounded-full">{recipe.category}</span>
+                            <h2 id="recipe-modal-title" className="text-4xl md:text-5xl lg:text-6xl font-serif italic text-[#2D4635] leading-[1.1] tracking-tight">{recipe.title}</h2>
                             <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-[#A0522D]">👤</span>
@@ -504,11 +504,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             </div>
                             <div className="space-y-6">
                                 {recipe.instructions.map((step, i) => (
-                                    <div key={i} id={`recipe-step-${i}`} className="flex gap-4 group hover:bg-white/50 p-4 rounded-xl transition-all -ml-4 scroll-mt-24">
-                                        <span className="text-3xl font-serif italic text-[#A0522D]/30 group-hover:text-[#A0522D]/50 shrink-0 tabular-nums transition-colors leading-none pt-1">
+                                    <div key={i} id={`recipe-step-${i}`} className="flex gap-5 md:gap-6 group hover:bg-white/60 p-5 rounded-2xl transition-all -ml-5 scroll-mt-24 shadow-sm border border-transparent hover:border-stone-200/50">
+                                        <span className="text-4xl md:text-5xl font-serif italic text-[#2D4635]/20 group-hover:text-[#A0522D]/60 shrink-0 tabular-nums transition-colors leading-[0.8] pt-2">
                                             {(i + 1).toString().padStart(2, '0')}
                                         </span>
-                                        <p className="text-sm md:text-base text-stone-700 leading-relaxed flex-1 group-hover:text-[#2D4635] transition-colors">
+                                        <p className="text-base md:text-lg lg:text-xl text-stone-700 leading-[1.8] flex-1 group-hover:text-[#2D4635] transition-colors font-serif">
                                             {step}
                                         </p>
                                     </div>
