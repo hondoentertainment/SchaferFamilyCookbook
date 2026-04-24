@@ -858,7 +858,7 @@ const App: React.FC = () => {
                                                     playsInline
                                                     preload="metadata"
                                                     title={item.caption || 'Family video'}
-                                                    aria-hidden
+                                                    aria-label={item.caption || 'Family video'}
                                                     onTouchStart={e => {
                                                         const el = e.target as HTMLVideoElement;
                                                         if (el.paused) el.play();
