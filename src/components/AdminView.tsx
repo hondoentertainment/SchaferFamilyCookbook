@@ -498,6 +498,40 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }
     }, [isSubmitting, uploadProgress.current, uploadProgress.total]);
 
+    const handleExportJSON = () => {
+        const json = JSON.stringify(recipes, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'schafer-cookbook-recipes.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast(`Exported ${recipes.length} recipes as JSON`, 'success');
+    };
+
+    const handleExportCSV = () => {
+        const header = ['title', 'category', 'contributor', 'prepTime', 'cookTime', 'calories', 'servings'];
+        const rows = recipes.map(r => [
+            r.title ?? '',
+            r.category ?? '',
+            r.contributor ?? '',
+            r.prepTime ?? '',
+            r.cookTime ?? '',
+            r.calories != null ? String(r.calories) : '',
+            r.servings != null ? String(r.servings) : '',
+        ].map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','));
+        const csv = [header.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'schafer-cookbook-recipes.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast(`Exported ${recipes.length} recipes as CSV`, 'success');
+    };
+
     const handleMergeContributors = async () => {
         if (!mergeFrom.trim() || !mergeTo.trim()) { toast('Please enter both contributor names.', 'error'); return; }
         if (mergeFrom.trim().toLowerCase() === mergeTo.trim().toLowerCase()) { toast('Cannot merge a contributor into themselves.', 'error'); return; }
@@ -882,10 +916,37 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Export Recipes */}
+                                    {!editingRecipe && (
+                                        <div className="space-y-4 pt-4 border-t border-stone-100">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] flex items-center gap-2">
+                                                <span>📤</span> Export Recipes
+                                            </h4>
+                                            <p className="text-xs text-stone-500">Download all {recipes.length} recipes for backup or external use.</p>
+                                            <div className="flex gap-4 flex-wrap">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleExportJSON}
+                                                    className="flex-1 min-w-[140px] py-4 bg-[#2D4635]/10 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#2D4635]/20 shadow-sm hover:bg-[#2D4635]/20 transition-colors"
+                                                >
+                                                    ⬇️ Export as JSON
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleExportCSV}
+                                                    className="flex-1 min-w-[140px] py-4 bg-stone-100 text-stone-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 shadow-sm hover:bg-stone-200 transition-colors"
+                                                >
+                                                    ⬇️ Export as CSV
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {editingRecipe && (
                                     <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
+                                            <label htmlFor="admin-recipe-image-upload" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
 
                                             {previewUrl && (
                                                 <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner group">
