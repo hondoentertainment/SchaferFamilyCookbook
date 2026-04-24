@@ -36,6 +36,7 @@ const PrivacyView = lazy(() => import('./components/PrivacyView').then(m => ({ d
 const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthrough').then(m => ({ default: m.OnboardingWalkthrough })));
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
 const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
+const CollectionsView = lazy(() => import('./components/CollectionsView').then(m => ({ default: m.CollectionsView })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -1035,7 +1036,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', 'Grocery List': 'Grocery List' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', 'Grocery List': 'Grocery List', Collections: 'Collections' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
                 </Suspense>
@@ -1418,6 +1419,19 @@ const App: React.FC = () => {
                 <Suspense fallback={<TabFallback />}>
                     <main id="main-content-grocery" role="main" aria-label="Grocery list" tabIndex={-1}>
                         <GroceryListView />
+                    </main>
+                </Suspense>
+            )}
+
+            {tab === 'Collections' && currentUser && (
+                <Suspense fallback={<TabFallback />}>
+                    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-12" role="main" aria-label="Recipe collections" tabIndex={-1}>
+                        <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8">Collections</h2>
+                        <CollectionsView
+                            recipes={recipes}
+                            currentUserName={currentUser.name}
+                            onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
+                        />
                     </main>
                 </Suspense>
             )}

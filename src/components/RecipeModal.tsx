@@ -78,12 +78,23 @@ const RatingSection: React.FC<{ recipeId: string; recipeTitle: string; currentUs
     );
 };
 
-const AddToCollectionSection: React.FC<{ recipeId: string }> = ({ recipeId }) => {
+const AddToCollectionSection: React.FC<{ recipeId: string; compact?: boolean }> = ({ recipeId, compact = false }) => {
     const { toast } = useUI();
     const [collections, setCollections] = useState(() => getAllCollections());
     const [open, setOpen] = useState(false);
 
-    if (collections.length === 0) return null;
+    const inCount = collections.filter((c) => c.recipeIds.includes(recipeId)).length;
+
+    const handleButtonClick = () => {
+        // Refresh collection list each time the menu is opened
+        const latest = getAllCollections();
+        setCollections(latest);
+        if (latest.length === 0) {
+            toast('Create a collection first in the Collections tab', 'info');
+            return;
+        }
+        setOpen((v) => !v);
+    };
 
     const handleAdd = (colId: string, colName: string) => {
         addToCollection(colId, recipeId);
@@ -92,14 +103,57 @@ const AddToCollectionSection: React.FC<{ recipeId: string }> = ({ recipeId }) =>
         setOpen(false);
     };
 
+    if (compact) {
+        return (
+            <div className="relative print:hidden">
+                <button
+                    type="button"
+                    onClick={handleButtonClick}
+                    className={`w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
+                        inCount > 0
+                            ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                            : 'bg-white/95 text-stone-400 hover:text-stone-900 hover:bg-white'
+                    }`}
+                    aria-label={inCount > 0 ? `In ${inCount} collection${inCount !== 1 ? 's' : ''}` : 'Save to collection'}
+                    title={inCount > 0 ? `In ${inCount} collection${inCount !== 1 ? 's' : ''}` : 'Save to Collection'}
+                >
+                    <span className="text-xl">📚</span>
+                </button>
+                {open && (
+                    <div className="absolute top-full right-0 mt-2 bg-white dark:bg-[var(--card-bg)] rounded-xl border border-stone-200 dark:border-[var(--border-color)] shadow-lg p-2 space-y-1 animate-fade-slide-in z-20 min-w-[11rem]">
+                        {collections.map((col) => {
+                            const alreadyIn = col.recipeIds.includes(recipeId);
+                            return (
+                                <button
+                                    key={col.id}
+                                    type="button"
+                                    onClick={() => !alreadyIn && handleAdd(col.id, col.name)}
+                                    disabled={alreadyIn}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors ${
+                                        alreadyIn ? 'text-stone-400 cursor-default' : 'hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] text-stone-700 dark:text-stone-300'
+                                    }`}
+                                >
+                                    <span>{col.icon}</span>
+                                    <span className="flex-1 truncate">{col.name}</span>
+                                    {alreadyIn && <span className="text-[10px] text-emerald-500">Added</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
     return (
         <div className="print:hidden">
             <button
                 type="button"
-                onClick={() => setOpen(!open)}
+                onClick={handleButtonClick}
                 className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400 transition-colors min-h-11"
             >
-                <span>📚</span> Add to Collection
+                <span>📚</span>
+                {inCount > 0 ? `In ${inCount} collection${inCount !== 1 ? 's' : ''}` : 'Save to Collection'}
             </button>
             {open && (
                 <div className="mt-2 bg-white dark:bg-[var(--card-bg)] rounded-xl border border-stone-200 dark:border-[var(--border-color)] shadow-lg p-2 space-y-1 animate-fade-slide-in">
@@ -400,6 +454,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <span className="text-xl">{isFavorite(recipe.id) ? '❤️' : '🤍'}</span>
                             </button>
                         )}
+                        <AddToCollectionSection recipeId={recipe.id} compact />
                         {prevRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(prevRecipe)}
