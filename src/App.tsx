@@ -24,6 +24,7 @@ import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from '
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
+import { trackEvent } from './services/analytics';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -646,6 +647,7 @@ const App: React.FC = () => {
     const handleSelectRecipe = (recipe: Recipe) => {
         recordRecipeView(recipe.id, recipe.title);
         setSelectedRecipe(recipe);
+        trackEvent('recipe_viewed', { recipeId: recipe.id, title: recipe.title });
         window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
     };
 
@@ -1032,7 +1034,7 @@ const App: React.FC = () => {
                         onNavigate={handleNavigateToRecipe}
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
-                        onStartCook={() => setCookModeRecipe(selectedRecipe)}
+                        onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
                         breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', 'Grocery List': 'Grocery List' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />

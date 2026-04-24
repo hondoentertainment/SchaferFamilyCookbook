@@ -9,6 +9,7 @@ import {
     isLeaderboardAvailable,
     type LeaderboardEntry,
 } from '../services/leaderboard';
+import { trackEvent } from '../services/analytics';
 
 const FEEDBACK_DELAY_MS = 1500;
 const LEADERBOARD_LIMIT = 10;
@@ -316,6 +317,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             setScoreboard(updated);
             setLastSavedScoreId(newId);
             setShowResults(true);
+            trackEvent('trivia_completed', { score: finalScore, total: questions.length });
             const msg = percentage >= 90 ? 'You know the family well!' : percentage >= 70 ? 'Great job!' : 'Keep exploring the archive!';
             setAriaAnnouncement(`Quiz complete. You scored ${finalScore} out of ${questions.length}, ${percentage} percent. ${msg}`);
 
