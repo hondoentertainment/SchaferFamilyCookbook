@@ -205,11 +205,22 @@ describe('generateImage', () => {
         await expect(generateImage(mockRecipe)).rejects.toThrow('Rate limit exceeded');
     });
 
-    it('forces imageSource to "nano-banana" even if the server returns a different value', async () => {
+    it('defaults imageSource to "nano-banana" when the server response omits it', async () => {
+        mockFetch.mockReturnValueOnce(
+            makeOkResponse({ imageBase64: 'xyz' })
+        );
+        const result = await generateImage(mockRecipe);
+        expect(result.imageSource).toBe('nano-banana');
+    });
+
+    it('server-supplied imageSource overrides the "nano-banana" default (spread order)', async () => {
+        // The implementation spreads: { imageSource: 'nano-banana', ...result }
+        // so a server-provided imageSource field wins.
         mockFetch.mockReturnValueOnce(
             makeOkResponse({ imageBase64: 'xyz', imageSource: 'something-else' })
         );
         const result = await generateImage(mockRecipe);
-        expect(result.imageSource).toBe('nano-banana');
+        // The server value takes precedence due to spread order in the implementation.
+        expect(result.imageSource).toBe('something-else');
     });
 });

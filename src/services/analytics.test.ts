@@ -119,11 +119,13 @@ describe('analytics service', () => {
         });
 
         it('does nothing (no throw) when Firebase is not configured', async () => {
-            // No activateFirebase() call — CloudArchive.getFirebase() returns null.
+            // Force CloudArchive.getFirebase() to return null regardless of localStorage state.
+            const spy = vi.spyOn(CloudArchive, 'getFirebase').mockReturnValue(null);
             expect(() => trackEvent('orphan_event')).not.toThrow();
             await Promise.resolve();
             const { addDoc } = await import('firebase/firestore');
             expect(addDoc).not.toHaveBeenCalled();
+            spy.mockRestore();
         });
 
         it('swallows Firestore errors without throwing to the caller', async () => {

@@ -258,9 +258,9 @@ describe('AddRecipeModal', () => {
         fireEvent.change(screen.getByLabelText(/paste recipe text for ai/i), { target: { value: 'Some text' } });
         fireEvent.click(screen.getByRole('button', { name: /organize with ai/i }));
 
-        // UIContext toast should surface as an accessible alert in the DOM
+        // UIContext toast uses role="status"
         await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
+            expect(screen.getByRole('status')).toBeInTheDocument();
         });
     });
 
@@ -274,9 +274,11 @@ describe('AddRecipeModal', () => {
         fireEvent.change(screen.getByLabelText(/paste recipe text for ai/i), { target: { value: 'Some text' } });
         fireEvent.click(screen.getByRole('button', { name: /organize with ai/i }));
 
+        // Two buttons show cooldown (Generate Photo + Organize with AI); both should be disabled
         await waitFor(() => {
-            const aiBtn = screen.getByRole('button', { name: /cooldown/i });
-            expect(aiBtn).toBeDisabled();
+            const cooldownBtns = screen.getAllByRole('button', { name: /cooldown/i });
+            expect(cooldownBtns.length).toBeGreaterThanOrEqual(1);
+            cooldownBtns.forEach((btn) => expect(btn).toBeDisabled());
         });
     });
 
