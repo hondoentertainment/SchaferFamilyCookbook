@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ShareRecipe, getRecipeShareUrl } from './ShareRecipe';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
