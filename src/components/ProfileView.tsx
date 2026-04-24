@@ -8,6 +8,7 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { PreferencesPanel } from './PreferencesPanel';
 import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
+import { hapticLight } from '../utils/haptics';
 
 export interface AdminSectionProps {
     editingRecipe: Recipe | null;
@@ -64,6 +65,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             await onUpdateProfile(name, avatar);
             setSaveSuccess(true);
             setSaveError(null);
+            hapticLight();
             toast('Profile updated', 'success');
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (err) {
