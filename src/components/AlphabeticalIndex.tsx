@@ -62,29 +62,48 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
         if (el) window.scrollTo({ top: el.offsetTop - 120, behavior: 'smooth' });
     };
 
-    // Scroll spy: track which letter section is in view
+    // Scroll spy: use IntersectionObserver to track which letter section header is visible
     useEffect(() => {
-        const container = document.getElementById('alphabetical-index-container');
-        if (!container) return;
+        if (activeLetters.length === 0) return;
 
-        const sections = activeLetters.map(l => ({ letter: l, el: document.getElementById(`idx-${l}`) })).filter(
-            (s): s is { letter: string; el: HTMLElement } => !!s.el
+        // We observe the sticky <h3> elements inside each section (id="idx-{letter}").
+        // rootMargin pushes the detection zone so the heading triggers just after it
+        // sticks to the top of the viewport rather than when it first enters the bottom.
+        const observer = new IntersectionObserver(
+            (entries) => {
+                // Collect every currently-intersecting section, then pick the one
+                // that appears earliest in the LETTERS order (topmost visible section).
+                entries.forEach(entry => {
+                    const letter = entry.target.getAttribute('data-letter');
+                    if (!letter) return;
+                    if (entry.isIntersecting) {
+                        setActiveLetter(letter);
+                    }
+                });
+            },
+            {
+                // Top margin: -120px keeps the trigger zone below the sticky nav bar.
+                // Bottom margin: force intersection to be detected near the top only.
+                rootMargin: '-120px 0px -70% 0px',
+                threshold: 0,
+            }
         );
 
-        const onScroll = () => {
-            const scrollTop = window.scrollY + 140;
-            for (let i = sections.length - 1; i >= 0; i--) {
-                const top = sections[i].el.getBoundingClientRect().top + window.scrollY;
-                if (scrollTop >= top) {
-                    setActiveLetter(sections[i].letter);
-                    break;
-                }
+        const targets: HTMLElement[] = [];
+        activeLetters.forEach(l => {
+            const el = document.getElementById(`idx-${l}`);
+            if (el) {
+                el.setAttribute('data-letter', l);
+                observer.observe(el);
+                targets.push(el);
             }
-        };
+        });
 
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
-        return () => window.removeEventListener('scroll', onScroll);
+        return () => {
+            targets.forEach(el => observer.unobserve(el));
+            observer.disconnect();
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLetters.join(',')]);
 
     if (isDataLoading && recipes.length === 0) {
@@ -92,7 +111,13 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
     }
 
     const letterButtonClass = (active: boolean, inView: boolean) =>
-        `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 min-w-[2.75rem] min-h-[2.75rem] ${active ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white' : 'text-stone-200'} ${inView ? 'ring-2 ring-[#2D4635] ring-offset-2 ring-offset-white' : ''}`;
+        `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 min-w-[2.75rem] min-h-[2.75rem] ${
+            inView
+                ? 'bg-[#2D4635] text-white shadow-md scale-110'
+                : active
+                    ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white'
+                    : 'text-stone-200'
+        }`;
 
     return (
         <div id="alphabetical-index-container" className="max-w-5xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16">
