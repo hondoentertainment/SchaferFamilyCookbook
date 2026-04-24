@@ -14,6 +14,7 @@ import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApp
 import { getAllCollections, addToCollection } from '../utils/collections';
 import { addActivity } from '../utils/activityFeed';
 import { addItems as addGroceryItems, getItems as getGroceryItems } from '../utils/groceryList';
+import { trackEvent } from '../services/analytics';
 
 const CATEGORY_ICONS: Record<string, string> = {
     Breakfast: '🥞',
@@ -286,6 +287,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             try {
                 await navigator.clipboard.writeText(shareUrl);
                 toast(`Link copied! ${shareTitle}`, 'success');
+                trackEvent('recipe_shared', { recipeId: recipe.id });
             } catch {
                 toast("Couldn't copy link. Check clipboard permissions and try again.", 'error');
             }
@@ -298,6 +300,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     url: shareUrl,
                 });
                 toast('Recipe shared', 'success');
+                trackEvent('recipe_shared', { recipeId: recipe.id });
             } catch (err) {
                 if ((err as Error).name !== 'AbortError') {
                     await doCopy();
