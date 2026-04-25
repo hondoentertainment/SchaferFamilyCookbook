@@ -25,7 +25,8 @@ test.describe('Admin (non-admin user)', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.locator('[data-testid="nav-profile"]').waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('[data-testid="nav-profile"]').click();
 
     await expect(page.getByText(/Meet your Administrators/i)).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/These family members help maintain the archive/i)).toBeVisible();
@@ -47,7 +48,8 @@ test.describe('Admin (non-admin user)', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.locator('[data-testid="nav-profile"]').waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('[data-testid="nav-profile"]').click();
 
     await expect(page.getByText(/Legacy Custodian/i)).toBeVisible({ timeout: 5000 });
   });
@@ -62,7 +64,9 @@ test.describe('Admin (admin user)', () => {
   });
 
   const goToAdminTools = async (page: import('@playwright/test').Page) => {
-    await page.getByRole('button', { name: /view profile/i }).first().click();
+    await page.locator('[data-testid="nav-profile"]').click();
+    // Wait for the Profile view to be fully rendered before clicking Admin Tools
+    await page.getByRole('button', { name: /Open Admin Tools/i }).waitFor({ state: 'visible', timeout: 5000 });
     await page.getByRole('button', { name: /Open Admin Tools/i }).click();
   };
 
