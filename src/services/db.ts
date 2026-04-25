@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, collection, setDoc, doc, deleteDoc, updateDoc, query, orderBy, onSnapshot, Firestore } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, query, orderBy, limit, getDocs, onSnapshot, Firestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
-import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '../types';
+import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
 import { CATEGORY_IMAGES } from '../constants';
 
@@ -430,6 +430,64 @@ export const CloudArchive = {
 
     async getHistory(): Promise<HistoryEntry[]> {
         return safeParseArray<HistoryEntry>(localStorage.getItem('schafer_db_history'));
-    }
+    },
+
+    // ── Family Story CMS ──────────────────────────────────────────────────────
+
+    async getStoryContent(): Promise<StorySection[]> {
+        const fb = this.getFirebase();
+        if (fb) {
+            try {
+                const snap = await getDoc(doc(fb.db, 'config', 'story_content'));
+                if (snap.exists()) {
+                    const sections = snap.data()?.sections;
+                    if (Array.isArray(sections)) return sections as StorySection[];
+                }
+            } catch (e) {
+                console.warn('getStoryContent: Firestore fetch failed, returning []', e);
+            }
+        }
+        return JSON.parse(localStorage.getItem('schafer_story_content') ?? '[]') as StorySection[];
+    },
+
+    async saveStoryContent(sections: StorySection[]): Promise<void> {
+        const fb = this.getFirebase();
+        if (fb) {
+            await setDoc(doc(fb.db, 'config', 'story_content'), { sections }, { merge: false });
+        }
+        localStorage.setItem('schafer_story_content', JSON.stringify(sections));
+    },
+
+    // ── Recipe Version History ────────────────────────────────────────────────
+
+    async saveRecipeVersion(recipe: Recipe, savedBy: string): Promise<void> {
+        const version: RecipeVersion = { ...recipe, savedAt: new Date().toISOString(), savedBy };
+        const fb = this.getFirebase();
+        if (fb) {
+            const ts = version.savedAt.replace(/[:.]/g, '-');
+            await setDoc(doc(fb.db, 'recipe_versions', recipe.id, 'versions', ts), version);
+        }
+        const key = `schafer_recipe_versions_${recipe.id}`;
+        const existing = safeParseArray<RecipeVersion>(localStorage.getItem(key));
+        existing.unshift(version);
+        localStorage.setItem(key, JSON.stringify(existing.slice(0, 20)));
+    },
+
+    async getRecipeVersions(recipeId: string): Promise<RecipeVersion[]> {
+        const fb = this.getFirebase();
+        if (fb) {
+            try {
+                const q = query(
+                    collection(fb.db, 'recipe_versions', recipeId, 'versions'),
+                    orderBy('savedAt', 'desc'),
+                    limit(20)
+                );
+                return (await getDocs(q)).docs.map(d => d.data() as RecipeVersion);
+            } catch (e) {
+                console.warn('getRecipeVersions: Firestore fetch failed', e);
+            }
+        }
+        return safeParseArray<RecipeVersion>(localStorage.getItem(`schafer_recipe_versions_${recipeId}`));
+    },
 };
 

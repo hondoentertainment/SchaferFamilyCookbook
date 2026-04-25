@@ -51,3 +51,17 @@ export async function magicImport(rawText: string): Promise<Record<string, unkno
     }
     return parsed as Record<string, unknown>;
 }
+
+export async function importFromUrl(url: string): Promise<Partial<Recipe>> {
+    const { json } = await post<{ json: string }>({ action: 'importUrl', url });
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(json || '{}');
+    } catch {
+        throw new Error('Failed to parse recipe JSON from URL import response');
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('Unexpected response shape from URL import: expected a JSON object');
+    }
+    return parsed as Partial<Recipe>;
+}
