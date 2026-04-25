@@ -27,6 +27,11 @@ import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
 import { trackEvent } from './services/analytics';
 import { listenForForegroundMessages } from './services/pushNotifications';
+import {
+    queueUpload,
+    getPendingUploads,
+    processPendingUploads,
+} from './services/offlineUploadQueue';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -463,6 +468,7 @@ const App: React.FC = () => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
+    const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
     const handleSetTab = (newTab: string) => {
         setTab(newTab);
@@ -571,6 +577,53 @@ const App: React.FC = () => {
         });
         return unsubscribe;
     }, []);
+
+    // Refresh the pending-upload badge count whenever relevant state changes.
+    const refreshPendingCount = React.useCallback(async () => {
+        const pending = await getPendingUploads();
+        setPendingUploadCount(pending.length);
+    }, []);
+
+    // Check on mount and whenever the gallery tab is opened.
+    useEffect(() => {
+        void refreshPendingCount();
+    }, [tab, gallery, refreshPendingCount]);
+
+    // Process queued uploads automatically when the device comes back online.
+    useEffect(() => {
+        const handleOnline = async () => {
+            const pending = await getPendingUploads();
+            if (pending.length === 0) return;
+
+            toast(`Back online — uploading ${pending.length} queued photo(s)…`, 'info');
+
+            const { processed, failed } = await processPendingUploads(async (file, caption, contributor) => {
+                const isVideo = file.type.startsWith('video/');
+                const url = await CloudArchive.uploadFile(file, 'gallery');
+                await CloudArchive.upsertGalleryItem({
+                    id: 'g' + Date.now(),
+                    type: isVideo ? 'video' : 'image',
+                    url: url || '',
+                    caption,
+                    contributor,
+                });
+            });
+
+            await refreshPendingCount();
+            await refreshLocalState();
+
+            if (processed > 0) {
+                toast(`${processed} photo(s) uploaded successfully.`, 'success');
+            }
+            if (failed > 0) {
+                toast(`${failed} photo(s) failed to upload. They remain in the queue.`, 'error');
+            }
+        };
+
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, [refreshPendingCount]);
+
 
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -796,6 +849,12 @@ const App: React.FC = () => {
                         <div>
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
                             <p className="text-stone-500 font-serif italic mt-2">Captured moments across the generations.</p>
+                            {pendingUploadCount > 0 && (
+                                <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold" role="status" aria-live="polite">
+                                    <span aria-hidden="true">📤</span>
+                                    {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
+                                </p>
+                            )}
                         </div>
                         {archivePhone ? (
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
@@ -1539,6 +1598,13 @@ const App: React.FC = () => {
                                 }
                             },
                             onAddGallery: async (g, f) => {
+                                // If offline and there's a file, queue it for later upload.
+                                if (!navigator.onLine && f) {
+                                    await queueUpload(f, g.caption, g.contributor);
+                                    await refreshPendingCount();
+                                    toast("You're offline. Photo saved to upload queue.", 'info');
+                                    return;
+                                }
                                 try {
                                     const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
                                     await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
