@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile } from '../types';
+import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
+import { CloudArchive } from '../services/db';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
@@ -56,11 +57,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [rawText, setRawText] = useState('');
-    const [_isMagicLoading, setIsMagicLoading] = useState(false);
+    const [isMagicLoading, setIsMagicLoading] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
-    const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory'>('records');
+    const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory' | 'story'>('records');
     const [editingTrivia, setEditingTrivia] = useState<Trivia | null>(null);
     const [isBulkSourcing, setIsBulkSourcing] = useState(false);
     const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
@@ -78,6 +79,21 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isSavingArchivePhone, setIsSavingArchivePhone] = useState(false);
     const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
     const [custodianBusy, setCustodianBusy] = useState(false);
+
+    // Story CMS state
+    const [storySections, setStorySections] = useState<StorySection[]>([]);
+    const [isLoadingStory, setIsLoadingStory] = useState(false);
+    const [isSavingStory, setIsSavingStory] = useState(false);
+
+    // Recipe version history state
+    const [versionModalRecipe, setVersionModalRecipe] = useState<Recipe | null>(null);
+    const [recipeVersions, setRecipeVersions] = useState<RecipeVersion[]>([]);
+    const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+
+    // URL import state
+    const [importUrl, setImportUrl] = useState('');
+    const [isUrlImporting, setIsUrlImporting] = useState(false);
+
     const [editingGalleryItem, setEditingGalleryItem] = useState<GalleryItem | null>(null);
     const [galleryEditCaption, setGalleryEditCaption] = useState('');
     const [galleryEditDate, setGalleryEditDate] = useState('');
@@ -152,6 +168,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     useEffect(() => {
         setArchivePhoneLocal(dbStats.archivePhone || '');
     }, [dbStats.archivePhone]);
+
+    // Load story content when story subtab becomes active
+    useEffect(() => {
+        if (activeSubtab !== 'story') return;
+        let cancelled = false;
+        setIsLoadingStory(true);
+        CloudArchive.getStoryContent().then(sections => {
+            if (!cancelled) setStorySections([...sections].sort((a, b) => a.order - b.order));
+        }).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingStory(false); });
+        return () => { cancelled = true; };
+    }, [activeSubtab]);
 
     // Hide seed/default recipes in Admin record management.
     const managedRecipes = recipes.filter(r => !defaultRecipeIds.includes(r.id));
@@ -277,7 +304,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         return 'png';
     };
 
-    const _handleMagicImport = async () => {
+    const handleMagicImport = async () => {
         if (!rawText.trim()) return;
         setIsMagicLoading(true);
         try {
@@ -289,6 +316,20 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             console.error(e);
             handleAIError(e, 'AI Analysis failed: ${message}');
         } finally { setIsMagicLoading(false); }
+    };
+
+    const handleUrlImport = async () => {
+        if (!importUrl.trim()) return;
+        setIsUrlImporting(true);
+        try {
+            const parsed = await geminiProxy.importFromUrl(importUrl.trim());
+            setRecipeForm(prev => ({ ...prev, ...parsed }));
+            setImportUrl('');
+            toast('Recipe imported from URL!', 'success');
+        } catch (e: any) {
+            console.error(e);
+            handleAIError(e, 'URL import failed: ${message}');
+        } finally { setIsUrlImporting(false); }
     };
 
     const handleVisualSourcing = async () => {
@@ -396,6 +437,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setIsSubmitting(true);
         try {
             const isUpdate = !!editingRecipe;
+            // Snapshot previous version before overwriting
+            if (isUpdate && editingRecipe) {
+                try {
+                    await CloudArchive.saveRecipeVersion(editingRecipe, currentUser?.name || 'Admin');
+                } catch (versionErr) {
+                    console.warn('saveRecipeVersion failed (non-fatal):', versionErr);
+                }
+            }
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
             await onAddRecipe({
                 ...recipeForm as Recipe,
@@ -654,6 +703,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         { id: 'gallery', label: '🖼️ Gallery' },
                         { id: 'trivia', label: '💡 Trivia' },
                         { id: 'directory', label: '👥 Directory' },
+                        { id: 'story', label: '📜 Family Story' },
                         { id: 'permissions', label: '🔐 Admins', restricted: true },
                     ]
                         .filter(tab => !tab.restricted || isSuperAdmin)
@@ -668,8 +718,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 tabIndex={activeSubtab === tab.id ? 0 : -1}
                                 onClick={() => setActiveSubtab(tab.id as typeof activeSubtab)}
                                 onKeyDown={(e) => {
-                                    const tabs = ['records', 'gallery', 'trivia', 'directory', ...(isSuperAdmin ? ['permissions'] as const : [])];
-                                    const i = tabs.indexOf(activeSubtab);
+                                    const tabs = ['records', 'gallery', 'trivia', 'directory', 'story', ...(isSuperAdmin ? ['permissions'] as const : [])] as const;
+                                    const i = tabs.indexOf(activeSubtab as typeof tabs[number]);
                                     if (e.key === 'ArrowRight' && i < tabs.length - 1) {
                                         e.preventDefault();
                                         setActiveSubtab(tabs[i + 1]);
@@ -868,6 +918,26 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                 🖼️
                                                             </button>
                                                             <button
+                                                                onClick={async () => {
+                                                                    setVersionModalRecipe(r);
+                                                                    setRecipeVersions([]);
+                                                                    setIsLoadingVersions(true);
+                                                                    try {
+                                                                        const versions = await CloudArchive.getRecipeVersions(r.id);
+                                                                        setRecipeVersions(versions);
+                                                                    } catch (e) {
+                                                                        console.warn('getRecipeVersions failed:', e);
+                                                                    } finally {
+                                                                        setIsLoadingVersions(false);
+                                                                    }
+                                                                }}
+                                                                className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-stone-50 text-stone-600 border border-stone-200 rounded-lg text-[10px] font-bold uppercase hover:bg-stone-100 flex items-center justify-center"
+                                                                title="View version history"
+                                                                aria-label={`View version history for ${r.title}`}
+                                                            >
+                                                                🕐
+                                                            </button>
+                                                            <button
                                                                 onClick={() => {
                                                                     onEditRecipe(r);
                                                                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -917,28 +987,50 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                     )}
 
-                                    {/* Export Recipes */}
+                                    {/* Magic Import & URL Import */}
                                     {!editingRecipe && (
-                                        <div className="space-y-4 pt-4 border-t border-stone-100">
+                                        <div className="space-y-4 pt-6 border-t border-stone-100">
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] flex items-center gap-2">
-                                                <span>📤</span> Export Recipes
+                                                <span>✨</span> Magic Import
                                             </h4>
-                                            <p className="text-xs text-stone-500">Download all {recipes.length} recipes for backup or external use.</p>
-                                            <div className="flex gap-4 flex-wrap">
-                                                <button
-                                                    type="button"
-                                                    onClick={handleExportJSON}
-                                                    className="flex-1 min-w-[140px] py-4 bg-[#2D4635]/10 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#2D4635]/20 shadow-sm hover:bg-[#2D4635]/20 transition-colors"
-                                                >
-                                                    ⬇️ Export as JSON
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleExportCSV}
-                                                    className="flex-1 min-w-[140px] py-4 bg-stone-100 text-stone-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 shadow-sm hover:bg-stone-200 transition-colors"
-                                                >
-                                                    ⬇️ Export as CSV
-                                                </button>
+                                            <div className="space-y-3">
+                                                <div className="flex gap-3">
+                                                    <label htmlFor="admin-magic-import-text" className="sr-only">Paste raw recipe text</label>
+                                                    <textarea
+                                                        id="admin-magic-import-text"
+                                                        placeholder="Paste raw recipe text here…"
+                                                        className="flex-1 h-24 p-3 border border-stone-200 rounded-2xl text-base bg-stone-50 outline-none focus:ring-2 focus:ring-[#2D4635]/20 resize-none"
+                                                        value={rawText}
+                                                        onChange={e => setRawText(e.target.value)}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleMagicImport}
+                                                        disabled={!rawText.trim() || isMagicLoading || isAICooldownActive}
+                                                        className="px-4 py-2 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50 self-end"
+                                                    >
+                                                        {isMagicLoading ? 'Parsing…' : 'Import Text'}
+                                                    </button>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <label htmlFor="admin-url-import" className="sr-only">Paste recipe URL to import</label>
+                                                    <input
+                                                        id="admin-url-import"
+                                                        type="url"
+                                                        placeholder="Paste recipe URL to import…"
+                                                        className="flex-1 p-3 border border-stone-200 rounded-2xl text-base bg-stone-50 outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                                                        value={importUrl}
+                                                        onChange={e => setImportUrl(e.target.value)}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleUrlImport}
+                                                        disabled={!importUrl.trim() || isUrlImporting || isAICooldownActive}
+                                                        className="px-4 py-2 bg-[#A0522D] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50 whitespace-nowrap"
+                                                    >
+                                                        {isUrlImporting ? 'Importing…' : 'Import from URL'}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -1589,6 +1681,138 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     )
                 }
 
+                {/* Family Story CMS Panel */}
+                {activeSubtab === 'story' && (
+                    <section id="admin-panel-story" role="tabpanel" aria-labelledby="admin-tab-story" className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-200 shadow-xl animate-in fade-in slide-in-from-bottom-4">
+                        <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
+                            <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">📜</span>
+                            Family Story CMS
+                        </h2>
+                        <p className="text-sm text-stone-500 mb-8 leading-relaxed">
+                            Edit the Family Story shown in the "Family Story" tab. Changes are saved to Firestore and appear for all visitors. When no sections are saved, the static built-in story is shown as a fallback.
+                        </p>
+
+                        {isLoadingStory ? (
+                            <div className="text-center py-12 text-stone-400 text-sm">Loading story content…</div>
+                        ) : (
+                            <div className="space-y-6">
+                                {storySections.length === 0 && (
+                                    <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800">
+                                        No custom sections saved yet. The static built-in story will display. Add sections below to override it.
+                                    </div>
+                                )}
+
+                                {storySections.map((section, idx) => (
+                                    <div key={section.id} className="p-6 bg-stone-50 rounded-[2rem] border border-stone-200 space-y-4">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Section {idx + 1}</span>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    disabled={idx === 0}
+                                                    onClick={() => {
+                                                        const updated = [...storySections];
+                                                        [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
+                                                        setStorySections(updated.map((s, i) => ({ ...s, order: i })));
+                                                    }}
+                                                    className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-white border border-stone-200 rounded-xl text-[10px] font-bold disabled:opacity-30 hover:bg-stone-100"
+                                                    aria-label="Move section up"
+                                                >↑</button>
+                                                <button
+                                                    type="button"
+                                                    disabled={idx === storySections.length - 1}
+                                                    onClick={() => {
+                                                        const updated = [...storySections];
+                                                        [updated[idx], updated[idx + 1]] = [updated[idx + 1], updated[idx]];
+                                                        setStorySections(updated.map((s, i) => ({ ...s, order: i })));
+                                                    }}
+                                                    className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-white border border-stone-200 rounded-xl text-[10px] font-bold disabled:opacity-30 hover:bg-stone-100"
+                                                    aria-label="Move section down"
+                                                >↓</button>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        const ok = await confirm('Delete this section?', { title: 'Confirm Delete', variant: 'danger', confirmLabel: 'Delete' });
+                                                        if (ok) setStorySections(storySections.filter((_, i) => i !== idx).map((s, i) => ({ ...s, order: i })));
+                                                    }}
+                                                    className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-bold hover:bg-red-100"
+                                                    aria-label="Delete section"
+                                                >✕</button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label htmlFor={`story-heading-${idx}`} className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Heading</label>
+                                            <input
+                                                id={`story-heading-${idx}`}
+                                                type="text"
+                                                value={section.heading}
+                                                onChange={e => {
+                                                    const updated = [...storySections];
+                                                    updated[idx] = { ...section, heading: e.target.value };
+                                                    setStorySections(updated);
+                                                }}
+                                                className="w-full p-3 border border-stone-200 rounded-xl text-base bg-white outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                                                placeholder="Section heading…"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor={`story-body-${idx}`} className="text-[9px] font-black uppercase tracking-widest text-stone-400 mb-1 block">Body</label>
+                                            <textarea
+                                                id={`story-body-${idx}`}
+                                                value={section.body}
+                                                onChange={e => {
+                                                    const updated = [...storySections];
+                                                    updated[idx] = { ...section, body: e.target.value };
+                                                    setStorySections(updated);
+                                                }}
+                                                className="w-full h-40 p-3 border border-stone-200 rounded-xl text-base bg-white outline-none focus:ring-2 focus:ring-[#2D4635]/20 resize-y"
+                                                placeholder="Section body text…"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStorySections([...storySections, {
+                                            id: 's_' + Date.now(),
+                                            heading: '',
+                                            body: '',
+                                            order: storySections.length
+                                        }]);
+                                    }}
+                                    className="w-full py-4 border-2 border-dashed border-[#2D4635]/30 rounded-[2rem] text-[10px] font-black uppercase tracking-widest text-[#2D4635] hover:bg-[#2D4635]/5 transition-all"
+                                >
+                                    + Add Section
+                                </button>
+
+                                <div className="pt-4 border-t border-stone-100 flex gap-4">
+                                    <button
+                                        type="button"
+                                        disabled={isSavingStory}
+                                        aria-busy={isSavingStory}
+                                        onClick={async () => {
+                                            setIsSavingStory(true);
+                                            try {
+                                                await CloudArchive.saveStoryContent(storySections);
+                                                toast('Family Story saved!', 'success');
+                                            } catch (e: any) {
+                                                toast(`Save failed: ${e?.message || 'unknown error'}`, 'error');
+                                            } finally {
+                                                setIsSavingStory(false);
+                                            }
+                                        }}
+                                        className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
+                                    >
+                                        {isSavingStory ? 'Saving…' : 'Save Story Content'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
+
                 {
                     pickerTarget && isSuperAdmin && (
                         <AvatarPicker
@@ -1605,6 +1829,70 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         />
                     )
                 }
+
+                {/* Recipe Version History Modal */}
+                {versionModalRecipe && (
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="version-modal-title"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                        onClick={e => { if (e.target === e.currentTarget) setVersionModalRecipe(null); }}
+                    >
+                        <div className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden">
+                            <div className="p-6 border-b border-stone-100 flex items-center justify-between">
+                                <div>
+                                    <h3 id="version-modal-title" className="text-lg font-serif font-bold text-[#2D4635]">Version History</h3>
+                                    <p className="text-xs text-stone-500 mt-0.5">{versionModalRecipe.title}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setVersionModalRecipe(null)}
+                                    className="min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 transition-colors text-lg"
+                                    aria-label="Close version history"
+                                >✕</button>
+                            </div>
+                            <div className="overflow-y-auto p-6 space-y-3 flex-1">
+                                {isLoadingVersions && (
+                                    <div className="text-center py-8 text-stone-400 text-sm">Loading versions…</div>
+                                )}
+                                {!isLoadingVersions && recipeVersions.length === 0 && (
+                                    <div className="text-center py-8 text-stone-400 space-y-2">
+                                        <span className="text-2xl block">🕐</span>
+                                        <p className="text-sm">No version history yet. Versions are saved each time an admin edits this recipe.</p>
+                                    </div>
+                                )}
+                                {recipeVersions.map((v, i) => (
+                                    <div key={i} className="p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-2">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div>
+                                                <p className="text-xs font-bold text-[#2D4635]">
+                                                    {new Date(v.savedAt).toLocaleString()}
+                                                </p>
+                                                <p className="text-[10px] text-stone-500 uppercase tracking-widest">by {v.savedBy}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    onEditRecipe(v as Recipe);
+                                                    setVersionModalRecipe(null);
+                                                    toast(`Restored version from ${new Date(v.savedAt).toLocaleDateString()} — review and save to commit.`, 'info');
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }}
+                                                className="px-4 py-2 bg-[#2D4635] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] whitespace-nowrap"
+                                            >
+                                                Restore
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-stone-500">
+                                            {v.ingredients?.length ?? 0} ingredients · {v.instructions?.length ?? 0} steps
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div >
         </div >
     );
