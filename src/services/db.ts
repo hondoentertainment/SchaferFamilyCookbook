@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, query, orderBy, limit, getDocs, onSnapshot, Firestore } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
+import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, query, orderBy, limit, getDocs, onSnapshot, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
 import { CATEGORY_IMAGES } from '../constants';
@@ -96,9 +96,14 @@ export const CloudArchive = {
                 authDomain: `${config.projectId}.firebaseapp.com`,
                 storageBucket: `${config.projectId}.firebasestorage.app`,
             };
-            this._firebaseApp = getApps().length === 0 ? initializeApp(fbConfig) : getApp();
+            const isNew = getApps().length === 0;
+            this._firebaseApp = isNew ? initializeApp(fbConfig) : getApp();
             this._firestore = getFirestore(this._firebaseApp);
             this._storage = getStorage(this._firebaseApp);
+            if (isNew && import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true') {
+                connectFirestoreEmulator(this._firestore, 'localhost', 8080);
+                connectStorageEmulator(this._storage, 'localhost', 9199);
+            }
             return { app: this._firebaseApp, db: this._firestore, storage: this._storage };
         } catch (e) {
             console.error('Firebase connection failed:', e);
