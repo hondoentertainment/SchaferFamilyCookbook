@@ -31,6 +31,7 @@ test.describe('Gallery', () => {
     await loginAs(page, 'Alice');
     await page.evaluate(() => localStorage.setItem('schafer_archive_phone', '+15551234567'));
     await page.reload();
+    await page.getByLabel(/Search recipes, ingredients/i).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Gallery' }).click();
 
     await expect(page.getByRole('heading', { name: 'Text your memories' })).toBeVisible();
@@ -57,6 +58,7 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
+    await page.getByLabel(/Search recipes, ingredients/i).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Gallery' }).click();
 
     await expect(page.getByText('Summer picnic 2024')).toBeVisible();
@@ -84,6 +86,7 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
+    await page.getByLabel(/Search recipes, ingredients/i).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Gallery' }).click();
     await expect(page.getByText('Beach day')).toBeVisible({ timeout: 5000 });
 
@@ -113,6 +116,7 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
+    await page.getByLabel(/Search recipes, ingredients/i).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Gallery' }).click();
     await expect(page.getByText('Escape test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape test/i }).click();
@@ -142,6 +146,7 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
+    await page.getByLabel(/Search recipes, ingredients/i).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Gallery' }).click();
     await expect(page.getByText('Escape key test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape key test/i }).click();

@@ -13,10 +13,23 @@ interface CookModeViewProps {
     onClose: () => void;
 }
 
+async function cacheRecipeImage(imageUrl: string): Promise<'saved' | 'already' | 'unsupported'> {
+    if (!('caches' in window)) return 'unsupported';
+    const cache = await caches.open('recipe-images-cache');
+    const existing = await cache.match(imageUrl);
+    if (!existing && imageUrl) {
+        await cache.add(imageUrl);
+        return 'saved';
+    }
+    return 'already';
+}
+
 export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) => {
     const { toast } = useUI();
     const [stepIndex, setStepIndex] = useState(0);
     const [scaleTo, setScaleTo] = useState(typeof recipe.servings === 'number' ? recipe.servings : 4);
+    const [imageCached, setImageCached] = useState<boolean | null>(null); // null = unknown
+    const [isOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
     const containerRef = useRef<HTMLDivElement>(null);
     const [showSwipeHint, setShowSwipeHint] = useState<boolean>(() => {
         try {
@@ -26,6 +39,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         }
     });
 
+    const hasImage = !!recipe.image;
     const baseServings = typeof recipe.servings === 'number' ? recipe.servings : 4;
     const scaleFactor = baseServings > 0 ? scaleTo / baseServings : 1;
     const ingredients = scaleIngredients(recipe.ingredients, scaleFactor);
@@ -94,6 +108,32 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         };
     }, []);
 
+    // On mount: check cache status and auto-cache the image
+    useEffect(() => {
+        if (!hasImage || !recipe.image) return;
+        if (!('caches' in window)) {
+            setImageCached(false);
+            return;
+        }
+        const imageUrl = recipe.image;
+        const run = async () => {
+            try {
+                const cache = await caches.open('recipe-images-cache');
+                const existing = await cache.match(imageUrl);
+                if (existing) {
+                    setImageCached(true);
+                } else {
+                    // Auto-cache when Cook Mode opens
+                    await cache.add(imageUrl);
+                    setImageCached(true);
+                }
+            } catch {
+                setImageCached(false);
+            }
+        };
+        run();
+    }, [hasImage, recipe.image]);
+
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -103,6 +143,31 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [onClose, goPrev, goNext]);
+
+
+    const handleSaveForOffline = async () => {
+        if (!recipe.image) return;
+        if (!('caches' in window)) {
+            toast('Offline saving not supported on this browser', 'info');
+            return;
+        }
+        try {
+            const result = await cacheRecipeImage(recipe.image);
+            if (result === 'saved') {
+                setImageCached(true);
+                toast('Recipe saved for offline use', 'success');
+            } else if (result === 'already') {
+                toast('Already saved', 'info');
+            } else {
+                toast('Offline saving not supported on this browser', 'info');
+            }
+        } catch {
+            toast('Could not save recipe for offline use', 'error');
+        }
+    };
+
+    const showOfflineImageWarning = hasImage && isOffline && imageCached === false;
+
 
     return (
         <div
@@ -127,7 +192,18 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                         Step {stepIndex + 1} of {totalSteps}
                     </p>
                 </div>
-                <div className="w-12" aria-hidden />
+                {hasImage ? (
+                    <button
+                        onClick={handleSaveForOffline}
+                        className="w-12 h-12 min-w-[3rem] min-h-[3rem] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                        aria-label={imageCached ? 'Recipe image already saved for offline use' : 'Save recipe for offline use'}
+                        title={imageCached ? 'Saved for offline' : 'Save for offline'}
+                    >
+                        {imageCached ? '✓' : '⬇'}
+                    </button>
+                ) : (
+                    <div className="w-12" aria-hidden />
+                )}
             </header>
 
             {showSwipeHint && (
@@ -158,6 +234,18 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                         <h2 className="text-2xl md:text-3xl font-serif italic text-[#F4A460] mb-6">
                             Ingredients
                         </h2>
+
+                        {/* Offline image warning */}
+                        {showOfflineImageWarning && (
+                            <div
+                                role="note"
+                                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-200 text-sm"
+                            >
+                                <span aria-hidden="true">⚠</span>
+                                <span>Images may not load offline</span>
+                            </div>
+                        )}
+
                         {baseServings > 0 && (
                             <div className="mb-6">
                                 <label htmlFor="cook-scale" className="text-sm text-white/80 mr-2">

@@ -226,4 +226,66 @@ describe('TriviaView', () => {
 
         await waitFor(() => expect(screen.getByText(/permission-denied/)).toBeInTheDocument());
     });
+
+    it('should end with score 0 when all questions are answered incorrectly', () => {
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        // Question 1 – wrong answer
+        fireEvent.click(screen.getByText('Sugar'));
+        fireEvent.click(screen.getByText('Next Archival Record'));
+
+        // Question 2 – wrong answer
+        fireEvent.click(screen.getByText('30 min'));
+        fireEvent.click(screen.getByText('Finish Archive Challenge'));
+
+        expect(screen.getByText('Legacy Challenge Complete')).toBeInTheDocument();
+        expect(screen.getAllByText(/0%/).length).toBeGreaterThanOrEqual(1);
+        // Score display should reflect 0 out of 2
+        expect(screen.getAllByText(/You scored/).length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText(/0 out of 2/).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should show a toast error when leaderboard submit throws (Firestore permission denied)', async () => {
+        vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(true);
+        vi.mocked(leaderboard.submitScore).mockRejectedValueOnce(
+            Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' })
+        );
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        fireEvent.click(screen.getByText('Love'));
+        fireEvent.click(screen.getByText('Next Archival Record'));
+        fireEvent.click(screen.getByText('45 min'));
+        fireEvent.click(screen.getByText('Finish Archive Challenge'));
+
+        // The results screen is shown and the error message is surfaced somewhere on screen
+        await waitFor(() =>
+            expect(screen.getByText('Legacy Challenge Complete')).toBeInTheDocument()
+        );
+        await waitFor(() =>
+            expect(
+                screen.getByText(/Missing or insufficient permissions\./i)
+            ).toBeInTheDocument()
+        );
+    });
+
+    it('should select the corresponding answer when keyboard keys 1–4 are pressed', () => {
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        // Press "1" – should select the first option ("Love", which is the correct answer)
+        fireEvent.keyDown(window, { key: '1' });
+
+        expect(screen.getByText('Correct')).toBeInTheDocument();
+        expect(screen.getByText('Score: 1')).toBeInTheDocument();
+    });
+
+    it('should render an empty state gracefully when trivia list is empty', () => {
+        renderWithProviders(<TriviaView {...defaultProps} trivia={[]} />);
+
+        expect(screen.getByText('The Quiz Archive is Empty')).toBeInTheDocument();
+        // Start button must NOT be present – quiz can't run without questions
+        expect(screen.queryByText('Begin The Challenge')).not.toBeInTheDocument();
+    });
 });

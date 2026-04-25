@@ -105,6 +105,18 @@ export interface RecipeCollection {
   timestamp: string;
 }
 
+export interface StorySection {
+  id: string;
+  heading: string;
+  body: string;
+  order: number;
+}
+
+export interface RecipeVersion extends Recipe {
+  savedAt: string;
+  savedBy: string;
+}
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type FontSize = 'small' | 'medium' | 'large';
 

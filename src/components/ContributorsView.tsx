@@ -24,8 +24,8 @@ const ContributorsSkeleton: React.FC = () => (
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10 list-none p-0 m-0">
                 {[0, 1, 2, 3].map(i => (
                     <li key={i}>
-                        <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-stone-100 shadow-sm text-center h-full flex flex-col items-center">
-                            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-200 mb-6" />
+                        <div className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-10 border border-stone-100 dark:border-stone-800 shadow-sm text-center h-full flex flex-col items-center">
+                            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-200 dark:bg-stone-700 mb-6" />
                             <div className="h-6 bg-stone-200 rounded w-2/3 mb-2" />
                             <div className="h-3 bg-stone-100 rounded w-1/3 mb-6" />
                             <div className="h-10 bg-stone-100 rounded-full w-full mt-auto" />
@@ -142,7 +142,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                         placeholder="Search contributors…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full max-w-md px-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base text-stone-700 placeholder:text-stone-500 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-colors"
+                        className="w-full max-w-md px-6 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base text-stone-700 dark:text-stone-200 placeholder:text-stone-500 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-colors"
                         aria-describedby={search ? "search-results" : undefined}
                     />
                     {search && (
@@ -155,7 +155,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
             {!hasContributors ? (
                 <div
-                    className="py-20 text-center border-2 border-dashed border-stone-100 rounded-[3rem] bg-white/50"
+                    className="py-20 text-center border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[3rem] bg-white/50 dark:bg-[var(--card-bg)]/50"
                     role="status"
                     aria-live="polite"
                 >
@@ -174,7 +174,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     )}
                 </div>
             ) : filteredStats.length === 0 ? (
-                <div className="py-12 text-center border-2 border-dashed border-stone-100 rounded-[3rem] bg-white/50" role="status">
+                <div className="py-12 text-center border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[3rem] bg-white/50 dark:bg-[var(--card-bg)]/50" role="status">
                     <p className="text-stone-500 font-serif italic">No contributors match &ldquo;{search}&rdquo;.</p>
                     <button
                         type="button"
@@ -194,11 +194,11 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
                         return (
                             <li key={stat.name}>
-                                <article className="bg-white rounded-[3rem] p-8 md:p-10 border border-stone-100 shadow-sm hover:shadow-2xl transition-all duration-300 group relative overflow-hidden text-center h-full flex flex-col">
+                                <article className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-10 border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-2xl transition-all duration-300 group relative overflow-hidden text-center h-full flex flex-col">
                                     <div className="relative inline-block mb-6">
                                         <img
                                             src={avatarUrl}
-                                            className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 border-8 border-white shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
+                                            className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 dark:bg-stone-800 border-8 border-white dark:border-stone-700 shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
                                             alt={`${stat.name}'s avatar`}
                                             onError={(e) => { handleAvatarError(stat.name); avatarOnError(e); }}
                                             loading="lazy"
@@ -213,27 +213,27 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                             </span>
                                         )}
                                     </div>
-                                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635]">{stat.name}</h3>
-                                    <p className="text-[10px] uppercase tracking-widest text-stone-400 mt-1 mb-4">
+                                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-300">{stat.name}</h3>
+                                    <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500 mt-1 mb-4">
                                         Archive Contributor
                                     </p>
                                     <div className="flex flex-wrap justify-center gap-2 mb-6 flex-1">
                                         {Array.from(stat.categories).slice(0, 4).map(cat => (
                                             <span
                                                 key={cat}
-                                                className="text-[8px] font-black uppercase bg-stone-50 text-stone-500 px-3 py-1 rounded-full"
+                                                className="text-[8px] font-black uppercase bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 px-3 py-1 rounded-full"
                                             >
                                                 {cat}
                                             </span>
                                         ))}
                                     </div>
-                                    <p className="text-xs text-stone-500 mb-6" aria-hidden="true">
+                                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-6" aria-hidden="true">
                                         {contributionSummary(stat)}
                                     </p>
                                     <button
                                         type="button"
                                         onClick={() => onSelectContributor(stat.name)}
-                                        className="mt-auto w-full py-4 bg-stone-50 text-[#2D4635] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-all min-h-[2.75rem] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                        className="mt-auto w-full py-4 bg-stone-50 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] dark:hover:bg-[#2D4635] hover:text-white transition-all min-h-[2.75rem] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
                                         aria-label={`Explore ${stat.name}'s collection: ${contributionSummary(stat)}`}
                                     >
                                         Explore Collection ({totalContributions(stat)})

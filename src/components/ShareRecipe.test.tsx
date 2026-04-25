@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ShareRecipe, getRecipeShareUrl } from './ShareRecipe';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
@@ -63,5 +63,75 @@ describe('ShareRecipe component', () => {
         } finally {
             (import.meta.env as Record<string, string | undefined>).VITE_SHARE_BASE = originalEnv;
         }
+    });
+
+    it('shows no error toast when navigator.share is rejected with AbortError (user cancels)', async () => {
+        const abortError = new DOMException('Share cancelled', 'AbortError');
+        vi.stubGlobal('navigator', {
+            ...navigator,
+            share: vi.fn().mockRejectedValueOnce(abortError),
+            clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+        });
+
+        const recipe = createMockRecipe({ id: 'abc123', title: 'Test Dish' });
+        renderWithProviders(<ShareRecipe recipe={recipe} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /share via system/i }));
+
+        // Wait a tick for the async handler to settle
+        await waitFor(() => {
+            // The share button should still be present (no crash)
+            expect(screen.getByRole('button', { name: /share via system/i })).toBeInTheDocument();
+        });
+
+        // The toast container is always mounted; verify it has no visible message text
+        // (an AbortError / user cancellation must be silent — no "Share failed" text)
+        expect(screen.queryByText(/share failed/i)).not.toBeInTheDocument();
+        // The status container should be empty (no child toast items)
+        expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    });
+
+    it('shows an error toast when navigator.clipboard.writeText fails', async () => {
+        vi.stubGlobal('navigator', {
+            ...navigator,
+            share: undefined,
+            clipboard: {
+                writeText: vi.fn().mockRejectedValueOnce(new Error('clipboard blocked')),
+            },
+        });
+
+        const recipe = createMockRecipe({ id: 'abc123', title: 'Test Dish' });
+        renderWithProviders(<ShareRecipe recipe={recipe} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /copy share link/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toHaveTextContent(/Could not copy link/i);
+        });
+    });
+
+    it('falls back to clipboard copy when navigator.share is not available', async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal('navigator', {
+            ...navigator,
+            share: undefined,
+            clipboard: { writeText },
+        });
+
+        const recipe = createMockRecipe({ id: 'abc123', title: 'Test Dish' });
+        renderWithProviders(<ShareRecipe recipe={recipe} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /share via system/i }));
+
+        // Without navigator.share the handler falls back to handleCopyText which
+        // calls clipboard.writeText with the full recipe text
+        await waitFor(() => {
+            expect(writeText).toHaveBeenCalledTimes(1);
+        });
+
+        // A success toast should appear confirming the copy
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toHaveTextContent(/copied to clipboard/i);
+        });
     });
 });

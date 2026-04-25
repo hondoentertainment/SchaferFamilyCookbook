@@ -2,6 +2,7 @@ import React from 'react';
 import { hapticLight } from '../utils/haptics';
 import { useUI } from '../context/UIContext';
 import type { Recipe } from '../types';
+import { trackEvent } from '../services/analytics';
 
 interface ShareRecipeProps {
   recipe: Recipe;
@@ -62,6 +63,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
     try {
       await navigator.clipboard.writeText(formatRecipeText());
       toast('Recipe copied to clipboard!', 'success');
+      trackEvent('recipe_shared', { recipeId: recipe.id });
     } catch {
       toast('Could not copy. Try selecting and copying manually.', 'error');
     }
@@ -72,6 +74,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast('Link copied to clipboard!', 'success');
+      trackEvent('recipe_shared', { recipeId: recipe.id });
     } catch {
       toast('Could not copy link.', 'error');
     }
@@ -88,6 +91,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
     if (navigator.share) {
       try {
         await navigator.share(shareData);
+        trackEvent('recipe_shared', { recipeId: recipe.id });
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           toast('Share failed', 'error');

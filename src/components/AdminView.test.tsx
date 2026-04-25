@@ -310,4 +310,74 @@ describe('AdminView', () => {
             expect.objectContaining({ contributor: 'New User' })
         );
     });
+
+    it('should show a validation error toast when saving a recipe with an empty title', () => {
+        // Render with an editing recipe so the form is visible
+        const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+        renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+
+        // Clear the title field
+        fireEvent.change(screen.getByPlaceholderText('Recipe Title'), { target: { value: '' } });
+        fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+
+        // onAddRecipe must NOT have been called
+        expect(mockOnAddRecipe).not.toHaveBeenCalled();
+        // A toast with the validation message should appear
+        expect(screen.getByRole('status')).toHaveTextContent(/Recipe title is required/i);
+    });
+
+    it('should show an error toast when onAddRecipe rejects (Firebase save failure)', async () => {
+        mockOnAddRecipe.mockRejectedValueOnce(new Error('permission-denied'));
+        const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+        renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+
+        fireEvent.change(screen.getByPlaceholderText('Recipe Title'), { target: { value: 'My Recipe' } });
+        fireEvent.change(screen.getByPlaceholderText('Ingredients (one per line)'), { target: { value: 'Egg' } });
+        fireEvent.change(screen.getByPlaceholderText('Instructions (one per line)'), { target: { value: 'Cook it' } });
+        fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+
+        // The save call is awaited inside the handler; wait for the toast to appear
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toHaveTextContent(/permission-denied/i);
+        });
+        // Confirm the app did not crash – the tab headers are still rendered
+        expect(screen.getByText('📖 Recipes')).toBeInTheDocument();
+    });
+
+    it('should show an error toast when the image upload rejects', async () => {
+        mockOnAddRecipe.mockImplementationOnce((_recipe: unknown, file: File | undefined) => {
+            if (file) return Promise.reject(new Error('Upload failed'));
+            return Promise.resolve();
+        });
+        const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+        renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+
+        // Attach an image file so the handler code path that uploads fires
+        const file = new File(['img'], 'photo.png', { type: 'image/png' });
+        const imageInput = screen.getByLabelText(/Upload recipe image/i);
+        fireEvent.change(imageInput, { target: { files: [file] } });
+
+        fireEvent.change(screen.getByPlaceholderText('Recipe Title'), { target: { value: 'My Recipe' } });
+        fireEvent.change(screen.getByPlaceholderText('Ingredients (one per line)'), { target: { value: 'Egg' } });
+        fireEvent.change(screen.getByPlaceholderText('Instructions (one per line)'), { target: { value: 'Cook it' } });
+        fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toHaveTextContent(/Upload failed/i);
+        });
+        // App must still be usable after the error
+        expect(screen.getByText('📖 Recipes')).toBeInTheDocument();
+    });
+
+    it('should call URL.createObjectURL when "Export as JSON" is clicked', () => {
+        renderWithProviders(<AdminView {...defaultProps} />);
+        fireEvent.click(screen.getByText('⬇️ Export as JSON'));
+        expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call URL.createObjectURL when "Export as CSV" is clicked', () => {
+        renderWithProviders(<AdminView {...defaultProps} />);
+        fireEvent.click(screen.getByText('⬇️ Export as CSV'));
+        expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    });
 });
