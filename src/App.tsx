@@ -246,11 +246,11 @@ const GalleryDeleteConfirmDialog: React.FC<{ item: GalleryItem; onClose: () => v
         >
             <div
                 ref={containerRef}
-                className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200"
+                className="bg-white dark:bg-[var(--card-bg)] rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] mb-2">Remove from gallery?</h3>
-                <p id="gallery-delete-desc" className="text-stone-500 mb-6">
+                <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] dark:text-emerald-300 mb-2">Remove from gallery?</h3>
+                <p id="gallery-delete-desc" className="text-stone-500 dark:text-stone-400 mb-6">
                     &quot;{item.caption}&quot; will be permanently removed. This cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
@@ -805,7 +805,7 @@ const App: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-stone-50 rounded-[2rem] p-6 border border-stone-100 flex items-center gap-6 max-w-md" role="region" aria-label="How to add photos">
+                            <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6 max-w-md" role="region" aria-label="How to add photos">
                                 <span className="text-2xl" aria-hidden="true">📷</span>
                                 <div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Want to add photos?</h4>
@@ -830,7 +830,7 @@ const App: React.FC = () => {
                         <>
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
                                 {gallery.map(item => (
-                                    <article key={item.id} className="break-inside-avoid bg-white p-4 rounded-[2rem] border border-stone-100 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl" role="listitem">
+                                    <article key={item.id} className="break-inside-avoid bg-white dark:bg-[var(--card-bg)] p-4 rounded-[2rem] border border-stone-100 dark:border-stone-800 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl" role="listitem">
                                         {item.type === 'video' ? (
                                             <button
                                                 type="button"
@@ -882,7 +882,7 @@ const App: React.FC = () => {
                                                 onClick={() => setSelectedGalleryItem(item)}
                                             />
                                         )}
-                                        <p className="font-serif italic text-stone-800 text-lg px-2 line-clamp-3">{item.caption}</p>
+                                        <p className="font-serif italic text-stone-800 dark:text-stone-200 text-lg px-2 line-clamp-3">{item.caption}</p>
                                         {item.created_at && (
                                             <time
                                                 dateTime={item.created_at}
@@ -1106,7 +1106,7 @@ const App: React.FC = () => {
                                     type="text"
                                     placeholder="Search recipes, ingredients..."
                                     aria-label="Search recipes, ingredients, or instructions"
-                                    className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 text-base"
+                                    className="w-full pl-14 pr-6 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 dark:placeholder:text-stone-600 text-base dark:text-stone-100"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                 />
@@ -1137,17 +1137,17 @@ const App: React.FC = () => {
                             </div>
                             <div className="hidden md:flex gap-6">
                                 <label htmlFor="recipe-category" className="sr-only">Filter by category</label>
-                                <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
+                                <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
                                     <option value="All">All Categories</option>
                                     {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 <label htmlFor="recipe-contributor" className="sr-only">Filter by contributor</label>
-                                <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
+                                <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
                                     <option value="All">All Contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
-                                <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 backdrop-blur border border-stone-200 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 cursor-pointer hover:bg-white min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                                <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
                                     <option value="title-desc">Z–A</option>
                                     <option value="category">Category</option>
@@ -1168,18 +1168,18 @@ const App: React.FC = () => {
 
                         <div
                             id="mobile-recipe-filters"
-                            className={`${showMobileFilters ? 'block' : 'hidden'} md:hidden bg-white/90 backdrop-blur-md border border-stone-200 rounded-[2rem] p-4 shadow-sm space-y-3`}
+                            className={`${showMobileFilters ? 'block' : 'hidden'} md:hidden bg-white/90 dark:bg-[var(--bg-secondary)]/90 backdrop-blur-md border border-stone-200 dark:border-stone-700 rounded-[2rem] p-4 shadow-sm space-y-3`}
                         >
                             <div className="grid grid-cols-1 gap-3">
-                                <select aria-label="Filter by category" className="px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-base font-bold text-stone-600 outline-none" value={category} onChange={e => setCategory(e.target.value)}>
+                                <select aria-label="Filter by category" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={category} onChange={e => setCategory(e.target.value)}>
                                     <option value="All">All Categories</option>
                                     {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
-                                <select aria-label="Filter by contributor" className="px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-base font-bold text-stone-600 outline-none" value={contributor} onChange={e => setContributor(e.target.value)}>
+                                <select aria-label="Filter by contributor" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={contributor} onChange={e => setContributor(e.target.value)}>
                                     <option value="All">All Contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
-                                <select aria-label="Sort recipes" className="px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-base font-bold text-stone-600 outline-none" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                                <select aria-label="Sort recipes" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
                                     <option value="title-desc">Z–A</option>
                                     <option value="category">Category</option>
@@ -1234,7 +1234,7 @@ const App: React.FC = () => {
                                                         <RecipeCardImage recipe={r} />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
                                                     </div>
-                                                    <p className="mt-2 text-sm font-serif italic text-stone-700 truncate group-hover:text-[#2D4635]">{r.title}</p>
+                                                    <p className="mt-2 text-sm font-serif italic text-stone-700 dark:text-stone-300 truncate group-hover:text-[#2D4635] dark:group-hover:text-emerald-300">{r.title}</p>
                                                 </button>
                                             ))}
                                         </div>
@@ -1256,7 +1256,7 @@ const App: React.FC = () => {
                                                         <RecipeCardImage recipe={r} />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
                                                     </div>
-                                                    <p className="mt-2 text-sm font-serif italic text-stone-700 truncate group-hover:text-[#2D4635]">{r.title}</p>
+                                                    <p className="mt-2 text-sm font-serif italic text-stone-700 dark:text-stone-300 truncate group-hover:text-[#2D4635] dark:group-hover:text-emerald-300">{r.title}</p>
                                                 </button>
                                             ))}
                                         </div>

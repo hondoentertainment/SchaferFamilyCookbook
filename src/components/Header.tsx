@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, DBStats } from '../types';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
+import { getStoredTheme, setStoredTheme } from '../utils/theme';
+import type { ThemeMode } from '../types';
 
 const LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
@@ -33,9 +35,21 @@ interface HeaderProps {
     onLogout: () => void;
 }
 
+const THEME_CYCLE: ThemeMode[] = ['system', 'light', 'dark'];
+const THEME_ICONS: Record<ThemeMode, string> = { system: '💻', light: '☀️', dark: '🌙' };
+const THEME_LABELS: Record<ThemeMode, string> = { system: 'System theme', light: 'Light theme', dark: 'Dark theme' };
+
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
     const [moreOpen, setMoreOpen] = useState(false);
     const moreRef = useRef<HTMLDivElement>(null);
+    const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
+
+    const handleThemeToggle = () => {
+        hapticLight();
+        const next = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length];
+        setStoredTheme(next);
+        setThemeMode(next);
+    };
 
     useEffect(() => {
         if (!moreOpen) return;
@@ -53,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
     const navTabs = ALL_NAV_TABS;
 
     return (
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-100 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+        <header className="sticky top-0 z-50 bg-white/90 dark:bg-[var(--header-bg)] backdrop-blur-md border-b border-stone-100 dark:border-stone-800 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 flex items-center justify-between gap-2 min-h-[3.5rem] md:min-h-0">
                 <div className="flex items-center gap-2 sm:gap-3 md:gap-8 min-w-0 flex-1">
                     <div
@@ -84,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                     }}
                                     title={title}
                                     aria-current={activeTab === id ? 'page' : undefined}
-                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors whitespace-nowrap min-h-[2.75rem] motion-reduce:transition-none ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-500 hover:bg-stone-50'}`}
+                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors whitespace-nowrap min-h-[2.75rem] motion-reduce:transition-none ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
                                 >
                                     {(tab as NavTab).label || id}
                                 </button>
@@ -100,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             aria-expanded={moreOpen}
                             aria-haspopup="true"
                             aria-label="More sections"
-                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${moreOpen ? 'bg-stone-100 text-[#2D4635]' : 'text-stone-500 hover:bg-stone-100 active:bg-stone-200'
+                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${moreOpen ? 'bg-stone-100 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700'
                                 }`}
                         >
                             <span className="text-xl leading-none" aria-hidden>☰</span>
@@ -109,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         {moreOpen && (
                             <div
                                 role="menu"
-                                className="absolute top-full left-0 mt-1 py-2 bg-white rounded-2xl shadow-xl border border-stone-100 min-w-[10rem] animate-in fade-in slide-in-from-top-2 duration-200 z-50"
+                                className="absolute top-full left-0 mt-1 py-2 bg-white dark:bg-[var(--card-bg)] rounded-2xl shadow-xl border border-stone-100 dark:border-stone-800 min-w-[10rem] animate-in fade-in slide-in-from-top-2 duration-200 z-50"
                                 aria-label="More sections"
                             >
                                 {EXTRA_TABS.map(({ id }) => (
@@ -118,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                         role="menuitem"
                                         aria-current={activeTab === id ? 'page' : undefined}
                                         onClick={() => { hapticLight(); setTab(id); setMoreOpen(false); }}
-                                        className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wider transition-colors first:rounded-t-2xl last:rounded-b-2xl ${activeTab === id ? 'bg-[#2D4635] text-white' : 'text-stone-600 hover:bg-stone-50'}`}
+                                        className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wider transition-colors first:rounded-t-2xl last:rounded-b-2xl ${activeTab === id ? 'bg-[#2D4635] text-white' : 'text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
                                     >
                                         {id}
                                     </button>
@@ -129,6 +143,16 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                 </div>
 
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+                    {/* Theme toggle */}
+                    <button
+                        type="button"
+                        onClick={handleThemeToggle}
+                        className="min-h-11 min-w-11 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                        title={THEME_LABELS[themeMode]}
+                        aria-label={`Toggle theme (currently ${THEME_LABELS[themeMode]})`}
+                    >
+                        <span className="text-lg leading-none">{THEME_ICONS[themeMode]}</span>
+                    </button>
                     {currentUser && (
                         <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
                             <div
@@ -136,19 +160,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 tabIndex={0}
                                 data-testid="nav-profile"
                                 aria-current={activeTab === 'Profile' ? 'page' : undefined}
-                                className={`flex items-center gap-2 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center px-2 ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200'}`}
+                                className={`flex items-center gap-2 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center px-2 ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200 dark:hover:ring-stone-700'}`}
                                 onClick={() => { hapticLight(); setTab('Profile'); }}
                                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Profile'); } }}
                                 aria-label={`${currentUser.name}, view profile`}
                             >
-                                <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
-                                <span className={`hidden sm:inline text-[10px] font-black uppercase tracking-widest ${activeTab === 'Profile' ? 'text-[#2D4635]' : 'text-stone-500'}`}>
+                                <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-stone-700 object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
+                                <span className={`hidden sm:inline text-[10px] font-black uppercase tracking-widest ${activeTab === 'Profile' ? 'text-[#2D4635] dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400'}`}>
                                     Profile
                                 </span>
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-colors motion-reduce:transition-none"
+                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-full transition-colors motion-reduce:transition-none"
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >

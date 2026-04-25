@@ -431,10 +431,10 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
             <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" aria-label="Recipe details">
                 <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
-                <div className="print-recipe-content bg-[#FDFBF7] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
+                <div className="print-recipe-content bg-[#FDFBF7] dark:bg-[var(--bg-secondary)] w-full md:max-w-5xl h-full md:h-auto md:max-h-[90vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col md:flex-row">
                     <button
                         onClick={onClose}
-                        className="absolute top-2 left-2 z-10 md:hidden px-4 py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600"
+                        className="absolute top-2 left-2 z-10 md:hidden px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300"
                         aria-label={`Back to ${breadcrumbContext}`}
                     >
                         ← {breadcrumbContext}
@@ -446,7 +446,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 className={`w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
                                     isFavorite(recipe.id)
                                         ? 'bg-red-50 text-red-500 hover:bg-red-100'
-                                        : 'bg-white/95 text-stone-400 hover:text-stone-900 hover:bg-white'
+                                        : 'bg-white/95 dark:bg-[var(--card-bg)]/95 text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)]'
                                 }`}
                                 aria-label={isFavorite(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
                                 title={isFavorite(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
@@ -458,7 +458,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         {prevRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(prevRecipe)}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-all hover:scale-110"
                                 aria-label={`Previous: ${prevRecipe.title}`}
                                 title="Previous recipe"
                             >
@@ -468,7 +468,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         {nextRecipe && onNavigate && (
                             <button
                                 onClick={() => onNavigate(nextRecipe)}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-all hover:scale-110"
                                 aria-label={`Next: ${nextRecipe.title}`}
                                 title="Next recipe"
                             >
@@ -482,27 +482,27 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         )}
                         <button
                             onClick={handleAddToGroceryList}
-                            className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                            className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
                             aria-label="Add ingredients to grocery list"
                             title="Add to Grocery List"
                             data-testid="recipe-modal-add-to-grocery"
                         >
                             <span className="text-xl">🛒</span>
                         </button>
-                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2" aria-label={`Share recipe: ${shareTitle}`} title={shareTitle}>
+                        <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-colors hover:scale-110 motion-reduce:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2" aria-label={`Share recipe: ${shareTitle}`} title={shareTitle}>
                             <span className="text-xl">⎘</span>
                         </button>
                         {!hasWebShare && (
                             <a
                                 href={emailRecipeUrl}
-                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110 no-underline"
+                                className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-all hover:scale-110 no-underline"
                                 aria-label="Email recipe"
                                 title="Email recipe"
                             >
                                 <span className="text-xl">✉</span>
                             </a>
                         )}
-                        <button onClick={handlePrint} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Print recipe" title="Print">
+                        <button onClick={handlePrint} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-all hover:scale-110" aria-label="Print recipe" title="Print">
                             <span className="text-xl">🖨</span>
                         </button>
                         {onStartCook && (
@@ -515,7 +515,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <span className="text-xl">👨‍🍳</span>
                             </button>
                         )}
-                        <button ref={closeButtonRef} onClick={onClose} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-white transition-all hover:scale-110" aria-label="Close recipe" title="Close">
+                        <button ref={closeButtonRef} onClick={onClose} className="w-10 h-10 md:w-12 md:h-12 min-w-11 min-h-11 md:min-w-12 md:min-h-12 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white dark:hover:bg-[var(--card-bg)] transition-all hover:scale-110" aria-label="Close recipe" title="Close">
                             <span className="text-xl font-light">✕</span>
                         </button>
                     </div>
@@ -637,7 +637,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         </div>
 
                         {/* Ingredients Section */}
-                        <div className={`print-simplify space-y-4 bg-white/50 p-6 rounded-2xl border border-stone-200/50 transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`}>
+                        <div className={`print-simplify space-y-4 bg-white/50 dark:bg-[var(--card-bg)]/50 p-6 rounded-2xl border border-stone-200/50 dark:border-[var(--border-color)] transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`}>
                             <div className="flex flex-wrap items-center justify-between gap-4">
                                 <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
                                     <span className="text-2xl">🥘</span>
@@ -650,7 +650,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             <select
                                                 value={scaleTo}
                                                 onChange={(e) => setScaleTo(parseInt(e.target.value, 10))}
-                                                className="px-3 py-2 rounded-full border border-stone-200 bg-white text-stone-700 font-medium focus:ring-2 focus:ring-[#2D4635]/20"
+                                                className="px-3 py-2 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--input-bg)] text-stone-700 dark:text-stone-200 font-medium focus:ring-2 focus:ring-[#2D4635]/20"
                                                 aria-label="Scale ingredients by serving size"
                                             >
                                                 {[...new Set([1, 2, 4, 6, 8, 10, 12, baseServings])]
@@ -674,7 +674,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                 toast("Couldn't copy ingredients. Check clipboard permissions and try again.", 'error');
                                             }
                                         }}
-                                        className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#2D4635] hover:text-[#A0522D] hover:bg-white/80 rounded-full border border-stone-200 transition-colors"
+                                        className="print:hidden shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#2D4635] dark:text-emerald-300 hover:text-[#A0522D] hover:bg-white/80 dark:hover:bg-[var(--bg-tertiary)] rounded-full border border-stone-200 dark:border-[var(--border-color)] transition-colors"
                                         aria-label="Copy ingredients to clipboard"
                                     >
                                         Copy ingredients
@@ -693,7 +693,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                         {/* Instructions Section */}
                         <div className="space-y-5" id="recipe-instructions">
-                            <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-stone-200">
+                            <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-stone-200 dark:border-[var(--border-color)]">
                                 <h3 className="text-xl font-serif italic text-[#2D4635] flex items-center gap-2">
                                     <span className="text-2xl">📝</span>
                                     <span>Instructions</span>
@@ -709,7 +709,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                     const el = document.getElementById(`recipe-step-${i}`);
                                                     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                                 }}
-                                                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-[#2D4635] hover:text-white text-stone-600 text-xs font-bold transition-colors"
+                                                className="w-8 h-8 rounded-full bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-[#2D4635] hover:text-white text-stone-600 dark:text-stone-300 text-xs font-bold transition-colors"
                                                 aria-label={`Go to step ${i + 1}`}
                                             >
                                                 {i + 1}
@@ -720,7 +720,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             </div>
                             <div className="space-y-6">
                                 {recipe.instructions.map((step, i) => (
-                                    <div key={i} id={`recipe-step-${i}`} className="flex gap-4 group hover:bg-white/50 p-4 rounded-xl transition-all -ml-4 scroll-mt-24">
+                                    <div key={i} id={`recipe-step-${i}`} className="flex gap-4 group hover:bg-white/50 dark:hover:bg-[var(--card-bg)]/50 p-4 rounded-xl transition-all -ml-4 scroll-mt-24">
                                         <span className="text-3xl font-serif italic text-[#A0522D]/30 group-hover:text-[#A0522D]/50 shrink-0 tabular-nums transition-colors leading-none pt-1">
                                             {(i + 1).toString().padStart(2, '0')}
                                         </span>
@@ -734,7 +734,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                         {/* Notes Section */}
                         {recipe.notes && (
-                            <div className="print-simplify bg-gradient-to-br from-[#2D4635]/5 to-[#A0522D]/5 p-6 md:p-8 rounded-3xl border border-[#2D4635]/10 shadow-inner">
+                            <div className="print-simplify bg-gradient-to-br from-[#2D4635]/5 to-[#A0522D]/5 dark:from-[#2D4635]/20 dark:to-[#A0522D]/20 p-6 md:p-8 rounded-3xl border border-[#2D4635]/10 dark:border-[#2D4635]/30 shadow-inner">
                                 <div className="flex items-start gap-3 mb-3">
                                     <span className="text-2xl">💭</span>
                                     <span className="font-serif text-lg italic text-[#2D4635]">Heirloom Notes</span>
