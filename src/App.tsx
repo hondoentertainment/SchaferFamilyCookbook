@@ -26,6 +26,7 @@ import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
 import { trackEvent } from './services/analytics';
+import { listenForForegroundMessages } from './services/pushNotifications';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -560,6 +561,16 @@ const App: React.FC = () => {
     useEffect(() => {
         if (tab !== 'Recipes') setShowMobileFilters(false);
     }, [tab]);
+
+    // Listen for foreground FCM messages and show a toast when a new recipe
+    // notification arrives.  The listener is set up once on mount and cleaned
+    // up automatically when the component unmounts.
+    useEffect(() => {
+        const unsubscribe = listenForForegroundMessages((title) => {
+            toast(`New recipe added: ${title}`, 'success');
+        });
+        return unsubscribe;
+    }, []);
 
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();

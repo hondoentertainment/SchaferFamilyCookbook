@@ -9,6 +9,78 @@ import { PreferencesPanel } from './PreferencesPanel';
 import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
 import { hapticLight } from '../utils/haptics';
+import { subscribeToPushNotifications } from '../services/pushNotifications';
+
+const PUSH_ENABLED_KEY = 'schafer_push_enabled';
+
+const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
+    const { toast } = useUI();
+    const [enabled, setEnabled] = useState(() => localStorage.getItem(PUSH_ENABLED_KEY) === 'true');
+    const [loading, setLoading] = useState(false);
+    const notificationsSupported =
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        'serviceWorker' in navigator &&
+        'PushManager' in window;
+
+    const handleSubscribe = async () => {
+        if (enabled || loading) return;
+        setLoading(true);
+        hapticLight();
+        try {
+            const success = await subscribeToPushNotifications(userName);
+            if (success) {
+                localStorage.setItem(PUSH_ENABLED_KEY, 'true');
+                setEnabled(true);
+                toast('Notifications enabled!', 'success');
+            } else {
+                toast('Could not enable notifications. Please check your browser settings.', 'error');
+            }
+        } catch {
+            toast('Something went wrong enabling notifications.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <section className="space-y-6 md:space-y-8">
+            <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
+                <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-sky-50 flex items-center justify-center not-italic text-xl md:text-2xl">🔔</span>
+                Notifications
+            </h3>
+
+            {!notificationsSupported ? (
+                <p className="text-stone-500 font-serif italic text-sm">
+                    Push notifications aren't supported in this browser.
+                </p>
+            ) : (
+                <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm p-6 space-y-4">
+                    <p className="text-sm text-stone-600 font-serif italic">
+                        You'll receive a notification when a new recipe is added to the cookbook.
+                    </p>
+
+                    {enabled ? (
+                        <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 w-fit">
+                            <span className="text-lg" aria-hidden="true">✓</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Notifications enabled</span>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={handleSubscribe}
+                            disabled={loading}
+                            className="px-8 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
+                            aria-busy={loading}
+                        >
+                            {loading ? 'Enabling…' : 'Get notified when new recipes are added'}
+                        </button>
+                    )}
+                </div>
+            )}
+        </section>
+    );
+};
 
 export interface AdminSectionProps {
     editingRecipe: Recipe | null;
@@ -331,8 +403,8 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             </div>
 
 
-            {/* Collections, Preferences & Activity Feed */}
-            <div className="grid lg:grid-cols-3 gap-12">
+            {/* Collections, Preferences, Notifications & Activity Feed */}
+            <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-12">
                 <section className="space-y-6 md:space-y-8">
                     <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
                         <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-50 flex items-center justify-center not-italic text-xl md:text-2xl">📚</span>
@@ -351,6 +423,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     </h3>
                     <PreferencesPanel />
                 </section>
+                <NotificationsSection userName={currentUser.name} />
                 <section className="space-y-6 md:space-y-8">
                     <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
                         <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-amber-50 flex items-center justify-center not-italic text-xl md:text-2xl">📢</span>

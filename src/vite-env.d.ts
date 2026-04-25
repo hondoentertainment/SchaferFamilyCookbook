@@ -10,6 +10,14 @@ interface ImportMetaEnv {
      * route `#recipe/<id>`.
      */
     readonly VITE_SHARE_BASE?: string;
+    /**
+     * Firebase Cloud Messaging VAPID key (Web Push certificate).
+     * Generate it in the Firebase console under:
+     *   Project settings → Cloud Messaging → Web Push certificates → Generate key pair
+     * Then add to your `.env`:
+     *   VITE_FCM_VAPID_KEY=your_key_here
+     */
+    readonly VITE_FCM_VAPID_KEY?: string;
 }
 
 interface ImportMeta {
