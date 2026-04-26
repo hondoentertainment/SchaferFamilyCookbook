@@ -45,7 +45,8 @@
       "Bake for 8–10 minutes until lightly golden."
     ],
     "image": "/recipe-images/imported_udyr28qep.jpg",
-    "notes": ""
+    "notes": "",
+    "tags": ["dessert", "holiday"]
   },
   {
     "id": "cd6bc17d",
@@ -67,7 +68,8 @@
       "Cut into squares once firm."
     ],
     "image": "/recipe-images/imported_b6556sczy.jpg",
-    "notes": ""
+    "notes": "",
+    "tags": ["dessert", "holiday", "chocolate"]
   },
   {
     "id": "003e8cbb",
@@ -765,7 +767,8 @@
       "Let rise again, then bake at 350°F for 25–30 minutes."
     ],
     "image": "/recipe-images/imported_3bdtp5u52.jpg",
-    "notes": "Top with favorite icing or glaze."
+    "notes": "Top with favorite icing or glaze.",
+    "tags": ["holiday", "breakfast", "baking"]
   },
   {
     "id": "bce43b32",

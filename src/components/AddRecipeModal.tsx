@@ -14,7 +14,8 @@ interface AddRecipeModalProps {
 export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onClose, contributors, currentUser }) => {
     const { toast } = useUI();
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
-    const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
+    const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [], tags: [] });
+    const [tagInput, setTagInput] = useState('');
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
     const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'nano-banana' | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -294,6 +295,47 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                     <div>
                         <label htmlFor="add-recipe-notes" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Heirloom Notes (optional)</label>
                         <textarea id="add-recipe-notes" placeholder="Add any special memories or tips…" className="w-full h-24 p-4 border border-[#2D4635]/20 rounded-2xl text-base bg-[#2D4635]/5 focus:ring-2 focus:ring-[#2D4635]/20 italic mt-1" value={recipeForm.notes || ''} onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                        <label htmlFor="add-recipe-tag-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Tags (optional)</label>
+                        <input
+                            id="add-recipe-tag-input"
+                            type="text"
+                            placeholder="Add tag (e.g. vegetarian) and press Enter"
+                            className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20"
+                            value={tagInput}
+                            onChange={e => setTagInput(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key !== 'Enter') return;
+                                e.preventDefault();
+                                const trimmed = tagInput.trim().toLowerCase();
+                                if (!trimmed) return;
+                                const current = recipeForm.tags ?? [];
+                                if (current.includes(trimmed) || current.length >= 10) return;
+                                setRecipeForm({ ...recipeForm, tags: [...current, trimmed] });
+                                setTagInput('');
+                            }}
+                        />
+                        {(recipeForm.tags ?? []).length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {(recipeForm.tags ?? []).map(tag => (
+                                    <span
+                                        key={tag}
+                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    >
+                                        {tag}
+                                        <button
+                                            type="button"
+                                            onClick={() => setRecipeForm({ ...recipeForm, tags: (recipeForm.tags ?? []).filter(t => t !== tag) })}
+                                            className="ml-0.5 text-emerald-500 hover:text-emerald-800 focus:outline-none"
+                                            aria-label={`Remove tag ${tag}`}
+                                        >
+                                            ✕
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div className="flex gap-4 pt-4">
                         <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">

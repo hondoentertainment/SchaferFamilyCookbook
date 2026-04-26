@@ -160,7 +160,7 @@ describe('magicImport', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateImage', () => {
-    const mockRecipe = { id: 'r1', title: 'Banana Bread', category: 'Dessert' };
+    const mockRecipe = { id: 'r1', title: 'Banana Bread', category: 'Dessert' as const };
 
     it('returns the image data with imageSource set to "nano-banana" on success', async () => {
         const base64 = 'iVBORw0KGgo=';

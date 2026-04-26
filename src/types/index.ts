@@ -14,6 +14,7 @@ export interface Recipe {
   calories?: number;
   /** Number of servings (e.g. 4) or yield description (e.g. "2 dozen cookies") */
   servings?: string | number;
+  tags?: string[];
   created_at?: string;
 }
 

@@ -97,6 +97,7 @@ For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATE
 
 - **Firestore / Storage rules:** **Public read**, **custodian-only write** (Firebase Auth + custom claim `admin`). Deploy: `firebase deploy --only firestore:rules,storage:rules`. Custodians use **Profile → Admin tools → Sign in with Google**; grant the claim once: `FIREBASE_SERVICE_ACCOUNT='<json>' npm run admin:set-claim -- <uid>`. Details: **[docs/FIREBASE_SECURITY.md](docs/FIREBASE_SECURITY.md)**.
 - **Recipe JSON backup (local):** `npm run backup:recipes` copies `src/data/recipes.json` to `backups/recipes-<timestamp>.json` (folder is gitignored).
+- **Automated Firestore backup:** The `weeklyFirestoreBackup` Cloud Function (in `functions/`) exports all collections to `gs://PROJECT_ID.firebasestorage.app/backups/YYYY-MM-DD/` every Sunday at 2:00 AM UTC. Deploy with `firebase deploy --only functions`. To restore a backup, see **[scripts/restore-backup.md](scripts/restore-backup.md)**.
 
 ## Identity & Access
 

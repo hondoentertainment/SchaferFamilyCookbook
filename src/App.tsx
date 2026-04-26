@@ -27,11 +27,8 @@ import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
 import { trackEvent } from './services/analytics';
 import { listenForForegroundMessages } from './services/pushNotifications';
-import {
-    queueUpload,
-    getPendingUploads,
-    processPendingUploads,
-} from './services/offlineUploadQueue';
+import { queueUpload } from './services/offlineUploadQueue';
+import { useOfflineUploadQueue } from './hooks/useOfflineUploadQueue';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -44,6 +41,7 @@ const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthro
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
 const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 const CollectionsView = lazy(() => import('./components/CollectionsView').then(m => ({ default: m.CollectionsView })));
+const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => ({ default: m.InstallPrompt })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -451,6 +449,7 @@ const App: React.FC = () => {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
+    const [selectedTag, setSelectedTag] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -468,7 +467,6 @@ const App: React.FC = () => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
-    const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
     const handleSetTab = (newTab: string) => {
         setTab(newTab);
@@ -578,52 +576,10 @@ const App: React.FC = () => {
         return unsubscribe;
     }, []);
 
-    // Refresh the pending-upload badge count whenever relevant state changes.
-    const refreshPendingCount = React.useCallback(async () => {
-        const pending = await getPendingUploads();
-        setPendingUploadCount(pending.length);
-    }, []);
-
-    // Check on mount and whenever the gallery tab is opened.
-    useEffect(() => {
-        void refreshPendingCount();
-    }, [tab, gallery, refreshPendingCount]);
-
-    // Process queued uploads automatically when the device comes back online.
-    useEffect(() => {
-        const handleOnline = async () => {
-            const pending = await getPendingUploads();
-            if (pending.length === 0) return;
-
-            toast(`Back online — uploading ${pending.length} queued photo(s)…`, 'info');
-
-            const { processed, failed } = await processPendingUploads(async (file, caption, contributor) => {
-                const isVideo = file.type.startsWith('video/');
-                const url = await CloudArchive.uploadFile(file, 'gallery');
-                await CloudArchive.upsertGalleryItem({
-                    id: 'g' + Date.now(),
-                    type: isVideo ? 'video' : 'image',
-                    url: url || '',
-                    caption,
-                    contributor,
-                });
-            });
-
-            await refreshPendingCount();
-            await refreshLocalState();
-
-            if (processed > 0) {
-                toast(`${processed} photo(s) uploaded successfully.`, 'success');
-            }
-            if (failed > 0) {
-                toast(`${failed} photo(s) failed to upload. They remain in the queue.`, 'error');
-            }
-        };
-
-        window.addEventListener('online', handleOnline);
-        return () => window.removeEventListener('online', handleOnline);
-    }, [refreshPendingCount]);
-
+    const { pendingUploadCount, refreshPendingCount } = useOfflineUploadQueue(tab, gallery.length, {
+        onUploadsProcessed: refreshLocalState,
+        onToast: toast,
+    });
 
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -661,6 +617,12 @@ const App: React.FC = () => {
         return c?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
     };
 
+    const allTags = useMemo(() => {
+        const tagSet = new Set<string>();
+        recipes.forEach(r => r.tags?.forEach(t => tagSet.add(t)));
+        return Array.from(tagSet).sort();
+    }, [recipes]);
+
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r => {
             const q = search.toLowerCase();
@@ -672,16 +634,17 @@ const App: React.FC = () => {
                 r.contributor.toLowerCase().includes(q);
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || r.contributor === contributor;
-            return matchS && matchC && matchA;
+            const matchT = !selectedTag || (r.tags?.includes(selectedTag) ?? false);
+            return matchS && matchC && matchA && matchT;
         });
-    }, [recipes, search, category, contributor]);
+    }, [recipes, search, category, contributor, selectedTag]);
 
     const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
     const matchedContributor = useMemo(
         () => contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase()) ?? null,
         [contributors, loginName]
     );
-    const activeFilterCount = [category !== 'All', contributor !== 'All', sortBy !== 'title-asc'].filter(Boolean).length;
+    const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
 
     const sortedRecipes = useMemo(() => {
         const list = [...filteredRecipes];
@@ -751,6 +714,7 @@ const App: React.FC = () => {
         setSearch('');
         setCategory('All');
         setContributor('All');
+        setSelectedTag('');
         setSortBy('title-asc');
     };
 
@@ -1010,6 +974,7 @@ const App: React.FC = () => {
                     )}
                 </main>
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+                <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         );
     }
@@ -1049,6 +1014,7 @@ const App: React.FC = () => {
                 </Suspense>
                 </div>
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+                <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         );
     }
@@ -1216,6 +1182,15 @@ const App: React.FC = () => {
                                     <option value="All">All Contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
+                                {allTags.length > 0 && (
+                                    <>
+                                        <label htmlFor="recipe-tag" className="sr-only">Filter by tag</label>
+                                        <select id="recipe-tag" aria-label="Filter by tag" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
+                                            <option value="">All Tags</option>
+                                            {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                    </>
+                                )}
                                 <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
                                 <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
@@ -1249,6 +1224,12 @@ const App: React.FC = () => {
                                     <option value="All">All Contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
+                                {allTags.length > 0 && (
+                                    <select aria-label="Filter by tag" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
+                                        <option value="">All Tags</option>
+                                        {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                )}
                                 <select aria-label="Sort recipes" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
                                     <option value="title-desc">Z–A</option>
@@ -1697,6 +1678,7 @@ const App: React.FC = () => {
             )}
 
             <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+            <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         </div>
     );

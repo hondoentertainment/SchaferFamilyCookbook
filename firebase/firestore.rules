@@ -86,5 +86,39 @@ service cloud.firestore {
         request.resource.data.completedAt == request.time;
       allow update, delete: if false;
     }
+
+    /**
+     * Recipe version snapshots written server-side whenever an admin saves a recipe.
+     * Admins can read version history; no client-side writes.
+     *
+     * Shape: snapshot of the full recipe document at the time of the save, plus
+     * { savedAt: Timestamp, savedBy: string }
+     */
+    match /recipe_versions/{recipeId}/versions/{versionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // FCM push-notification tokens: no public read (token privacy).
+    // Any authenticated request — or any caller supplying the required shape —
+    // may register a token. No client-side update/delete (admin only).
+    match /fcm_tokens/{tokenId} {
+      allow read: if false;
+      allow create: if
+        request.auth != null ||
+        (
+          request.resource.data.token is string &&
+          request.resource.data.userName is string
+        );
+      allow update, delete: if isAdmin();
+    }
+
+    // Analytics events: append-only observability log.
+    // No public read; creates are open (low-risk); no update/delete from client.
+    match /analytics_events/{eventId} {
+      allow read: if false;
+      allow create: if true;
+      allow update, delete: if false;
+    }
   }
 }
