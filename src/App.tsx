@@ -27,11 +27,8 @@ import { avatarOnError } from './utils/avatarFallback';
 import { hapticLight } from './utils/haptics';
 import { trackEvent } from './services/analytics';
 import { listenForForegroundMessages } from './services/pushNotifications';
-import {
-    queueUpload,
-    getPendingUploads,
-    processPendingUploads,
-} from './services/offlineUploadQueue';
+import { queueUpload } from './services/offlineUploadQueue';
+import { useOfflineUploadQueue } from './hooks/useOfflineUploadQueue';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -44,6 +41,7 @@ const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthro
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
 const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 const CollectionsView = lazy(() => import('./components/CollectionsView').then(m => ({ default: m.CollectionsView })));
+const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => ({ default: m.InstallPrompt })));
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -468,7 +466,6 @@ const App: React.FC = () => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
-    const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
     const handleSetTab = (newTab: string) => {
         setTab(newTab);
@@ -578,52 +575,10 @@ const App: React.FC = () => {
         return unsubscribe;
     }, []);
 
-    // Refresh the pending-upload badge count whenever relevant state changes.
-    const refreshPendingCount = React.useCallback(async () => {
-        const pending = await getPendingUploads();
-        setPendingUploadCount(pending.length);
-    }, []);
-
-    // Check on mount and whenever the gallery tab is opened.
-    useEffect(() => {
-        void refreshPendingCount();
-    }, [tab, gallery, refreshPendingCount]);
-
-    // Process queued uploads automatically when the device comes back online.
-    useEffect(() => {
-        const handleOnline = async () => {
-            const pending = await getPendingUploads();
-            if (pending.length === 0) return;
-
-            toast(`Back online — uploading ${pending.length} queued photo(s)…`, 'info');
-
-            const { processed, failed } = await processPendingUploads(async (file, caption, contributor) => {
-                const isVideo = file.type.startsWith('video/');
-                const url = await CloudArchive.uploadFile(file, 'gallery');
-                await CloudArchive.upsertGalleryItem({
-                    id: 'g' + Date.now(),
-                    type: isVideo ? 'video' : 'image',
-                    url: url || '',
-                    caption,
-                    contributor,
-                });
-            });
-
-            await refreshPendingCount();
-            await refreshLocalState();
-
-            if (processed > 0) {
-                toast(`${processed} photo(s) uploaded successfully.`, 'success');
-            }
-            if (failed > 0) {
-                toast(`${failed} photo(s) failed to upload. They remain in the queue.`, 'error');
-            }
-        };
-
-        window.addEventListener('online', handleOnline);
-        return () => window.removeEventListener('online', handleOnline);
-    }, [refreshPendingCount]);
-
+    const { pendingUploadCount, refreshPendingCount } = useOfflineUploadQueue(tab, gallery.length, {
+        onUploadsProcessed: refreshLocalState,
+        onToast: toast,
+    });
 
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -1010,6 +965,7 @@ const App: React.FC = () => {
                     )}
                 </main>
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+                <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         );
     }
@@ -1049,6 +1005,7 @@ const App: React.FC = () => {
                 </Suspense>
                 </div>
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+                <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         );
     }
@@ -1697,6 +1654,7 @@ const App: React.FC = () => {
             )}
 
             <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
+            <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         </div>
     );
