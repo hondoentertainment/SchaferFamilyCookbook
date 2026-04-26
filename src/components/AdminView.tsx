@@ -503,6 +503,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setImageSourceForCurrent(null);
             setPreviewUrl(null);
             if (editingRecipe) clearEditing();
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            toast(msg, 'error');
         } finally { setIsSubmitting(false); }
     };
 
@@ -1147,6 +1150,31 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         {isUrlImporting ? 'Importing…' : 'Import from URL'}
                                                     </button>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Export Recipes */}
+                                    {!editingRecipe && (
+                                        <div className="space-y-4 pt-6 border-t border-stone-100">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] flex items-center gap-2">
+                                                <span>⬇️</span> Export
+                                            </h4>
+                                            <div className="flex gap-4 flex-wrap">
+                                                <button
+                                                    type="button"
+                                                    onClick={_handleExportJSON}
+                                                    className="flex-1 min-w-[140px] py-4 bg-stone-50 text-stone-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 shadow-sm hover:bg-stone-100"
+                                                >
+                                                    ⬇️ Export as JSON
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={_handleExportCSV}
+                                                    className="flex-1 min-w-[140px] py-4 bg-stone-50 text-stone-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 shadow-sm hover:bg-stone-100"
+                                                >
+                                                    ⬇️ Export as CSV
+                                                </button>
                                             </div>
                                         </div>
                                     )}

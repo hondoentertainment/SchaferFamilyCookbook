@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { AdminView } from './AdminView';
 import {
     renderWithProviders,
@@ -167,14 +167,16 @@ describe('AdminView', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
 
-        expect(mockOnAddRecipe).toHaveBeenCalledWith(
-            expect.objectContaining({
-                title: 'New Test Recipe',
-                ingredients: ['Apple', 'Sugar'],
-                instructions: ['Bake it']
-            }),
-            undefined
-        );
+        await waitFor(() => {
+            expect(mockOnAddRecipe).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    title: 'New Test Recipe',
+                    ingredients: ['Apple', 'Sugar'],
+                    instructions: ['Bake it']
+                }),
+                undefined
+            );
+        });
     });
 
     it('should call onDeleteRecipe when delete is confirmed', async () => {
@@ -311,19 +313,22 @@ describe('AdminView', () => {
         );
     });
 
-    it('should show a validation error toast when saving a recipe with an empty title', () => {
+    it('should show a validation error toast when saving a recipe with an empty title', async () => {
         // Render with an editing recipe so the form is visible
         const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
         renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
 
-        // Clear the title field
-        fireEvent.change(screen.getByPlaceholderText('Recipe Title'), { target: { value: '' } });
-        fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+        // Clear the title field, then submit the form directly to bypass HTML5 required constraint
+        const titleInput = screen.getByPlaceholderText('Recipe Title');
+        fireEvent.change(titleInput, { target: { value: '' } });
+        fireEvent.submit(titleInput.closest('form')!);
 
         // onAddRecipe must NOT have been called
         expect(mockOnAddRecipe).not.toHaveBeenCalled();
         // A toast with the validation message should appear
-        expect(screen.getByRole('status')).toHaveTextContent(/Recipe title is required/i);
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toHaveTextContent(/Recipe title is required/i);
+        });
     });
 
     it('should show an error toast when onAddRecipe rejects (Firebase save failure)', async () => {

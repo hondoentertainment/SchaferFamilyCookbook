@@ -28,8 +28,8 @@ describe('OfflineBanner', () => {
     // -----------------------------------------------------------------------
     it('renders nothing when navigator.onLine is true', () => {
         setOnlineStatus(true);
-        const { container } = renderWithProviders(<OfflineBanner />);
-        expect(container.firstChild).toBeNull();
+        renderWithProviders(<OfflineBanner />);
+        expect(screen.queryByText(/you're offline/i)).not.toBeInTheDocument();
     });
 
     // -----------------------------------------------------------------------
@@ -48,8 +48,11 @@ describe('OfflineBanner', () => {
     it('banner has role="status" and aria-live="polite"', () => {
         setOnlineStatus(false);
         renderWithProviders(<OfflineBanner />);
-        const banner = screen.getByRole('status');
-        expect(banner).toBeInTheDocument();
+        // The banner element has role="status" and aria-live="polite"; find it by its
+        // unique offline text since the UIProvider toast container also has role="status".
+        const allStatuses = screen.getAllByRole('status');
+        const banner = allStatuses.find(el => /you're offline/i.test(el.textContent ?? ''));
+        expect(banner).toBeDefined();
         expect(banner).toHaveAttribute('aria-live', 'polite');
     });
 
@@ -59,13 +62,15 @@ describe('OfflineBanner', () => {
     it('hides the banner when the "online" event fires', () => {
         setOnlineStatus(false);
         renderWithProviders(<OfflineBanner />);
-        expect(screen.getByRole('status')).toBeInTheDocument();
+        // Banner is shown — verify by unique offline text
+        expect(screen.getByText(/you're offline/i)).toBeInTheDocument();
 
         act(() => {
             fireEvent(window, new Event('online'));
         });
 
-        expect(screen.queryByRole('status')).toBeNull();
+        // Banner text is gone after coming back online
+        expect(screen.queryByText(/you're offline/i)).not.toBeInTheDocument();
     });
 
     // -----------------------------------------------------------------------
@@ -74,13 +79,14 @@ describe('OfflineBanner', () => {
     it('shows the banner when the "offline" event fires', () => {
         setOnlineStatus(true);
         renderWithProviders(<OfflineBanner />);
-        expect(screen.queryByRole('status')).toBeNull();
+        // Banner not visible when online
+        expect(screen.queryByText(/you're offline/i)).not.toBeInTheDocument();
 
         act(() => {
             fireEvent(window, new Event('offline'));
         });
 
-        expect(screen.getByRole('status')).toBeInTheDocument();
+        // Banner appears after going offline
         expect(screen.getByText(/you're offline/i)).toBeInTheDocument();
     });
 

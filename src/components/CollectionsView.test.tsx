@@ -171,8 +171,9 @@ describe('CollectionsView', () => {
         // Expand the collection first
         fireEvent.click(screen.getByRole('button', { name: /favourites/i }));
 
-        // Click the recipe button that becomes visible
-        const recipeBtn = await screen.findByRole('button', { name: /grandma pie/i });
+        // Click the recipe button that becomes visible — find by text content since
+        // happy-dom's accessible name computation may not match the button text.
+        const recipeBtn = await screen.findByText('Grandma Pie');
         fireEvent.click(recipeBtn);
 
         expect(defaultProps.onViewRecipe).toHaveBeenCalledWith(recipe);
