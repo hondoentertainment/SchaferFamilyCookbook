@@ -7,7 +7,6 @@ import {
     createMockTrivia,
     createMockContributor,
     createMockGalleryItem,
-    waitFor
 } from '../test/utils';
 
 describe('AdminView', () => {
