@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CloudArchive } from '../services/db';
@@ -102,14 +103,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const galleryEditModalRef = useRef<HTMLDivElement>(null);
 
     // Notify Family state
-    const [notifyFormOpen, setNotifyFormOpen] = useState(false);
+    const [showNotifyForm, setShowNotifyForm] = useState(false);
     const [notifyTitle, setNotifyTitle] = useState('');
     const [isSendingNotify, setIsSendingNotify] = useState(false);
+    const notifyInputRef = useRef<HTMLInputElement>(null);
 
     // Analytics state
-    type AnalyticsEvent = { event: string; data?: Record<string, unknown> | null; timestamp: string };
+    type AnalyticsEvent = { event: string; timestamp: string; data?: { title?: string; score?: number; total?: number } };
     const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
-    const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
+    const [analyticsLoaded, setAnalyticsLoaded] = useState(false);
 
     useFocusTrap(!!editingGalleryItem, galleryEditModalRef);
 
@@ -190,6 +193,28 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingStory(false); });
         return () => { cancelled = true; };
     }, [activeSubtab]);
+
+    // Fetch analytics when the analytics subtab becomes active
+    useEffect(() => {
+        if (activeSubtab !== 'analytics' || analyticsLoaded) return;
+        const fb = CloudArchive.getFirebase();
+        if (!fb) {
+            setAnalyticsLoaded(true);
+            return;
+        }
+        setAnalyticsLoading(true);
+        const q = query(collection(fb.db, 'analytics_events'), orderBy('timestamp', 'desc'), limit(200));
+        getDocs(q)
+            .then((snapshot) => {
+                setAnalyticsEvents(snapshot.docs.map(d => d.data() as AnalyticsEvent));
+                setAnalyticsLoaded(true);
+            })
+            .catch((err) => {
+                console.error('Failed to load analytics:', err);
+                setAnalyticsLoaded(true);
+            })
+            .finally(() => setAnalyticsLoading(false));
+    }, [activeSubtab, analyticsLoaded]);
 
     // Hide seed/default recipes in Admin record management.
     const managedRecipes = recipes.filter(r => !defaultRecipeIds.includes(r.id));
@@ -717,6 +742,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         { id: 'trivia', label: '💡 Trivia' },
                         { id: 'directory', label: '👥 Directory' },
                         { id: 'story', label: '📜 Family Story' },
+                        { id: 'analytics', label: '📊 Analytics' },
                         { id: 'permissions', label: '🔐 Admins', restricted: true },
                     ]
                         .filter(tab => !tab.restricted || isSuperAdmin)
@@ -731,7 +757,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 tabIndex={activeSubtab === tab.id ? 0 : -1}
                                 onClick={() => setActiveSubtab(tab.id as typeof activeSubtab)}
                                 onKeyDown={(e) => {
-                                    const tabs = ['records', 'gallery', 'trivia', 'directory', 'story', ...(isSuperAdmin ? ['permissions'] as const : [])] as const;
+                                    const tabs = ['records', 'gallery', 'trivia', 'directory', 'story', 'analytics', ...(isSuperAdmin ? ['permissions'] as const : [])] as const;
                                     const i = tabs.indexOf(activeSubtab as typeof tabs[number]);
                                     if (e.key === 'ArrowRight' && i < tabs.length - 1) {
                                         e.preventDefault();
@@ -821,6 +847,83 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <h2 className="text-3xl font-serif italic text-[#2D4635]">
                                 {activeSubtab === 'records' ? 'Manage Recipes' : activeSubtab === 'gallery' ? 'Family Archive' : 'Family Trivia'}
                             </h2>
+                            {activeSubtab === 'records' && (
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    {!showNotifyForm ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const latestTitle = managedRecipes[0]?.title ?? '';
+                                                setNotifyTitle(latestTitle);
+                                                setShowNotifyForm(true);
+                                                setTimeout(() => notifyInputRef.current?.focus(), 50);
+                                            }}
+                                            className="px-5 py-2.5 rounded-full bg-[#2D4635]/10 text-[#2D4635] border border-[#2D4635]/20 text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635]/20 transition-all whitespace-nowrap"
+                                        >
+                                            🔔 Notify Family
+                                        </button>
+                                    ) : (
+                                        <form
+                                            className="flex items-center gap-2 flex-wrap"
+                                            onSubmit={async (e) => {
+                                                e.preventDefault();
+                                                if (!notifyTitle.trim() || isSendingNotify) return;
+                                                setIsSendingNotify(true);
+                                                try {
+                                                    const secret = import.meta.env.VITE_NOTIFY_SECRET as string | undefined;
+                                                    const resp = await fetch('/api/notify', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            ...(secret ? { 'x-notify-secret': secret } : {}),
+                                                        },
+                                                        body: JSON.stringify({
+                                                            title: notifyTitle.trim(),
+                                                            body: 'A new recipe has been added to the Schafer Family Cookbook.',
+                                                        }),
+                                                    });
+                                                    const json = await resp.json() as { sent?: number; failed?: number; error?: string };
+                                                    if (!resp.ok) throw new Error(json.error || `HTTP ${resp.status}`);
+                                                    toast(`Notification sent to ${json.sent ?? 0} family member${json.sent === 1 ? '' : 's'}`, 'success');
+                                                    setShowNotifyForm(false);
+                                                    setNotifyTitle('');
+                                                } catch (err: unknown) {
+                                                    const msg = (err instanceof Error) ? err.message : String(err ?? '');
+                                                    toast(`Failed to send notification: ${msg}`, 'error');
+                                                } finally {
+                                                    setIsSendingNotify(false);
+                                                }
+                                            }}
+                                        >
+                                            <label htmlFor="admin-notify-title" className="sr-only">Notification title</label>
+                                            <input
+                                                id="admin-notify-title"
+                                                ref={notifyInputRef}
+                                                type="text"
+                                                value={notifyTitle}
+                                                onChange={e => setNotifyTitle(e.target.value)}
+                                                placeholder="Recipe title…"
+                                                className="px-4 py-2 rounded-xl border border-stone-200 text-base bg-stone-50 outline-none focus:ring-2 focus:ring-[#2D4635]/20 w-48"
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={isSendingNotify || !notifyTitle.trim()}
+                                                aria-busy={isSendingNotify}
+                                                className="px-5 py-2.5 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-60 whitespace-nowrap"
+                                            >
+                                                {isSendingNotify ? 'Sending…' : 'Send Notification'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setShowNotifyForm(false); setNotifyTitle(''); }}
+                                                className="px-4 py-2.5 rounded-full border border-stone-200 text-stone-400 text-[10px] font-black uppercase tracking-widest hover:bg-stone-50"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 gap-16">
@@ -1870,6 +1973,121 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         )}
                     </section>
                 )}
+
+                {activeSubtab === 'analytics' && (() => {
+                    const fb = CloudArchive.getFirebase();
+                    const isConfigured = !!fb;
+                    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+                    // Top 5 most-viewed recipes
+                    const viewCounts: Record<string, number> = {};
+                    analyticsEvents
+                        .filter(e => e.event === 'recipe_viewed')
+                        .forEach(e => {
+                            const t = e.data?.title ?? 'Unknown';
+                            viewCounts[t] = (viewCounts[t] ?? 0) + 1;
+                        });
+                    const topRecipes = Object.entries(viewCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5);
+                    const maxViews = topRecipes[0]?.[1] ?? 1;
+
+                    // Cook mode starts this week
+                    const cookModeCount = analyticsEvents.filter(
+                        e => e.event === 'cook_mode_started' && e.timestamp >= sevenDaysAgo
+                    ).length;
+
+                    // Trivia completions + avg score
+                    const triviaEvents = analyticsEvents.filter(e => e.event === 'trivia_completed');
+                    const triviaCount = triviaEvents.length;
+                    const avgScore = triviaCount > 0
+                        ? Math.round(
+                            triviaEvents.reduce((sum, e) => {
+                                const score = e.data?.score ?? 0;
+                                const total = e.data?.total ?? 1;
+                                return sum + (total > 0 ? (score / total) * 100 : 0);
+                            }, 0) / triviaCount
+                        )
+                        : 0;
+
+                    // Total shares
+                    const shareCount = analyticsEvents.filter(e => e.event === 'recipe_shared').length;
+
+                    return (
+                        <section id="admin-panel-analytics" role="tabpanel" aria-labelledby="admin-tab-analytics" className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-16 border border-stone-200 shadow-xl animate-in fade-in slide-in-from-bottom-4">
+                            <h2 className="text-3xl font-serif italic text-[#2D4635] mb-8 flex items-center gap-4">
+                                <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">📊</span>
+                                Analytics
+                            </h2>
+
+                            {!isConfigured ? (
+                                <p className="text-stone-500 text-sm italic">Analytics requires Firebase to be configured.</p>
+                            ) : analyticsLoading ? (
+                                <p className="text-stone-400 text-sm animate-pulse">Loading analytics…</p>
+                            ) : (
+                                <div className="space-y-10">
+                                    {/* Summary stats row */}
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                        <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-100 space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Cook Mode (7 days)</p>
+                                            <p className="text-4xl font-serif font-bold text-[#2D4635]">{cookModeCount}</p>
+                                        </div>
+                                        <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-100 space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Trivia Completions</p>
+                                            <p className="text-4xl font-serif font-bold text-[#2D4635]">{triviaCount}</p>
+                                            {triviaCount > 0 && (
+                                                <p className="text-xs text-stone-500">Avg score <strong>{avgScore}%</strong></p>
+                                            )}
+                                        </div>
+                                        <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-100 space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Shares</p>
+                                            <p className="text-4xl font-serif font-bold text-[#2D4635]">{shareCount}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Top 5 recipes */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Top 5 Most-Viewed Recipes</h3>
+                                        {topRecipes.length === 0 ? (
+                                            <p className="text-stone-400 text-sm italic">No recipe view events recorded yet.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {topRecipes.map(([title, count]) => (
+                                                    <div key={title} className="flex items-center gap-4">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <span className="text-sm font-serif font-bold text-[#2D4635] truncate">{title}</span>
+                                                                <span className="text-xs font-bold text-stone-500 ml-2 shrink-0">{count}</span>
+                                                            </div>
+                                                            <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-[#2D4635] rounded-full transition-all duration-500"
+                                                                    style={{ width: `${(count / maxViews) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest border-t border-stone-100 pt-4">
+                                        Loaded {analyticsEvents.length} event{analyticsEvents.length === 1 ? '' : 's'}
+                                        {' '}&mdash;{' '}
+                                        <button
+                                            type="button"
+                                            onClick={() => { setAnalyticsLoaded(false); setAnalyticsEvents([]); }}
+                                            className="underline hover:text-[#2D4635] transition-colors"
+                                        >
+                                            Refresh
+                                        </button>
+                                    </p>
+                                </div>
+                            )}
+                        </section>
+                    );
+                })()}
 
                 {
                     pickerTarget && isSuperAdmin && (
