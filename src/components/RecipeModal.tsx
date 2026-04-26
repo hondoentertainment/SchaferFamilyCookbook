@@ -600,6 +600,18 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             </nav>
                             <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
                             <h2 id="recipe-modal-title" className="text-3xl md:text-4xl font-serif italic text-[#2D4635] leading-tight">{recipe.title}</h2>
+                            {recipe.tags && recipe.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5" aria-label="Recipe tags">
+                                    {recipe.tags.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className="inline-block text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full"
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-3 text-xs md:text-[10px] font-black uppercase text-stone-400 tracking-widest pt-2">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-[#A0522D]">👤</span>

@@ -47,7 +47,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const { toast, confirm } = useUI();
     const AI_COOLDOWN_MS = 5 * 60 * 1000;
     const { editingRecipe, clearEditing, recipes, trivia, contributors, currentUser, dbStats, gallery = [], onAddRecipe, onAddGallery, onAddTrivia, onDeleteTrivia, onDeleteRecipe, onDeleteGalleryItem, onUpdateGalleryItem, onUpdateContributor, onUpdateArchivePhone, onEditRecipe, defaultRecipeIds = [], firebaseCustodian } = props;
-    const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [] });
+    const [recipeForm, setRecipeForm] = useState<Partial<Recipe>>({ title: '', category: 'Main', ingredients: [], instructions: [], tags: [] });
+    const [tagInput, setTagInput] = useState('');
     const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({ caption: '' });
     const [triviaForm, setTriviaForm] = useState<Partial<Trivia>>({ question: '', options: ['', '', '', ''], answer: '' });
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
@@ -61,7 +62,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
     const [pickerTarget, setPickerTarget] = useState<{ name: string, avatar: string, id: string, role: 'admin' | 'user' } | null>(null);
-    const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory' | 'story'>('records');
+    const [activeSubtab, setActiveSubtab] = useState<'permissions' | 'records' | 'gallery' | 'trivia' | 'directory' | 'story' | 'analytics'>('records');
     const [editingTrivia, setEditingTrivia] = useState<Trivia | null>(null);
     const [isBulkSourcing, setIsBulkSourcing] = useState(false);
     const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
@@ -99,6 +100,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [galleryEditDate, setGalleryEditDate] = useState('');
     const [isSavingGalleryEdit, setIsSavingGalleryEdit] = useState(false);
     const galleryEditModalRef = useRef<HTMLDivElement>(null);
+
+    // Notify Family state
+    const [notifyFormOpen, setNotifyFormOpen] = useState(false);
+    const [notifyTitle, setNotifyTitle] = useState('');
+    const [isSendingNotify, setIsSendingNotify] = useState(false);
+
+    // Analytics state
+    type AnalyticsEvent = { event: string; data?: Record<string, unknown> | null; timestamp: string };
+    const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
+    const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
     useFocusTrap(!!editingGalleryItem, galleryEditModalRef);
 
@@ -199,11 +210,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setRecipeForm(editingRecipe);
             setPreviewUrl(editingRecipe.image || CATEGORY_IMAGES[editingRecipe.category] || CATEGORY_IMAGES.Generic);
         } else {
-            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
+            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [], tags: [] });
             setPreviewUrl(null);
         }
         setRecipeFile(null);
         setImageSourceForCurrent(null);
+        setTagInput('');
     }, [editingRecipe]);
 
     useEffect(() => {
@@ -460,7 +472,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             toast(isUpdate ? 'Recipe updated' : 'Recipe saved', 'success');
             setTimeout(() => setSuccessMessage(''), 4000);
 
-            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [], notes: '', contributor: '' });
+            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [], notes: '', contributor: '', tags: [] });
+            setTagInput('');
             setRecipeFile(null);
             setImageSourceForCurrent(null);
             setPreviewUrl(null);
@@ -1141,6 +1154,51 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 value={recipeForm.notes || ''}
                                                 onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })}
                                             />
+                                        </div>
+
+                                        {/* Tags */}
+                                        <div className="space-y-2">
+                                            <label htmlFor="admin-recipe-tag-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Tags (optional)</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    id="admin-recipe-tag-input"
+                                                    type="text"
+                                                    placeholder="Add tag (e.g. vegetarian) and press Enter"
+                                                    className="flex-1 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20"
+                                                    value={tagInput}
+                                                    onChange={e => setTagInput(e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key !== 'Enter') return;
+                                                        e.preventDefault();
+                                                        const trimmed = tagInput.trim().toLowerCase();
+                                                        if (!trimmed) return;
+                                                        const current = recipeForm.tags ?? [];
+                                                        if (current.includes(trimmed) || current.length >= 10) return;
+                                                        setRecipeForm({ ...recipeForm, tags: [...current, trimmed] });
+                                                        setTagInput('');
+                                                    }}
+                                                />
+                                            </div>
+                                            {(recipeForm.tags ?? []).length > 0 && (
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    {(recipeForm.tags ?? []).map(tag => (
+                                                        <span
+                                                            key={tag}
+                                                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                        >
+                                                            {tag}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setRecipeForm({ ...recipeForm, tags: (recipeForm.tags ?? []).filter(t => t !== tag) })}
+                                                                className="ml-0.5 text-emerald-500 hover:text-emerald-800 focus:outline-none"
+                                                                aria-label={`Remove tag ${tag}`}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="flex gap-4">
