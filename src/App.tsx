@@ -449,6 +449,7 @@ const App: React.FC = () => {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
     const [contributor, setContributor] = useState('All');
+    const [selectedTag, setSelectedTag] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -616,6 +617,12 @@ const App: React.FC = () => {
         return c?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
     };
 
+    const allTags = useMemo(() => {
+        const tagSet = new Set<string>();
+        recipes.forEach(r => r.tags?.forEach(t => tagSet.add(t)));
+        return Array.from(tagSet).sort();
+    }, [recipes]);
+
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r => {
             const q = search.toLowerCase();
@@ -627,16 +634,17 @@ const App: React.FC = () => {
                 r.contributor.toLowerCase().includes(q);
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || r.contributor === contributor;
-            return matchS && matchC && matchA;
+            const matchT = !selectedTag || (r.tags?.includes(selectedTag) ?? false);
+            return matchS && matchC && matchA && matchT;
         });
-    }, [recipes, search, category, contributor]);
+    }, [recipes, search, category, contributor, selectedTag]);
 
     const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
     const matchedContributor = useMemo(
         () => contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase()) ?? null,
         [contributors, loginName]
     );
-    const activeFilterCount = [category !== 'All', contributor !== 'All', sortBy !== 'title-asc'].filter(Boolean).length;
+    const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
 
     const sortedRecipes = useMemo(() => {
         const list = [...filteredRecipes];
@@ -706,6 +714,7 @@ const App: React.FC = () => {
         setSearch('');
         setCategory('All');
         setContributor('All');
+        setSelectedTag('');
         setSortBy('title-asc');
     };
 
@@ -1173,6 +1182,15 @@ const App: React.FC = () => {
                                     <option value="All">All Contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
+                                {allTags.length > 0 && (
+                                    <>
+                                        <label htmlFor="recipe-tag" className="sr-only">Filter by tag</label>
+                                        <select id="recipe-tag" aria-label="Filter by tag" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
+                                            <option value="">All Tags</option>
+                                            {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                    </>
+                                )}
                                 <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
                                 <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
@@ -1206,6 +1224,12 @@ const App: React.FC = () => {
                                     <option value="All">All Contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
+                                {allTags.length > 0 && (
+                                    <select aria-label="Filter by tag" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
+                                        <option value="">All Tags</option>
+                                        {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                )}
                                 <select aria-label="Sort recipes" className="px-5 py-4 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-stone-700 rounded-2xl text-base font-bold text-stone-600 dark:text-stone-200 outline-none" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
                                     <option value="title-desc">Z–A</option>
