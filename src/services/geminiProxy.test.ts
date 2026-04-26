@@ -48,7 +48,7 @@ describe('generateContent', () => {
         await generateContent('hello world');
 
         expect(mockFetch).toHaveBeenCalledTimes(1);
-        const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+        const [url, options] = mockFetch.mock.calls[0] as [string, { method: string; headers: Record<string, string>; body: string }];
         expect(url).toBe('/api/gemini');
         expect(options.method).toBe('POST');
         expect(options.headers).toMatchObject({ 'Content-Type': 'application/json' });
@@ -112,7 +112,7 @@ describe('magicImport', () => {
         mockFetch.mockReturnValueOnce(makeOkResponse({ json: '{"title":"Test"}' }));
         await magicImport('some raw text');
 
-        const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+        const [, options] = mockFetch.mock.calls[0] as [string, { method: string; headers: Record<string, string>; body: string }];
         const body = JSON.parse(options.body as string);
         expect(body).toEqual({ action: 'magicImport', rawText: 'some raw text' });
     });
@@ -178,7 +178,7 @@ describe('generateImage', () => {
         mockFetch.mockReturnValueOnce(makeOkResponse({ imageBase64: 'abc123' }));
         await generateImage(mockRecipe);
 
-        const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+        const [url, options] = mockFetch.mock.calls[0] as [string, { method: string; headers: Record<string, string>; body: string }];
         expect(url).toBe('/api/gemini');
         const body = JSON.parse(options.body as string);
         expect(body.action).toBe('generateImage');

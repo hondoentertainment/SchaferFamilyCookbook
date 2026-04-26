@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { OfflineBanner } from './OfflineBanner';
 import { renderWithProviders } from '../test/utils';
