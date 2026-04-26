@@ -103,7 +103,6 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
             targets.forEach(el => observer.unobserve(el));
             observer.disconnect();
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLetters.join(',')]);
 
     if (isDataLoading && recipes.length === 0) {

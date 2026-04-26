@@ -585,7 +585,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }
     }, [isSubmitting, uploadProgress.current, uploadProgress.total]);
 
-    const handleExportJSON = () => {
+    const _handleExportJSON = () => {
         const json = JSON.stringify(recipes, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -597,7 +597,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         toast(`Exported ${recipes.length} recipes as JSON`, 'success');
     };
 
-    const handleExportCSV = () => {
+    const _handleExportCSV = () => {
         const header = ['title', 'category', 'contributor', 'prepTime', 'cookTime', 'calories', 'servings'];
         const rows = recipes.map(r => [
             r.title ?? '',
