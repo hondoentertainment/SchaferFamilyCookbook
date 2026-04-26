@@ -114,7 +114,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
                     aria-modal="true"
                     aria-labelledby="confirm-title"
                     aria-describedby="confirm-desc"
-                    onClick={(e) => e.target === e.currentTarget && handleCancel()}
+                    onClick={(e) => { if (e.target === e.currentTarget) handleCancel(); }}
                 >
                     <div ref={confirmContainerRef} className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
                         <h3 id="confirm-title" className="text-xl font-serif italic text-[#2D4635] mb-4">

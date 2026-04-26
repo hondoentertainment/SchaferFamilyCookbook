@@ -825,7 +825,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 {admin.name.toLowerCase() !== 'admin' && (
                                                     <button
                                                         onClick={async () => { if (await confirm(`Revoke admin access for ${admin.name}?`, { variant: 'danger', confirmLabel: 'Revoke' })) onUpdateContributor({ ...admin, role: 'user' }); }}
-                                                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                                                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[8px] hover:bg-red-500 hover:text-white transition-all md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                                                         aria-label={`Revoke admin access for ${admin.name}`}
                                                         title={`Revoke admin access for ${admin.name}`}
                                                     >
@@ -1009,7 +1009,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={() => handleQuickSource(r)}
                                                                 disabled={isGeneratingImage || isAICooldownActive}

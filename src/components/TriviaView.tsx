@@ -370,6 +370,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleOptionSelect and nextQuestion use refs for values that change between renders
     }, [currentQuestionIndex, isAnswered, quizStarted, showResults, questions]);
 
     if (isDataLoading && questions.length === 0) {
