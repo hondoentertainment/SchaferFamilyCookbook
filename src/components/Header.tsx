@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, DBStats } from '../types';
+import { siteConfig } from '../config/site';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
 import { getStoredTheme, setStoredTheme } from '../utils/theme';
 import type { ThemeMode } from '../types';
 
-const LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
+const FALLBACK_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
 )}`;
 
@@ -42,7 +43,11 @@ const THEME_LABELS: Record<ThemeMode, string> = { system: 'System theme', light:
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
     const [moreOpen, setMoreOpen] = useState(false);
     const moreRef = useRef<HTMLDivElement>(null);
+    const [logoFailed, setLogoFailed] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
+
+    const brandLogoSrc = !logoFailed && siteConfig.logoUrl ? siteConfig.logoUrl : FALLBACK_LOGO_SVG;
+    const brandLabel = siteConfig.siteName;
 
     const handleThemeToggle = () => {
         hapticLight();
@@ -76,10 +81,20 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:rounded-lg min-h-11 min-w-11 md:min-h-0 md:min-w-0 justify-center md:justify-start -m-2 p-2 md:m-0 md:p-0"
                         onClick={() => { hapticLight(); setTab('Recipes'); }}
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Recipes'); } }}
-                        aria-label="Go to Recipes"
+                        aria-label={`${brandLabel} — go to recipes`}
                     >
-                        <img src={LOGO_URL} className="w-8 h-8 sm:w-9 sm:h-9 md:w-8 md:h-8 rounded-full object-cover ring-1 ring-stone-100" alt="" />
-                        <span className="font-serif italic text-base sm:text-lg md:text-xl text-[#2D4635] hidden sm:block">Archive</span>
+                        <img
+                            src={brandLogoSrc}
+                            className="w-8 h-8 sm:w-9 sm:h-9 md:w-8 md:h-8 rounded-full object-cover ring-1 ring-stone-100"
+                            alt=""
+                            onError={() => setLogoFailed(true)}
+                        />
+                        <span
+                            className="font-serif italic text-base sm:text-lg md:text-xl text-[#2D4635] dark:text-emerald-100/90 hidden sm:block max-w-[12rem] md:max-w-[18rem] truncate"
+                            title={brandLabel}
+                        >
+                            {brandLabel}
+                        </span>
                     </div>
 
                     {/* Desktop: full horizontal nav */}

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Recipe, GalleryItem, Trivia, ContributorProfile } from '../types';
 import { PLACEHOLDER_AVATAR } from '../constants';
+import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 
 interface ContributorsViewProps {
@@ -89,7 +90,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
     const getAvatar = useCallback((name: string) => {
         const c = contributors.find(p => normalizeName(p.name) === normalizeName(name));
-        return c?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+        return c?.avatar || contributorAvatarUrlForName(name);
     }, [contributors]);
 
     const isAdmin = useCallback((name: string) =>

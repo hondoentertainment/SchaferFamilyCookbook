@@ -29,6 +29,9 @@ import { trackEvent } from './services/analytics';
 import { listenForForegroundMessages } from './services/pushNotifications';
 import { queueUpload } from './services/offlineUploadQueue';
 import { useOfflineUploadQueue } from './hooks/useOfflineUploadQueue';
+import { isSuperAdmin } from './config/site';
+import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
+import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
@@ -412,8 +415,7 @@ const App: React.FC = () => {
         if (!s) return null;
         try {
             const u = JSON.parse(s);
-            // Super Admin Auto-assign
-            if (u.name.toLowerCase() === 'kyle' || u.email === 'hondo4185@gmail.com') {
+            if (isSuperAdmin(u.name) || isSuperAdmin(u.email)) {
                 u.role = 'admin';
             } else if (!u.role) {
                 u.role = (u.name.toLowerCase() === 'admin' ? 'admin' : 'user');
@@ -475,6 +477,11 @@ const App: React.FC = () => {
     const defaultRecipeIds = useMemo(
         () => new Set((defaultRecipes as Recipe[]).map(r => r.id)),
         []
+    );
+
+    const contributorsForDisplay = useMemo(
+        () => mergeContributorsForDisplay(contributors, recipes, gallery, trivia),
+        [contributors, recipes, gallery, trivia]
     );
 
     const refreshLocalState = async () => {
@@ -587,18 +594,15 @@ const App: React.FC = () => {
 
         setIsLoggingIn(true);
 
-        // Check if we have a stored profile for this person
         const name = loginName.trim();
         const existing = contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
-
-        // Super Admin Detection
-        const isSuper = name.toLowerCase() === 'kyle' || name.toLowerCase() === 'hondo4185@gmail.com';
-        const email = isSuper && name.includes('@') ? name : (existing?.email);
+        const isSuper = isSuperAdmin(name);
+        const email = isSuper && name.includes('@') ? name : existing?.email;
 
         const u: UserProfile = {
             id: existing?.id || 'u' + Date.now(),
             name: existing?.name || name,
-            picture: existing?.avatar ?? PLACEHOLDER_AVATAR,
+            picture: existing?.avatar ?? contributorAvatarUrlForName(name),
             role: isSuper ? 'admin' : ((existing?.role as any) || (name.toLowerCase() === 'admin' ? 'admin' : 'user')),
             email: email
         };
@@ -611,10 +615,11 @@ const App: React.FC = () => {
         }
     };
 
-    // Helper to get avatar
     const getAvatar = (name: string) => {
-        const c = contributors.find(p => p.name === name);
-        return c?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+        const c = contributorsForDisplay.find(
+            p => p.name === name || p.name.toLowerCase() === name.toLowerCase()
+        );
+        return c?.avatar || contributorAvatarUrlForName(name);
     };
 
     const allTags = useMemo(() => {
@@ -644,6 +649,14 @@ const App: React.FC = () => {
         () => contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase()) ?? null,
         [contributors, loginName]
     );
+    const loginPreviewAvatar = useMemo(() => {
+        const n = loginName.trim();
+        if (!n) return PLACEHOLDER_AVATAR;
+        return (
+            contributorsForDisplay.find(c => c.name.toLowerCase() === n.toLowerCase())?.avatar
+            ?? contributorAvatarUrlForName(n)
+        );
+    }, [contributorsForDisplay, loginName]);
     const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
 
     const sortedRecipes = useMemo(() => {
@@ -731,7 +744,7 @@ const App: React.FC = () => {
                         <div className="w-24 h-24 bg-stone-100 rounded-full mx-auto relative overflow-hidden border-4 border-white shadow-2xl group transition-all">
                             {loginName ? (
                                 <img
-                                    src={matchedContributor?.avatar ?? PLACEHOLDER_AVATAR}
+                                    src={loginPreviewAvatar}
                                     className="w-full h-full object-cover animate-in fade-in zoom-in"
                                     alt="Identity"
                                     onError={avatarOnError}
@@ -1060,7 +1073,7 @@ const App: React.FC = () => {
                             }
                         }}
                         onClose={() => setShowAddRecipeModal(false)}
-                        contributors={contributors}
+                        contributors={contributorsForDisplay}
                         currentUser={currentUser}
                     />
                 </Suspense>
@@ -1459,7 +1472,7 @@ const App: React.FC = () => {
                             <ContributorsSkeleton />
                         </div>
                     ) : (
-                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributors} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
+                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributorsForDisplay} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
                     )}
                 </Suspense>
             )}
@@ -1532,7 +1545,7 @@ const App: React.FC = () => {
                             setEditingRecipe(recipe);
                             handleSetTab('Profile');
                         }}
-                        contributors={contributors}
+                        contributors={contributorsForDisplay}
                         adminSectionProps={currentUser.role === 'admin' ? {
                             editingRecipe,
                             clearEditing: () => setEditingRecipe(null),

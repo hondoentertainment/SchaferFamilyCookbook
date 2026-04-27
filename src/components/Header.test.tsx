@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { Header } from './Header';
 import { renderWithProviders, createMockContributor } from '../test/utils';
+import { siteConfig } from '../config/site';
 
 describe('Header', () => {
     const mockSetTab = vi.fn();
@@ -38,8 +39,8 @@ describe('Header', () => {
     it('should render logical logo and navigation', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        expect(screen.getByRole('button', { name: 'Go to Recipes' })).toBeInTheDocument();
-        expect(screen.getByText('Archive')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to recipes` })).toBeInTheDocument();
+        expect(screen.getByText(siteConfig.siteName)).toBeInTheDocument();
         expect(screen.getByText('Recipes')).toBeInTheDocument();
         expect(screen.getByText('A–Z')).toBeInTheDocument();
         expect(screen.getByText('Family Story')).toBeInTheDocument();
@@ -83,9 +84,9 @@ describe('Header', () => {
         expect(mockOnLogout).toHaveBeenCalled();
     });
 
-    it('should call setTab("Recipes") when Archive logo receives Enter/Space keydown', () => {
+    it('should call setTab("Recipes") when brand logo receives Enter/Space keydown', () => {
         renderWithProviders(<Header {...defaultProps} />);
-        const logoBtn = screen.getByRole('button', { name: 'Go to Recipes' });
+        const logoBtn = screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to recipes` });
 
         fireEvent.keyDown(logoBtn, { key: 'Enter' });
         expect(mockSetTab).toHaveBeenCalledWith('Recipes');

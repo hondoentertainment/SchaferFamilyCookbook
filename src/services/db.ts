@@ -56,19 +56,39 @@ function getCategoryFallbackImage(category?: Recipe['category']): string {
     return CATEGORY_IMAGES[category || 'Main'] || CATEGORY_IMAGES.Generic;
 }
 
+function isCuratedImageSource(source?: Recipe['imageSource']): boolean {
+    return source === 'upload' || source === 'nano-banana' || source === 'pollinations';
+}
+
+/** Legacy JSON used random `/recipe-images/imported_*.jpg` paths per recipe; normalize to the canonical image for that category. */
+function isLegacyBundledRecipeImage(image?: string): boolean {
+    return !!image && image.startsWith('/recipe-images/');
+}
+
 function shouldUseCategoryFallbackImage(image?: string): boolean {
     if (!image) return true;
-    if (image.startsWith('/recipe-images/') || image.startsWith('data:image/')) return false;
+    if (image.startsWith('data:image/')) return false;
     if (image.includes('storage.googleapis.com') || image.includes('firebasestorage.googleapis.com')) return false;
     return image.includes('pollinations.ai') || image.includes('images.unsplash.com') || (!image.startsWith('http://') && !image.startsWith('https://'));
 }
 
 function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
     return recipes.map((recipe) => {
-        if (!shouldUseCategoryFallbackImage(recipe.image)) return recipe;
+        if (isCuratedImageSource(recipe.imageSource)) {
+            return recipe;
+        }
+        if (isLegacyBundledRecipeImage(recipe.image)) {
+            return {
+                ...recipe,
+                image: getCategoryFallbackImage(recipe.category),
+            };
+        }
+        if (!shouldUseCategoryFallbackImage(recipe.image)) {
+            return recipe;
+        }
         return {
             ...recipe,
-            image: getCategoryFallbackImage(recipe.category)
+            image: getCategoryFallbackImage(recipe.category),
         };
     });
 }
