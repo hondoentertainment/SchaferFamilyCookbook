@@ -171,7 +171,7 @@ describe('AdminView', () => {
                 expect.objectContaining({
                     title: 'New Test Recipe',
                     ingredients: ['Apple', 'Sugar'],
-                    instructions: ['Bake it']
+                    instructions: ['Bake it'],
                 }),
                 undefined
             );
@@ -326,7 +326,7 @@ describe('AdminView', () => {
         expect(mockOnAddRecipe).not.toHaveBeenCalled();
         // A toast with the validation message should appear
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/Recipe title is required/i);
+            expect(screen.getByTestId('toast-stack')).toHaveTextContent(/Recipe title is required/i);
         });
     });
 
@@ -342,7 +342,7 @@ describe('AdminView', () => {
 
         // The save call is awaited inside the handler; wait for the toast to appear
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/permission-denied/i);
+            expect(screen.getByTestId('toast-stack')).toHaveTextContent(/permission-denied/i);
         });
         // Confirm the app did not crash – the tab headers are still rendered
         expect(screen.getByText('📖 Recipes')).toBeInTheDocument();
@@ -367,7 +367,7 @@ describe('AdminView', () => {
         fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
 
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/Upload failed/i);
+            expect(screen.getByTestId('toast-stack')).toHaveTextContent(/Upload failed/i);
         });
         // App must still be usable after the error
         expect(screen.getByText('📖 Recipes')).toBeInTheDocument();

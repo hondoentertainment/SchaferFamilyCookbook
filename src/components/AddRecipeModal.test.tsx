@@ -258,9 +258,8 @@ describe('AddRecipeModal', () => {
         fireEvent.change(screen.getByLabelText(/paste recipe text for ai/i), { target: { value: 'Some text' } });
         fireEvent.click(screen.getByRole('button', { name: /organize with ai/i }));
 
-        // UIContext toast uses role="status"
         await waitFor(() => {
-            expect(screen.getByRole('status')).toBeInTheDocument();
+            expect(screen.getByTestId('toast-stack')).toBeInTheDocument();
         });
     });
 

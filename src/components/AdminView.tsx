@@ -483,15 +483,21 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 }
             }
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
-            await onAddRecipe({
-                ...recipeForm as Recipe,
-                id: recipeForm.id || 'r' + Date.now(),
-                contributor: recipeForm.contributor || currentUser?.name || 'Family',
-                image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic,
-                imageSource: imageSource || undefined,
-                ingredients,
-                instructions
-            }, recipeFile || undefined);
+            try {
+                await onAddRecipe({
+                    ...recipeForm as Recipe,
+                    id: recipeForm.id || 'r' + Date.now(),
+                    contributor: recipeForm.contributor || currentUser?.name || 'Family',
+                    image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic,
+                    imageSource: imageSource || undefined,
+                    ingredients,
+                    instructions
+                }, recipeFile || undefined);
+            } catch (saveErr) {
+                const msg = saveErr instanceof Error ? saveErr.message : String(saveErr);
+                toast(msg, 'error');
+                return;
+            }
 
             setSuccessMessage(isUpdate ? `✓ "${recipeForm.title}" updated successfully!` : `✓ "${recipeForm.title}" added to archive!`);
             toast(isUpdate ? 'Recipe updated' : 'Recipe saved', 'success');
@@ -588,7 +594,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }
     }, [isSubmitting, uploadProgress.current, uploadProgress.total]);
 
-    const _handleExportJSON = () => {
+    const handleExportJSON = () => {
         const json = JSON.stringify(recipes, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -600,7 +606,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         toast(`Exported ${recipes.length} recipes as JSON`, 'success');
     };
 
-    const _handleExportCSV = () => {
+    const handleExportCSV = () => {
         const header = ['title', 'category', 'contributor', 'prepTime', 'cookTime', 'calories', 'servings'];
         const rows = recipes.map(r => [
             r.title ?? '',
@@ -962,21 +968,39 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {/* Manage Recipes List with Search */}
                                     {!editingRecipe && (
                                         <div className="bg-stone-50 rounded-3xl border border-stone-100 p-6 max-h-[500px] overflow-hidden mb-8">
-                                            <div className="flex items-center justify-between mb-4 sticky top-0 bg-stone-50 py-2 z-10">
+                                            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap sticky top-0 bg-stone-50 py-2 z-10">
                                                 <h4 className="text-[10px] font-black uppercase text-stone-400">
                                                     Manage Recipes ({filteredRecipes.length}{recipeSearch ? ` of ${managedRecipes.length}` : ''})
                                                 </h4>
-                                                <div className="relative">
-                                                    <label htmlFor="admin-recipe-search" className="sr-only">Search recipes</label>
-                                                    <input
-                                                        id="admin-recipe-search"
-                                                        type="search"
-                                                        placeholder="Search recipes..."
-                                                        value={recipeSearch}
-                                                        onChange={e => setRecipeSearch(e.target.value)}
-                                                        className="pl-8 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20 w-48"
-                                                    />
-                                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
+                                                <div className="flex items-center gap-2 flex-wrap ml-auto">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleExportJSON}
+                                                        className="px-3 py-2 rounded-xl border border-stone-200 bg-white text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-[#2D4635]/30 hover:text-[#2D4635] transition-colors"
+                                                        aria-label="Download all recipes as JSON"
+                                                    >
+                                                        ⬇️ Export as JSON
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleExportCSV}
+                                                        className="px-3 py-2 rounded-xl border border-stone-200 bg-white text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-[#2D4635]/30 hover:text-[#2D4635] transition-colors"
+                                                        aria-label="Download all recipes as CSV"
+                                                    >
+                                                        ⬇️ Export as CSV
+                                                    </button>
+                                                    <div className="relative">
+                                                        <label htmlFor="admin-recipe-search" className="sr-only">Search recipes</label>
+                                                        <input
+                                                            id="admin-recipe-search"
+                                                            type="search"
+                                                            placeholder="Search recipes..."
+                                                            value={recipeSearch}
+                                                            onChange={e => setRecipeSearch(e.target.value)}
+                                                            className="pl-8 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20 w-48"
+                                                        />
+                                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
@@ -1154,33 +1178,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                     )}
 
-                                    {/* Export Recipes */}
-                                    {!editingRecipe && (
-                                        <div className="space-y-4 pt-6 border-t border-stone-100">
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] flex items-center gap-2">
-                                                <span>⬇️</span> Export
-                                            </h4>
-                                            <div className="flex gap-4 flex-wrap">
-                                                <button
-                                                    type="button"
-                                                    onClick={_handleExportJSON}
-                                                    className="flex-1 min-w-[140px] py-4 bg-stone-50 text-stone-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 shadow-sm hover:bg-stone-100"
-                                                >
-                                                    ⬇️ Export as JSON
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={_handleExportCSV}
-                                                    className="flex-1 min-w-[140px] py-4 bg-stone-50 text-stone-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 shadow-sm hover:bg-stone-100"
-                                                >
-                                                    ⬇️ Export as CSV
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {editingRecipe && (
-                                    <form onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
+                                    <form noValidate onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
                                         <div className="space-y-2">
                                             <label htmlFor="admin-recipe-image-upload" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
 

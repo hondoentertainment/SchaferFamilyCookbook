@@ -49,7 +49,7 @@ describe('OfflineBanner', () => {
         setOnlineStatus(false);
         renderWithProviders(<OfflineBanner />);
         // The banner element has role="status" and aria-live="polite"; find it by its
-        // unique offline text since the UIProvider toast container also has role="status".
+        // unique offline text (toast list uses a live region, not role="status").
         const allStatuses = screen.getAllByRole('status');
         const banner = allStatuses.find(el => /you're offline/i.test(el.textContent ?? ''));
         expect(banner).toBeDefined();

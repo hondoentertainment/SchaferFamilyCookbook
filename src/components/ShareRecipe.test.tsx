@@ -88,7 +88,7 @@ describe('ShareRecipe component', () => {
         // (an AbortError / user cancellation must be silent — no "Share failed" text)
         expect(screen.queryByText(/share failed/i)).not.toBeInTheDocument();
         // The status container should be empty (no child toast items)
-        expect(screen.getByRole('status')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('toast-stack')).toBeEmptyDOMElement();
     });
 
     it('shows an error toast when navigator.clipboard.writeText fails', async () => {
@@ -106,7 +106,7 @@ describe('ShareRecipe component', () => {
         fireEvent.click(screen.getByRole('button', { name: /copy share link/i }));
 
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/Could not copy link/i);
+            expect(screen.getByTestId('toast-stack')).toHaveTextContent(/Could not copy link/i);
         });
     });
 
@@ -131,7 +131,7 @@ describe('ShareRecipe component', () => {
 
         // A success toast should appear confirming the copy
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/copied to clipboard/i);
+            expect(screen.getByTestId('toast-stack')).toHaveTextContent(/copied to clipboard/i);
         });
     });
 });

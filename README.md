@@ -31,15 +31,21 @@ Without a valid key or working proxy, AI buttons will fail with network/API erro
 | AI buttons fail with network error | No `GEMINI_API_KEY` or no working `/api/gemini` proxy (use `vercel dev` or deploy to Vercel) |
 | MMS webhook doesn't receive texts | Needs `FIREBASE_SERVICE_ACCOUNT` and `TWILIO_AUTH_TOKEN` in Vercel env; webhook runs only on Vercel, not GitHub Pages |
 
+### Tests and CI
+
+- **`npm run ci`** runs ESLint, TypeScript check, **Vitest** (unit), and a production build. It does **not** run Playwright; run E2E separately before large UI or routing changes.
+- **Playwright** (`npm run test:e2e` or `npm run test:e2e -- --project=chromium` to mirror the Actions job) builds the app, serves `vite preview` on a **dedicated localhost port** defined in `playwright.config.ts`, then runs the specs. That avoids accidentally testing whatever happens to be bound to Vite’s default preview port (4173). If you need to attach to an already-running server, set `PLAYWRIGHT_BASE_URL` to that origin; to reuse a preview Playwright just started, set `PW_REUSE_E2E_SERVER=1` (see `playwright.config.ts`).
+- **GitHub Actions** runs `ci` first, then a second job starts Firebase emulators and E2E with the env vars in `.github/workflows/ci.yml` (`VITE_FIREBASE_USE_EMULATOR`, etc.).
+
 ## Finalize and Deploy
 
 ```bash
-npm run ci              # Lint, type-check, unit tests, build
-npm run test:e2e        # E2E (chromium: --project=chromium)
+npm run ci              # Lint, type-check, unit tests, build (no Playwright)
+npm run test:e2e        # E2E (e.g. --project=chromium; includes build + preview)
 npm run smoke:prod      # Verify Vercel + GitHub Pages return 200 and expected content
 ```
 
-After push to `main`: CI runs lint, type-check, unit tests, build, then a **Playwright E2E** job (Chromium). Deploy to GitHub Pages runs from the deploy workflow. Vercel deploys if connected. Verify env vars in Vercel: `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT`, `TWILIO_AUTH_TOKEN`.
+After push to `main`: CI runs lint, type-check, unit tests, build, then a **separate Playwright E2E** job (Chromium, with emulators as in the workflow). Deploy to GitHub Pages runs from the deploy workflow. Vercel deploys if connected. Verify env vars in Vercel: `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT`, `TWILIO_AUTH_TOKEN`.
 
 ## Deploy (Vercel)
 
