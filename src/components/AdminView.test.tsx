@@ -64,7 +64,7 @@ describe('AdminView', () => {
     it('should render Records tab by default with Manage Recipes', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
         expect(screen.getAllByText('Manage Recipes').length).toBeGreaterThan(0);
-        expect(screen.getByText('Manage Recipes (2)')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Search archive (e.g. Grandma's, Pie...)")).toBeInTheDocument();
     });
 
     it('should render subtabs for Recipes, Gallery, Trivia, Directory', () => {
@@ -77,17 +77,16 @@ describe('AdminView', () => {
 
     it('should filter recipes by search', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
-        const searchInput = screen.getByPlaceholderText('Search recipes...');
+        const searchInput = screen.getByPlaceholderText("Search archive (e.g. Grandma's, Pie...)");
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getByText('Apple Pie')).toBeInTheDocument();
         expect(screen.queryByText('Banana Bread')).not.toBeInTheDocument();
-        expect(screen.getByText(/Manage Recipes \(1 of 2\)/)).toBeInTheDocument();
     });
 
     it('should show empty state when search has no matches', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
-        fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: 'xyz' } });
-        expect(screen.getByText(/No recipes match "xyz"/)).toBeInTheDocument();
+        fireEvent.change(screen.getByPlaceholderText("Search archive (e.g. Grandma's, Pie...)"), { target: { value: 'xyz' } });
+        expect(screen.getByText('Archive empty or no match.')).toBeInTheDocument();
     });
 
     it('should switch to Gallery tab', () => {
@@ -140,20 +139,21 @@ describe('AdminView', () => {
 
     it('should show bulk image buttons', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
-        expect(screen.getByText('🖼️ Fill Missing (Imagen)')).toBeInTheDocument();
-        expect(screen.getByText('🔄 Regenerate All (Imagen)')).toBeInTheDocument();
+        expect(screen.getByText('Bulk Visual Management')).toBeInTheDocument();
+        expect(screen.getByText('🖼️ Stage Missing')).toBeInTheDocument();
+        expect(screen.getByText('🔄 Regen All (AI)')).toBeInTheDocument();
     });
 
-    it('should show Recipe images progress when recipes are passed', () => {
+    it('should show recipe cards with mixed image states', () => {
         const recipesWithMixedImages = [
             createMockRecipe({ id: 'r1', title: 'With Image', image: 'https://example.com/a.jpg', imageSource: 'upload' }),
             createMockRecipe({ id: 'r2', title: 'No Image', image: '', imageSource: undefined }),
             createMockRecipe({ id: 'r3', title: 'With Imagen', image: 'https://example.com/b.jpg', imageSource: 'nano-banana' }),
         ];
         renderWithProviders(<AdminView {...defaultProps} recipes={recipesWithMixedImages} />);
-        expect(screen.getByText('Recipe images')).toBeInTheDocument();
-        const recipeImagesSection = screen.getByText('Recipe images').closest('div');
-        expect(recipeImagesSection).toHaveTextContent(/2 of 3 recipes have images/);
+        expect(screen.getByText('With Image')).toBeInTheDocument();
+        expect(screen.getByText('No Image')).toBeInTheDocument();
+        expect(screen.getByText('With Imagen')).toBeInTheDocument();
     });
 
     it('should call onAddRecipe when the recipe form is submitted', async () => {
@@ -234,8 +234,6 @@ describe('AdminView', () => {
 
         const confirmDialogBtn = await screen.findByRole('button', { name: 'Merge' });
         fireEvent.click(confirmDialogBtn);
-        // Expect onAddRecipe to be called to update "Test User" recipes to "New User"
-        // Wait for the re-save
         await screen.findByText(/Successfully merged 2 recipes/i).catch(() => { });
         expect(mockOnAddRecipe).toHaveBeenCalledWith(
             expect.objectContaining({ contributor: 'New User' })

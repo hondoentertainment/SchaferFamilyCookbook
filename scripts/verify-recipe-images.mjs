@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env node
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
@@ -10,6 +10,7 @@ const recipesPath = resolve(root, 'src/data/recipes.json');
 const auditCsvPath = resolve(root, 'images_audit.csv');
 
 const recipes = JSON.parse(readFileSync(recipesPath, 'utf8'));
+const checkRemoteLive = process.argv.includes('--check-remote-live');
 const usageCounts = new Map();
 for (const recipe of recipes) {
   const image = String(recipe.image || '').trim();
@@ -31,20 +32,22 @@ function csvEscape(value) {
 for (const recipe of recipes) {
   const image = String(recipe.image || '').trim();
   const isLocal = image.startsWith('/recipe-images/');
+  const isRemote = /^https?:\/\//.test(image);
   const relativePath = isLocal ? image.replace(/^\//, '') : '';
   const diskPath = isLocal ? resolve(root, 'public', relativePath.replace(/^recipe-images\//, 'recipe-images/')) : '';
-  const exists = isLocal && existsSync(diskPath);
+  let exists = isLocal && existsSync(diskPath);
   const usageCount = usageCounts.get(image) || 0;
   let width = '';
   let height = '';
   let sizeBytes = '';
   let aspectRatio = '';
+  let mimeType = '';
 
   if (!image) {
     failures.push(`${recipe.title}: missing image path`);
-  } else if (!isLocal) {
-    failures.push(`${recipe.title}: image is not local (${image})`);
-  } else if (!exists) {
+  } else if (!isLocal && !isRemote) {
+    failures.push(`${recipe.title}: image path is neither local nor remote (${image})`);
+  } else if (isLocal && !exists) {
     failures.push(`${recipe.title}: missing file ${image}`);
   }
 
@@ -63,6 +66,7 @@ for (const recipe of recipes) {
     height = metadata.height ?? '';
     sizeBytes = metadata.size ?? '';
     aspectRatio = metadata.width && metadata.height ? (metadata.width / metadata.height).toFixed(3) : '';
+    mimeType = metadata.format ? `image/${metadata.format === 'jpeg' ? 'jpeg' : metadata.format}` : '';
 
     if ((metadata.width ?? 0) < 800 || (metadata.height ?? 0) < 600) {
       warnings.push(`${recipe.title}: low image dimensions ${metadata.width}x${metadata.height}`);
@@ -72,6 +76,33 @@ for (const recipe of recipes) {
     }
     if (stats.isOpaque === false) {
       warnings.push(`${recipe.title}: image has transparency; verify export format is intentional`);
+    }
+  } else if (isRemote) {
+    try {
+      const remoteUrl = new URL(image);
+      exists = true;
+      mimeType = 'image/remote';
+      if (!remoteUrl.pathname.includes('/prompt/')) {
+        failures.push(`${recipe.title}: remote image URL is missing the expected prompt path`);
+      }
+      if (recipe.imageSource === 'pollinations' && remoteUrl.hostname !== 'image.pollinations.ai') {
+        failures.push(`${recipe.title}: pollinations imageSource points to unexpected host ${remoteUrl.hostname}`);
+      }
+      if (checkRemoteLive) {
+        const response = await fetch(image, {
+          headers: { 'User-Agent': 'SchaferCookbook/1.0' },
+          signal: AbortSignal.timeout(45000),
+        });
+        mimeType = response.headers.get('content-type')?.split(';')[0] || mimeType;
+        sizeBytes = response.headers.get('content-length') || sizeBytes;
+        if (!response.ok) {
+          failures.push(`${recipe.title}: remote image returned HTTP ${response.status}`);
+        } else if (!mimeType.startsWith('image/')) {
+          failures.push(`${recipe.title}: remote image content-type is not an image (${mimeType || 'unknown'})`);
+        }
+      }
+    } catch (error) {
+      failures.push(`${recipe.title}: remote image URL is invalid (${error?.message || String(error)})`);
     }
   }
 
@@ -83,6 +114,8 @@ for (const recipe of recipes) {
     recipe.imageSource || '',
     usageCount,
     exists,
+    isLocal ? 'local' : isRemote ? 'remote' : 'invalid',
+    mimeType,
     width,
     height,
     sizeBytes,
@@ -91,7 +124,7 @@ for (const recipe of recipes) {
 }
 
 const csvLines = [
-  ['id', 'title', 'category', 'image', 'imageSource', 'usageCount', 'exists', 'width', 'height', 'sizeBytes', 'aspectRatio'].join(','),
+  ['id', 'title', 'category', 'image', 'imageSource', 'usageCount', 'exists', 'storage', 'mimeType', 'width', 'height', 'sizeBytes', 'aspectRatio'].join(','),
   ...rows.map((row) => row.map(csvEscape).join(',')),
 ];
 writeFileSync(auditCsvPath, csvLines.join('\n') + '\n');

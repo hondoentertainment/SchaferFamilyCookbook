@@ -5,6 +5,7 @@ import {
     buildLLMPromptText,
     normalizeDescription,
     buildRecipeImagePrompt,
+    buildPollinationsImageUrl,
     extractGeneratedImage,
     TEXT_MODEL,
     RECIPE_IMAGE_MODEL,
@@ -19,6 +20,10 @@ type RecipeInput = {
     instructions?: string[];
 };
 
+function getResponseText(response: { text?: string } | null | undefined): string {
+    return typeof response?.text === 'string' ? response.text : '';
+}
+
 function getErrorMessage(err: unknown): string {
     if (err instanceof Error) return err.message;
     return String(err ?? '');
@@ -27,6 +32,27 @@ function getErrorMessage(err: unknown): string {
 function isQuotaError(message: string): boolean {
     const lower = message.toLowerCase();
     return lower.includes('429') || lower.includes('quota') || lower.includes('rate limit');
+}
+
+async function fetchPollinationsImage(recipe: RecipeInput) {
+    const imageUrl = buildPollinationsImageUrl(recipe);
+    const response = await fetch(imageUrl, {
+        headers: { 'User-Agent': 'SchaferCookbook/1.0' },
+        signal: AbortSignal.timeout(45000),
+    });
+    if (!response.ok) {
+        throw new Error(`Pollinations image request failed with HTTP ${response.status}`);
+    }
+    const mimeType = response.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+    if (imageBuffer.length < 1000) {
+        throw new Error(`Pollinations image response was too small (${imageBuffer.length} bytes)`);
+    }
+    return {
+        imageBase64: imageBuffer.toString('base64'),
+        mimeType,
+        imageSource: 'pollinations' as const,
+    };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -43,24 +69,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    if (!API_KEY) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
-    }
-
     try {
         const body = (req.body ?? {}) as Record<string, unknown>;
         const action = typeof body.action === 'string' ? body.action : '';
 
-        const ai = new GoogleGenAI({ apiKey: API_KEY });
-
         if (action === 'generateContent') {
+            if (!API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
             const text = typeof body.text === 'string' ? body.text : '';
             if (!text) return res.status(400).json({ error: 'Missing text' });
+            const ai = new GoogleGenAI({ apiKey: API_KEY });
             const response = await ai.models.generateContent({
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text }] }]
             });
-            const result = (response as any).text;
+            const result = getResponseText(response);
             return res.status(200).json({ text: result ?? '' });
         }
 
@@ -70,40 +92,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 : undefined;
             if (!recipe?.title) return res.status(400).json({ error: 'Missing recipe' });
 
-            const promptText = buildLLMPromptText(recipe);
-            const contentResp = await ai.models.generateContent({
-                model: TEXT_MODEL,
-                contents: [{ role: 'user', parts: [{ text: promptText }] }]
-            });
-            const raw = (contentResp as any).text;
-            const description = normalizeDescription(raw, recipe);
+            if (API_KEY) {
+                try {
+                    const ai = new GoogleGenAI({ apiKey: API_KEY });
+                    const promptText = buildLLMPromptText(recipe);
+                    const contentResp = await ai.models.generateContent({
+                        model: TEXT_MODEL,
+                        contents: [{ role: 'user', parts: [{ text: promptText }] }]
+                    });
+                    const raw = getResponseText(contentResp);
+                    const description = normalizeDescription(raw, recipe);
 
-            const imageResp = await ai.models.generateContent({
-                model: RECIPE_IMAGE_MODEL,
-                contents: [{ role: 'user', parts: [{ text: buildRecipeImagePrompt(description) }] }],
-                config: {
-                    responseModalities: ['TEXT', 'IMAGE'],
-                    imageConfig: {
-                        aspectRatio: '4:3',
-                        imageSize: '1K'
+                    const imageResp = await ai.models.generateContent({
+                        model: RECIPE_IMAGE_MODEL,
+                        contents: [{ role: 'user', parts: [{ text: buildRecipeImagePrompt(description) }] }],
+                        config: {
+                            responseModalities: ['TEXT', 'IMAGE'],
+                            imageConfig: {
+                                aspectRatio: '4:3',
+                                imageSize: '1K'
+                            }
+                        }
+                    });
+                    const generatedImage = extractGeneratedImage(imageResp);
+                    if (generatedImage?.imageBase64) {
+                        return res.status(200).json({
+                            imageBase64: generatedImage.imageBase64,
+                            mimeType: generatedImage.mimeType,
+                            imageSource: 'nano-banana'
+                        });
                     }
+                } catch (err: unknown) {
+                    console.warn('Gemini image generation failed, falling back to Pollinations:', err);
                 }
-            });
-            const generatedImage = extractGeneratedImage(imageResp);
-            if (!generatedImage?.imageBase64) {
-                return res.status(500).json({ error: 'Image generation failed' });
             }
 
-            return res.status(200).json({ 
-                imageBase64: generatedImage.imageBase64,
-                mimeType: generatedImage.mimeType,
-                imageSource: 'nano-banana'
-            });
+            const fallbackImage = await fetchPollinationsImage(recipe);
+            return res.status(200).json(fallbackImage);
         }
 
         if (action === 'magicImport') {
+            if (!API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
             const rawText = typeof body.rawText === 'string' ? body.rawText : '';
             if (!rawText) return res.status(400).json({ error: 'Missing rawText' });
+            const ai = new GoogleGenAI({ apiKey: API_KEY });
             const response = await ai.models.generateContent({
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text: `Recipe text: ${rawText}` }] }],
@@ -124,13 +156,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                 }
             });
-            const result = (response as any).text;
+            const result = getResponseText(response);
             return res.status(200).json({ json: result ?? '{}' });
         }
 
         if (action === 'magicImportBulk') {
+            if (!API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
             const rawText = typeof body.rawText === 'string' ? body.rawText : '';
             if (!rawText) return res.status(400).json({ error: 'Missing rawText' });
+            const ai = new GoogleGenAI({ apiKey: API_KEY });
             const response = await ai.models.generateContent({
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text: `Multiple recipes text: ${rawText}` }] }],
@@ -154,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                 }
             });
-            const result = (response as any).text;
+            const result = getResponseText(response);
             return res.status(200).json({ json: result ?? '[]' });
         }
 
@@ -170,4 +204,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Gemini API error' });
     }
 }
-

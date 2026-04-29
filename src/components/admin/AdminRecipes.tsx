@@ -34,13 +34,15 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
         try {
             const saved = localStorage.getItem('sc_recipe_draft_form');
             if (saved) return JSON.parse(saved);
-        } catch { }
+        } catch {
+            localStorage.removeItem('sc_recipe_draft_form');
+        }
         return { title: '', category: 'Main', ingredients: [], instructions: [] };
     });
     const [rawText, setRawText] = useState(() => localStorage.getItem('sc_recipe_draft_text') || '');
 
     const [recipeFile, setRecipeFile] = useState<File | null>(null);
-    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'nano-banana' | null>(null);
+    const [imageSourceForCurrent, setImageSourceForCurrent] = useState<'upload' | 'nano-banana' | 'pollinations' | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isMagicLoading, setIsMagicLoading] = useState(false);
@@ -56,7 +58,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
     const [visibleCount, setVisibleCount] = useState(20);
 
     // Staging Queues
-    interface StagedImage { recipe: Recipe; file: File; previewUrl: string; }
+    interface StagedImage { recipe: Recipe; file: File; previewUrl: string; imageSource: 'nano-banana' | 'pollinations'; }
     const [stagedImages, setStagedImages] = useState<StagedImage[]>([]);
     const [stagedMagicImports, setStagedMagicImports] = useState<Partial<Recipe>[]>([]);
 
@@ -103,10 +105,14 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
         } else {
             const saved = localStorage.getItem('sc_recipe_draft_form');
             if (saved) {
-                 try { setRecipeForm(JSON.parse(saved)); } catch {}
-            } else {
-                 setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
+                 try {
+                    setRecipeForm(JSON.parse(saved));
+                    return;
+                 } catch {
+                    localStorage.removeItem('sc_recipe_draft_form');
+                 }
             }
+            setRecipeForm({ title: '', category: 'Main', ingredients: [], instructions: [] });
             setPreviewUrl(null);
         }
         setRecipeFile(null);
@@ -214,7 +220,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
             } else {
                  toast('No valid formats found in text.', 'error');
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'AI Analysis failed: ${message}');
         } finally { setIsMagicLoading(false); }
@@ -229,7 +235,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
             setRecipeFile(file);
             setImageSourceForCurrent(imageSource);
             setPreviewUrl(URL.createObjectURL(file));
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'Failed to generate image: ${message}.');
         } finally { setIsGeneratingImage(false); }
@@ -241,7 +247,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
             const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
             const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
             await onAddRecipe({ ...recipe, imageSource }, file);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'Quick generation failed: ${message}.');
         } finally { setIsGeneratingImage(false); }
@@ -253,7 +259,11 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
             : recipes.filter(r => {
                 const isPlaceholder = Object.values(CATEGORY_IMAGES).includes(r.image);
                 const isPollinations = r.image?.includes('pollinations.ai');
-                const isMissing = !r.image || r.image.includes('fallback-gradient') || r.image.includes('source.unsplash.com');
+                const isMissing =
+                    !r.image ||
+                    r.image.includes('fallback-gradient') ||
+                    r.image.includes('source.unsplash.com') ||
+                    r.image.includes('images.unsplash.com');
                 return isPlaceholder || isPollinations || isMissing;
             });
 
@@ -276,11 +286,11 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
         for (let i = 0; i < targetRecipes.length; i++) {
             const recipe = targetRecipes[i];
             try {
-                const { imageBase64, mimeType } = await geminiProxy.generateImage(recipe);
+                const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
                 const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
                 const previewUrl = URL.createObjectURL(file);
                 
-                newStaged.push({ recipe, file, previewUrl });
+                newStaged.push({ recipe, file, previewUrl, imageSource });
                 successCount++;
             } catch (e) {
                 console.error(`Failed to stage image for "${recipe.title}":`, e);
@@ -307,7 +317,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
         setIsSubmitting(true);
         try {
             for (const item of stagedImages) {
-                await onAddRecipe({ ...item.recipe, imageSource: 'nano-banana' }, item.file);
+                await onAddRecipe({ ...item.recipe, imageSource: item.imageSource }, item.file);
             }
             toast(`Approved and saved ${stagedImages.length} images to the archive.`, 'success');
             stagedImages.forEach(s => URL.revokeObjectURL(s.previewUrl));
@@ -448,7 +458,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto no-scrollbar p-1">
                         {stagedImages.map(item => (
                              <div key={item.recipe.id} className="bg-white border border-stone-100 rounded-2xl shadow-sm overflow-hidden group">
-                                 <img src={item.previewUrl} className="w-full h-32 object-cover" />
+                                 <img src={item.previewUrl} className="w-full h-32 object-cover" alt={`Staged preview for ${item.recipe.title}`} />
                                  <div className="p-3">
                                      <h4 className="text-[10px] font-bold text-[#2D4635] truncate">{item.recipe.title}</h4>
                                      <div className="mt-2 flex gap-1">
@@ -623,7 +633,7 @@ export const AdminRecipes: React.FC<AdminRecipesProps> = ({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Category</label>
-                            <select className="p-4 border border-stone-200/60 bg-white/80 rounded-2xl text-base focus:bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full transition-colors" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
+                            <select className="p-4 border border-stone-200/60 bg-white/80 rounded-2xl text-base focus:bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full transition-colors" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as Recipe['category'] })}>
                                 {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
                             </select>
                         </div>

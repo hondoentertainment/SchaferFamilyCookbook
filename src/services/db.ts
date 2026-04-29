@@ -5,6 +5,10 @@ import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry } from '.
 import defaultRecipes from '../data/recipes.json';
 import { CATEGORY_IMAGES } from '../constants';
 
+const canonicalRecipes = defaultRecipes as Recipe[];
+const canonicalRecipeById = new Map(canonicalRecipes.map((recipe) => [recipe.id, recipe]));
+const canonicalRecipeByTitle = new Map(canonicalRecipes.map((recipe) => [recipe.title.normalize('NFKC'), recipe]));
+
 function safeParseArray<T>(raw: string | null): T[] {
     if (!raw) return [];
     try {
@@ -19,19 +23,47 @@ function getCategoryFallbackImage(category?: Recipe['category']): string {
     return CATEGORY_IMAGES[category || 'Main'] || CATEGORY_IMAGES.Generic;
 }
 
-function shouldUseCategoryFallbackImage(image?: string): boolean {
+function shouldUseCategoryFallbackImage(image?: string, imageSource?: Recipe['imageSource']): boolean {
     if (!image) return true;
     if (image.startsWith('/recipe-images/') || image.startsWith('data:image/')) return false;
     if (image.includes('storage.googleapis.com') || image.includes('firebasestorage.googleapis.com')) return false;
-    return image.includes('pollinations.ai') || image.includes('images.unsplash.com') || (!image.startsWith('http://') && !image.startsWith('https://'));
+    if (image.includes('pollinations.ai')) return imageSource !== 'pollinations';
+    return image.includes('images.unsplash.com') || (!image.startsWith('http://') && !image.startsWith('https://'));
+}
+
+function shouldPreserveCustomImage(image?: string): boolean {
+    if (!image) return false;
+    if (image.startsWith('data:image/')) return true;
+    return image.includes('storage.googleapis.com') || image.includes('firebasestorage.googleapis.com');
+}
+
+function shouldRefreshCanonicalRecipeImage(recipe: Recipe): boolean {
+    if (!recipe.image) return true;
+    if (shouldPreserveCustomImage(recipe.image)) return false;
+    if (recipe.image.includes('images.unsplash.com') || recipe.image.includes('source.unsplash.com')) return true;
+    if (recipe.image.includes('pollinations.ai')) return true;
+    return recipe.image.startsWith('/recipe-images/') && !recipe.imageSource;
+}
+
+function hydrateCanonicalRecipeImage(recipe: Recipe): Recipe {
+    const canonicalRecipe =
+        canonicalRecipeById.get(recipe.id) ||
+        canonicalRecipeByTitle.get(String(recipe.title || '').normalize('NFKC'));
+    if (!canonicalRecipe || !shouldRefreshCanonicalRecipeImage(recipe)) return recipe;
+    return {
+        ...recipe,
+        image: canonicalRecipe.image,
+        imageSource: canonicalRecipe.imageSource,
+    };
 }
 
 function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
     return recipes.map((recipe) => {
-        if (!shouldUseCategoryFallbackImage(recipe.image)) return recipe;
+        const hydratedRecipe = hydrateCanonicalRecipeImage(recipe);
+        if (!shouldUseCategoryFallbackImage(hydratedRecipe.image, hydratedRecipe.imageSource)) return hydratedRecipe;
         return {
-            ...recipe,
-            image: getCategoryFallbackImage(recipe.category)
+            ...hydratedRecipe,
+            image: getCategoryFallbackImage(hydratedRecipe.category)
         };
     });
 }

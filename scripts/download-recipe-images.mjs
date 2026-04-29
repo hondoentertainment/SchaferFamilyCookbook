@@ -43,9 +43,13 @@ for (let i = 0; i < recipes.length; i++) {
     const recipe = recipes[i];
     const imageFile = `${recipe.id}.jpg`;
     const imagePath = resolve(outputDir, imageFile);
+    const currentLocalPath = recipe.image.startsWith('/recipe-images/')
+        ? resolve(outputDir, recipe.image.replace('/recipe-images/', ''))
+        : imagePath;
 
     // Skip if already downloaded
-    if (recipe.image.startsWith('/recipe-images/') && existsSync(imagePath)) {
+    if (recipe.image.startsWith('/recipe-images/') && existsSync(currentLocalPath)) {
+        recipe.imageSource = recipe.imageSource || 'pollinations';
         process.stdout.write(`[${String(i + 1).padStart(2)}/${recipes.length}] ${recipe.title.padEnd(45).substring(0, 45)} SKIP (exists)\n`);
         updated++;
         continue;
@@ -57,6 +61,7 @@ for (let i = 0; i < recipes.length; i++) {
         const bytes = await downloadImage(recipe.image, imagePath);
         totalBytes += bytes;
         recipe.image = `/recipe-images/${imageFile}`;
+        recipe.imageSource = recipe.imageSource || 'pollinations';
         updated++;
         console.log(`OK (${Math.round(bytes / 1024)} KB)`);
     } catch (e) {

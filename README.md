@@ -72,11 +72,16 @@ Located in `scripts/`:
 
 | Script | Purpose |
 |--------|---------|
-| `generate-imagen-images.mjs` | Generate Imagen 3 images for all recipes; uses `shared/recipeImagePrompts.mjs` for anti-hallucination rules. Run: `GEMINI_API_KEY=... node scripts/generate-imagen-images.mjs` |
-| `generate-recipe-images.mjs` | Create Pollinations AI image URLs from hand-curated prompts. |
-| `download-recipe-images.mjs` | Download Pollinations URLs to `public/recipe-images/`. |
+| `generate-imagen-images.mjs` | Generate recipe images with `--provider auto|gemini|pollinations`. `auto` tries Gemini first, then falls back to Pollinations if Gemini is unavailable or out of quota. |
+| `generate-recipe-images.mjs` | Rebuild `src/data/recipes.json` with unique Pollinations URLs and `imageSource: "pollinations"` for every recipe. |
+| `download-recipe-images.mjs` | Download any remote recipe image URLs to `public/recipe-images/` and rewrite them to local paths. |
+| `verify-recipe-images.mjs` | Audit recipe image uniqueness, metadata, and availability; writes `images_audit.csv`. |
 
-For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATEGY.md. Use: npm run images:dry-run, npm run images:batch, npm run images:resume.
+For quota-safe batch runs and Pollinations fallback, see IMAGE_GENERATION_STRATEGY.md. Useful commands:
+- `npm run images:dry-run`
+- `npm run images:batch`
+- `npm run images:resume`
+- `npm run images:verify`
 
 **Prompt rules:** `shared/recipeImagePrompts.mjs` defines canonical prompts for recipe images. Used by AdminView (single + bulk) and `generate-imagen-images.mjs`.
 

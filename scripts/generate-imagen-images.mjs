@@ -23,6 +23,7 @@ import {
   buildLLMPromptText,
   normalizeDescription,
   buildRecipeImagePrompt,
+  buildPollinationsImageUrl,
   extractGeneratedImage,
   getImageExtension,
   TEXT_MODEL,
@@ -48,6 +49,7 @@ function parseArgs(argv) {
     resetState: false,
     stateFile: defaultStateFile,
     help: false,
+    provider: 'auto',
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -60,6 +62,7 @@ function parseArgs(argv) {
     else if (arg === '--no-resume') args.resume = false;
     else if (arg === '--resume') args.resume = true;
     else if (arg === '--reset-state') args.resetState = true;
+    else if (arg === '--provider' && next) { args.provider = String(next).toLowerCase(); i++; }
     else if (arg === '--limit' && next) { args.limit = Math.max(0, Number(next)); i++; }
     else if (arg === '--delay-ms' && next) { args.delayMs = Math.max(0, Number(next)); i++; }
     else if (arg === '--retry-delay-ms' && next) { args.retryDelayMs = Math.max(0, Number(next)); i++; }
@@ -69,6 +72,9 @@ function parseArgs(argv) {
   }
 
   if (args.forceAll) args.missingOnly = false;
+  if (!['auto', 'gemini', 'pollinations'].includes(args.provider)) {
+    throw new Error(`Unsupported provider "${args.provider}". Use auto, gemini, or pollinations.`);
+  }
   return args;
 }
 
@@ -88,6 +94,7 @@ Flags:
   --no-resume            Ignore existing state successes for this run
   --reset-state          Clear state file before running
   --dry-run              Show target recipes without calling the API
+  --provider <name>      auto (default), gemini, or pollinations
   --help                 Show this help
 `);
 }
@@ -162,7 +169,7 @@ function sleep(ms) {
 }
 
 function recipeHasFreshLocalImage(recipe) {
-  if (recipe.imageSource !== 'nano-banana') return false;
+  if (!['nano-banana', 'pollinations'].includes(recipe.imageSource || '')) return false;
   const image = recipe.image || '';
   if (!image.startsWith('/recipe-images/')) return false;
   const imageFile = image.replace('/recipe-images/', '');
@@ -175,6 +182,7 @@ function recipeNeedsGeneration(recipe) {
   if (!image) return true;
   if (image.includes('pollinations.ai')) return true;
   if (image.includes('source.unsplash.com')) return true;
+  if (image.includes('images.unsplash.com')) return true;
   if (image.includes('fallback-gradient')) return true;
   return !recipeHasFreshLocalImage(recipe);
 }
@@ -204,6 +212,21 @@ async function generateImage(ai, description) {
   return generatedImage;
 }
 
+async function downloadPollinationsImage(recipe) {
+  const imageUrl = buildPollinationsImageUrl(recipe);
+  const response = await fetch(imageUrl, {
+    headers: { 'User-Agent': 'SchaferCookbook/1.0' },
+    signal: AbortSignal.timeout(45000),
+  });
+  if (!response.ok) throw new Error(`Pollinations HTTP ${response.status}`);
+  const mimeType = response.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+  const imageBuffer = Buffer.from(await response.arrayBuffer());
+  if (imageBuffer.length < 1000) {
+    throw new Error(`Pollinations image too small (${imageBuffer.length} bytes)`);
+  }
+  return { imageBuffer, mimeType, imageSource: 'pollinations' };
+}
+
 async function generateWithRetry(ai, recipe, args) {
   let attempt = 0;
   const maxAttempts = args.maxRetries + 1;
@@ -228,6 +251,33 @@ async function generateWithRetry(ai, recipe, args) {
       console.log(`  ↳ transient error, retrying in ${Math.round(waitMs / 1000)}s...`);
       await sleep(waitMs);
     }
+  }
+}
+
+async function downloadPollinationsWithRetry(recipe, args) {
+  let attempt = 0;
+  const maxAttempts = args.maxRetries + 1;
+
+  while (attempt < maxAttempts) {
+    attempt += 1;
+    try {
+      return await downloadPollinationsImage(recipe);
+    } catch (error) {
+      const message = error?.message || String(error);
+      if (!isRetryableError(message) || attempt >= maxAttempts) {
+        throw error;
+      }
+      const waitMs = args.retryDelayMs * attempt;
+      console.log(`  -> Pollinations transient error, retrying in ${Math.round(waitMs / 1000)}s...`);
+      await sleep(waitMs);
+    }
+  }
+}
+
+function removePriorRecipeFileVariants(recipeId, nextImagePath) {
+  for (const oldExtension of ['png', 'jpg', 'webp']) {
+    const oldPath = resolve(outputDir, `${recipeId}.${oldExtension}`);
+    if (oldPath !== nextImagePath && existsSync(oldPath)) rmSync(oldPath);
   }
 }
 
@@ -263,6 +313,7 @@ console.log(`Candidates:            ${candidates.length}`);
 console.log(`Will process now:      ${selected.length}`);
 console.log(`Missing-only mode:     ${args.missingOnly ? 'yes' : 'no'}`);
 console.log(`Resume prior success:  ${args.resume ? 'yes' : 'no'}`);
+console.log(`Provider mode:         ${args.provider}`);
 console.log(`Delay between items:   ${args.delayMs}ms`);
 console.log(`Retry policy:          ${args.maxRetries} retries, base ${args.retryDelayMs}ms`);
 console.log(`State file:            ${args.stateFile}`);
@@ -277,16 +328,20 @@ if (args.dryRun) {
 }
 
 const apiKey = loadApiKey();
-if (!apiKey) {
-  console.error('ERROR: No GEMINI_API_KEY found. Set it in .env.local or as an environment variable.');
+if (args.provider === 'gemini' && !apiKey) {
+  console.error('ERROR: No GEMINI_API_KEY found. Set it in .env.local or as an environment variable, or use --provider auto/pollinations.');
   process.exit(1);
 }
-const ai = new GoogleGenAI({ apiKey });
+if (args.provider === 'auto' && !apiKey) {
+  console.log('\nNo GEMINI_API_KEY found. Falling back to Pollinations for this run.');
+}
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 let runSuccess = 0;
 let runFailed = 0;
 let runSkipped = 0;
-let stoppedForQuota = false;
+let geminiQuotaFallbackTriggered = false;
+let geminiUnavailableForRun = args.provider === 'pollinations' || !ai;
 const failures = [];
 
 for (let i = 0; i < selected.length; i++) {
@@ -294,38 +349,70 @@ for (let i = 0; i < selected.length; i++) {
   process.stdout.write(`[${String(i + 1).padStart(2)}/${selected.length}] [${index}] ${truncate(recipe.title, 45).padEnd(45)} `);
 
   try {
-    const { imageBase64, mimeType } = await generateWithRetry(ai, recipe, args);
+    let imageSource = 'pollinations';
+    let mimeType = 'image/jpeg';
+    let imageBuffer = null;
+
+    if (args.provider === 'pollinations') {
+      const pollinationsImage = await downloadPollinationsWithRetry(recipe, args);
+      imageSource = pollinationsImage.imageSource;
+      mimeType = pollinationsImage.mimeType;
+      imageBuffer = pollinationsImage.imageBuffer;
+    } else if (args.provider === 'gemini') {
+      const geminiImage = await generateWithRetry(ai, recipe, args);
+      imageSource = 'nano-banana';
+      mimeType = geminiImage.mimeType;
+      imageBuffer = Buffer.from(geminiImage.imageBase64, 'base64');
+    } else if (!geminiUnavailableForRun) {
+      try {
+        const geminiImage = await generateWithRetry(ai, recipe, args);
+        imageSource = 'nano-banana';
+        mimeType = geminiImage.mimeType;
+        imageBuffer = Buffer.from(geminiImage.imageBase64, 'base64');
+      } catch (error) {
+        const message = error?.message || String(error);
+        if (error?.code === 'HARD_QUOTA') {
+          geminiUnavailableForRun = true;
+          geminiQuotaFallbackTriggered = true;
+          state.stoppedForQuota = true;
+          console.log(`FALLBACK: ${truncate(message, 80)}`);
+          process.stdout.write(`  -> switching remaining recipes to Pollinations\n`);
+        } else {
+          console.log(`FALLBACK: ${truncate(message, 80)}`);
+        }
+        const pollinationsImage = await downloadPollinationsWithRetry(recipe, args);
+        imageSource = pollinationsImage.imageSource;
+        mimeType = pollinationsImage.mimeType;
+        imageBuffer = pollinationsImage.imageBuffer;
+      }
+    } else {
+      const pollinationsImage = await downloadPollinationsWithRetry(recipe, args);
+      imageSource = pollinationsImage.imageSource;
+      mimeType = pollinationsImage.mimeType;
+      imageBuffer = pollinationsImage.imageBuffer;
+    }
+
     const extension = getImageExtension(mimeType);
     const imageFile = `${recipe.id}.${extension}`;
     const imagePath = resolve(outputDir, imageFile);
 
-    for (const oldExtension of ['png', 'jpg', 'webp']) {
-      const oldPath = resolve(outputDir, `${recipe.id}.${oldExtension}`);
-      if (oldPath !== imagePath && existsSync(oldPath)) rmSync(oldPath);
-    }
-
-    writeFileSync(imagePath, Buffer.from(imageBase64, 'base64'));
+    removePriorRecipeFileVariants(recipe.id, imagePath);
+    writeFileSync(imagePath, imageBuffer);
     recipe.image = `/recipe-images/${imageFile}`;
-    recipe.imageSource = 'nano-banana';
+    recipe.imageSource = imageSource;
 
     state.entries[recipe.id] = {
       status: 'success',
       title: recipe.title,
       image: recipe.image,
+      imageSource,
       updatedAt: new Date().toISOString(),
     };
     runSuccess += 1;
     state.totals.success += 1;
-    console.log('OK');
+    console.log(`OK (${imageSource})`);
   } catch (error) {
     const message = error?.message || String(error);
-    if (error?.code === 'HARD_QUOTA') {
-      stoppedForQuota = true;
-      state.stoppedForQuota = true;
-      console.log(`STOP: ${truncate(message, 80)}`);
-      break;
-    }
-
     runFailed += 1;
     failures.push({ title: recipe.title, message });
     state.entries[recipe.id] = {
@@ -360,12 +447,11 @@ if (failures.length > 0) {
   console.log('\nFailures from this run:');
   failures.forEach((f) => console.log(`  - ${f.title}: ${truncate(f.message, 120)}`));
 }
-if (stoppedForQuota) {
-  console.log('\nStopped early: hard Gemini quota exhaustion detected.');
+if (geminiQuotaFallbackTriggered) {
+  console.log('\nGemini quota exhaustion was detected. Remaining recipes were generated with Pollinations.');
 }
 console.log('\nResumable strategy:');
-console.log(`  1) Wait for quota reset`);
-console.log(`  2) Re-run: node scripts/generate-imagen-images.mjs --missing-only --limit 20`);
-console.log(`  3) Progress is preserved in: ${args.stateFile}`);
+console.log(`  1) Re-run with the same provider mode when needed`);
+console.log(`  2) Progress is preserved in: ${args.stateFile}`);
 console.log(`\nImages saved to: public/recipe-images/`);
 console.log(`Updated dataset: src/data/recipes.json`);

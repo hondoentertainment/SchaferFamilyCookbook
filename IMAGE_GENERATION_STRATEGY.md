@@ -1,12 +1,13 @@
 # Recipe Image Generation Strategy (Quota-Safe)
 
-This project now supports **resumable, quota-safe image generation** for recipe photos.
+This project now supports **resumable, quota-safe recipe image generation** with an automatic Pollinations fallback.
 
 ## Goals
 
-- Update all recipe images to high-quality Nano Banana output.
+- Update all recipe images with recipe-specific AI output.
 - Avoid quota spikes and full-run failures.
 - Resume exactly where a prior run stopped.
+- Keep image creation working even when Gemini quota is unavailable.
 
 ## Recommended Workflow
 
@@ -16,13 +17,15 @@ This project now supports **resumable, quota-safe image generation** for recipe 
    - `npm run images:batch`
 3. **Repeat later (same command) until complete.**
    - The script stores progress in `.cache/imagen-generation-state.json`.
+4. **Audit the results:**
+   - `npm run images:verify`
 
 ## Why This Avoids Limits
 
-- Default mode is **missing-only** (skips recipes that already have valid Nano Banana local images).
+- Default mode is **missing-only** (skips recipes that already have valid local or Pollinations-backed images).
 - Batches are capped (`--limit 20` by default via npm script).
 - Requests are spaced with delay and transient errors are retried with backoff.
-- Hard quota exhaustion stops early while preserving all progress.
+- In `auto` mode, Gemini quota exhaustion falls back to Pollinations instead of failing the run.
 
 ## Useful Commands
 
@@ -30,12 +33,18 @@ This project now supports **resumable, quota-safe image generation** for recipe 
   - `node scripts/generate-imagen-images.mjs --dry-run --missing-only`
 - Standard batch:
   - `node scripts/generate-imagen-images.mjs --missing-only --limit 20`
+- Pollinations-only repair run:
+  - `node scripts/generate-imagen-images.mjs --missing-only --provider pollinations --limit 20`
 - Slower, safer run:
   - `node scripts/generate-imagen-images.mjs --missing-only --limit 15 --delay-ms 6000`
 - Force regenerate all recipes:
   - `node scripts/generate-imagen-images.mjs --force-all --limit 20`
 - Reset run state and start over:
   - `node scripts/generate-imagen-images.mjs --reset-state --no-resume --missing-only --limit 20`
+- Rebuild the full recipe catalog with unique Pollinations URLs:
+  - `node scripts/generate-recipe-images.mjs`
+- Localize any remote recipe image URLs:
+  - `node scripts/download-recipe-images.mjs`
 
 ## Suggested Cadence
 
@@ -48,15 +57,16 @@ Increase slowly only after repeated successful runs.
 
 ## Output and Data Integrity
 
-- Images are saved to `public/recipe-images/`.
 - `src/data/recipes.json` is updated incrementally.
+- Local image runs save files to `public/recipe-images/`.
+- Pollinations catalog rebuilds keep unique remote URLs plus `imageSource` metadata.
 - Existing image remains untouched for failed recipes.
 
 ## Admin UI Behavior
 
 Bulk generation in the Admin panel now:
 
-- Detects quota exhaustion
-- Stops early
+- Uses the `/api/gemini` proxy for primary generation
+- Falls back to Pollinations when Gemini is unavailable
 - Keeps already-generated images
-- Prompts you to resume later
+- Preserves `imageSource` metadata when staged images are approved

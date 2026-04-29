@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CloudArchive } from './db';
 import { createMockRecipe, createMockTrivia, createMockGalleryItem, setupLocalStorage } from '../test/utils';
+import defaultRecipes from '../data/recipes.json';
+import type { ContributorProfile, Recipe } from '../types';
+
+type SeedRecipe = Pick<Recipe, 'id' | 'title' | 'image' | 'imageSource'>;
 
 describe('CloudArchive', () => {
     beforeEach(() => {
@@ -42,19 +46,36 @@ describe('CloudArchive', () => {
             expect(recipes.length).toBeGreaterThan(0);
         });
 
-        it('should migrate external recipe image URLs to local category fallbacks', async () => {
-            const oldRecipe = createMockRecipe({
-                id: 'recipe-old-image',
-                category: 'Dessert',
-                image: 'https://image.pollinations.ai/prompt/old'
-            });
-            localStorage.setItem('schafer_db_recipes', JSON.stringify([oldRecipe]));
+        it('should migrate stale seeded recipe images to canonical local assets', async () => {
+            const canonicalRecipe = (defaultRecipes as SeedRecipe[])[0];
+            const staleRecipe = {
+                ...canonicalRecipe,
+                image: 'https://images.unsplash.com/photo-1495195129352-aec325a55b65?auto=format&fit=crop&q=80&w=800',
+                imageSource: undefined,
+            };
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([staleRecipe]));
 
             const recipes = await CloudArchive.getRecipes();
-            expect(recipes[0].image).toBe('/recipe-images/imported_13bpozmcw.jpg');
+            expect(recipes[0].image).toBe(canonicalRecipe.image);
+            expect(recipes[0].imageSource).toBe(canonicalRecipe.imageSource);
 
             const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
-            expect(stored[0].image).toBe('/recipe-images/imported_13bpozmcw.jpg');
+            expect(stored[0].image).toBe(canonicalRecipe.image);
+            expect(stored[0].imageSource).toBe(canonicalRecipe.imageSource);
+        });
+
+        it('should preserve custom uploaded images during canonical migration', async () => {
+            const canonicalRecipe = (defaultRecipes as SeedRecipe[])[0];
+            const customRecipe = {
+                ...canonicalRecipe,
+                image: 'data:image/png;base64,abc123',
+                imageSource: 'upload',
+            };
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([customRecipe]));
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes[0].image).toBe('data:image/png;base64,abc123');
+            expect(recipes[0].imageSource).toBe('upload');
         });
 
         it('should upsert a new recipe', async () => {
@@ -261,7 +282,8 @@ describe('CloudArchive', () => {
         it('should call generic onSnapshot for subscriptions', async () => {
             const { onSnapshot } = await import('firebase/firestore');
             const { vi } = await import('vitest');
-            vi.mocked(onSnapshot).mockImplementation((q: any, cb: any) => {
+            vi.mocked(onSnapshot).mockImplementation((_query, callback) => {
+                const cb = callback as (snapshot: { docs: unknown[]; data: () => { archivePhone: string } }) => void;
                 cb({ docs: [], data: () => ({ archivePhone: '' }) });
                 return vi.fn();
             });
@@ -283,7 +305,8 @@ describe('CloudArchive', () => {
 
         it('should update contributors in firebase mode', async () => {
             const { setDoc, deleteDoc } = await import('firebase/firestore');
-            await CloudArchive.upsertContributor({ id: 'c1', name: 'Test' } as any);
+            const contributor: ContributorProfile = { id: 'c1', name: 'Test', avatar: '', role: 'user' };
+            await CloudArchive.upsertContributor(contributor);
             expect(setDoc).toHaveBeenCalled();
             await CloudArchive.deleteContributor('c1');
             expect(deleteDoc).toHaveBeenCalled();
@@ -292,7 +315,7 @@ describe('CloudArchive', () => {
         it('should get correct download URL when uploading file in firebase mode', async () => {
             const { uploadBytes } = await import('firebase/storage');
             const { vi } = await import('vitest');
-            vi.mocked(uploadBytes).mockResolvedValueOnce({ ref: {} } as any);
+            vi.mocked(uploadBytes).mockResolvedValueOnce({ ref: {} } as never);
             const file = new File(['test'], 'test.png', { type: 'image/png' });
             const url = await CloudArchive.uploadFile(file, 'test-folder');
             expect(url).toBe('https://example.com/image.jpg');
@@ -315,4 +338,3 @@ describe('CloudArchive', () => {
         });
     });
 });
-

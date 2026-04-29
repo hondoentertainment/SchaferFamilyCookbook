@@ -4,9 +4,12 @@
  * Ensures images match recipe content and avoid hallucination.
  */
 
+import { getRecipePrompt } from './recipePrompts.mjs';
+
 export const TEXT_MODEL = 'gemini-2.0-flash';
 export const RECIPE_IMAGE_MODEL = 'gemini-3.1-flash-image-preview';
 export const DEFAULT_IMAGE_MIME_TYPE = 'image/png';
+export const POLLINATIONS_IMAGE_HOST = 'https://image.pollinations.ai';
 
 export const RECIPE_IMAGE_RULES = {
   /** LLM instruction: strict anti-hallucination. */
@@ -22,13 +25,17 @@ export const RECIPE_IMAGE_RULES = {
 /** Minimum length for LLM output; shorter triggers deterministic fallback. */
 export const MIN_DESCRIPTION_LENGTH = 10;
 
+export function buildDeterministicDishDescription(recipe) {
+  const topIngredients = (recipe.ingredients || []).slice(0, 8).join(', ');
+  return `${recipe.title || 'the finished dish'}, featuring ${topIngredients || 'the main ingredients'}, plated as cooked`;
+}
+
 /**
  * Build deterministic prompt from recipe data only (no LLM).
  * Fallback when LLM returns empty or unreliable.
  */
 export function buildDeterministicPrompt(recipe) {
-  const topIngredients = (recipe.ingredients || []).slice(0, 8).join(', ');
-  return `the finished dish "${recipe.title}", featuring ${topIngredients || 'the main ingredients'}, plated as cooked`;
+  return `the finished dish "${buildDeterministicDishDescription(recipe)}"`;
 }
 
 /**
@@ -98,4 +105,28 @@ export function getImageExtension(mimeType = DEFAULT_IMAGE_MIME_TYPE) {
  */
 export function buildPollinationsPrompt(dishDescription) {
   return `Professional food photography of ${dishDescription}, ${RECIPE_IMAGE_RULES.POLLINATIONS_ACCURACY}. Warm lighting, appetizing, top-down angle, rustic kitchen background`;
+}
+
+export function buildRecipeAccurateDishDescription(recipe) {
+  return getRecipePrompt(recipe?.title) || buildDeterministicDishDescription(recipe);
+}
+
+function hashCode(str = '') {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+export function buildPollinationsImageUrl(recipe, options = {}) {
+  const {
+    width = 800,
+    height = 600,
+    seed = Math.abs(hashCode(`${recipe?.id || ''}:${recipe?.title || ''}`)),
+  } = options;
+  const dishDescription = buildRecipeAccurateDishDescription(recipe);
+  const prompt = encodeURIComponent(buildPollinationsPrompt(dishDescription));
+  return `${POLLINATIONS_IMAGE_HOST}/prompt/${prompt}?seed=${seed}&width=${width}&height=${height}&nologo=true`;
 }

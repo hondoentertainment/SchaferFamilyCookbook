@@ -71,6 +71,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http://') || recipe.image.startsWith('https://'));
     const isAIGenerated =
         recipe?.imageSource === 'nano-banana' ||
+        recipe?.imageSource === 'pollinations' ||
         (recipe?.imageSource == null && !!recipe?.image?.includes?.('pollinations.ai'));
 
     useFocusTrap(true, modalRef);
@@ -544,4 +545,3 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         </>
     );
 };
-

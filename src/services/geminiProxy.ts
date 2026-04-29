@@ -10,7 +10,7 @@ const API_BASE = '/api/gemini';
 export type GeneratedRecipeImage = {
     imageBase64: string;
     mimeType?: string;
-    imageSource: 'nano-banana';
+    imageSource: 'nano-banana' | 'pollinations';
 };
 
 async function post<T>(body: object): Promise<T> {
@@ -35,7 +35,7 @@ export async function generateImage(recipe: Partial<Recipe>): Promise<GeneratedR
     const result = await post<GeneratedRecipeImage>({ action: 'generateImage', recipe });
     const { imageBase64 } = result;
     if (!imageBase64) throw new Error('No image returned');
-    return { imageSource: 'nano-banana', ...result };
+    return { ...result, imageSource: result.imageSource || 'nano-banana' };
 }
 
 export async function magicImport(rawText: string): Promise<Record<string, unknown>> {
