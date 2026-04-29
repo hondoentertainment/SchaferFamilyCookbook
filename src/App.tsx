@@ -213,6 +213,7 @@ const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => voi
             alt={caption || 'Gallery photo'}
             onError={() => setBroken(true)}
             loading="lazy"
+            decoding="async"
         />
     );
     if (onClick) {
@@ -333,6 +334,7 @@ const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({
                     width={800}
                     height={600}
                     loading="lazy"
+                    decoding="async"
                     className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500 pointer-events-none"
                     alt={item.caption || 'Gallery photo'}
                     onClick={(e) => e.stopPropagation()}
@@ -354,10 +356,49 @@ import defaultRecipes from './data/recipes.json';
 const isValidImageUrl = (url: string) =>
     !!url && (url.startsWith('/recipe-images/') || url.startsWith('http://') || url.startsWith('https://'));
 
+const CATEGORY_ICONS: Record<string, string> = {
+    Breakfast: '🥞',
+    Main: '🍲',
+    Dessert: '🍰',
+    Side: '🥗',
+    Appetizer: '🧀',
+    Bread: '🍞',
+    'Dip/Sauce': '🫕',
+    Snack: '🍿',
+    Generic: '🍽️'
+};
+
+const RecipeImageFallback: React.FC<{ category: Recipe['category']; label?: string; compact?: boolean }> = ({ category, label = 'Image unavailable', compact = false }) => (
+    <div className="absolute inset-0 overflow-hidden bg-[#2D4635]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(244,164,96,0.35),transparent_32%),radial-gradient(circle_at_75%_80%,rgba(16,185,129,0.22),transparent_36%)]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/95 via-[#2D4635]/78 to-[#A0522D]/82" />
+        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(135deg,#fff_0_1px,transparent_1px_18px)]" aria-hidden="true" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
+            <span className={`${compact ? 'text-3xl' : 'text-5xl md:text-6xl'} mb-3 drop-shadow-lg`} aria-hidden="true">
+                {CATEGORY_ICONS[category] || CATEGORY_ICONS.Generic}
+            </span>
+            <span className="font-serif italic text-sm md:text-base text-white/85">{category}</span>
+            {!compact && (
+                <span className="mt-4 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white/80 backdrop-blur-sm">
+                    {label}
+                </span>
+            )}
+        </div>
+    </div>
+);
+
 const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const [broken, setBroken] = useState(false);
+    const [loaded, setLoaded] = useState(false);
     const { toast } = useUI();
     const hasValidImage = isValidImageUrl(recipe.image) && !broken;
+    const imageSourceLabel = recipe.imageSource === 'nano-banana'
+        ? 'Designed with Imagen'
+        : recipe.imageSource === 'pollinations'
+            ? 'Generated from recipe'
+            : recipe.imageSource === 'upload'
+                ? 'Family photo'
+                : null;
 
     const handleImageError = () => {
         setBroken(true);
@@ -368,26 +409,53 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
 
     if (hasValidImage) {
         return (
-            <img
-                src={recipe.image}
-                width={800}
-                height={600}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                loading="lazy"
-                alt={recipe.title}
-                onError={handleImageError}
-            />
+            <>
+                {!loaded && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 animate-pulse" />
+                )}
+                <img
+                    src={recipe.image}
+                    width={800}
+                    height={600}
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                    loading="lazy"
+                    decoding="async"
+                    alt={recipe.title}
+                    onLoad={() => setLoaded(true)}
+                    onError={handleImageError}
+                />
+                {imageSourceLabel && (
+                    <span className="absolute top-4 right-4 z-10 rounded-full border border-white/20 bg-black/35 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-white/85 shadow-lg backdrop-blur-md">
+                        {imageSourceLabel}
+                    </span>
+                )}
+            </>
         );
     }
 
     return (
+        <RecipeImageFallback category={recipe.category} label="Image unavailable" />
+    );
+};
+
+const HeroRecipeImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
+    const [broken, setBroken] = useState(false);
+    if (!isValidImageUrl(recipe.image) || broken) {
+        return <RecipeImageFallback category={recipe.category} compact label="Hero image unavailable" />;
+    }
+
+    return (
         <>
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-stone-300" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2D4635]/80 to-transparent" />
-            <div className="absolute top-4 left-4 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg z-10">
-                <span className="text-xs">📝</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Recipe coming</span>
-            </div>
+            <img
+                src={recipe.image}
+                alt=""
+                className="w-full h-full object-cover opacity-25"
+                aria-hidden="true"
+                loading="eager"
+                decoding="async"
+                onError={() => setBroken(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2D4635] via-[#2D4635]/90 to-[#2D4635]/58" />
         </>
     );
 };
@@ -483,6 +551,27 @@ const App: React.FC = () => {
         () => mergeContributorsForDisplay(contributors, recipes, gallery, trivia),
         [contributors, recipes, gallery, trivia]
     );
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const matched = contributorsForDisplay.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
+        const nextPicture = matched?.avatar ?? (currentUser.picture ? null : contributorAvatarUrlForName(currentUser.name));
+        const roleProfile = contributors.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
+        const nextRole = roleProfile?.role;
+        if (!nextPicture && !nextRole) return;
+
+        const shouldUpdatePicture = !!nextPicture && nextPicture !== currentUser.picture;
+        const shouldUpdateRole = !!nextRole && nextRole !== currentUser.role;
+        if (!shouldUpdatePicture && !shouldUpdateRole) return;
+
+        const updatedUser = {
+            ...currentUser,
+            ...(shouldUpdatePicture ? { picture: nextPicture } : {}),
+            ...(shouldUpdateRole ? { role: nextRole } : {}),
+        };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('schafer_user', JSON.stringify(updatedUser));
+    }, [contributors, contributorsForDisplay, currentUser]);
 
     const refreshLocalState = async () => {
         const provider = CloudArchive.getProvider();
@@ -1113,8 +1202,7 @@ const App: React.FC = () => {
                             const featured = sortedRecipes.find(r => r.image && isValidImageUrl(r.image));
                             return featured ? (
                                 <div className="absolute inset-0">
-                                    <img src={featured.image} alt="" className="w-full h-full object-cover opacity-20" aria-hidden />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#2D4635] via-[#2D4635]/90 to-[#2D4635]/60" />
+                                    <HeroRecipeImage recipe={featured} />
                                 </div>
                             ) : null;
                         })()}
@@ -1551,7 +1639,7 @@ const App: React.FC = () => {
                             clearEditing: () => setEditingRecipe(null),
                             recipes,
                             trivia,
-                            contributors,
+                            contributors: contributorsForDisplay,
                             dbStats: { ...dbStats, archivePhone },
                             gallery,
                             onDeleteGalleryItem: async (id) => {

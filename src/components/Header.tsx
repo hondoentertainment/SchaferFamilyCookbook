@@ -20,12 +20,11 @@ const EXTRA_TABS = [
 
 type NavTab = { id: string; title: string; label?: string };
 
-const ALL_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
+const PRIMARY_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
     { id: 'Recipes', title: 'Browse recipes with filters', label: 'Recipes' },
     { id: 'Index', title: 'Browse recipes A–Z', label: 'A–Z' },
     { id: 'Gallery', title: 'Family photos and videos', label: 'Gallery' },
     { id: 'Trivia', title: 'Family trivia quiz', label: 'Trivia' },
-    ...EXTRA_TABS.map((t) => ({ ...t, label: t.id })),
 ];
 
 interface HeaderProps {
@@ -46,8 +45,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
     const [logoFailed, setLogoFailed] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
 
-    const brandLogoSrc = !logoFailed && siteConfig.logoUrl ? siteConfig.logoUrl : FALLBACK_LOGO_SVG;
-    const brandLabel = siteConfig.siteName;
+    const brandLogoSrc = logoFailed ? FALLBACK_LOGO_SVG : FALLBACK_LOGO_SVG;
+    const brandLabel = siteConfig.siteName.replace(/\s*Family Cookbook\s*$/i, ' Cookbook');
 
     const handleThemeToggle = () => {
         hapticLight();
@@ -69,33 +68,33 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
         return () => { document.removeEventListener('click', onClick); document.removeEventListener('keydown', onKeyDown); };
     }, [moreOpen]);
 
-    const navTabs = ALL_NAV_TABS;
+    const navTabs = PRIMARY_NAV_TABS;
+    const moreIsActive = EXTRA_TABS.some(({ id }) => id === activeTab);
 
     return (
         <header className="sticky top-0 z-50 bg-white/90 dark:bg-[var(--header-bg)] backdrop-blur-md border-b border-stone-100 dark:border-stone-800 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 flex items-center justify-between gap-2 min-h-[3.5rem] md:min-h-0">
-                <div className="flex items-center gap-2 sm:gap-3 md:gap-8 min-w-0 flex-1">
-                    <div
-                        role="button"
-                        tabIndex={0}
+                <div className="flex items-center gap-2 sm:gap-3 md:gap-5 min-w-0 flex-1">
+                    <button
+                        type="button"
                         className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:rounded-lg min-h-11 min-w-11 md:min-h-0 md:min-w-0 justify-center md:justify-start -m-2 p-2 md:m-0 md:p-0"
                         onClick={() => { hapticLight(); setTab('Recipes'); }}
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Recipes'); } }}
-                        aria-label={`${brandLabel} — go to recipes`}
+                        aria-label={`${siteConfig.siteName} — go to recipes`}
                     >
                         <img
                             src={brandLogoSrc}
-                            className="w-8 h-8 sm:w-9 sm:h-9 md:w-8 md:h-8 rounded-full object-cover ring-1 ring-stone-100"
+                            className="w-8 h-8 sm:w-9 sm:h-9 md:w-8 md:h-8 rounded-full object-cover ring-1 ring-stone-100 shadow-sm"
                             alt=""
                             onError={() => setLogoFailed(true)}
                         />
                         <span
-                            className="font-serif italic text-base sm:text-lg md:text-xl text-[#2D4635] dark:text-emerald-100/90 hidden sm:block max-w-[12rem] md:max-w-[18rem] truncate"
-                            title={brandLabel}
+                            className="font-serif italic text-base sm:text-lg md:text-xl text-[#2D4635] dark:text-emerald-100/90 hidden sm:block max-w-[11rem] lg:max-w-[14rem] truncate"
+                            title={siteConfig.siteName}
                         >
                             {brandLabel}
                         </span>
-                    </div>
+                    </button>
 
                     {/* Desktop: full horizontal nav */}
                     <nav className="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }} aria-label="Main navigation">
@@ -121,15 +120,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         })}
                     </nav>
 
-                    {/* Mobile: More menu (Family Story, Contributors) */}
-                    <div className="relative md:hidden shrink-0" ref={moreRef}>
+                    <div className="relative shrink-0" ref={moreRef}>
                         <button
                             type="button"
                             onClick={() => setMoreOpen(v => !v)}
                             aria-expanded={moreOpen}
                             aria-haspopup="true"
                             aria-label="More sections"
-                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${moreOpen ? 'bg-stone-100 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700'
+                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${moreOpen || moreIsActive ? 'bg-stone-100 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700'
                                 }`}
                         >
                             <span className="text-xl leading-none" aria-hidden>☰</span>

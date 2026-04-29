@@ -53,6 +53,7 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
           <img
             src={contributor.avatar}
             alt={contributor.name}
+            decoding="async"
             onError={avatarOnError}
             className="w-28 h-28 rounded-full mx-auto border-4 border-white dark:border-stone-700 shadow-xl object-cover"
           />

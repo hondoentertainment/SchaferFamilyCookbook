@@ -14,8 +14,9 @@ test.describe('Tab navigation', () => {
     await expect(page.getByRole('button', { name: 'A–Z' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Gallery' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Trivia' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Family Story' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Contributors' })).toBeVisible();
+    await page.getByRole('button', { name: 'More sections' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Family Story' }).first()).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Contributors' })).toBeVisible();
     await expect(page.getByRole('button', { name: /view profile/i }).first()).toBeVisible();
   });
 
@@ -49,7 +50,8 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Family Story tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Family Story' }).click();
+    await page.getByRole('button', { name: 'More sections' }).click();
+    await page.getByRole('menuitem', { name: 'Family Story' }).click();
     await expect(
       page.getByRole('heading', { name: /Schafer.*Oehler|Family Food History/ }).or(
         page.getByText('Our family has been involved')
@@ -58,12 +60,14 @@ test.describe('Tab navigation', () => {
   });
 
   test('navigates to Contributors tab', async ({ page }) => {
-    await page.getByRole('button', { name: 'Contributors' }).click();
+    await page.getByRole('button', { name: 'More sections' }).click();
+    await page.getByRole('menuitem', { name: 'Contributors' }).click();
     await expect(page.getByRole('heading', { name: 'The Contributors' })).toBeVisible({ timeout: 5000 });
   });
 
   test('Contributors tab loads after login and shows expected content', async ({ page }) => {
-    await page.getByRole('button', { name: 'Contributors' }).click();
+    await page.getByRole('button', { name: 'More sections' }).click();
+    await page.getByRole('menuitem', { name: 'Contributors' }).click();
     await expect(page.getByRole('heading', { name: 'The Contributors' })).toBeVisible({ timeout: 5000 });
     await expect(
       page.getByPlaceholder('Search contributors…').or(page.getByRole('button', { name: 'Browse recipes' }))

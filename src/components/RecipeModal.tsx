@@ -196,6 +196,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 }) => {
     const { toast } = useUI();
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxImageBroken, setLightboxImageBroken] = useState(false);
     const [showScrollToTop, setShowScrollToTop] = useState(false);
     const baseServings = recipe ? (typeof recipe.servings === 'number' ? recipe.servings : 4) : 4;
     const [scaleTo, setScaleTo] = useState(baseServings);
@@ -225,6 +226,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const isAIGenerated =
         recipe?.imageSource === 'nano-banana' ||
         (recipe?.imageSource == null && !!recipe?.image?.includes?.('pollinations.ai'));
+    const imageSourceLabel = recipe?.imageSource === 'upload'
+        ? 'Family photo'
+        : recipe?.imageSource === 'nano-banana'
+            ? 'Designed with Imagen'
+            : isAIGenerated
+                ? 'Generated from recipe'
+                : null;
 
     useFocusTrap(true, modalRef);
     useFocusTrap(lightboxOpen, lightboxRef);
@@ -267,8 +275,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         setScaleTo(base);
         setImageBroken(false);
         setImageLoading(true);
+        setLightboxImageBroken(false);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
+
+    useEffect(() => {
+        if (lightboxOpen) setLightboxImageBroken(false);
+    }, [lightboxOpen]);
 
     // Flash ingredients when scale changes (skip initial mount)
     useEffect(() => {
@@ -416,13 +429,31 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     >
                         ✕
                     </button>
-                    <img
-                        src={recipe.image}
-                        width={800}
-                        height={600}
-                        className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500"
-                        alt={recipe.title}
-                    />
+                    {lightboxImageBroken ? (
+                        <div
+                            className="max-w-full max-h-[90vh] w-full max-w-3xl aspect-[4/3] rounded-2xl border border-white/15 bg-white/5 flex flex-col items-center justify-center text-white px-8 shadow-2xl"
+                            role="img"
+                            aria-label={`Image unavailable for ${recipe.title}`}
+                        >
+                            <span className="text-5xl mb-4" aria-hidden="true">
+                                {CATEGORY_ICONS[recipe.category] || CATEGORY_ICONS.Generic}
+                            </span>
+                            <p className="font-serif italic text-lg text-center">Preview unavailable</p>
+                            <p className="text-white/50 text-xs mt-3 text-center max-w-sm">
+                                This photo could not be loaded. Close and try again, or check your connection.
+                            </p>
+                        </div>
+                    ) : (
+                        <img
+                            src={recipe.image}
+                            width={800}
+                            height={600}
+                            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-105 duration-500"
+                            alt={recipe.title}
+                            decoding="async"
+                            onError={() => setLightboxImageBroken(true)}
+                        />
+                    )}
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-xs uppercase tracking-widest">
                         Click anywhere to close
                     </div>
@@ -545,6 +576,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                                     alt={recipe.title}
                                     loading="lazy"
+                                    decoding="async"
                                     onLoad={() => setImageLoading(false)}
                                     onError={() => {
                                         setImageLoading(false);
@@ -554,8 +586,10 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         }
                                     }}
                                 />
-                                {isAIGenerated && (
-                                    <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/50 text-white text-[9px] font-bold uppercase tracking-wider" title="AI-generated from recipe ingredients">✨ AI</span>
+                                {imageSourceLabel && (
+                                    <span className="absolute bottom-3 left-3 px-3 py-1.5 rounded-full border border-white/20 bg-black/45 text-white text-[9px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md" title={imageSourceLabel}>
+                                        {imageSourceLabel}
+                                    </span>
                                 )}
                             </>
                         ) : (

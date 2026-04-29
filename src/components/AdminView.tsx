@@ -7,6 +7,7 @@ import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
+import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { useFocusTrap } from '../utils/focusTrap';
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
@@ -809,7 +810,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     await onUpdateContributor({
                                                         id: profile?.id || 'c_' + Date.now(),
                                                         name: profile?.name || name,
-                                                        avatar: profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+                                                        avatar: profile?.avatar || contributorAvatarUrlForName(name),
                                                         role: 'admin'
                                                     });
                                                     setNewAdminName('');
@@ -1020,8 +1021,23 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 ) : filteredRecipes.map(r => (
                                                     <div key={r.id} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-stone-100 hover:shadow-md transition-all group">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden">
-                                                                {r.image && <img src={r.image} className="w-full h-full object-cover" alt={r.title} loading="lazy" width={40} height={40} />}
+                                                            <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden flex items-center justify-center text-sm" aria-hidden={!r.image}>
+                                                                {r.image ? (
+                                                                    <img
+                                                                        src={r.image}
+                                                                        className="w-full h-full object-cover"
+                                                                        alt={r.title}
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                        width={40}
+                                                                        height={40}
+                                                                        onError={(e) => {
+                                                                            (e.currentTarget as HTMLImageElement).src = CATEGORY_IMAGES[r.category] || CATEGORY_IMAGES.Generic;
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <span aria-hidden="true">🍽</span>
+                                                                )}
                                                             </div>
                                                             <div>
                                                                 <h5 className="text-sm font-serif font-bold text-[#2D4635]">{r.title}</h5>
@@ -1189,6 +1205,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         src={previewUrl}
                                                         className="w-full h-full object-cover"
                                                         alt="Preview"
+                                                        decoding="async"
                                                         onError={(e) => {
                                                             (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic;
                                                         }}
@@ -1526,7 +1543,19 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             {item.type === 'video' ? (
                                                                 <div className="w-16 h-16 rounded-xl bg-stone-800 flex items-center justify-center text-white text-xl flex-shrink-0" aria-hidden="true">▶</div>
                                                             ) : (
-                                                                <img src={item.url} alt="" aria-hidden="true" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-stone-100" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }} />
+                                                                <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 flex items-center justify-center text-stone-400" aria-hidden="true">
+                                                                    <img
+                                                                        src={item.url}
+                                                                        alt=""
+                                                                        className="relative z-10 w-full h-full object-cover"
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.remove();
+                                                                        }}
+                                                                    />
+                                                                    <span className="absolute text-xl">📷</span>
+                                                                </div>
                                                             )}
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-stone-800 truncate">{item.caption || <span className="italic text-stone-400">No caption</span>}</p>
@@ -1785,15 +1814,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                                 {Array.from(new Set([
                                     ...(props.recipes || []).map(r => r.contributor),
+                                    ...(props.gallery || []).map(g => g.contributor),
                                     ...(props.trivia || []).map(t => t.contributor),
                                     ...(props.contributors || []).map(c => c.name)
                                 ].filter(Boolean))).sort().map(name => {
-                                    const profile = contributors.find(c => c.name === name);
-                                    const avatar = profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+                                    const profile = contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
+                                    const avatar = profile?.avatar || contributorAvatarUrlForName(name);
                                     const role = profile?.role || 'user';
                                     return (
                                         <div key={name} className="flex flex-col items-center gap-3 p-4 bg-stone-50 rounded-[2rem] border border-stone-200 hover:shadow-lg transition-all cursor-pointer group relative">
-                                            <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} />
+                                            <img src={avatar} className="w-20 h-20 rounded-full bg-white shadow-sm object-cover" alt={name} onError={avatarOnError} />
                                             <span className="text-xs font-bold text-stone-600 text-center">{name}</span>
                                             <div className="flex gap-2">
                                                 <button

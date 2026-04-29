@@ -42,19 +42,36 @@ describe('CloudArchive', () => {
             expect(recipes.length).toBeGreaterThan(0);
         });
 
-        it('should migrate external recipe image URLs to local category fallbacks', async () => {
+        it('should migrate generic recipe image URLs to recipe-specific generated images', async () => {
             const oldRecipe = createMockRecipe({
                 id: 'recipe-old-image',
                 category: 'Dessert',
-                image: 'https://image.pollinations.ai/prompt/old'
+                image: 'https://image.pollinations.ai/prompt/old',
+                imageSource: 'pollinations'
             });
             localStorage.setItem('schafer_db_recipes', JSON.stringify([oldRecipe]));
 
             const recipes = await CloudArchive.getRecipes();
-            expect(recipes[0].image).toBe('/recipe-images/imported_13bpozmcw.jpg');
+            expect(recipes[0].image).toContain('https://image.pollinations.ai/prompt/');
+            expect(recipes[0].image).toContain('Test%20Recipe');
+            expect(recipes[0].imageSource).toBe('pollinations');
 
             const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
-            expect(stored[0].image).toBe('/recipe-images/imported_13bpozmcw.jpg');
+            expect(stored[0].image).toBe(recipes[0].image);
+            expect(stored[0].imageSource).toBe('pollinations');
+        });
+
+        it('should preserve uploaded recipe images during normalization', async () => {
+            const uploadedRecipe = createMockRecipe({
+                id: 'recipe-uploaded-image',
+                image: 'https://firebasestorage.googleapis.com/v0/b/demo/o/recipes%2Fphoto.jpg',
+                imageSource: 'upload'
+            });
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([uploadedRecipe]));
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes[0].image).toBe(uploadedRecipe.image);
+            expect(recipes[0].imageSource).toBe('upload');
         });
 
         it('should upsert a new recipe', async () => {

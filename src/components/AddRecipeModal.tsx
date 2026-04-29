@@ -218,7 +218,13 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block" id="archival-image-label">Archival Image</span>
                         {previewUrl && (
                             <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner">
-                                <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" onError={(e) => { (e.target as HTMLImageElement).src = getDefaultImageForCategory(recipeForm.category); }} />
+                                <img
+                                    src={previewUrl}
+                                    className="w-full h-full object-cover"
+                                    alt="Preview"
+                                    decoding="async"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = getDefaultImageForCategory(recipeForm.category); }}
+                                />
                             </div>
                         )}
                         {!previewUrl && (

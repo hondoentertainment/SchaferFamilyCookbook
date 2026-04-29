@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { RecipeModal } from './RecipeModal';
 import { createMockRecipe, renderWithProviders } from '../test/utils';
 
@@ -130,6 +130,19 @@ describe('RecipeModal', () => {
         const lightboxClose = screen.getByRole('button', { name: /close enlarged image/i });
         fireEvent.click(lightboxClose);
         expect(screen.queryByText('Click anywhere to close')).not.toBeInTheDocument();
+    });
+
+    it('should show fallback in lightbox when enlarged image fails to load', () => {
+        const recipeWithLocalImage = createMockRecipe({ image: '/recipe-images/test-recipe.jpg' });
+        renderWithProviders(<RecipeModal {...defaultProps} recipe={recipeWithLocalImage} />);
+        fireEvent.click(screen.getByAltText('Test Recipe'));
+        const lightbox = screen.getByRole('dialog', { name: 'Enlarged recipe image' });
+        const enlarged = within(lightbox).getByAltText('Test Recipe');
+        fireEvent.error(enlarged);
+        expect(within(lightbox).getByText('Preview unavailable')).toBeInTheDocument();
+        expect(
+            within(lightbox).getByRole('img', { name: /Image unavailable for Test Recipe/i })
+        ).toBeInTheDocument();
     });
 
     it('should show share button with accessible label containing recipe title', () => {

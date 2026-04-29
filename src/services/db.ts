@@ -3,7 +3,6 @@ import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, qu
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
-import { CATEGORY_IMAGES } from '../constants';
 
 async function retryWithBackoff<T>(
     fn: () => Promise<T>,
@@ -52,20 +51,41 @@ function safeParseArray<T>(raw: string | null): T[] {
     }
 }
 
-function getCategoryFallbackImage(category?: Recipe['category']): string {
-    return CATEGORY_IMAGES[category || 'Main'] || CATEGORY_IMAGES.Generic;
+function getRecipeImageSeed(recipe: Recipe): number {
+    const input = `${recipe.id}:${recipe.title}`;
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+        hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+    }
+    return hash;
+}
+
+function getRecipeSpecificImage(recipe: Recipe): string {
+    const ingredients = recipe.ingredients
+        .slice(0, 5)
+        .map((ingredient) => ingredient.replace(/\([^)]*\)/g, '').trim())
+        .filter(Boolean)
+        .join(', ');
+    const prompt = [
+        `realistic overhead food photography of ${recipe.title}`,
+        `${recipe.category} family cookbook recipe`,
+        ingredients ? `featuring ${ingredients}` : '',
+        'warm natural window light, rustic table, appetizing, no text, no watermark',
+    ].filter(Boolean).join(', ');
+
+    return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1200&height=900&nologo=true&seed=${getRecipeImageSeed(recipe)}`;
 }
 
 function isCuratedImageSource(source?: Recipe['imageSource']): boolean {
-    return source === 'upload' || source === 'nano-banana' || source === 'pollinations';
+    return source === 'upload' || source === 'nano-banana';
 }
 
-/** Legacy JSON used random `/recipe-images/imported_*.jpg` paths per recipe; normalize to the canonical image for that category. */
+/** Legacy JSON used random `/recipe-images/imported_*.jpg` paths per recipe. */
 function isLegacyBundledRecipeImage(image?: string): boolean {
     return !!image && image.startsWith('/recipe-images/');
 }
 
-function shouldUseCategoryFallbackImage(image?: string): boolean {
+function shouldUseRecipeSpecificImage(image?: string): boolean {
     if (!image) return true;
     if (image.startsWith('data:image/')) return false;
     if (image.includes('storage.googleapis.com') || image.includes('firebasestorage.googleapis.com')) return false;
@@ -80,15 +100,17 @@ function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
         if (isLegacyBundledRecipeImage(recipe.image)) {
             return {
                 ...recipe,
-                image: getCategoryFallbackImage(recipe.category),
+                image: getRecipeSpecificImage(recipe),
+                imageSource: 'pollinations',
             };
         }
-        if (!shouldUseCategoryFallbackImage(recipe.image)) {
+        if (!shouldUseRecipeSpecificImage(recipe.image)) {
             return recipe;
         }
         return {
             ...recipe,
-            image: getCategoryFallbackImage(recipe.category),
+            image: getRecipeSpecificImage(recipe),
+            imageSource: 'pollinations',
         };
     });
 }
@@ -140,7 +162,7 @@ export const CloudArchive = {
             const recipes = snapshot.docs
                 .map(doc => doc.data())
                 .filter(validateRecipe);
-            callback(recipes);
+            callback(normalizeRecipeImages(recipes));
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeRecipes error:', error);

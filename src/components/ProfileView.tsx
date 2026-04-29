@@ -168,7 +168,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
                     <div className="relative group">
-                        <img src={avatar} className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} />
+                        <img src={avatar} className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} onError={avatarOnError} />
                         <button
                             onClick={() => setShowPicker(true)}
                             className="absolute bottom-4 right-4 w-12 h-12 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-xl"
@@ -264,6 +264,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     loading="lazy"
+                                    decoding="async"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}
@@ -304,6 +305,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     loading="lazy"
+                                    decoding="async"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}
@@ -338,6 +340,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
                                     alt={recipe.title}
                                     loading="lazy"
+                                    decoding="async"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
                                     }}

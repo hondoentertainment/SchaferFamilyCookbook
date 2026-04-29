@@ -69,6 +69,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         src={currentUser.picture}
                         alt=""
                         aria-hidden
+                        decoding="async"
                         onError={avatarOnError}
                         className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 object-cover mb-0.5 transition-transform ${activeTab === 'Profile' ? 'scale-105' : ''
                             } ${activeTab === 'Profile' ? 'border-[#2D4635]' : 'border-stone-200'

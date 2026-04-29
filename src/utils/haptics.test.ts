@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { hapticSuccess, hapticError, hapticLight } from './haptics';
 
 describe('Vibration API (Haptics)', () => {
-    let originalVibrate: any;
+    let originalVibrate: Navigator['vibrate'];
     let matchMediaMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {

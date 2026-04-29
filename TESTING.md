@@ -1,348 +1,184 @@
-# 🧪 Testing Guide - Schafer Family Cookbook
+# Testing Plan - Schafer Family Cookbook
 
-## Overview
+This plan describes the checks that should pass before merging or deploying. It matches the current `package.json`, Playwright config, and GitHub Actions workflows.
 
-This project uses **Vitest** with **React Testing Library** to ensure code quality and reliability. An intelligent test agent is included to make testing easier and more efficient.
+## Test Stack
 
-## 🚀 Quick Start
+- **Unit/component/API tests:** Vitest with React Testing Library and `happy-dom`.
+- **E2E tests:** Playwright against a Vite preview server on port `4287`.
+- **CI:** GitHub Actions runs lint, type check, unit tests, build, then Chromium E2E with Firebase emulators.
+- **Deploy gate:** GitHub Pages deploys only after the `CI` workflow succeeds on `main`.
 
-### Run Tests Immediately
+## Commands
 
-```bash
-# Run all tests once
-npm run test:run
+| Goal | Command |
+| --- | --- |
+| Full local CI check | `npm run ci` |
+| Unit/component/API tests once | `npm run test:run` |
+| Unit/component/API tests in watch mode | `npm run test` |
+| Vitest UI | `npm run test:ui` |
+| Coverage report | `npm run test:coverage` |
+| TypeScript only | `npm run type-check` |
+| Lint only | `npm run lint` |
+| Production build only | `npm run build` |
+| All Playwright projects | `npm run test:e2e` |
+| Chromium Playwright project | `npm run test:e2e:desktop` |
+| Playwright UI | `npm run test:e2e:ui` |
 
-# Run tests in watch mode (recommended for development)
-npm run test
+`npm run ci` intentionally does not run Playwright. Use it for the fast merge/deploy confidence check, then add E2E for changed user flows.
 
-# Open interactive UI
-npm run test:ui
+## Local Prerequisites
 
-# Generate coverage report
-npm run test:coverage
-```
+1. Install dependencies with `npm ci` (or `npm install` during normal local development).
+2. Install Playwright browsers when needed: `npx playwright install`.
+3. For emulator-backed E2E, start Firestore and Storage emulators or use the GitHub Actions workflow. CI starts them automatically.
 
-### Use the Test Agent (Recommended)
-
-The test agent provides an interactive CLI for managing tests:
-
-```bash
-# Interactive mode
-node test-agent.js
-
-# Direct command
-node test-agent.js 1    # Run all tests
-node test-agent.js 3    # Open UI mode
-```
-
-## 📁 Test Structure
-
-```
-e2e/                        # Playwright E2E tests
-├── fixtures.ts             # Login helpers (loginAs, loginAsAdmin)
-├── auth.spec.ts            # Login flow
-├── navigation.spec.ts      # Tab navigation
-├── recipes.spec.ts         # Recipe filters, search
-├── recipe-modal.spec.ts    # Recipe modal, deep link, share, print
-├── gallery.spec.ts         # Gallery, text-to-archive, lightbox
-├── trivia.spec.ts          # Trivia quiz flow
-├── profile.spec.ts         # Profile edit
-└── admin.spec.ts           # Admin panel, Twilio config
-
-src/
-├── test/
-│   ├── setup.ts          # Global test configuration
-│   └── utils.tsx         # Test helpers and mock factories
-├── App.test.tsx          # App integration tests (login, tabs)
-├── services/
-│   └── db.test.ts        # Database service tests (18 tests)
-└── components/
-    ├── AlphabeticalIndex.test.tsx  # Index grouping & selection (5 tests)
-    ├── ContributorsView.test.tsx  # Contributor stats & actions (3 tests)
-    ├── Header.test.tsx            # Navigation & auth display (7 tests)
-    ├── HistoryView.test.tsx       # Family story content (6 tests)
-    ├── ProfileView.test.tsx       # Profile, recipes, history (8 tests)
-    ├── RecipeModal.test.tsx       # Recipe details & lightbox (14 tests)
-    └── TriviaView.test.tsx        # Quiz flow & scoring (7 tests)
-```
-
-## 🛠️ Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run test` | Watch mode - auto-reruns on file changes |
-| `npm run test:run` | Single test run (CI/CD friendly) |
-| `npm run test:ui` | Interactive browser UI |
-| `npm run test:coverage` | Generate coverage report |
-| `npm run test:e2e` | Playwright E2E tests (Chromium + Firefox) |
-| `npm run test:e2e:ui` | Playwright E2E with interactive UI |
-| `npm run test:e2e:desktop` | E2E Chromium only |
-
-**CI:** On push/PR to `main` or `master`, GitHub Actions runs `npm run test:run` then a separate job installs Playwright Chromium and runs `npm run test:e2e -- --project=chromium`.
-
-## 📝 Writing Tests
-
-### Test a Service
-
-```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { CloudArchive } from './db';
-import { setupLocalStorage } from '../test/utils';
-
-describe('MyService', () => {
-    beforeEach(() => {
-        setupLocalStorage();
-        localStorage.clear();
-    });
-
-    it('should do something', async () => {
-        const result = await CloudArchive.getRecipes();
-        expect(result).toBeDefined();
-    });
-});
-```
-
-### Test a Component
-
-```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
-import { MyComponent } from './MyComponent';
-import { renderWithProviders, createMockRecipe } from '../test/utils';
-
-describe('MyComponent', () => {
-    it('should render correctly', () => {
-        const mockData = createMockRecipe();
-        renderWithProviders(<MyComponent recipe={mockData} />);
-        
-        expect(screen.getByText('Test Recipe')).toBeInTheDocument();
-    });
-
-    it('should handle clicks', () => {
-        const mockHandler = vi.fn();
-        renderWithProviders(<MyComponent onClick={mockHandler} />);
-        
-        fireEvent.click(screen.getByRole('button'));
-        expect(mockHandler).toHaveBeenCalled();
-    });
-});
-```
-
-## 🏭 Mock Data Factories
-
-Use the provided factories to create test data:
-
-```typescript
-import { 
-    createMockRecipe, 
-    createMockTrivia, 
-    createMockGalleryItem,
-    createMockContributor,
-    createMockHistoryEntry 
-} from '../test/utils';
-
-// Create with defaults
-const recipe = createMockRecipe();
-
-// Override specific fields
-const customRecipe = createMockRecipe({
-    title: 'Custom Title',
-    category: 'Dessert'
-});
-```
-
-## 🎯 What to Test
-
-### Priority 1: Critical Paths
-- ✅ Database operations (CRUD)
-- ✅ Data persistence (localStorage/Firebase)
-- ✅ User authentication flows
-- ✅ Form submissions
-
-### Priority 2: User Interactions
-- ✅ Button clicks
-- ✅ Form inputs
-- ✅ Modal open/close
-- ✅ Navigation
-
-### Priority 3: Edge Cases
-- ✅ Empty states
-- ✅ Error handling
-- ✅ Loading states
-- ✅ Null/undefined values
-
-## 📊 Coverage Goals
-
-| Area | Target Coverage |
-|------|----------------|
-| Services (db.ts) | 90%+ |
-| Critical Components | 80%+ |
-| Utilities | 85%+ |
-| Overall | 75%+ |
-
-## 🔧 Configuration
-
-### Vitest Config (`vitest.config.ts`)
-
-```typescript
-export default defineConfig({
-    plugins: [react()],
-    test: {
-        globals: true,
-        environment: 'happy-dom',
-        setupFiles: ['./src/test/setup.ts'],
-        coverage: {
-            provider: 'v8',
-            reporter: ['text', 'json', 'html'],
-        },
-    },
-});
-```
-
-### Test Setup (`src/test/setup.ts`)
-
-- Mocks Firebase automatically
-- Mocks Google GenAI
-- Configures localStorage
-- Imports jest-dom matchers
-
-## 🐛 Debugging Tests
-
-### Use the UI Mode
+Playwright starts its own preview server unless `PLAYWRIGHT_BASE_URL` is set:
 
 ```bash
-npm run test:ui
+npm run test:e2e:desktop
 ```
 
-The UI provides:
-- Visual test runner
-- Source code viewing
-- Console output
-- Execution timeline
-
-### Add Debug Statements
-
-```typescript
-import { screen, debug } from '@testing-library/react';
-
-it('debugs component', () => {
-    renderWithProviders(<MyComponent />);
-    screen.debug(); // Prints DOM to console
-});
-```
-
-### Run Specific Tests
+To run against an already deployed site:
 
 ```bash
-# By file
-npx vitest run src/services/db.test.ts
-
-# By pattern
-npx vitest run -t "Recipe"
+PLAYWRIGHT_BASE_URL=https://schafer-family-cookbook.vercel.app npm run test:e2e:desktop
 ```
 
-## 🚨 Common Issues
+On PowerShell:
 
-### Issue: Tests fail with "localStorage is not defined"
-
-**Solution:** Use `setupLocalStorage()` in your test:
-
-```typescript
-import { setupLocalStorage } from '../test/utils';
-
-beforeEach(() => {
-    setupLocalStorage();
-});
+```powershell
+$env:PLAYWRIGHT_BASE_URL="https://schafer-family-cookbook.vercel.app"; npm run test:e2e:desktop
 ```
 
-### Issue: Firebase errors in tests
+## Required Checks By Change Type
 
-**Solution:** Firebase is already mocked in `setup.ts`. Ensure you're importing from the mocked modules.
+### Documentation-only changes
 
-### Issue: Component doesn't render
+- `npm run type-check` if examples mention exported types or code paths.
+- No E2E required unless docs include deployment/test instructions that should be verified.
 
-**Solution:** Use `renderWithProviders()` instead of plain `render()`:
+### UI component changes
 
-```typescript
-import { renderWithProviders } from '../test/utils';
+- Run the focused component test file, for example:
+  ```bash
+  npx vitest run src/components/Header.test.tsx
+  ```
+- Run `npm run type-check`.
+- Run `npm run ci` before merge/deploy.
+- Add Playwright when the change affects navigation, login, modals, install prompts, or mobile layout.
 
-renderWithProviders(<MyComponent />);
-```
+### Data, service, or persistence changes
 
-## 📚 Best Practices
+- Run the focused service tests, for example:
+  ```bash
+  npx vitest run src/services/db.test.ts
+  ```
+- Run related component tests if UI display changes.
+- Run `npm run ci`.
+- Use emulator-backed E2E for Firebase, upload, gallery, admin, or profile flows.
 
-1. **Test Behavior, Not Implementation**
-   - Focus on what users see and do
-   - Avoid testing internal state
+### Recipe image changes
 
-2. **Keep Tests Independent**
-   - Each test should run in isolation
-   - Use `beforeEach` to reset state
+- Run:
+  ```bash
+  npx vitest run src/services/db.test.ts src/components/RecipeModal.test.tsx src/App.test.tsx
+  npm run type-check
+  ```
+- Manually verify a representative mix of Breakfast, Main, Dessert, Side, Appetizer, Bread, Dip/Sauce, and Snack cards.
+- Confirm uploaded or curated images are preserved and legacy/generic images are replaced only where intended.
 
-3. **Use Descriptive Names**
-   ```typescript
-   it('should display error message when form is invalid')
+### Contributor/avatar changes
+
+- Run:
+  ```bash
+  npx vitest run src/components/ContributorsView.test.tsx src/components/ProfileView.test.tsx src/components/AdminView.test.tsx src/App.test.tsx
+  npm run type-check
+  ```
+- Manually verify avatars in the header, bottom nav, recipe cards/bylines, Contributors, Profile, and Admin contributor grid.
+- Check users with saved profiles and names inferred only from recipes, gallery, or trivia.
+
+### Admin, gallery, or Twilio/API changes
+
+- Run:
+  ```bash
+  npx vitest run src/components/AdminView.test.tsx api/webhook.test.ts api/lib/rateLimit.test.ts
+  npm run type-check
+  ```
+- Run Chromium E2E if the change touches admin navigation, gallery upload/display, Twilio configuration, or archive phone behavior.
+
+### Release or production deploy
+
+1. `npm run ci`
+2. `npm run test:e2e:desktop`
+3. Optional production smoke:
+   ```bash
+   npm run smoke:prod
    ```
+4. Deploy after checks pass.
 
-4. **Mock External Dependencies**
-   - Firebase is already mocked
-   - Mock API calls
-   - Mock timers when needed
+## CI Behavior
 
-5. **Test Accessibility**
-   ```typescript
-   expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
-   ```
+The `CI` workflow runs on pushes and pull requests to `main` or `master`, plus manual dispatch.
 
-## 🎓 Learning Resources
+Main job:
 
-- [Vitest Documentation](https://vitest.dev/)
-- [React Testing Library](https://testing-library.com/react)
-- [Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
+1. `npm ci`
+2. `npm run lint`
+3. `npm run type-check`
+4. `npm run test:run`
+5. `npm run build`
 
-## 🤖 Test Agent Features
+E2E job:
 
-The intelligent test agent (`test-agent.js`) provides:
+1. Installs dependencies and Playwright Chromium.
+2. Installs Firebase CLI.
+3. Starts Firestore and Storage emulators for project `demo-schafer`.
+4. Waits for ports `8080` and `9199`.
+5. Runs `npm run test:e2e -- --project=chromium` with emulator environment variables.
 
-1. **Interactive Menu** - Easy command selection
-2. **Watch Mode** - Auto-rerun on changes
-3. **UI Mode** - Browser-based test runner
-4. **Coverage Reports** - See what's tested
-5. **Pattern Matching** - Run specific tests
-6. **Health Checks** - Verify setup
+The GitHub Pages deployment workflow runs after CI succeeds on `main`, or manually through workflow dispatch.
 
-Run it with:
-```bash
-node test-agent.js
-```
+## Test Coverage Map
 
-## 📈 Next Steps
+- `src/services/db.test.ts`: local/Firebase persistence, subscriptions, uploads, recipe image normalization, contributors.
+- `src/services/firebaseCustodianAuth.test.ts`: custodian sign-in and admin claim handling.
+- `src/services/userPrefsSync.test.ts`: favorites/preferences cloud sync behavior.
+- `src/services/leaderboard.test.ts`: trivia leaderboard persistence.
+- `src/services/geminiProxy.test.ts`: recipe image generation proxy behavior.
+- `api/webhook.test.ts` and `api/lib/rateLimit.test.ts`: serverless webhook and rate limiting.
+- `src/components/*.test.tsx`: user-facing components, forms, modals, profile/admin surfaces, navigation, sharing, grocery list, collections, and cook mode.
+- `src/utils/*.test.ts`: ratings, favorites, collections, grocery list, scaling, recent views, haptics, swipes, scoreboards, and activity feed.
+- `e2e/*.spec.ts`: browser-level login, navigation, recipes, recipe modal, gallery, trivia, profile, admin, and auth flows.
 
-1. **Add More Tests**
-   - Test remaining components
-   - Add integration tests
-   - Test error scenarios
+## Manual Smoke Checklist
 
-2. **Improve Coverage**
-   - Run `npm run test:coverage`
-   - Identify untested code
-   - Add missing tests
+Use this after UI/data changes or before a production deploy:
 
-3. **Automate**
-   - Add to CI/CD pipeline
-   - Run on pre-commit hooks
-   - Generate coverage badges
+- Login as a regular family member and as an admin.
+- Browse recipes, search, filter, sort, and open a recipe modal.
+- Confirm recipe images match the recipe content closely enough and that broken images fall back gracefully.
+- Confirm contributor avatars appear in header/profile, recipe bylines, Contributors, and Admin.
+- Add or edit a recipe in local mode and verify it persists after reload.
+- Open Gallery, Trivia, Grocery List, Collections, Family Story, Privacy, and Profile from the header/bottom navigation.
+- Toggle theme and confirm the header remains legible.
+- Check mobile-width layout for touch targets, bottom nav, More menu, modals, and scroll behavior.
 
-## 💡 Tips
+## Known Noisy Output
 
-- Run tests frequently during development
-- Use watch mode for instant feedback
-- Check coverage to find gaps
-- Keep tests fast (<1s each)
-- Update tests when changing features
+Some tests intentionally exercise error paths and may print warnings/errors while still passing, such as:
 
----
+- invalid JSON recovery in `db.test.ts`
+- Twilio webhook failure scenarios
+- user preference sync network failures
+- React `act(...)` warnings in older async interaction tests
 
-**Happy Testing! 🎉**
+Treat non-zero exit codes as failures. Passing tests with expected error-path logs are acceptable.
 
-For questions or issues, check the test-agent help menu or review existing tests for examples.
+## When Adding New Tests
+
+- Prefer behavior-oriented queries: role, label, text, and user-visible state.
+- Use `renderWithProviders` for React components.
+- Use factories from `src/test/utils.tsx` for recipes, contributors, gallery items, trivia, and history.
+- Keep unit tests deterministic; mock network, Firebase, storage, timers, and clipboard/share APIs as needed.
+- Add or update E2E tests when the behavior spans multiple screens or depends on browser APIs.

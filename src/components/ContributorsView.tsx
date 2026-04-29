@@ -73,14 +73,15 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
         recipes.forEach(r => add(r.contributor, 1, 0, 0, r.category));
         gallery.forEach(g => add(g.contributor, 0, 1, 0));
         trivia.forEach(t => add(t.contributor, 0, 0, 1));
+        contributors.forEach(c => add(c.name));
         return Object.values(s)
-            .filter(x => x.recipeCount > 0 || x.galleryCount > 0 || x.triviaCount > 0)
             .sort((a, b) => {
                 const ta = a.recipeCount + a.galleryCount + a.triviaCount;
                 const tb = b.recipeCount + b.galleryCount + b.triviaCount;
-                return tb - ta;
+                if (tb !== ta) return tb - ta;
+                return a.name.localeCompare(b.name);
             });
-    }, [recipes, gallery, trivia]);
+    }, [recipes, gallery, trivia, contributors]);
 
     const filteredStats = useMemo(() => {
         if (!search.trim()) return stats;

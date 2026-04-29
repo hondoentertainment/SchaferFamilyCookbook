@@ -40,11 +40,12 @@ describe('Header', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
         expect(screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to recipes` })).toBeInTheDocument();
-        expect(screen.getByText(siteConfig.siteName)).toBeInTheDocument();
+        expect(screen.getByText('Schafer Cookbook')).toBeInTheDocument();
         expect(screen.getByText('Recipes')).toBeInTheDocument();
         expect(screen.getByText('A–Z')).toBeInTheDocument();
-        expect(screen.getByText('Family Story')).toBeInTheDocument();
-        expect(screen.getByText('Privacy')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'More sections' }));
+        expect(screen.getByRole('menuitem', { name: 'Family Story' })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: 'Privacy' })).toBeInTheDocument();
     });
 
     it('should call setTab when a navigation button is clicked', () => {
