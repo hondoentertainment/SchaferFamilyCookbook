@@ -1046,7 +1046,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     {r.contributor && <span className="text-[9px] text-stone-500">by {r.contributor}</span>}
                                                                     {r.imageSource && (
                                                                         <span className="text-[8px] px-1.5 py-0.5 rounded bg-stone-200 text-stone-600 font-bold uppercase" title={`Image source: ${r.imageSource}`}>
-                                                                            {r.imageSource === 'nano-banana' ? 'Imagen' : r.imageSource === 'upload' ? 'Upload' : r.imageSource}
+                                                                            {r.imageSource === 'nano-banana' ? 'Imagen' : r.imageSource === 'upload' ? 'Upload' : r.imageSource === 'local-generated' ? 'Local' : r.imageSource}
                                                                         </span>
                                                                     )}
                                                                 </div>

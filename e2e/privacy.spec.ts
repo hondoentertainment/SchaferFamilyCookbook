@@ -9,9 +9,9 @@ test.describe('Privacy', () => {
     await loginAs(page, 'Alice');
   });
 
-  test('Privacy tab shows policy heading', async ({ page }) => {
-    await page.getByRole('button', { name: 'More sections' }).click();
-    await page.getByRole('menuitem', { name: 'Privacy' }).click();
+  test('Privacy is reachable from the Me tab', async ({ page }) => {
+    await page.getByTestId('nav-profile').click();
+    await page.getByRole('button', { name: /Open Privacy and Data view/i }).click();
     await expect(page.getByRole('heading', { name: /Privacy & data/i })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/What this site stores/i)).toBeVisible();
   });

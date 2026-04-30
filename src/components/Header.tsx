@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserProfile, DBStats } from '../types';
 import { siteConfig } from '../config/site';
 import { avatarOnError } from '../utils/avatarFallback';
@@ -10,22 +10,23 @@ const FALLBACK_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
 )}`;
 
-const EXTRA_TABS = [
-    { id: 'Collections', title: 'Your saved recipe collections' },
-    { id: 'Grocery List', title: 'Your shopping list of recipe ingredients' },
-    { id: 'Family Story', title: 'Family food history narrative' },
-    { id: 'Contributors', title: 'Contributor directory' },
-    { id: 'Privacy', title: 'Privacy and data' },
-] as const;
-
 type NavTab = { id: string; title: string; label?: string };
 
 const PRIMARY_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
-    { id: 'Recipes', title: 'Browse recipes with filters', label: 'Recipes' },
-    { id: 'Index', title: 'Browse recipes A–Z', label: 'A–Z' },
-    { id: 'Gallery', title: 'Family photos and videos', label: 'Gallery' },
-    { id: 'Trivia', title: 'Family trivia quiz', label: 'Trivia' },
+    { id: 'Home', title: 'Your personalized cookbook home', label: 'Home' },
+    { id: 'Recipes', title: 'Search recipes, collections, and the A–Z index', label: 'Recipes' },
+    { id: 'Gallery', title: 'Family photos, story, contributors, and trivia', label: 'Family' },
+    { id: 'Grocery List', title: 'Plan shopping and cooking from saved recipes', label: 'Cook' },
+    { id: 'Profile', title: 'Profile, preferences, admin tools, and privacy', label: 'Me' },
 ];
+
+const NAV_GROUPS: Record<string, string[]> = {
+    Home: ['Home'],
+    Recipes: ['Recipes', 'Index', 'Collections'],
+    'Grocery List': ['Grocery List'],
+    Gallery: ['Gallery', 'Trivia', 'Family Story', 'Contributors'],
+    Profile: ['Profile', 'Privacy'],
+};
 
 interface HeaderProps {
     activeTab: string;
@@ -40,8 +41,6 @@ const THEME_ICONS: Record<ThemeMode, string> = { system: '💻', light: '☀️'
 const THEME_LABELS: Record<ThemeMode, string> = { system: 'System theme', light: 'Light theme', dark: 'Dark theme' };
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
-    const [moreOpen, setMoreOpen] = useState(false);
-    const moreRef = useRef<HTMLDivElement>(null);
     const [logoFailed, setLogoFailed] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
 
@@ -55,21 +54,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
         setThemeMode(next);
     };
 
-    useEffect(() => {
-        if (!moreOpen) return;
-        const onClick = (e: MouseEvent) => {
-            if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-                setMoreOpen(false);
-            }
-        };
-        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setMoreOpen(false); };
-        document.addEventListener('click', onClick);
-        document.addEventListener('keydown', onKeyDown);
-        return () => { document.removeEventListener('click', onClick); document.removeEventListener('keydown', onKeyDown); };
-    }, [moreOpen]);
-
     const navTabs = PRIMARY_NAV_TABS;
-    const moreIsActive = EXTRA_TABS.some(({ id }) => id === activeTab);
+    const isTabActive = (id: string) => NAV_GROUPS[id]?.includes(activeTab) ?? activeTab === id;
 
     return (
         <header className="sticky top-0 z-50 bg-white/90 dark:bg-[var(--header-bg)] backdrop-blur-md border-b border-stone-100 dark:border-stone-800 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
@@ -78,9 +64,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     <button
                         type="button"
                         className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:rounded-lg min-h-11 min-w-11 md:min-h-0 md:min-w-0 justify-center md:justify-start -m-2 p-2 md:m-0 md:p-0"
-                        onClick={() => { hapticLight(); setTab('Recipes'); }}
-                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Recipes'); } }}
-                        aria-label={`${siteConfig.siteName} — go to recipes`}
+                        onClick={() => { hapticLight(); setTab('Home'); }}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Home'); } }}
+                        aria-label={`${siteConfig.siteName} — go to home`}
                     >
                         <img
                             src={brandLogoSrc}
@@ -110,53 +96,26 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                         setTab(id);
                                         document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                                     }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            hapticLight();
+                                            setTab(id);
+                                        }
+                                    }}
                                     title={title}
-                                    aria-current={activeTab === id ? 'page' : undefined}
-                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors whitespace-nowrap min-h-[2.75rem] motion-reduce:transition-none ${activeTab === id ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+                                    data-testid={id === 'Profile' ? 'nav-profile' : undefined}
+                                    aria-current={isTabActive(id) ? 'page' : undefined}
+                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors whitespace-nowrap min-h-[2.75rem] motion-reduce:transition-none ${isTabActive(id) ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
                                 >
                                     {(tab as NavTab).label || id}
                                 </button>
                             );
                         })}
                     </nav>
-
-                    <div className="relative shrink-0" ref={moreRef}>
-                        <button
-                            type="button"
-                            onClick={() => setMoreOpen(v => !v)}
-                            aria-expanded={moreOpen}
-                            aria-haspopup="true"
-                            aria-label="More sections"
-                            className={`min-h-11 min-w-11 px-3 py-2 flex items-center gap-2 rounded-full transition-colors ${moreOpen || moreIsActive ? 'bg-stone-100 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700'
-                                }`}
-                        >
-                            <span className="text-xl leading-none" aria-hidden>☰</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">More</span>
-                        </button>
-                        {moreOpen && (
-                            <div
-                                role="menu"
-                                className="absolute top-full left-0 mt-1 py-2 bg-white dark:bg-[var(--card-bg)] rounded-2xl shadow-xl border border-stone-100 dark:border-stone-800 min-w-[10rem] animate-in fade-in slide-in-from-top-2 duration-200 z-50"
-                                aria-label="More sections"
-                            >
-                                {EXTRA_TABS.map(({ id }) => (
-                                    <button
-                                        key={id}
-                                        role="menuitem"
-                                        aria-current={activeTab === id ? 'page' : undefined}
-                                        onClick={() => { hapticLight(); setTab(id); setMoreOpen(false); }}
-                                        className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wider transition-colors first:rounded-t-2xl last:rounded-b-2xl ${activeTab === id ? 'bg-[#2D4635] text-white' : 'text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
-                                    >
-                                        {id}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                 </div>
 
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
-                    {/* Theme toggle */}
                     <button
                         type="button"
                         onClick={handleThemeToggle}
@@ -169,23 +128,17 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     {currentUser && (
                         <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
                             <div
-                                role="button"
-                                tabIndex={0}
-                                data-testid="nav-profile"
-                                aria-current={activeTab === 'Profile' ? 'page' : undefined}
-                                className={`flex items-center gap-2 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 min-h-11 min-w-11 flex items-center justify-center px-2 ${activeTab === 'Profile' ? 'ring-2 ring-[#2D4635]' : 'hover:ring-2 hover:ring-stone-200 dark:hover:ring-stone-700'}`}
-                                onClick={() => { hapticLight(); setTab('Profile'); }}
-                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Profile'); } }}
-                                aria-label={`${currentUser.name}, view profile`}
+                                className="hidden md:flex items-center gap-2 rounded-full min-h-11 min-w-11 justify-center px-2"
+                                aria-label={`${currentUser.name}, signed in`}
                             >
                                 <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-stone-700 object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
-                                <span className={`hidden sm:inline text-[10px] font-black uppercase tracking-widest ${activeTab === 'Profile' ? 'text-[#2D4635] dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400'}`}>
-                                    Profile
+                                <span className="hidden lg:inline text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                                    {currentUser.name}
                                 </span>
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-full transition-colors motion-reduce:transition-none"
+                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-full transition-colors motion-reduce:transition-none"
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >

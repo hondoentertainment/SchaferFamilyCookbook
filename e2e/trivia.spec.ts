@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const loginAndOpenTrivia = async (
   page: import('@playwright/test').Page,
@@ -22,12 +22,14 @@ const loginAndOpenTrivia = async (
   }, triviaSeed);
   await page.reload();
 
-  await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill('Alice');
-  await page.getByRole('button', { name: /Enter The Archive/i }).click();
+  await page.getByPlaceholder(/your name/i).fill('Alice');
+  await page.getByRole('button', { name: /^continue$/i }).click();
+  // Land on Home, then jump to Family hub ? Trivia tab.
   await page
-    .getByRole('textbox', { name: /Search recipes, ingredients/i })
+    .getByRole('heading', { name: /Good (morning|afternoon|evening|night)/i })
     .waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: 'Trivia' }).click();
+  await page.getByRole('button', { name: 'Family', exact: true }).first().click();
+  await page.getByRole('button', { name: /^Trivia/i }).first().click();
 };
 
 test.describe('Trivia', () => {
@@ -106,7 +108,7 @@ test.describe('Trivia', () => {
   });
 
   test('family leaderboard panel is visible after finishing a quiz', async ({ page }) => {
-    // Offline/local mode — leaderboard should render its shell with an
+    // Offline/local mode � leaderboard should render its shell with an
     // "Unavailable offline" message since Firebase isn't configured.
     await loginAndOpenTrivia(page, [
       {

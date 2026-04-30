@@ -19,7 +19,7 @@ test.describe('Cook Mode swipe navigation', () => {
 
     test('swipe-left on the step body advances the step', async ({ page }) => {
         // Open a recipe that has instructions.
-        await page.getByRole('button', { name: /View recipe:/i }).first().click();
+        await page.getByRole('button', { name: /Open recipe:/i }).first().click();
         await expect(page.getByRole('dialog')).toBeVisible();
 
         // Enter cook mode.

@@ -4,11 +4,55 @@ import { hapticLight } from '../utils/haptics';
 import { avatarOnError } from '../utils/avatarFallback';
 
 const MAIN_TABS = [
-    { id: 'Recipes', label: 'Recipes', icon: '📖' },
-    { id: 'Index', label: 'A–Z', icon: '🔤' },
-    { id: 'Gallery', label: 'Gallery', icon: '🖼️' },
-    { id: 'Trivia', label: 'Trivia', icon: '💡' },
+    { id: 'Home', label: 'Home', group: ['Home'] },
+    { id: 'Recipes', label: 'Recipes', group: ['Recipes', 'Index', 'Collections'] },
+    { id: 'Gallery', label: 'Family', group: ['Gallery', 'Trivia', 'Family Story', 'Contributors'] },
+    { id: 'Grocery List', label: 'Cook', group: ['Grocery List'] },
+    { id: 'Profile', label: 'Me', group: ['Profile', 'Privacy'] },
 ] as const;
+
+const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
+    const stroke = active ? '#2D4635' : 'currentColor';
+    const fill = active ? '#2D4635' : 'none';
+    const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+    if (id === 'Home') {
+        return (
+            <svg {...common} aria-hidden>
+                <path d="M3 11.5 12 4l9 7.5" fill={active ? '#2D4635' : 'none'} fillOpacity={active ? 0.08 : 0} />
+                <path d="M5 10.5V20h14v-9.5" />
+                <path d="M10 20v-5h4v5" />
+            </svg>
+        );
+    }
+    if (id === 'Recipes') {
+        return (
+            <svg {...common} aria-hidden>
+                <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" fill={active ? '#2D4635' : 'none'} fillOpacity={active ? 0.08 : 0} />
+                <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" />
+                <path d="M9 8h6M9 12h6M9 16h4" />
+            </svg>
+        );
+    }
+    if (id === 'Grocery List') {
+        return (
+            <svg {...common} aria-hidden>
+                <path d="M3 5h2l2.5 11h11L21 8H7" fill={fill} fillOpacity={active ? 0.08 : 0} />
+                <circle cx="9" cy="20" r="1.5" fill={active ? '#2D4635' : 'none'} />
+                <circle cx="17" cy="20" r="1.5" fill={active ? '#2D4635' : 'none'} />
+            </svg>
+        );
+    }
+    if (id === 'Gallery') {
+        return (
+            <svg {...common} aria-hidden>
+                <rect x="3" y="6" width="18" height="14" rx="2.5" fill={fill} fillOpacity={active ? 0.08 : 0} />
+                <path d="M3 16l5-5 4 4 3-3 6 6" />
+                <circle cx="9" cy="10" r="1.6" fill={active ? '#2D4635' : 'none'} />
+            </svg>
+        );
+    }
+    return null;
+};
 
 interface BottomNavProps {
     activeTab: string;
@@ -19,70 +63,57 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, currentUser }) => {
     if (!currentUser) return null;
 
-    const tabs = MAIN_TABS;
-
     return (
         <nav
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-100 shadow-[0_-1px_0_rgba(0,0,0,0.04)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pt-px"
+            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-stone-950/95 backdrop-blur-xl border-t border-stone-200 dark:border-stone-800 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)]"
             role="navigation"
             aria-label="Main navigation"
         >
-            <div className="flex items-center justify-around min-h-[3.5rem] py-1">
-                {tabs.map(({ id, label, icon }) => (
-                    <button
-                        key={id}
-                        onClick={() => {
-                            hapticLight();
-                            setTab(id);
-                        }}
-                        aria-current={activeTab === id ? 'page' : undefined}
-                        className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-colors touch-manipulation active:scale-95 motion-reduce:transition-none ${activeTab === id
-                                ? 'text-[#2D4635] bg-[#2D4635]/8'
-                                : 'text-stone-500'
-                            }`}
-                        aria-label={label}
-                    >
-                        <span className={`text-xl sm:text-2xl mb-0.5 select-none transition-transform ${activeTab === id ? 'scale-110' : ''}`} aria-hidden>
-                            {icon}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-full px-0.5">
-                            {label}
-                        </span>
-                        <span
-                            className={`mt-1 h-1.5 rounded-full bg-[#2D4635] transition-all ${activeTab === id ? 'w-5 opacity-100' : 'w-1 opacity-0'}`}
-                            aria-hidden
-                        />
-                    </button>
-                ))}
-                <button
-                    data-testid="bottom-nav-profile"
-                    onClick={() => {
-                        hapticLight();
-                        setTab('Profile');
-                    }}
-                    aria-current={activeTab === 'Profile' ? 'page' : undefined}
-                    className={`flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-2 px-1 mx-1 rounded-2xl transition-all touch-manipulation active:scale-95 ${activeTab === 'Profile' ? 'text-[#2D4635] bg-[#2D4635]/8' : 'text-stone-500'
-                        }`}
-                    aria-label={`${currentUser.name}, view profile`}
-                >
-                    <img
-                        src={currentUser.picture}
-                        alt=""
-                        aria-hidden
-                        decoding="async"
-                        onError={avatarOnError}
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 object-cover mb-0.5 transition-transform ${activeTab === 'Profile' ? 'scale-105' : ''
-                            } ${activeTab === 'Profile' ? 'border-[#2D4635]' : 'border-stone-200'
-                            }`}
-                    />
-                    <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-full px-0.5">
-                        Profile
-                    </span>
-                    <span
-                        className={`mt-1 h-1.5 rounded-full bg-[#2D4635] transition-all ${activeTab === 'Profile' ? 'w-5 opacity-100' : 'w-1 opacity-0'}`}
-                        aria-hidden
-                    />
-                </button>
+            <div className="flex items-stretch justify-around min-h-16 px-1">
+                {MAIN_TABS.map(({ id, label, group }) => {
+                    const isActive = group.some((tabId) => tabId === activeTab);
+                    return (
+                        <button
+                            key={id}
+                            data-testid={id === 'Profile' ? 'bottom-nav-profile' : undefined}
+                            onClick={() => {
+                                hapticLight();
+                                setTab(id);
+                            }}
+                            aria-current={isActive ? 'page' : undefined}
+                            className="relative flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-1.5 px-0.5 touch-manipulation active:scale-95 transition-transform motion-reduce:transition-none"
+                            aria-label={id === 'Profile' ? `${currentUser.name}, view profile` : label}
+                        >
+                            <span
+                                className={`absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-b-full transition-all ${
+                                    isActive ? 'bg-[#2D4635] opacity-100' : 'bg-transparent opacity-0'
+                                }`}
+                                aria-hidden
+                            />
+                            <span className={`mb-0.5 transition-transform ${isActive ? 'scale-105' : ''} ${isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-400 dark:text-stone-500'}`}>
+                                {id === 'Profile' ? (
+                                    <img
+                                        src={currentUser.picture}
+                                        alt=""
+                                        aria-hidden
+                                        decoding="async"
+                                        onError={avatarOnError}
+                                        className={`w-7 h-7 rounded-full object-cover border-2 ${isActive ? 'border-[#2D4635]' : 'border-stone-200 dark:border-stone-700'}`}
+                                    />
+                                ) : (
+                                    <NavIcon id={id} active={isActive} />
+                                )}
+                            </span>
+                            <span
+                                className={`text-[10px] font-bold tracking-wider truncate max-w-full px-0.5 ${
+                                    isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-500 dark:text-stone-400'
+                                }`}
+                            >
+                                {label}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
         </nav>
     );

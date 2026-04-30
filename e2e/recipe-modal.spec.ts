@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAs } from './fixtures';
 
 test.describe('Recipe modal', () => {
@@ -10,7 +10,7 @@ test.describe('Recipe modal', () => {
   });
 
   test('opens when clicking a recipe card', async ({ page }) => {
-    const firstRecipe = page.getByRole('button', { name: /View recipe:/i }).first();
+    const firstRecipe = page.getByRole('button', { name: /Open recipe:/i }).first();
     await firstRecipe.click();
 
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 3000 });
@@ -18,14 +18,14 @@ test.describe('Recipe modal', () => {
   });
 
   test('shows recipe details', async ({ page }) => {
-    await page.getByRole('button', { name: /View recipe:/i }).first().click();
+    await page.getByRole('button', { name: /Open recipe:/i }).first().click();
 
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.locator('[role="dialog"] h2').first()).toBeVisible();
   });
 
   test('closes on close button', async ({ page }) => {
-    await page.getByRole('button', { name: /View recipe:/i }).first().click();
+    await page.getByRole('button', { name: /Open recipe:/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     await page.getByRole('button', { name: /Close recipe/i }).click();
@@ -33,7 +33,7 @@ test.describe('Recipe modal', () => {
   });
 
   test('closes on Escape key', async ({ page }) => {
-    await page.getByRole('button', { name: /View recipe:/i }).first().click();
+    await page.getByRole('button', { name: /Open recipe:/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     await page.evaluate(() => {
@@ -51,7 +51,7 @@ test.describe('Recipe modal', () => {
     // Dynamically look up the id for Festive Apple Dip from the rendered
     // recipe cards so the test does not depend on a specific seed id that
     // may change if recipes.json is reorganised.
-    const festiveCard = page.getByRole('button', { name: /View recipe: Festive Apple Dip/i });
+    const festiveCard = page.getByRole('button', { name: /Open recipe: Festive Apple Dip/i });
     await festiveCard.waitFor({ state: 'visible', timeout: 5000 });
     // Click the card to trigger the hash update, then read the hash.
     await festiveCard.click();
@@ -72,21 +72,19 @@ test.describe('Recipe modal', () => {
     await expect(page.getByRole('dialog').getByRole('heading', { name: 'Festive Apple Dip' })).toBeVisible();
   });
 
-  test('share button is present', async ({ page }) => {
-    await page.getByRole('button', { name: /View recipe:/i }).first().click();
+  test('share and print actions are reachable from the More menu', async ({ page }) => {
+    await page.getByRole('button', { name: /Open recipe:/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
+
+    // Share/Print/Email moved into the bottom-bar overflow menu (More actions).
+    await page.getByRole('button', { name: /^More actions$/i }).click();
 
     await expect(
-      page.getByRole('button', { name: /Share recipe/i }).or(
-        page.getByRole('link', { name: /Email recipe/i })
+      page.getByRole('menuitem', { name: /Share recipe/i }).or(
+        page.getByRole('menuitem', { name: /Email recipe/i })
       ).first()
     ).toBeVisible({ timeout: 2000 });
-  });
 
-  test('print button is present', async ({ page }) => {
-    await page.getByRole('button', { name: /View recipe:/i }).first().click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    await expect(page.getByRole('button', { name: /Print recipe/i })).toBeVisible({ timeout: 2000 });
+    await expect(page.getByRole('menuitem', { name: /Print recipe/i })).toBeVisible({ timeout: 2000 });
   });
 });

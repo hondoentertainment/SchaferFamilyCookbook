@@ -20,12 +20,16 @@ export async function loginAs(
   });
   await page.reload();
 
-  await page.getByPlaceholder(/e\.g\. Grandma Joan/i).fill(name);
-  await page.getByRole('button', { name: /Enter The Archive/i }).click();
+  await page.getByPlaceholder(/your name/i).fill(name);
+  await page.getByRole('button', { name: /^continue$/i }).click();
 
-  // Wait for recipes to load (indicates we're past login).
-  // The search input's placeholder was renamed from "Search by title..."
-  // to "Search recipes, ingredients..."; match via aria-label for stability.
+  // Wait for the Home tab greeting to confirm we're past login. Then
+  // navigate to Recipes for downstream specs that depend on the search box.
+  await page
+    .getByRole('heading', { name: /Good (morning|afternoon|evening|night)/i })
+    .waitFor({ state: 'visible', timeout: 15000 });
+
+  await page.getByRole('button', { name: /^Recipes$/, exact: true }).first().click();
   await page
     .getByRole('textbox', { name: /Search recipes, ingredients/i })
     .waitFor({ state: 'visible', timeout: 15000 });

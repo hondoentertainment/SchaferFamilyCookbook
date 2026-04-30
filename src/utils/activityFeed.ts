@@ -2,7 +2,14 @@ import { STORAGE_KEYS } from '../constants/storage';
 
 export interface ActivityEvent {
   id: string;
-  type: 'recipe_added' | 'recipe_rated' | 'note_added' | 'collection_created' | 'favorite_added';
+  type:
+    | 'recipe_added'
+    | 'recipe_rated'
+    | 'note_added'
+    | 'collection_created'
+    | 'favorite_added'
+    | 'recipe_cooked'
+    | 'profile_updated';
   userName: string;
   detail: string;
   timestamp: string;
@@ -61,5 +68,7 @@ export function getActivityIcon(type: ActivityEvent['type']): string {
     case 'note_added': return '💬';
     case 'collection_created': return '📚';
     case 'favorite_added': return '❤️';
+    case 'recipe_cooked': return '🍳';
+    case 'profile_updated': return '👤';
   }
 }

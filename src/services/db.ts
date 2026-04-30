@@ -77,7 +77,7 @@ function getRecipeSpecificImage(recipe: Recipe): string {
 }
 
 function isCuratedImageSource(source?: Recipe['imageSource']): boolean {
-    return source === 'upload' || source === 'nano-banana';
+    return source === 'upload' || source === 'nano-banana' || source === 'local-generated';
 }
 
 /** Legacy JSON used random `/recipe-images/imported_*.jpg` paths per recipe. */

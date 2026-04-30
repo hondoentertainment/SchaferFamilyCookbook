@@ -1,10 +1,11 @@
 # Recipe Image Generation Strategy (Quota-Safe)
 
-This project now supports **resumable, quota-safe image generation** for recipe photos.
+This project supports **resumable, quota-safe Imagen generation** plus a **deterministic local fallback rebuild** so every recipe can ship with a corresponding local image.
 
 ## Goals
 
-- Update all recipe images to high-quality Nano Banana output.
+- Update all recipe images to high-quality Nano Banana output when API quota and credentials are available.
+- Guarantee complete local image coverage with recipe-specific fallback WebP assets.
 - Avoid quota spikes and full-run failures.
 - Resume exactly where a prior run stopped.
 
@@ -16,6 +17,10 @@ This project now supports **resumable, quota-safe image generation** for recipe 
    - `npm run images:batch`
 3. **Repeat later (same command) until complete.**
    - The script stores progress in `.cache/imagen-generation-state.json`.
+4. **Guarantee local fallback coverage when needed:**
+   - `npm run images:rebuild:fallback`
+5. **Verify coverage:**
+   - `npm run images:verify`
 
 ## Why This Avoids Limits
 
@@ -36,6 +41,10 @@ This project now supports **resumable, quota-safe image generation** for recipe 
   - `node scripts/generate-imagen-images.mjs --force-all --limit 20`
 - Reset run state and start over:
   - `node scripts/generate-imagen-images.mjs --reset-state --no-resume --missing-only --limit 20`
+- Rebuild every recipe with deterministic local fallback art:
+  - `npm run images:rebuild:fallback`
+- Audit local file coverage, dimensions, duplicates, and metadata:
+  - `npm run images:verify`
 
 ## Suggested Cadence
 
@@ -50,6 +59,7 @@ Increase slowly only after repeated successful runs.
 
 - Images are saved to `public/recipe-images/`.
 - `src/data/recipes.json` is updated incrementally.
+- Fallback rebuilds write `/recipe-images/<recipe-id>.webp` and `imageSource: "local-generated"`.
 - Existing image remains untouched for failed recipes.
 
 ## Admin UI Behavior

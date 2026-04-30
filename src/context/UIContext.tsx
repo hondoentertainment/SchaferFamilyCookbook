@@ -86,14 +86,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
             {/* Toast container - aria-live for screen readers */}
             <div
                 data-testid="toast-stack"
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-2 pointer-events-none pb-[env(safe-area-inset-bottom,0px)]"
+                className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] md:bottom-6 left-1/2 -translate-x-1/2 z-[300] flex w-[min(92vw,32rem)] flex-col gap-2 pointer-events-none"
                 aria-live="polite"
                 aria-atomic="true"
             >
                 {toasts.map(t => (
                     <div
                         key={t.id}
-                        className={`pointer-events-auto px-6 py-4 rounded-2xl shadow-xl border font-bold text-sm uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+                        className={`pointer-events-auto px-5 py-4 rounded-2xl shadow-xl border text-center font-bold text-sm uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-300 ${
                             t.type === 'success'
                                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                 : t.type === 'error'

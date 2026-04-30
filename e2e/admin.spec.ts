@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { loginAs, loginAsAdmin } from './fixtures';
 
 test.describe('Admin (non-admin user)', () => {
@@ -114,10 +114,10 @@ test.describe('Admin (admin user)', () => {
   });
 
   test('admin quick-edit button appears on recipe cards', async ({ page }) => {
-    const recipeCard = page.locator('[role="button"][aria-label*="View recipe:"]').first();
+    const recipeCard = page.getByRole('button', { name: /Open recipe:/i }).first();
     await recipeCard.hover();
 
-    const editBtn = recipeCard.getByRole('button', { name: /Edit .* with AI/i });
+    const editBtn = page.getByRole('button', { name: /Edit .* with AI/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 3000 });
   });
 

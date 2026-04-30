@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { UserProfile, Recipe, HistoryEntry, GalleryItem, Trivia, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
@@ -10,8 +10,15 @@ import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
 import { hapticLight } from '../utils/haptics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
+import { addActivity, getActivityFeed, formatTimeAgo } from '../utils/activityFeed';
+import { getFavoriteIds } from '../utils/favorites';
+import { getRecentlyViewedEntries } from '../utils/recentlyViewed';
+import { isSuperAdmin } from '../config/site';
 
 const PUSH_ENABLED_KEY = 'schafer_push_enabled';
+const SECTION_HEADING_CLASS =
+    'text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[var(--color-warmth)] mb-4';
+const SECTION_DIVIDER_CLASS = 'border-t border-stone-100 dark:border-[var(--border-color)]';
 
 const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
     const { toast } = useUI();
@@ -43,42 +50,37 @@ const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
         }
     };
 
+    if (!notificationsSupported) {
+        return (
+            <p className="text-stone-500 dark:text-stone-400 font-serif italic text-sm">
+                Push notifications aren't supported in this browser.
+            </p>
+        );
+    }
+
     return (
-        <section className="space-y-6 md:space-y-8">
-            <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-sky-50 flex items-center justify-center not-italic text-xl md:text-2xl">🔔</span>
-                Notifications
-            </h3>
+        <div className="bg-white dark:bg-[var(--card-bg)] rounded-[2rem] border border-stone-100 dark:border-[var(--border-color)] shadow-sm p-6 space-y-4">
+            <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic">
+                You'll receive a notification when a new recipe is added to the cookbook.
+            </p>
 
-            {!notificationsSupported ? (
-                <p className="text-stone-500 font-serif italic text-sm">
-                    Push notifications aren't supported in this browser.
-                </p>
-            ) : (
-                <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm p-6 space-y-4">
-                    <p className="text-sm text-stone-600 font-serif italic">
-                        You'll receive a notification when a new recipe is added to the cookbook.
-                    </p>
-
-                    {enabled ? (
-                        <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 w-fit">
-                            <span className="text-lg" aria-hidden="true">✓</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Notifications enabled</span>
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleSubscribe}
-                            disabled={loading}
-                            className="px-8 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
-                            aria-busy={loading}
-                        >
-                            {loading ? 'Enabling…' : 'Get notified when new recipes are added'}
-                        </button>
-                    )}
+            {enabled ? (
+                <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 w-fit">
+                    <span className="text-lg" aria-hidden="true">✓</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Notifications enabled</span>
                 </div>
+            ) : (
+                <button
+                    type="button"
+                    onClick={handleSubscribe}
+                    disabled={loading}
+                    className="px-8 py-4 min-h-11 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635] motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
+                    aria-busy={loading}
+                >
+                    {loading ? 'Enabling…' : 'Get notified when new recipes are added'}
+                </button>
             )}
-        </section>
+        </div>
     );
 };
 
@@ -119,38 +121,298 @@ interface ProfileViewProps {
     contributors?: ContributorProfile[];
 }
 
+interface UserProfileWithJoined extends UserProfile {
+    joinedAt?: string;
+    createdAt?: string;
+}
+
+interface ActivityStats {
+    cookedThisMonth: number;
+    favoritesCount: number;
+    streakDays: number;
+    lastActiveLabel: string | null;
+}
+
+function computeActivityStats(userName: string): ActivityStats {
+    const now = Date.now();
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const feed = getActivityFeed();
+    const userFeed = feed.filter(
+        (event) => event.userName?.toLowerCase() === userName.toLowerCase(),
+    );
+
+    const cookedThisMonth = userFeed.filter(
+        (event) => event.type === 'recipe_cooked' && now - new Date(event.timestamp).getTime() <= THIRTY_DAYS,
+    ).length;
+
+    const favoritesCount = (() => {
+        try {
+            return getFavoriteIds().size;
+        } catch {
+            return 0;
+        }
+    })();
+
+    // Build set of YYYY-MM-DD days the user did anything
+    const dayKeys = new Set<string>();
+    const dayKey = (ms: number) => {
+        const d = new Date(ms);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    };
+    for (const event of userFeed) {
+        const ts = new Date(event.timestamp).getTime();
+        if (Number.isFinite(ts)) dayKeys.add(dayKey(ts));
+    }
+    try {
+        for (const entry of getRecentlyViewedEntries()) {
+            if (entry?.viewedAt) dayKeys.add(dayKey(entry.viewedAt));
+        }
+    } catch {
+        // ignore
+    }
+
+    let streakDays = 0;
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    while (dayKeys.has(`${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`)) {
+        streakDays += 1;
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
+    const allTimestamps: number[] = [];
+    for (const event of userFeed) {
+        const ts = new Date(event.timestamp).getTime();
+        if (Number.isFinite(ts)) allTimestamps.push(ts);
+    }
+    try {
+        for (const entry of getRecentlyViewedEntries()) {
+            if (entry?.viewedAt && Number.isFinite(entry.viewedAt)) allTimestamps.push(entry.viewedAt);
+        }
+    } catch {
+        // ignore
+    }
+    const lastActiveLabel =
+        allTimestamps.length > 0
+            ? `Last active ${formatTimeAgo(new Date(Math.max(...allTimestamps)).toISOString())}`
+            : null;
+
+    return { cookedThisMonth, favoritesCount, streakDays, lastActiveLabel };
+}
+
+const StatCard: React.FC<{ value: React.ReactNode; label: string; hint?: string }> = ({ value, label, hint }) => (
+    <div className="bg-cream dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm flex flex-col items-center text-center gap-2">
+        <span className="text-4xl md:text-5xl font-serif italic text-brand dark:text-emerald-300 leading-none">{value}</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-ink-soft dark:text-stone-400">
+            {label}
+        </span>
+        {hint && (
+            <span className="text-[10px] font-serif italic text-stone-400 dark:text-stone-500">{hint}</span>
+        )}
+    </div>
+);
+
+const SectionHeading: React.FC<{ id: string; children: React.ReactNode }> = ({ id, children }) => (
+    <h3 id={id} className={SECTION_HEADING_CLASS}>
+        {children}
+    </h3>
+);
+
+const RecipeRow: React.FC<{ recipe: Recipe; onView?: (r: Recipe) => void; rightSlot?: React.ReactNode }> = ({
+    recipe,
+    onView,
+    rightSlot,
+}) => {
+    const inner = (
+        <>
+            <img
+                src={recipe.image}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
+                alt={recipe.title}
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                    (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
+                }}
+            />
+            <div className="flex-1 min-w-0">
+                <h4 className="font-serif italic text-[#2D4635] dark:text-emerald-200 text-lg md:text-xl truncate">
+                    {recipe.title}
+                </h4>
+                <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">
+                    {recipe.category}
+                </span>
+            </div>
+            {rightSlot ?? (
+                <span className="text-stone-400 group-hover:text-[#2D4635] transition-colors">→</span>
+            )}
+        </>
+    );
+
+    if (onView) {
+        return (
+            <button
+                key={recipe.id}
+                type="button"
+                onClick={() => onView(recipe)}
+                className="w-full text-left bg-white dark:bg-[var(--card-bg)] p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 dark:border-[var(--border-color)] shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all"
+            >
+                {inner}
+            </button>
+        );
+    }
+
+    return (
+        <div className="bg-white dark:bg-[var(--card-bg)] p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 dark:border-[var(--border-color)] shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all">
+            {inner}
+        </div>
+    );
+};
+
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
-    const { currentUser, userRecipes, userHistory, favoriteRecipes, recentRecipes, allRecipes, onViewRecipe, onUpdateProfile, onEditRecipe, adminSectionProps, contributors = [] } = props;
+    const {
+        currentUser,
+        userRecipes,
+        userHistory,
+        favoriteRecipes,
+        recentRecipes,
+        allRecipes,
+        onViewRecipe,
+        onUpdateProfile,
+        onEditRecipe,
+        adminSectionProps,
+        contributors = [],
+    } = props;
+    const profileWithJoined = currentUser as UserProfileWithJoined;
     const { toast } = useUI();
     const [name, setName] = useState(currentUser.name);
     const [avatar, setAvatar] = useState(currentUser.picture);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [draftName, setDraftName] = useState(currentUser.name);
     const [isSaving, setIsSaving] = useState(false);
-    const [saveError, setSaveError] = useState<string | null>(null);
     const [showPicker, setShowPicker] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
+    const nameInputRef = useRef<HTMLInputElement>(null);
+    const activityFeedSectionRef = useRef<HTMLDivElement>(null);
 
-    const handleSave = async () => {
-        setIsSaving(true);
-        setSaveSuccess(false);
-        setSaveError(null);
+    useEffect(() => {
+        setName(currentUser.name);
+        setDraftName(currentUser.name);
+        setAvatar(currentUser.picture);
+    }, [currentUser.name, currentUser.picture]);
+
+    useEffect(() => {
+        if (isEditingName && nameInputRef.current) {
+            nameInputRef.current.focus();
+            nameInputRef.current.select();
+        }
+    }, [isEditingName]);
+
+    const memberSinceLabel = useMemo(() => {
+        const raw = profileWithJoined.joinedAt ?? profileWithJoined.createdAt;
+        if (!raw) return null;
+        const date = new Date(raw);
+        if (Number.isNaN(date.getTime())) return null;
+        return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }, [profileWithJoined.joinedAt, profileWithJoined.createdAt]);
+
+    const stats = useMemo(() => computeActivityStats(currentUser.name), [currentUser.name, userHistory.length]);
+
+    const persistProfile = async (nextName: string, nextAvatar: string) => {
         try {
-            await onUpdateProfile(name, avatar);
-            setSaveSuccess(true);
-            setSaveError(null);
-            hapticLight();
-            toast('Profile updated', 'success');
-            setTimeout(() => setSaveSuccess(false), 3000);
+            await onUpdateProfile(nextName, nextAvatar);
+            return true;
         } catch (err) {
+            // Fallback persistence to the same localStorage key the app initializes from
+            try {
+                const raw = localStorage.getItem('schafer_user');
+                const parsed = raw ? (JSON.parse(raw) as UserProfile) : (currentUser as UserProfile);
+                localStorage.setItem(
+                    'schafer_user',
+                    JSON.stringify({ ...parsed, name: nextName, picture: nextAvatar }),
+                );
+            } catch {
+                // best effort
+            }
             const message = err instanceof Error ? err.message : 'Failed to save profile';
-            setSaveError(message);
             toast(message, 'error');
-        } finally {
-            setIsSaving(false);
+            return false;
         }
     };
 
+    const startNameEdit = () => {
+        hapticLight();
+        setDraftName(name);
+        setIsEditingName(true);
+    };
+
+    const cancelNameEdit = () => {
+        setDraftName(name);
+        setIsEditingName(false);
+    };
+
+    const commitNameEdit = async () => {
+        const trimmed = draftName.trim();
+        if (!trimmed || trimmed === name) {
+            setDraftName(name);
+            setIsEditingName(false);
+            return;
+        }
+        setIsSaving(true);
+        const ok = await persistProfile(trimmed, avatar);
+        if (ok) {
+            setName(trimmed);
+            try {
+                addActivity('profile_updated', trimmed, 'updated their display name');
+            } catch {
+                // ignore
+            }
+            toast('Display name updated', 'success');
+            setIsEditingName(false);
+        }
+        setIsSaving(false);
+    };
+
+    const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            void commitNameEdit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelNameEdit();
+        }
+    };
+
+    const handleAvatarSelect = async (url: string) => {
+        setShowPicker(false);
+        const previous = avatar;
+        setAvatar(url);
+        setIsSaving(true);
+        const ok = await persistProfile(name, url);
+        if (!ok) {
+            setAvatar(previous);
+        } else {
+            toast('Avatar updated', 'success');
+        }
+        setIsSaving(false);
+    };
+
+    const handleNavigateToPrivacy = () => {
+        hapticLight();
+        try {
+            window.dispatchEvent(new CustomEvent('schafer:navigate', { detail: 'Privacy' }));
+        } catch {
+            // ignore
+        }
+    };
+
+    const scrollToActivityFeed = () => {
+        activityFeedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
     const isAdmin = currentUser.role === 'admin';
-    const showAdminSection = isAdmin && !!adminSectionProps;
+    const isSuperAdminUser =
+        isSuperAdmin(currentUser.email) || isSuperAdmin(currentUser.name);
+    // Preserve existing behavior: admin role sees admin section. Super-admin gate is OR'd in.
+    const showAdminSection = (isAdmin || isSuperAdminUser) && !!adminSectionProps;
     const scrollToAdminSection = () => {
         document.getElementById('admin-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
@@ -161,349 +423,454 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
         return () => window.clearTimeout(timer);
     }, [showAdminSection, adminSectionProps?.editingRecipe]);
 
+    const roleBadge = (
+        <span
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                isAdmin
+                    ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 border-orange-100 dark:border-orange-700'
+                    : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-700'
+            }`}
+            aria-label={isAdmin ? 'Legacy Custodian' : 'Family Member'}
+        >
+            <span aria-hidden="true">{isAdmin ? '🏆' : '👤'}</span>
+            {isAdmin ? 'Legacy Custodian' : 'Family Member'}
+        </span>
+    );
+
     return (
-        <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-12 md:space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {/* Identity Card */}
-            <section className="bg-white rounded-[3rem] md:rounded-[4rem] p-6 md:p-16 border border-stone-100 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
-                    <div className="relative group">
-                        <img src={avatar} className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-2xl transition-all group-hover:scale-105" alt={name} onError={avatarOnError} />
-                        <button
-                            onClick={() => setShowPicker(true)}
-                            className="absolute bottom-4 right-4 w-12 h-12 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-xl"
-                            aria-label="Change avatar"
-                        >
-                            🎭
-                        </button>
-                    </div>
-
-                    <div className="flex-1 space-y-8 w-full">
-                        <div className="space-y-2">
-                            <label htmlFor="profile-display-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Display Identity</label>
-                            <input
-                                id="profile-display-name"
-                                type="text"
-                                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-3xl font-serif italic text-[#2D4635] outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner text-base"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                aria-busy={isSaving}
+        <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 motion-reduce:animate-none">
+            {/* ── Identity ─────────────────────────────────────────────── */}
+            <section aria-labelledby="profile-identity-heading">
+                <SectionHeading id="profile-identity-heading">Identity</SectionHeading>
+                <div className="bg-white dark:bg-[var(--card-bg)] rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 border border-stone-100 dark:border-[var(--border-color)] shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-56 h-56 bg-emerald-50 dark:bg-emerald-950/30 rounded-full -mr-28 -mt-28 blur-3xl opacity-50 pointer-events-none" />
+                    <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6 md:gap-8">
+                        <div className="relative">
+                            <img
+                                src={avatar}
+                                className="w-24 h-24 rounded-full border-4 border-white dark:border-[var(--border-color)] shadow-xl object-cover bg-stone-100"
+                                alt={name}
+                                onError={avatarOnError}
                             />
-                        </div>
-
-                        <div className="flex flex-wrap gap-4" role="status" aria-live="polite" aria-atomic="true">
                             <button
-                                onClick={handleSave}
-                                disabled={isSaving}
-                                className="px-12 py-5 min-h-[2.75rem] bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635]"
-                                aria-busy={isSaving}
+                                type="button"
+                                onClick={() => setShowPicker(true)}
+                                className="absolute -bottom-1 -right-1 w-11 h-11 min-w-11 min-h-11 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-base focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
+                                aria-label="Change avatar"
                             >
-                                {isSaving ? 'Saving...' : 'Save Profile'}
+                                🎭
                             </button>
-                            {saveError && (
-                                <div className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-700 rounded-full border border-red-200 animate-in fade-in slide-in-from-left-4 duration-300">
-                                    <span className="text-lg" aria-hidden="true">⚠</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{saveError}</span>
-                                </div>
-                            )}
-                            {saveSuccess && (
-                                <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 animate-in fade-in slide-in-from-left-4 duration-300">
-                                    <span className="text-lg" aria-hidden="true">✓</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Profile Updated</span>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-3 px-8 py-4 bg-stone-50 rounded-full border border-stone-100">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Status:</span>
-                                <span className={`text-[10px] font-black uppercase tracking-widest ${currentUser.role === 'admin' ? 'text-orange-500' : 'text-emerald-600'}`}>
-                                    {currentUser.role === 'admin' ? '🏆 Legacy Custodian' : '👤 Family Member'}
-                                </span>
-                            </div>
                         </div>
 
-                        {showAdminSection && (
-                            <div className="rounded-[2rem] border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-5 md:p-6 shadow-sm">
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Admin workspace</p>
-                                        <h3 className="text-2xl font-serif italic text-[#2D4635]">Manage the archive from your profile</h3>
-                                        <p className="text-sm text-stone-600 font-serif italic">
-                                            Jump straight into recipes, gallery, trivia, directory, and contributor permissions from one focused workspace.
-                                        </p>
+                        <div className="flex-1 w-full space-y-3 text-center sm:text-left">
+                            {!isEditingName ? (
+                                <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+                                    <h2
+                                        className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200 leading-tight"
+                                        data-testid="profile-display-name"
+                                    >
+                                        {name}
+                                    </h2>
+                                    <button
+                                        type="button"
+                                        onClick={startNameEdit}
+                                        className="inline-flex items-center justify-center w-11 h-11 min-w-11 min-h-11 rounded-full text-stone-500 hover:text-[#2D4635] hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] dark:text-stone-400 dark:hover:text-emerald-200 transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                        aria-label="Edit display name"
+                                    >
+                                        <span aria-hidden="true">✎</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                    <label htmlFor="profile-display-name-input" className="sr-only">
+                                        Display name
+                                    </label>
+                                    <input
+                                        id="profile-display-name-input"
+                                        ref={nameInputRef}
+                                        type="text"
+                                        value={draftName}
+                                        onChange={(e) => setDraftName(e.target.value)}
+                                        onKeyDown={handleNameKeyDown}
+                                        disabled={isSaving}
+                                        aria-label="Display name"
+                                        aria-busy={isSaving}
+                                        className="flex-1 min-w-0 px-4 py-3 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] border border-stone-200 dark:border-[var(--border-color)] rounded-2xl text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200 outline-none focus:ring-2 focus:ring-[#2D4635]/30 focus:bg-white dark:focus:bg-[var(--card-bg)] transition-all"
+                                    />
+                                    <div className="flex gap-2 justify-center sm:justify-start">
+                                        <button
+                                            type="button"
+                                            onClick={() => void commitNameEdit()}
+                                            disabled={isSaving}
+                                            className="inline-flex items-center justify-center min-w-11 min-h-11 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-bold shadow-md hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100"
+                                            aria-label="Save display name"
+                                        >
+                                            <span aria-hidden="true">✓</span>
+                                            <span className="ml-1.5">{isSaving ? 'Saving…' : 'Save'}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={cancelNameEdit}
+                                            disabled={isSaving}
+                                            className="inline-flex items-center justify-center min-w-11 min-h-11 px-4 py-2 rounded-full bg-stone-100 dark:bg-[var(--bg-tertiary)] text-stone-600 dark:text-stone-300 text-sm font-bold hover:bg-stone-200 dark:hover:bg-stone-700 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100"
+                                            aria-label="Cancel editing display name"
+                                        >
+                                            <span aria-hidden="true">✕</span>
+                                            <span className="ml-1.5">Cancel</span>
+                                        </button>
                                     </div>
+                                </div>
+                            )}
+
+                            <div className="text-sm text-stone-500 dark:text-stone-400 font-serif italic">
+                                {memberSinceLabel ? (
+                                    <span>Member since {memberSinceLabel}</span>
+                                ) : (
+                                    <span>{isAdmin ? 'Legacy Custodian' : 'Family Member'}</span>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap pt-1">
+                                {roleBadge}
+                                {currentUser.email && (
+                                    <span className="text-xs text-stone-400 dark:text-stone-500 font-serif italic truncate max-w-full">
+                                        {currentUser.email}
+                                    </span>
+                                )}
+                            </div>
+
+                            {showAdminSection && (
+                                <div className="pt-3">
                                     <button
                                         type="button"
                                         onClick={scrollToAdminSection}
-                                        className="px-8 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#24382b] transition-colors whitespace-nowrap"
+                                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                     >
-                                        Open Admin Tools
+                                        Open Admin Tools →
                                     </button>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <div className="grid lg:grid-cols-2 gap-12">
-                {/* My Favorites */}
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-50 flex items-center justify-center not-italic text-xl md:text-2xl">❤️</span>
-                        My Favorites
-                    </h3>
-                    <div className="space-y-3 md:space-y-4">
-                        {favoriteRecipes.map((recipe) => (
-                            <button
-                                key={recipe.id}
-                                type="button"
-                                onClick={() => onViewRecipe(recipe)}
-                                className="w-full text-left bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all"
-                            >
-                                <img
-                                    src={recipe.image}
-                                    className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
-                                    alt={recipe.title}
-                                    loading="lazy"
-                                    decoding="async"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
-                                    }}
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
-                                </div>
-                                <span className="text-stone-400 group-hover:text-[#2D4635] transition-colors">→</span>
-                            </button>
-                        ))}
-                        {favoriteRecipes.length === 0 && (
-                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem] space-y-4">
-                                <span className="text-5xl block">🤍</span>
-                                <p className="text-stone-400 font-serif italic text-lg">No favorites yet</p>
-                                <p className="text-sm text-stone-400 max-w-xs mx-auto">Tap the heart on any recipe card to save it here for quick access.</p>
-                            </div>
-                        )}
-                    </div>
-                </section>
+            {/* ── Activity ─────────────────────────────────────────────── */}
+            <section aria-labelledby="profile-activity-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+                <SectionHeading id="profile-activity-heading">Activity</SectionHeading>
 
-                {/* Recently Viewed */}
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-xl md:text-2xl">👁</span>
-                        Recently Viewed
-                    </h3>
-                    <div className="space-y-3 md:space-y-4">
-                        {recentRecipes.map((recipe) => (
-                            <button
-                                key={recipe.id}
-                                type="button"
-                                onClick={() => onViewRecipe(recipe)}
-                                className="w-full text-left bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all"
-                            >
-                                <img
-                                    src={recipe.image}
-                                    className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
-                                    alt={recipe.title}
-                                    loading="lazy"
-                                    decoding="async"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
-                                    }}
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
-                                </div>
-                                <span className="text-stone-400 group-hover:text-[#2D4635] transition-colors">→</span>
-                            </button>
-                        ))}
-                        {recentRecipes.length === 0 && (
-                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
-                                <p className="text-stone-400 font-serif italic text-lg">The recipes you open most recently will gather here.</p>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-                {/* My Recipes */}
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-50 flex items-center justify-center not-italic text-xl md:text-2xl">📖</span>
-                        My Shared Recipes
-                    </h3>
-
-                    <div className="space-y-3 md:space-y-4">
-                        {userRecipes.map(recipe => (
-                            <div key={recipe.id} className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm flex items-center gap-4 md:gap-6 group hover:shadow-md transition-all">
-                                <img
-                                    src={recipe.image}
-                                    className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shadow-sm"
-                                    alt={recipe.title}
-                                    loading="lazy"
-                                    decoding="async"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = CATEGORY_IMAGES[recipe.category] || CATEGORY_IMAGES.Generic;
-                                    }}
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="font-serif italic text-[#2D4635] text-lg md:text-xl truncate">{recipe.title}</h4>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">{recipe.category}</span>
-                                </div>
-                                {currentUser.role === 'admin' ? (
-                                    <button
-                                        onClick={() => onEditRecipe(recipe)}
-                                        className="p-3 md:p-4 bg-stone-50 text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0"
-                                        title="Edit recipe"
-                                        aria-label="Edit recipe"
-                                    >
-                                        ✏️
-                                    </button>
-                                ) : (
-                                    <span className="p-3 md:p-4 text-stone-300 text-xs italic shrink-0" title="Contact an administrator to request edits">View only</span>
-                                )}
-                            </div>
-                        ))}
-                        {userRecipes.length === 0 && (
-                            <div className="py-12 md:py-20 text-center border-2 border-dashed border-stone-100 rounded-[2.5rem] md:rounded-[3rem]">
-                                <p className="text-stone-400 font-serif italic text-lg">When you contribute a recipe, it will be added to your family shelf here.</p>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-                {/* My History */}
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-xl md:text-2xl">⏲️</span>
-                        My Contribution Log
-                    </h3>
-
-                    <div className="space-y-3 md:space-y-4 max-h-[500px] md:max-h-[600px] overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
-                        {userHistory.map(entry => (
-                            <div key={entry.id} className="flex gap-4 p-4 md:p-5 bg-stone-50/50 rounded-2xl md:rounded-3xl border border-stone-100 items-start">
-                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-base md:text-lg mt-0.5 md:mt-1 shrink-0">
-                                    {entry.type === 'recipe' ? '🍲' : entry.type === 'gallery' ? '🖼️' : '💡'}
-                                </div>
-                                <div className="flex-1 space-y-1 min-w-0">
-                                    <p className="text-xs md:text-sm text-stone-600">
-                                        <span className="font-bold text-[#2D4635] capitalize">{entry.action}</span>
-                                        {' '}{entry.type}{' '}
-                                        <span className="italic font-serif">"{entry.itemName}"</span>
-                                    </p>
-                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-stone-300">
-                                        {new Date(entry.timestamp).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                        {userHistory.length === 0 && (
-                            <div className="py-20 text-center border-2 border-dashed border-stone-100 rounded-[3rem]">
-                                <p className="text-stone-400 font-serif italic text-lg">Your contributions and updates will appear here as the archive grows.</p>
-                            </div>
-                        )}
-                    </div>
-                </section>
-            </div>
-
-
-            {/* Collections, Preferences, Notifications & Activity Feed */}
-            <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-12">
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-50 flex items-center justify-center not-italic text-xl md:text-2xl">📚</span>
-                        Collections
-                    </h3>
-                    <CollectionsView
-                        recipes={allRecipes}
-                        currentUserName={currentUser.name}
-                        onViewRecipe={onViewRecipe}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                    <StatCard
+                        value={stats.cookedThisMonth}
+                        label="Recipes Cooked This Month"
                     />
-                </section>
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-50 flex items-center justify-center not-italic text-xl md:text-2xl">🎨</span>
-                        Preferences
-                    </h3>
-                    <PreferencesPanel />
-                </section>
-                <NotificationsSection userName={currentUser.name} />
-                <section className="space-y-6 md:space-y-8">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-amber-50 flex items-center justify-center not-italic text-xl md:text-2xl">📢</span>
-                        Family Activity
-                    </h3>
-                    <ActivityFeed maxItems={10} />
-                </section>
-            </div>
+                    <StatCard
+                        value={stats.favoritesCount}
+                        label="Favorites"
+                    />
+                    {stats.streakDays > 0 ? (
+                        <StatCard value={`${stats.streakDays}`} label="Day Streak" />
+                    ) : (
+                        <StatCard
+                            value={stats.lastActiveLabel ? '·' : '—'}
+                            label={stats.lastActiveLabel ?? 'No activity yet'}
+                        />
+                    )}
+                </div>
 
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={scrollToActivityFeed}
+                        className="inline-flex items-center min-h-11 px-5 py-3 bg-stone-50 dark:bg-[var(--bg-tertiary)] hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-100 dark:border-[var(--border-color)] rounded-full text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-200 transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                    >
+                        View Activity Feed →
+                    </button>
+                    {stats.lastActiveLabel && stats.streakDays > 0 && (
+                        <span className="text-xs text-stone-400 dark:text-stone-500 font-serif italic">
+                            {stats.lastActiveLabel}
+                        </span>
+                    )}
+                </div>
+
+                <div className="grid lg:grid-cols-2 gap-8 mt-10">
+                    {/* My Favorites */}
+                    <div className="space-y-4" aria-label="My favorites">
+                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center not-italic text-lg md:text-xl">❤️</span>
+                            My Favorites
+                        </h4>
+                        <div className="space-y-3">
+                            {favoriteRecipes.map((recipe) => (
+                                <RecipeRow key={recipe.id} recipe={recipe} onView={onViewRecipe} />
+                            ))}
+                            {favoriteRecipes.length === 0 && (
+                                <div className="py-10 md:py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem] space-y-2">
+                                    <span className="text-4xl block">🤍</span>
+                                    <p className="text-stone-400 font-serif italic text-base">No favorites yet</p>
+                                    <p className="text-xs text-stone-400 max-w-xs mx-auto">
+                                        Tap the heart on any recipe card to save it here for quick access.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recently Viewed */}
+                    <div className="space-y-4" aria-label="Recently viewed">
+                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center not-italic text-lg md:text-xl">👁</span>
+                            Recently Viewed
+                        </h4>
+                        <div className="space-y-3">
+                            {recentRecipes.map((recipe) => (
+                                <RecipeRow key={recipe.id} recipe={recipe} onView={onViewRecipe} />
+                            ))}
+                            {recentRecipes.length === 0 && (
+                                <div className="py-10 md:py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
+                                    <p className="text-stone-400 font-serif italic text-base">
+                                        The recipes you open most recently will gather here.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* My Shared Recipes */}
+                    <div className="space-y-4" aria-label="My shared recipes">
+                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center not-italic text-lg md:text-xl">📖</span>
+                            My Shared Recipes
+                        </h4>
+                        <div className="space-y-3">
+                            {userRecipes.map((recipe) => (
+                                <RecipeRow
+                                    key={recipe.id}
+                                    recipe={recipe}
+                                    rightSlot={
+                                        currentUser.role === 'admin' ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => onEditRecipe(recipe)}
+                                                className="p-3 md:p-4 min-w-11 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                                title="Edit recipe"
+                                                aria-label="Edit recipe"
+                                            >
+                                                ✏️
+                                            </button>
+                                        ) : (
+                                            <span
+                                                className="p-3 md:p-4 text-stone-300 text-xs italic shrink-0"
+                                                title="Contact an administrator to request edits"
+                                            >
+                                                View only
+                                            </span>
+                                        )
+                                    }
+                                />
+                            ))}
+                            {userRecipes.length === 0 && (
+                                <div className="py-10 md:py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
+                                    <p className="text-stone-400 font-serif italic text-base">
+                                        When you contribute a recipe, it will be added to your family shelf here.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* My Contribution Log */}
+                    <div className="space-y-4" aria-label="My contribution log">
+                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center not-italic text-lg md:text-xl">⏲️</span>
+                            My Contribution Log
+                        </h4>
+                        <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+                            {userHistory.map((entry) => (
+                                <div
+                                    key={entry.id}
+                                    className="flex gap-4 p-4 bg-stone-50/50 dark:bg-[var(--bg-tertiary)] rounded-2xl border border-stone-100 dark:border-[var(--border-color)] items-start"
+                                >
+                                    <div className="w-9 h-9 rounded-full bg-white dark:bg-[var(--card-bg)] flex items-center justify-center shadow-sm text-base mt-0.5 shrink-0">
+                                        {entry.type === 'recipe' ? '🍲' : entry.type === 'gallery' ? '🖼️' : '💡'}
+                                    </div>
+                                    <div className="flex-1 space-y-1 min-w-0">
+                                        <p className="text-xs md:text-sm text-stone-600 dark:text-stone-300">
+                                            <span className="font-bold text-[#2D4635] dark:text-emerald-200 capitalize">
+                                                {entry.action}
+                                            </span>{' '}
+                                            {entry.type}{' '}
+                                            <span className="italic font-serif">"{entry.itemName}"</span>
+                                        </p>
+                                        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-stone-300">
+                                            {new Date(entry.timestamp).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                            {userHistory.length === 0 && (
+                                <div className="py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
+                                    <p className="text-stone-400 font-serif italic text-base">
+                                        Your contributions and updates will appear here as the archive grows.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Family Activity Feed */}
+                <div ref={activityFeedSectionRef} className="mt-10 space-y-4" aria-label="Family activity feed">
+                    <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                        <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center not-italic text-lg md:text-xl">📢</span>
+                        Family Activity
+                    </h4>
+                    <ActivityFeed maxItems={10} />
+                </div>
+            </section>
+
+            {/* ── Preferences ──────────────────────────────────────────── */}
+            <section aria-labelledby="profile-preferences-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+                <SectionHeading id="profile-preferences-heading">Preferences</SectionHeading>
+                <div className="grid lg:grid-cols-2 gap-8">
+                    <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm">
+                        <PreferencesPanel />
+                    </div>
+                    <div className="space-y-4">
+                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center not-italic text-lg md:text-xl">📚</span>
+                            Collections
+                        </h4>
+                        <CollectionsView
+                            recipes={allRecipes}
+                            currentUserName={currentUser.name}
+                            onViewRecipe={onViewRecipe}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Notifications ────────────────────────────────────────── */}
+            <section aria-labelledby="profile-notifications-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+                <SectionHeading id="profile-notifications-heading">Notifications</SectionHeading>
+                <NotificationsSection userName={currentUser.name} />
+            </section>
+
+            {/* ── Privacy & Data ───────────────────────────────────────── */}
+            <section aria-labelledby="profile-privacy-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+                <SectionHeading id="profile-privacy-heading">Privacy &amp; Data</SectionHeading>
+                <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm space-y-4">
+                    <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic">
+                        Review what the cookbook stores on your device and in the family cloud, and how it is shared.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            type="button"
+                            onClick={handleNavigateToPrivacy}
+                            className="inline-flex items-center min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                            aria-label="Open Privacy and Data view"
+                        >
+                            Open Privacy &amp; Data →
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Admin (super-admin / custodian only) ─────────────────── */}
             {showAdminSection && adminSectionProps && (
                 <section
-                    id="admin-tools-section"
-                    className="space-y-6 rounded-[2.5rem] md:rounded-[3rem] border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-4 md:p-8 shadow-xl scroll-mt-24"
-                    aria-label="Admin tools"
+                    aria-labelledby="profile-admin-heading"
+                    className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}
                 >
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Admin tools</p>
-                            <h3 className="text-3xl font-serif italic text-[#2D4635]">Archive control room</h3>
-                            <p className="max-w-2xl text-sm text-stone-600 font-serif italic">
-                                Add and update recipes, manage gallery and trivia records, and keep contributor access current without leaving the profile page.
-                            </p>
-                        </div>
-                        {adminSectionProps.editingRecipe && (
-                            <div className="rounded-full border border-orange-200 bg-white/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-orange-600 shadow-sm">
-                                Editing: {adminSectionProps.editingRecipe.title}
+                    <SectionHeading id="profile-admin-heading">Admin</SectionHeading>
+                    <div
+                        id="admin-tools-section"
+                        className="space-y-6 rounded-[2rem] md:rounded-[2.5rem] border border-orange-100 dark:border-orange-700/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-950/30 dark:via-[var(--card-bg)] dark:to-amber-950/20 p-4 md:p-8 shadow-xl scroll-mt-24"
+                        aria-label="Admin tools"
+                    >
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">
+                                    Admin tools
+                                </p>
+                                <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200">
+                                    Archive control room
+                                </h3>
+                                <p className="max-w-2xl text-sm text-stone-600 dark:text-stone-400 font-serif italic">
+                                    Add and update recipes, manage gallery and trivia records, and keep contributor
+                                    access current without leaving the profile page.
+                                </p>
                             </div>
-                        )}
-                    </div>
+                            {adminSectionProps.editingRecipe && (
+                                <div className="rounded-full border border-orange-200 dark:border-orange-700 bg-white/90 dark:bg-[var(--card-bg)]/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-300 shadow-sm">
+                                    Editing: {adminSectionProps.editingRecipe.title}
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="rounded-[2rem] bg-white/80 p-2 md:p-4 shadow-inner ring-1 ring-white/60">
-                        <AdminView
-                            editingRecipe={adminSectionProps.editingRecipe}
-                            clearEditing={adminSectionProps.clearEditing}
-                            recipes={adminSectionProps.recipes}
-                            trivia={adminSectionProps.trivia}
-                            contributors={adminSectionProps.contributors}
-                            currentUser={currentUser}
-                            dbStats={adminSectionProps.dbStats}
-                            gallery={adminSectionProps.gallery}
-                            onAddRecipe={adminSectionProps.onAddRecipe}
-                            onAddGallery={adminSectionProps.onAddGallery}
-                            onAddTrivia={adminSectionProps.onAddTrivia}
-                            onDeleteTrivia={adminSectionProps.onDeleteTrivia}
-                            onDeleteRecipe={adminSectionProps.onDeleteRecipe}
-                            onDeleteGalleryItem={adminSectionProps.onDeleteGalleryItem}
-                            onUpdateGalleryItem={adminSectionProps.onUpdateGalleryItem}
-                            onUpdateContributor={adminSectionProps.onUpdateContributor}
-                            onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
-                            onEditRecipe={adminSectionProps.onEditRecipe}
-                            defaultRecipeIds={adminSectionProps.defaultRecipeIds}
-                            firebaseCustodian={adminSectionProps.firebaseCustodian}
-                        />
+                        <div className="rounded-[1.5rem] md:rounded-[2rem] bg-white/80 dark:bg-[var(--card-bg)]/60 p-2 md:p-4 shadow-inner ring-1 ring-white/60 dark:ring-[var(--border-color)]">
+                            <AdminView
+                                editingRecipe={adminSectionProps.editingRecipe}
+                                clearEditing={adminSectionProps.clearEditing}
+                                recipes={adminSectionProps.recipes}
+                                trivia={adminSectionProps.trivia}
+                                contributors={adminSectionProps.contributors}
+                                currentUser={currentUser}
+                                dbStats={adminSectionProps.dbStats}
+                                gallery={adminSectionProps.gallery}
+                                onAddRecipe={adminSectionProps.onAddRecipe}
+                                onAddGallery={adminSectionProps.onAddGallery}
+                                onAddTrivia={adminSectionProps.onAddTrivia}
+                                onDeleteTrivia={adminSectionProps.onDeleteTrivia}
+                                onDeleteRecipe={adminSectionProps.onDeleteRecipe}
+                                onDeleteGalleryItem={adminSectionProps.onDeleteGalleryItem}
+                                onUpdateGalleryItem={adminSectionProps.onUpdateGalleryItem}
+                                onUpdateContributor={adminSectionProps.onUpdateContributor}
+                                onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
+                                onEditRecipe={adminSectionProps.onEditRecipe}
+                                defaultRecipeIds={adminSectionProps.defaultRecipeIds}
+                                firebaseCustodian={adminSectionProps.firebaseCustodian}
+                            />
+                        </div>
                     </div>
                 </section>
             )}
 
             {/* Meet your Administrators - for non-admin users */}
-            {!isAdmin && contributors.filter(c => c.role === 'admin').length > 0 && (
-                <section className="space-y-6 md:space-y-8 mt-12">
-                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] flex items-center gap-4">
-                        <span className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 flex items-center justify-center not-italic text-xl md:text-2xl">🔐</span>
-                        Meet your Administrators
-                    </h3>
-                    <p className="text-stone-500 font-serif italic max-w-lg">
-                        These family members help maintain the archive, organize heritage recipes, and verify memories. Need administrative access? Contact one of the curators below to be promoted.
+            {!isAdmin && contributors.filter((c) => c.role === 'admin').length > 0 && (
+                <section
+                    aria-labelledby="profile-administrators-heading"
+                    className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}
+                >
+                    <SectionHeading id="profile-administrators-heading">Meet your Administrators</SectionHeading>
+                    <p className="text-stone-500 dark:text-stone-400 font-serif italic max-w-lg mb-6">
+                        These family members help maintain the archive, organize heritage recipes, and verify
+                        memories. Need administrative access? Contact one of the curators below to be promoted.
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                        {contributors.filter(c => c.role === 'admin').map(admin => (
-                            <div key={admin.id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-md">
-                                <img src={admin.avatar} className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-stone-50 object-cover" alt={admin.name} onError={avatarOnError} />
-                                <div className="text-center">
-                                    <h4 className="font-serif italic text-[#2D4635] text-lg leading-none">{admin.name}</h4>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Legacy Custodian</span>
+                        {contributors
+                            .filter((c) => c.role === 'admin')
+                            .map((admin) => (
+                                <div
+                                    key={admin.id}
+                                    className="bg-white dark:bg-[var(--card-bg)] p-6 rounded-[2rem] border border-stone-100 dark:border-[var(--border-color)] shadow-sm flex flex-col items-center gap-4 transition-all hover:shadow-md"
+                                >
+                                    <img
+                                        src={admin.avatar}
+                                        className="w-20 h-20 rounded-full border-4 border-white dark:border-[var(--border-color)] shadow-lg bg-stone-50 object-cover"
+                                        alt={admin.name}
+                                        onError={avatarOnError}
+                                    />
+                                    <div className="text-center">
+                                        <h4 className="font-serif italic text-[#2D4635] dark:text-emerald-200 text-lg leading-none">
+                                            {admin.name}
+                                        </h4>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">
+                                            Legacy Custodian
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </section>
             )}
@@ -511,10 +878,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             {showPicker && (
                 <AvatarPicker
                     currentAvatar={avatar}
-                    onSelect={(url) => {
-                        setAvatar(url);
-                        setShowPicker(false);
-                    }}
+                    onSelect={(url) => void handleAvatarSelect(url)}
                     onClose={() => setShowPicker(false)}
                 />
             )}

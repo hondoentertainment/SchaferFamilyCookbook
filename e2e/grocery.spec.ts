@@ -12,7 +12,7 @@ test.describe('Grocery list', () => {
     test('add recipe ingredients, check one off, clear checked, and clear all', async ({ page }) => {
         // Open the first recipe
         await page
-            .getByRole('button', { name: /View recipe:/i })
+            .getByRole('button', { name: /Open recipe:/i })
             .first()
             .click();
         await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
@@ -31,14 +31,8 @@ test.describe('Grocery list', () => {
         await page.getByRole('button', { name: /Close recipe/i }).click();
         await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3000 });
 
-        // Navigate to the Grocery List tab. Use Header desktop nav or mobile "More" menu.
-        const desktopGrocery = page.getByRole('button', { name: /^Grocery List$/ }).first();
-        if (await desktopGrocery.isVisible().catch(() => false)) {
-            await desktopGrocery.click();
-        } else {
-            await page.getByRole('button', { name: /More sections/i }).click();
-            await page.getByRole('menuitem', { name: /Grocery List/i }).click();
-        }
+        // Navigate to the Cook tab, which opens the Grocery List.
+        await page.getByRole('button', { name: 'Cook', exact: true }).first().click();
 
         await expect(page.getByRole('heading', { name: /grocery list/i, level: 2 })).toBeVisible();
 
@@ -73,14 +67,8 @@ test.describe('Grocery list', () => {
     });
 
     test('manual "Add item" input adds a standalone entry', async ({ page }) => {
-        // Navigate straight to Grocery List
-        const desktopGrocery = page.getByRole('button', { name: /^Grocery List$/ }).first();
-        if (await desktopGrocery.isVisible().catch(() => false)) {
-            await desktopGrocery.click();
-        } else {
-            await page.getByRole('button', { name: /More sections/i }).click();
-            await page.getByRole('menuitem', { name: /Grocery List/i }).click();
-        }
+        // Navigate straight to Grocery List via the Cook tab.
+        await page.getByRole('button', { name: 'Cook', exact: true }).first().click();
 
         await page.getByLabel(/Add an item to your grocery list/i).fill('12 limes');
         await page.getByRole('button', { name: /^Add$/i }).click();

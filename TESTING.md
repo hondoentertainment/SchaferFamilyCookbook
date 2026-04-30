@@ -24,6 +24,8 @@ This plan describes the checks that should pass before merging or deploying. It 
 | All Playwright projects | `npm run test:e2e` |
 | Chromium Playwright project | `npm run test:e2e:desktop` |
 | Playwright UI | `npm run test:e2e:ui` |
+| Rebuild local recipe fallback images | `npm run images:rebuild:fallback` |
+| Verify recipe image coverage | `npm run images:verify` |
 
 `npm run ci` intentionally does not run Playwright. Use it for the fast merge/deploy confidence check, then add E2E for changed user flows.
 
@@ -82,11 +84,23 @@ $env:PLAYWRIGHT_BASE_URL="https://schafer-family-cookbook.vercel.app"; npm run t
 
 - Run:
   ```bash
+  npm run images:verify
   npx vitest run src/services/db.test.ts src/components/RecipeModal.test.tsx src/App.test.tsx
   npm run type-check
   ```
 - Manually verify a representative mix of Breakfast, Main, Dessert, Side, Appetizer, Bread, Dip/Sauce, and Snack cards.
-- Confirm uploaded or curated images are preserved and legacy/generic images are replaced only where intended.
+- Confirm `src/data/recipes.json` points each recipe to a unique local `/recipe-images/<id>.*` file and includes `imageSource`.
+- Use `npm run images:rebuild:fallback` when Imagen quota or credentials are unavailable but every recipe still needs a local image.
+
+### Navigation or IA changes
+
+- Run:
+  ```bash
+  npx vitest run src/components/Header.test.tsx src/App.test.tsx
+  npm run type-check
+  ```
+- Run Chromium E2E when changing Browse, Cook, Family, Me, More sections, Profile/Admin entry, or mobile bottom navigation.
+- Keep stable accessibility selectors for core flows: `View recipe: <title>`, `More sections`, `nav-profile`, and the recipe search textbox label.
 
 ### Contributor/avatar changes
 

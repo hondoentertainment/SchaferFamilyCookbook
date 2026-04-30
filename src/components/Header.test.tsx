@@ -17,7 +17,7 @@ describe('Header', () => {
     };
 
     const defaultProps = {
-        activeTab: 'Recipes',
+        activeTab: 'Home',
         setTab: mockSetTab,
         currentUser: {
             id: mockUser.id,
@@ -32,49 +32,52 @@ describe('Header', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // Mock scrollIntoView
         window.HTMLElement.prototype.scrollIntoView = vi.fn();
     });
 
-    it('should render logical logo and navigation', () => {
+    it('should render logo and the five primary navigation tabs', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        expect(screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to recipes` })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to home` })).toBeInTheDocument();
         expect(screen.getByText('Schafer Cookbook')).toBeInTheDocument();
-        expect(screen.getByText('Recipes')).toBeInTheDocument();
-        expect(screen.getByText('A–Z')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'More sections' }));
-        expect(screen.getByRole('menuitem', { name: 'Family Story' })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: 'Privacy' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Home$/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Recipes$/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Family$/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Cook$/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Me$/ })).toBeInTheDocument();
+    });
+
+    it('should NOT render the legacy More menu', () => {
+        renderWithProviders(<Header {...defaultProps} />);
+        expect(screen.queryByRole('button', { name: 'More sections' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
     it('should call setTab when a navigation button is clicked', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        fireEvent.click(screen.getByText('Gallery'));
+        fireEvent.click(screen.getByRole('button', { name: /^Family$/ }));
         expect(mockSetTab).toHaveBeenCalledWith('Gallery');
     });
 
     it('should highlight the active tab', () => {
         renderWithProviders(<Header {...defaultProps} activeTab="Gallery" />);
 
-        const galleryButton = screen.getByText('Gallery');
+        const galleryButton = screen.getByRole('button', { name: /^Family$/ });
         expect(galleryButton).toHaveClass('bg-[#2D4635]');
         expect(galleryButton).toHaveClass('text-white');
     });
 
-    it('should show user profile when logged in', () => {
+    it('should show signed-in user identity when logged in', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        const profileBtn = screen.getByRole('button', { name: new RegExp(`${mockUser.name}.*view profile`, 'i') });
-        expect(profileBtn).toBeInTheDocument();
-        expect(profileBtn.querySelector('img')).toBeInTheDocument();
+        expect(screen.getByLabelText(new RegExp(`${mockUser.name}.*signed in`, 'i'))).toBeInTheDocument();
     });
 
-    it('should switch to Profile tab when user clicks their profile', () => {
+    it('should switch to Profile tab when user clicks Me', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
-        fireEvent.click(screen.getByRole('button', { name: /view profile/i }));
+        fireEvent.click(screen.getByTestId('nav-profile'));
         expect(mockSetTab).toHaveBeenCalledWith('Profile');
     });
 
@@ -85,20 +88,20 @@ describe('Header', () => {
         expect(mockOnLogout).toHaveBeenCalled();
     });
 
-    it('should call setTab("Recipes") when brand logo receives Enter/Space keydown', () => {
+    it('should call setTab("Home") when brand logo receives Enter/Space keydown', () => {
         renderWithProviders(<Header {...defaultProps} />);
-        const logoBtn = screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to recipes` });
+        const logoBtn = screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to home` });
 
         fireEvent.keyDown(logoBtn, { key: 'Enter' });
-        expect(mockSetTab).toHaveBeenCalledWith('Recipes');
+        expect(mockSetTab).toHaveBeenCalledWith('Home');
 
         mockSetTab.mockClear();
 
         fireEvent.keyDown(logoBtn, { key: ' ' });
-        expect(mockSetTab).toHaveBeenCalledWith('Recipes');
+        expect(mockSetTab).toHaveBeenCalledWith('Home');
     });
 
-    it('should call setTab("Profile") when Profile button receives Enter/Space keydown', () => {
+    it('should call setTab("Profile") when Me receives Enter/Space keydown', () => {
         renderWithProviders(<Header {...defaultProps} />);
         const profileBtn = screen.getByTestId('nav-profile');
 
@@ -106,44 +109,5 @@ describe('Header', () => {
         expect(mockSetTab).toHaveBeenCalledWith('Profile');
 
         fireEvent.keyDown(profileBtn, { key: ' ' });
-    });
-
-    it('should toggle More menu and handle mobile extra tabs', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-
-        const moreBtn = screen.getByRole('button', { name: 'More sections' });
-
-        // Open
-        fireEvent.click(moreBtn);
-        expect(screen.getByRole('menu')).toBeInTheDocument();
-
-        const familyStoryMenuBtn = screen.getByRole('menuitem', { name: 'Family Story' });
-        fireEvent.click(familyStoryMenuBtn);
-        expect(mockSetTab).toHaveBeenCalledWith('Family Story');
-
-        // Menu should be closed after clicking an item
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-    });
-
-    it('should close More menu when clicking outside', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-        const moreBtn = screen.getByRole('button', { name: 'More sections' });
-
-        fireEvent.click(moreBtn);
-        expect(screen.getByRole('menu')).toBeInTheDocument();
-
-        fireEvent.click(document.body);
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-    });
-
-    it('should close More menu on Escape key press', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-        const moreBtn = screen.getByRole('button', { name: 'More sections' });
-
-        fireEvent.click(moreBtn);
-        expect(screen.getByRole('menu')).toBeInTheDocument();
-
-        fireEvent.keyDown(document, { key: 'Escape' });
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 });

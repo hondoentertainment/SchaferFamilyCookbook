@@ -145,9 +145,11 @@ describe('RecipeModal', () => {
         ).toBeInTheDocument();
     });
 
-    it('should show share button with accessible label containing recipe title', () => {
+    it('should expose share recipe action with accessible label containing recipe title', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
-        const shareBtn = screen.getByRole('button', { name: /Share recipe: Open in .*: Test Recipe/i });
+        // Share now lives in the bottom action bar's overflow menu — open it first.
+        fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
+        const shareBtn = screen.getByRole('menuitem', { name: /Share recipe: Open in .*: Test Recipe/i });
         expect(shareBtn).toBeInTheDocument();
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);

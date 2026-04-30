@@ -36,7 +36,12 @@ function groupByRecipe(items: GroceryItem[]): GroupedItems[] {
     return ordered.map((title) => ({ title, items: map.get(title)! }));
 }
 
-export const GroceryListView: React.FC = () => {
+interface GroceryListViewProps {
+    onBrowseRecipes?: () => void;
+    onOpenCollections?: () => void;
+}
+
+export const GroceryListView: React.FC<GroceryListViewProps> = ({ onBrowseRecipes, onOpenCollections }) => {
     const { toast, confirm } = useUI();
     const [items, setItems] = useState<GroceryItem[]>(() => getItems());
     const [manualText, setManualText] = useState('');
@@ -105,24 +110,44 @@ export const GroceryListView: React.FC = () => {
 
     return (
         <section
-            className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-8"
+            className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-12 space-y-6 md:space-y-8"
             aria-labelledby="grocery-list-heading"
         >
             <header className="space-y-3">
-                <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 dark:bg-[#A0522D]/20 px-3 py-1 rounded-full">
-                    Shopping
-                </span>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#A0522D]">Cook · Plan · Shop</p>
                 <h2
                     id="grocery-list-heading"
-                    className="text-3xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
+                    className="text-2xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
                 >
-                    Grocery List
+                    Grocery list
                 </h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400 font-serif italic">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                     {hasItems
                         ? `${items.length} item${items.length === 1 ? '' : 's'} · ${checkedCount} checked`
-                        : 'Add ingredients from a recipe, or jot down anything you need below.'}
+                        : 'Pull ingredients straight from a recipe, or jot anything down below.'}
                 </p>
+                {(onBrowseRecipes || onOpenCollections) && (
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {onBrowseRecipes && (
+                            <button
+                                type="button"
+                                onClick={onBrowseRecipes}
+                                className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
+                            >
+                                ＋ Recipes
+                            </button>
+                        )}
+                        {onOpenCollections && (
+                            <button
+                                type="button"
+                                onClick={onOpenCollections}
+                                className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                            >
+                                Collections
+                            </button>
+                        )}
+                    </div>
+                )}
                 {hasItems && (
                     <div className="flex flex-wrap gap-3 pt-1">
                         <button
@@ -181,6 +206,20 @@ export const GroceryListView: React.FC = () => {
                     <p className="font-serif italic text-stone-600 dark:text-stone-300 text-lg">
                         Your grocery list is empty. Add ingredients from a recipe.
                     </p>
+                    <div className="flex flex-wrap justify-center gap-3 px-4">
+                        {onBrowseRecipes && (
+                            <button
+                                type="button"
+                                onClick={onBrowseRecipes}
+                                className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
+                            >
+                                Browse recipes
+                            </button>
+                        )}
+                        <p className="w-full text-xs text-stone-400 dark:text-stone-500">
+                            Open any recipe, then use “Add to grocery list” from the ingredients section.
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <div className="space-y-8">

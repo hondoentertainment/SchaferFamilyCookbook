@@ -22,7 +22,7 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 - **Recipe Deep-Linking:** Shareable URLs `#recipe/{id}`; opening link loads recipe modal directly.
 - **Alphabetical Index:** A–Z table (tab labeled "A–Z"); grouping for numeric/symbol titles under "#".
 - **Image Accuracy:** Anti-hallucination prompt rules in `shared/recipeImagePrompts.mjs`; images match recipe content.
-- **Image Sources:** Manual upload, Imagen (Gemini), or Pollinations. Optional `imageSource` metadata for tracking.
+- **Image Sources:** Manual upload, Imagen (Gemini), Pollinations, or local deterministic fallback images. `imageSource` metadata tracks source (`upload`, `nano-banana`, `pollinations`, `local-generated`).
 - **Image Error Handling:** Debounced toast when recipe images fail to load; fallback to category placeholder.
 
 ### 3.2 Recipe Modal & Cook Mode
@@ -83,7 +83,7 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 - **Magic Import:** Paste raw recipe text; Gemini extracts structured JSON.
 - **Edit with AI:** Admins can edit existing recipes via AI from recipe cards (Records) and Profile.
 - **Imagen Integration:** Generate dish photos from recipe ingredients using shared anti-hallucination prompts.
-- **Bulk Visual Sourcing:** Fill missing images or regenerate all via Imagen.
+- **Bulk Visual Sourcing:** Fill missing images or regenerate all via Imagen, with local deterministic fallback tooling for full catalog coverage when quota or credentials are unavailable.
 - **API Key Proxy:** All Gemini/Imagen calls route through `/api/gemini`; key never exposed to client.
 
 ### 4.2 Content Management
@@ -121,9 +121,12 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 ### 5.3 Navigation
 
-- **Main Tabs:** Recipes, A–Z (Index), Gallery, Grocery, Trivia, Family Story, Contributors, Profile. Admin is available only to admins via **Profile → Admin Tools** (no top-level Admin tab).
-- **Mobile:** Bottom nav (Recipes, A–Z, Gallery, Trivia, Profile); hamburger for Family Story, Contributors. Admin entry from Profile.
-- **Desktop:** Full horizontal nav in Header; Footer with Profile. Admin entry from Profile.
+- **Main Areas:** Browse, Cook, Family, Me.
+- **Browse:** Recipes, A–Z index, and collections.
+- **Cook:** Grocery list and cooking-oriented recipe entry points.
+- **Family:** Gallery, Trivia, Family Story, and Contributors.
+- **Me:** Profile, preferences, privacy, and Admin Tools for admins.
+- **Mobile/Desktop:** Same four-area model with a single **More sections** drawer/menu for secondary destinations. Admin entry remains under **Me → Admin Tools**.
 
 ### 5.4 Security
 

@@ -21,6 +21,7 @@ describe('ProfileView', () => {
         userHistory: [],
         favoriteRecipes: [] as ReturnType<typeof createMockRecipe>[],
         recentRecipes: [] as ReturnType<typeof createMockRecipe>[],
+        allRecipes: [] as ReturnType<typeof createMockRecipe>[],
         onViewRecipe: vi.fn(),
         onUpdateProfile: mockOnUpdateProfile,
         onEditRecipe: mockOnEditRecipe,
@@ -57,20 +58,25 @@ describe('ProfileView', () => {
 
     it('should render user profile with name and avatar', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
-        expect(screen.getByDisplayValue('Test User')).toBeInTheDocument();
+        // Name is shown as a heading until the inline-edit pencil is pressed.
+        expect(screen.getByTestId('profile-display-name')).toHaveTextContent('Test User');
         expect(screen.getByAltText('Test User')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /edit display name/i })).toBeInTheDocument();
     });
 
     it('should show Family Member status for non-admin', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
-        expect(screen.getByText(/Family Member/)).toBeInTheDocument();
+        // The label appears both as a subhead and as an aria-labeled badge.
+        expect(screen.getAllByText(/Family Member/).length).toBeGreaterThan(0);
+        expect(screen.getByLabelText('Family Member')).toBeInTheDocument();
     });
 
     it('should show Legacy Custodian status for admin', () => {
         renderWithProviders(
             <ProfileView {...defaultProps} currentUser={{ ...defaultProps.currentUser, role: 'admin' }} />
         );
-        expect(screen.getByText(/Legacy Custodian/)).toBeInTheDocument();
+        expect(screen.getAllByText(/Legacy Custodian/).length).toBeGreaterThan(0);
+        expect(screen.getByLabelText('Legacy Custodian')).toBeInTheDocument();
     });
 
     it('should render admin tools inline for admin users', () => {
@@ -146,13 +152,49 @@ describe('ProfileView', () => {
         expect(screen.getByText(/"Added Recipe"/)).toBeInTheDocument();
     });
 
-    it('should call onUpdateProfile when Save Profile is clicked', async () => {
+    it('should call onUpdateProfile when display name is edited inline and saved', async () => {
         mockOnUpdateProfile.mockResolvedValue(undefined);
         renderWithProviders(<ProfileView {...defaultProps} />);
-        const saveBtn = screen.getByText('Save Profile');
-        fireEvent.click(saveBtn);
+
+        // Open inline edit
+        fireEvent.click(screen.getByRole('button', { name: /edit display name/i }));
+
+        const input = await screen.findByRole('textbox', { name: /display name/i });
+        fireEvent.change(input, { target: { value: 'Updated Name' } });
+        fireEvent.click(screen.getByRole('button', { name: /save display name/i }));
+
         await waitFor(() => {
-            expect(mockOnUpdateProfile).toHaveBeenCalled();
+            expect(mockOnUpdateProfile).toHaveBeenCalledWith('Updated Name', expect.any(String));
         });
+    });
+
+    it('should cancel inline name edit on Escape without calling onUpdateProfile', async () => {
+        renderWithProviders(<ProfileView {...defaultProps} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /edit display name/i }));
+        const input = await screen.findByRole('textbox', { name: /display name/i });
+        fireEvent.change(input, { target: { value: 'Discarded' } });
+        fireEvent.keyDown(input, { key: 'Escape' });
+
+        await waitFor(() => {
+            expect(screen.queryByRole('textbox', { name: /display name/i })).not.toBeInTheDocument();
+        });
+        expect(screen.getByTestId('profile-display-name')).toHaveTextContent('Test User');
+        expect(mockOnUpdateProfile).not.toHaveBeenCalled();
+    });
+
+    it('should render activity stats row with favorites count', () => {
+        renderWithProviders(<ProfileView {...defaultProps} />);
+        expect(screen.getByText('Recipes Cooked This Month')).toBeInTheDocument();
+        expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+
+    it('should render section headings (Identity, Activity, Preferences, Notifications, Privacy)', () => {
+        renderWithProviders(<ProfileView {...defaultProps} />);
+        expect(screen.getByRole('heading', { name: /^identity$/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /^activity$/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /^preferences$/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /^notifications$/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /privacy/i })).toBeInTheDocument();
     });
 });

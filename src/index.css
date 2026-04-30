@@ -5,6 +5,18 @@
   --color-accent: #A0522D;
   --color-background: #FDFBF7;
 
+  /* Editorial brand tokens (Tailwind v4 auto-generates bg-brand, text-warmth, etc.) */
+  --color-brand: #2D4635;          /* deep forest — primary */
+  --color-brand-soft: #557060;     /* secondary green */
+  --color-brand-ink: #1B2C22;      /* darker ink for headers on cream */
+  --color-warmth: #A0522D;         /* sienna — accent */
+  --color-warmth-soft: #C97B4A;    /* lighter sienna */
+  --color-paper: #FDFBF7;          /* page */
+  --color-cream: #FFF8EC;          /* warm card surface */
+  --color-ink: #1C1917;            /* text primary */
+  --color-ink-soft: #57534E;       /* text secondary */
+  --color-ink-muted: #A8A29E;      /* text muted */
+
   --font-serif: 'Playfair Display', serif;
   --font-sans: 'Lato', sans-serif;
 }

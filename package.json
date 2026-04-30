@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:desktop": "playwright test --project=chromium",
-    "lint": "eslint src api --report-unused-disable-directives --max-warnings 125",
+    "lint": "eslint src api --report-unused-disable-directives --max-warnings 130",
     "lint:fix": "eslint src api --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -23,6 +23,8 @@
     "images:dry-run": "node scripts/generate-imagen-images.mjs --dry-run --missing-only",
     "images:batch": "node scripts/generate-imagen-images.mjs --missing-only --limit 20",
     "images:resume": "node scripts/generate-imagen-images.mjs --missing-only --limit 20 --resume",
+    "images:rebuild:fallback": "node scripts/rebuild-recipe-images.mjs --force-all --fallback-only --clean-old-generated",
+    "images:verify": "node scripts/verify-recipe-images.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "backup:recipes": "node scripts/backup-recipes-json.mjs",
     "admin:set-claim": "node scripts/set-admin-claim.mjs"

@@ -13,7 +13,7 @@ import {
 import { Header } from './components/Header';
 import { OfflineBanner } from './components/OfflineBanner';
 import { PLACEHOLDER_AVATAR } from './constants';
-import { getAverageRating, isFamilyApproved } from './utils/ratings';
+import { getAverageRating, getRatingCount, isFamilyApproved } from './utils/ratings';
 import { STORAGE_KEYS } from './constants/storage';
 import { addActivity } from './utils/activityFeed';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
@@ -34,6 +34,7 @@ import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 
 const AddRecipeModal = lazy(() => import('./components/AddRecipeModal').then(m => ({ default: m.AddRecipeModal })));
+const HomeView = lazy(() => import('./components/HomeView').then(m => ({ default: m.HomeView })));
 const AlphabeticalIndex = lazy(() => import('./components/AlphabeticalIndex').then(m => ({ default: m.AlphabeticalIndex })));
 const ContributorsView = lazy(() => import('./components/ContributorsView').then(m => ({ default: m.ContributorsView })));
 const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
@@ -51,6 +52,52 @@ const TabFallback = () => (
         <span className="animate-pulse font-serif italic motion-reduce:animate-none">Loading…</span>
     </div>
 );
+
+interface FamilyHubProps {
+    activeTab: string;
+    onSelect: (tabId: string) => void;
+    galleryCount: number;
+    triviaCount: number;
+    contributorCount: number;
+}
+
+const FamilyHub: React.FC<FamilyHubProps> = ({ activeTab, onSelect, galleryCount, triviaCount, contributorCount }) => {
+    const items = [
+        { id: 'Gallery', label: 'Gallery', detail: `${galleryCount} memories`, icon: '📷' },
+        { id: 'Trivia', label: 'Trivia', detail: `${triviaCount} questions`, icon: '🎲' },
+        { id: 'Family Story', label: 'Story', detail: 'Read the archive', icon: '📖' },
+        { id: 'Contributors', label: 'People', detail: `${contributorCount} contributors`, icon: '👥' },
+    ];
+    return (
+        <section
+            aria-label="Family hub navigation"
+            className="max-w-[1400px] mx-auto px-3 md:px-6 pt-3 md:pt-6 pb-1"
+        >
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {items.map((item) => {
+                    const active = activeTab === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => { onSelect(item.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            aria-current={active ? 'page' : undefined}
+                            className={`min-h-11 shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98] ${
+                                active
+                                    ? 'bg-[#2D4635] text-white shadow-sm'
+                                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-700'
+                            }`}
+                        >
+                            <span aria-hidden className="text-base leading-none">{item.icon}</span>
+                            <span>{item.label}</span>
+                            <span className={`hidden sm:inline text-[10px] font-medium normal-case tracking-normal ${active ? 'text-emerald-100/80' : 'text-stone-400'}`}>· {item.detail}</span>
+                        </button>
+                    );
+                })}
+            </div>
+        </section>
+    );
+};
 
 const RecipeGridSkeleton: React.FC = () => (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -398,7 +445,9 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
             ? 'Generated from recipe'
             : recipe.imageSource === 'upload'
                 ? 'Family photo'
-                : null;
+                : recipe.imageSource === 'local-generated'
+                    ? 'Recipe-specific image'
+                    : null;
 
     const handleImageError = () => {
         setBroken(true);
@@ -466,7 +515,7 @@ const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
 const App: React.FC = () => {
     const { toast } = useUI();
-    const [tab, setTab] = useState('Recipes');
+    const [tab, setTab] = useState('Home');
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -499,7 +548,7 @@ const App: React.FC = () => {
         void signOutFirebaseCustodian();
         localStorage.removeItem('schafer_user');
         setCurrentUser(null);
-        setTab('Recipes');
+        setTab('Home');
     };
 
     const [dbStats, setDbStats] = useState<DBStats>({
@@ -662,6 +711,21 @@ const App: React.FC = () => {
         if (tab !== 'Recipes') setShowMobileFilters(false);
     }, [tab]);
 
+    // Cross-component navigation: ProfileView (and others) can dispatch a
+    // 'schafer:navigate' CustomEvent with { detail: tabId } to switch tabs
+    // without prop drilling.
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent<string>).detail;
+            if (typeof detail === 'string' && detail.length > 0) {
+                handleSetTab(detail);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+        window.addEventListener('schafer:navigate', handler);
+        return () => window.removeEventListener('schafer:navigate', handler);
+    }, []);
+
     // Listen for foreground FCM messages and show a toast when a new recipe
     // notification arrives.  The listener is set up once on mount and cleaned
     // up automatically when the component unmounts.
@@ -775,6 +839,39 @@ const App: React.FC = () => {
         }
     }, [filteredRecipes, sortBy, recentIds]);
 
+    const recentlyViewedRecipes = useMemo(() => {
+        return getRecentlyViewedEntries()
+            .map((entry) => recipes.find((recipe) => recipe.id === entry.id))
+            .filter((recipe): recipe is Recipe => !!recipe);
+    }, [recipes, selectedRecipe]);
+
+    const favoriteRecipes = useMemo(
+        () => recipes.filter((recipe) => favoriteIds.has(recipe.id)),
+        [recipes, favoriteIds]
+    );
+
+    const localGeneratedImageCount = useMemo(
+        () => recipes.filter((recipe) => recipe.imageSource === 'local-generated').length,
+        [recipes]
+    );
+
+    const quickCategoryCounts = useMemo(() => {
+        const wanted = ['Main', 'Dessert', 'Breakfast', 'Dip/Sauce'] as const;
+        return wanted
+            .map((name) => ({ name, count: recipes.filter((recipe) => recipe.category === name).length }))
+            .filter((item) => item.count > 0);
+    }, [recipes]);
+
+    const resetBrowse = () => {
+        setSearch('');
+        setSelectedTag('');
+        setContributor('All');
+        setCategory('All');
+        setSortBy('title-asc');
+        handleSetTab('Recipes');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleSelectRecipe = (recipe: Recipe) => {
         recordRecipeView(recipe.id, recipe.title);
         setSelectedRecipe(recipe);
@@ -821,79 +918,109 @@ const App: React.FC = () => {
     };
 
     if (!currentUser) {
+        const quickFamily = contributorsForDisplay.slice(0, 6);
+        const submitLogin = (name: string) => {
+            const trimmed = name.trim();
+            if (!trimmed) return;
+            const existing = contributors.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+            const isSuper = isSuperAdmin(trimmed);
+            const email = isSuper && trimmed.includes('@') ? trimmed : existing?.email;
+            const u: UserProfile = {
+                id: existing?.id || 'u' + Date.now(),
+                name: existing?.name || trimmed,
+                picture: existing?.avatar ?? contributorAvatarUrlForName(trimmed),
+                role: isSuper ? 'admin' : ((existing?.role as any) || (trimmed.toLowerCase() === 'admin' ? 'admin' : 'user')),
+                email,
+            };
+            localStorage.setItem('schafer_user', JSON.stringify(u));
+            setCurrentUser(u);
+            if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
+                setShowOnboarding(true);
+            }
+        };
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#2D4635] p-6">
-                <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
+            <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6">
+                <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                     Skip to main content
                 </a>
-                <div id="main-content-login" className="bg-white rounded-[4rem] p-10 md:p-16 w-full max-w-xl shadow-2xl relative overflow-hidden text-center animate-in zoom-in duration-700 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]" tabIndex={-1}>
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-800 via-orange-300 to-emerald-800" />
-
-                    <div className="relative mb-12">
-                        <div className="w-24 h-24 bg-stone-100 rounded-full mx-auto relative overflow-hidden border-4 border-white shadow-2xl group transition-all">
-                            {loginName ? (
-                                <img
-                                    src={loginPreviewAvatar}
-                                    className="w-full h-full object-cover animate-in fade-in zoom-in"
-                                    alt="Identity"
-                                    onError={avatarOnError}
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-stone-300 text-3xl font-serif">?</div>
-                            )}
-                        </div>
-                        <div className="mt-8 space-y-3">
-                            <h1 className="text-4xl font-serif italic text-[#2D4635] mb-2">Welcome to the Family Table</h1>
-                            <p className="text-stone-600 italic font-serif text-sm md:text-base max-w-md mx-auto">
-                                Step into the Schafer Family Archive to browse treasured recipes, revisit family memories, and keep the story cooking for the next generation.
-                            </p>
-                            <div className="flex flex-wrap justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-500">
-                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Recipes</span>
-                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Gallery</span>
-                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Trivia</span>
-                                <span className="px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">Family Story</span>
-                            </div>
-                        </div>
+                <div
+                    id="main-content-login"
+                    className="bg-white dark:bg-stone-900 rounded-3xl md:rounded-[2rem] p-6 sm:p-8 md:p-10 w-full max-w-md shadow-2xl border border-stone-100 dark:border-stone-800 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
+                    tabIndex={-1}
+                >
+                    <div className="text-center space-y-2 mb-6">
+                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#A0522D]">The Schafer Cookbook</p>
+                        <h1 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-100">Who's cooking?</h1>
                     </div>
 
-                    <form onSubmit={handleLoginSubmit} className="space-y-8 relative z-10">
-                        <div className="space-y-2">
-                            <label htmlFor="login-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A0522D] ml-2">Legacy Contributor Name</label>
-                            <p className="text-sm text-stone-500 font-serif italic -mt-1">Enter a family name to continue. If we recognize it, we&apos;ll bring in the saved avatar and profile.</p>
+                    {quickFamily.length > 0 && (
+                        <div className="mb-6">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3 text-center">Tap your name</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {quickFamily.map((c) => (
+                                    <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={() => submitLogin(c.name)}
+                                        className="group flex flex-col items-center gap-2 rounded-2xl p-2 hover:bg-stone-50 dark:hover:bg-stone-800/60 transition-colors min-h-16 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635]"
+                                        aria-label={`Sign in as ${c.name}`}
+                                    >
+                                        <img
+                                            src={c.avatar || contributorAvatarUrlForName(c.name)}
+                                            alt=""
+                                            onError={avatarOnError}
+                                            className="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-stone-700 shadow-md group-hover:scale-105 transition-transform"
+                                        />
+                                        <span className="text-xs font-medium text-stone-600 dark:text-stone-300 truncate max-w-full">{c.name.split(' ')[0]}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="relative my-4 flex items-center" aria-hidden>
+                        <span className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+                        <span className="px-3 text-[10px] font-bold uppercase tracking-widest text-stone-400">Or type a name</span>
+                        <span className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+                    </div>
+
+                    <form onSubmit={handleLoginSubmit} className="space-y-3">
+                        <label htmlFor="login-name" className="sr-only">Your name</label>
+                        <div className="relative">
                             <input
                                 id="login-name"
                                 type="text"
-                                placeholder="e.g. Grandma Joan"
+                                placeholder="Your name"
                                 autoComplete="name"
                                 disabled={isLoggingIn}
                                 aria-busy={isLoggingIn}
-                                className="w-full p-6 bg-stone-50 border border-stone-100 rounded-3xl text-center text-xl font-serif outline-none focus:ring-2 focus:ring-[#2D4635]/10 focus:bg-white transition-all shadow-inner text-base disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full pl-14 pr-4 py-4 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-700 rounded-full text-base outline-none focus:ring-2 focus:ring-[#2D4635]/30 focus:bg-white dark:focus:bg-stone-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                                 value={loginName}
                                 onChange={e => setLoginName(e.target.value)}
                             />
-                            {loginName.trim() && (
-                                <div className={`mt-3 rounded-2xl border px-4 py-3 text-left ${matchedContributor ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-stone-50 border-stone-100 text-stone-600'}`}>
-                                    <p className="text-[10px] font-black uppercase tracking-widest">
-                                        {matchedContributor ? 'Known family profile found' : 'New archive guest'}
-                                    </p>
-                                    <p className="mt-1 text-sm font-serif italic">
-                                        {matchedContributor
-                                            ? `You’ll enter as ${matchedContributor.name} with your saved identity.`
-                                            : 'You can still explore the archive now, and an administrator can personalize this profile later.'}
-                                    </p>
-                                </div>
-                            )}
+                            <img
+                                src={loginPreviewAvatar}
+                                alt=""
+                                onError={avatarOnError}
+                                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full object-cover border border-stone-200 dark:border-stone-700"
+                                aria-hidden
+                            />
                         </div>
+                        {loginName.trim() && matchedContributor && (
+                            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 text-center font-serif italic">
+                                Welcome back, {matchedContributor.name.split(' ')[0]}.
+                            </p>
+                        )}
                         <button
                             type="submit"
                             disabled={isLoggingIn || !loginName.trim()}
                             aria-busy={isLoggingIn}
-                            className="w-full py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            className="w-full min-h-12 py-3.5 bg-[#2D4635] text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-lg hover:bg-[#2D4635]/95 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLoggingIn ? 'Entering…' : 'Enter The Archive'}
+                            {isLoggingIn ? 'Opening…' : 'Continue'}
                         </button>
-                        <p className="text-stone-500 text-xs italic pt-4">
-                            <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="underline hover:text-[#2D4635] focus:outline-none focus:ring-2 focus:ring-[#2D4635] focus:ring-offset-2 rounded">Need access? Contact an administrator.</a>
+                        <p className="text-stone-400 text-[11px] text-center pt-2">
+                            <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="underline hover:text-[#2D4635] focus:outline-none focus:ring-1 focus:ring-[#2D4635] rounded">Need access? Email an admin.</a>
                         </p>
                     </form>
                 </div>
@@ -910,8 +1037,9 @@ const App: React.FC = () => {
                 </a>
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <main id="main-content" className="max-w-7xl mx-auto py-12 pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
-                    <section className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
+                <FamilyHub activeTab={tab} onSelect={handleSetTab} galleryCount={gallery.length} triviaCount={trivia.length} contributorCount={contributorsForDisplay.length} />
+                <main id="main-content" className="max-w-7xl mx-auto py-6 md:py-10 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:pl-[max(1.5rem,env(safe-area-inset-left,0px))] md:pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
+                    <section className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-6">
                         <div>
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
                             <p className="text-stone-500 font-serif italic mt-2">Captured moments across the generations.</p>
@@ -960,7 +1088,22 @@ const App: React.FC = () => {
                                 <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
                                 <p className="text-stone-500 font-serif italic max-w-md mx-auto">Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.</p>
                             </div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Share the moments that matter</p>
+                            <div className="flex flex-wrap justify-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetTab('Contributors')}
+                                    className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white"
+                                >
+                                    Meet contributors
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetTab('Family Story')}
+                                    className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600"
+                                >
+                                    Read the story
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <>
@@ -1075,6 +1218,29 @@ const App: React.FC = () => {
                         </>
                     )}
                 </main>
+                {selectedRecipe && (
+                    <Suspense fallback={<div className="fixed inset-0 z-[100] bg-stone-900/60 flex items-center justify-center" aria-label="Loading recipe"><span className="animate-pulse text-white">Loading…</span></div>}>
+                        <RecipeModal
+                            recipe={selectedRecipe}
+                            onClose={handleRecipeClose}
+                            recipeList={recipeListForModal}
+                            onNavigate={handleNavigateToRecipe}
+                            isFavorite={(id) => favoriteIds.has(id)}
+                            onToggleFavorite={handleToggleFavorite}
+                            onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
+                            breadcrumbContext="Family"
+                            currentUserName={currentUser?.name}
+                        />
+                    </Suspense>
+                )}
+                {cookModeRecipe && (
+                    <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
+                        <CookModeView
+                            recipe={cookModeRecipe}
+                            onClose={() => setCookModeRecipe(null)}
+                        />
+                    </Suspense>
+                )}
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
                 <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
@@ -1090,6 +1256,7 @@ const App: React.FC = () => {
                 </a>
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                <FamilyHub activeTab={tab} onSelect={handleSetTab} galleryCount={gallery.length} triviaCount={trivia.length} contributorCount={contributorsForDisplay.length} />
                 <div id="main-content-trivia" tabIndex={-1} role="main" aria-label="Family trivia">
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
@@ -1115,6 +1282,29 @@ const App: React.FC = () => {
                     />
                 </Suspense>
                 </div>
+                {selectedRecipe && (
+                    <Suspense fallback={<div className="fixed inset-0 z-[100] bg-stone-900/60 flex items-center justify-center" aria-label="Loading recipe"><span className="animate-pulse text-white">Loading…</span></div>}>
+                        <RecipeModal
+                            recipe={selectedRecipe}
+                            onClose={handleRecipeClose}
+                            recipeList={recipeListForModal}
+                            onNavigate={handleNavigateToRecipe}
+                            isFavorite={(id) => favoriteIds.has(id)}
+                            onToggleFavorite={handleToggleFavorite}
+                            onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
+                            breadcrumbContext="Family"
+                            currentUserName={currentUser?.name}
+                        />
+                    </Suspense>
+                )}
+                {cookModeRecipe && (
+                    <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
+                        <CookModeView
+                            recipe={cookModeRecipe}
+                            onClose={() => setCookModeRecipe(null)}
+                        />
+                    </Suspense>
+                )}
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
                 <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
@@ -1193,107 +1383,190 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
+            {tab === 'Home' && (
+                <Suspense fallback={<TabFallback />}>
+                    <HomeView
+                        currentUser={currentUser}
+                        recipes={recipes}
+                        favoriteRecipes={favoriteRecipes}
+                        recentlyViewedRecipes={recentlyViewedRecipes}
+                        contributors={contributorsForDisplay}
+                        onSelectRecipe={(r) => handleSelectRecipe(r)}
+                        onSetTab={(t) => { handleSetTab(t); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        onSelectCategory={(c) => { setCategory(c); }}
+                        isFavorite={(id) => favoriteIds.has(id)}
+                        onToggleFavorite={handleToggleFavorite}
+                    />
+                </Suspense>
+            )}
+
             {tab === 'Recipes' && (
-                <main className="max-w-[1600px] mx-auto pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] py-8 md:py-12 space-y-12">
-                    {/* Hero Section */}
-                    <div className="relative rounded-[3rem] overflow-hidden bg-[#2D4635] text-white shadow-2xl">
-                        {/* Featured recipe background image */}
+                <main className="max-w-[1400px] mx-auto pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:pl-[max(1.5rem,env(safe-area-inset-left,0px))] md:pr-[max(1.5rem,env(safe-area-inset-right,0px))] py-5 md:py-10 space-y-6 md:space-y-10">
+                    {/* Editorial masthead — compact on mobile, full editorial on desktop */}
+                    <section className="relative rounded-2xl md:rounded-[2.5rem] overflow-hidden bg-[#2D4635] text-white shadow-md md:shadow-xl">
                         {(() => {
                             const featured = sortedRecipes.find(r => r.image && isValidImageUrl(r.image));
                             return featured ? (
-                                <div className="absolute inset-0">
+                                <div className="hidden md:block absolute inset-0 opacity-90">
                                     <HeroRecipeImage recipe={featured} />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/95 via-[#1a2a20]/75 to-[#1a2a20]/30" />
                                 </div>
                             ) : null;
                         })()}
-                        <div className="relative z-10 p-8 md:p-20">
-                            <div className="max-w-2xl space-y-6">
-                                <span className="inline-block px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-emerald-100">
-                                    Est. 2024 • The Schafer Collection
-                                </span>
-                                <h1 className="text-5xl md:text-7xl font-serif italic leading-[0.9]">
-                                    Preserving the <span className="text-[#F4A460]">flavor</span> of our family history.
+                        <div className="relative z-10 p-5 sm:p-6 md:p-14 lg:p-16">
+                            <div className="max-w-2xl space-y-2 md:space-y-5">
+                                <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.28em] text-emerald-100/80">
+                                    <span className="inline-block h-px w-8 bg-emerald-100/40" aria-hidden />
+                                    The Schafer Cookbook
+                                </p>
+                                <h1 className="text-2xl sm:text-3xl md:text-6xl font-serif italic leading-[1.05] md:leading-[0.95]">
+                                    A family table, written down.
                                 </h1>
-                                <div className="flex flex-wrap gap-4 pt-4 items-center">
-                                    <div className="h-px bg-white/20 flex-1 my-auto hidden md:block" />
-                                    <p className="text-emerald-100/60 text-xs uppercase tracking-widest">
-                                        {dbStats.recipeCount} Recipes Archived
-                                    </p>
-                                    {Array.from(favoriteIds).length > 0 && (
-                                        <span className="text-emerald-100/40 text-xs uppercase tracking-widest">
-                                            • {Array.from(favoriteIds).length} Favorites
-                                        </span>
-                                    )}
-                                </div>
+                                <p className="text-emerald-50/80 text-sm md:text-base font-serif italic max-w-md">
+                                    {dbStats.recipeCount} recipes from the people who taught us how to cook.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => { handleSetTab('Home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                    className="md:hidden mt-1 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-100/80 underline-offset-2 hover:underline"
+                                >
+                                    ← Back to home
+                                </button>
                             </div>
                         </div>
+                    </section>
 
-                        {/* Decorative Circles */}
-                        <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#F4A460] rounded-full blur-[100px] opacity-20" />
-                        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-400 rounded-full blur-[80px] opacity-10" />
-                    </div>
+                    {/* Compact guided browse strip */}
+                    <section aria-label="Quick browse" className="-mx-1 px-1">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <button
+                                type="button"
+                                onClick={resetBrowse}
+                                className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
+                            >
+                                All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    resetBrowse();
+                                    setSortBy('recent');
+                                    setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+                                }}
+                                className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                            >
+                                Recent {recentlyViewedRecipes.length ? `· ${recentlyViewedRecipes.length}` : ''}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    resetBrowse();
+                                    if (favoriteRecipes.length > 0) {
+                                        setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+                                    } else {
+                                        toast('Tap the heart on recipes you want to cook again.', 'info');
+                                    }
+                                }}
+                                className="min-h-10 shrink-0 rounded-full border border-red-100 bg-red-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-red-600 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
+                            >
+                                Favorites {favoriteRecipes.length ? `· ${favoriteRecipes.length}` : ''}
+                            </button>
+                            <span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700 shrink-0" aria-hidden />
+                            {quickCategoryCounts.map(({ name, count }) => (
+                                <button
+                                    key={name}
+                                    type="button"
+                                    onClick={() => { resetBrowse(); setCategory(name); }}
+                                    className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                                        category === name
+                                            ? 'bg-[#2D4635] text-white border-[#2D4635]'
+                                            : 'border-stone-200 bg-white text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
+                                    }`}
+                                >
+                                    {name} · {count}
+                                </button>
+                            ))}
+                        </div>
+                        {currentUser?.role === 'admin' && localGeneratedImageCount > 0 && (
+                            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                                {localGeneratedImageCount} of {recipes.length} cards use the cookbook fallback. <code className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 normal-case font-mono text-[10px]">npm run images:batch</code> upgrades them with Imagen.
+                            </p>
+                        )}
+                    </section>
 
-                    <div className="sticky top-16 md:top-24 z-30 space-y-4">
-                        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                    <div className="sticky top-14 md:top-20 z-30 -mx-1 space-y-3 bg-[#FDFBF7]/85 dark:bg-stone-950/80 backdrop-blur-md py-2 px-1 rounded-2xl">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <div className="relative flex-1">
                                 <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
-                                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden="true">🔍</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm" aria-hidden="true">🔍</span>
                                 <input
                                     id="recipe-search"
                                     type="text"
-                                    placeholder="Search recipes, ingredients..."
+                                    inputMode="search"
+                                    placeholder="Search recipes, ingredients, contributors…"
                                     aria-label="Search recipes, ingredients, or instructions"
-                                    className="w-full pl-14 pr-6 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all font-serif italic placeholder:text-stone-300 dark:placeholder:text-stone-600 text-base dark:text-stone-100"
+                                    className="w-full pl-11 pr-10 py-3 md:py-3.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-[#2D4635]/30 transition-all text-base dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                 />
+                                {search && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearch('')}
+                                        aria-label="Clear search"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 text-xs"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
                             </div>
-                            <div className="flex md:hidden gap-3">
+                            <div className="flex md:hidden gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setShowMobileFilters(v => !v)}
-                                    className={`flex-1 min-h-[2.75rem] px-5 py-4 rounded-full border text-[10px] font-black uppercase tracking-widest transition-colors ${
+                                    className={`min-h-11 min-w-11 px-3 py-3 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-colors ${
                                         showMobileFilters || activeFilterCount > 0
                                             ? 'bg-[#2D4635] text-white border-[#2D4635]'
-                                            : 'bg-white/80 text-stone-600 border-stone-200'
+                                            : 'bg-white text-stone-600 border-stone-200 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-700'
                                     }`}
                                     aria-expanded={showMobileFilters}
                                     aria-controls="mobile-recipe-filters"
                                 >
-                                    Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+                                    Filter{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}
                                 </button>
                                 {currentUser?.role === 'admin' && (
                                     <button
                                         type="button"
                                         onClick={() => setShowAddRecipeModal(true)}
-                                        className="min-h-[2.75rem] px-5 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors whitespace-nowrap"
+                                        aria-label="Add a new recipe"
+                                        className="min-h-11 min-w-11 px-4 bg-[#A0522D] text-white rounded-full text-base font-bold shadow hover:bg-[#A0522D]/90 transition-colors"
                                     >
-                                        + Add
+                                        +
                                     </button>
                                 )}
                             </div>
-                            <div className="hidden md:flex gap-6">
+                            <div className="hidden md:flex gap-2">
                                 <label htmlFor="recipe-category" className="sr-only">Filter by category</label>
-                                <select id="recipe-category" aria-label="Filter by category" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={category} onChange={e => setCategory(e.target.value)}>
-                                    <option value="All">All Categories</option>
+                                <select id="recipe-category" aria-label="Filter by category" className="px-4 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-medium text-stone-700 dark:text-stone-200 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 min-h-11" value={category} onChange={e => setCategory(e.target.value)}>
+                                    <option value="All">All categories</option>
                                     {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 <label htmlFor="recipe-contributor" className="sr-only">Filter by contributor</label>
-                                <select id="recipe-contributor" aria-label="Filter by contributor" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={contributor} onChange={e => setContributor(e.target.value)}>
-                                    <option value="All">All Contributors</option>
+                                <select id="recipe-contributor" aria-label="Filter by contributor" className="px-4 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-medium text-stone-700 dark:text-stone-200 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 min-h-11" value={contributor} onChange={e => setContributor(e.target.value)}>
+                                    <option value="All">All contributors</option>
                                     {Array.from(new Set(recipes.map(r => r.contributor))).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 {allTags.length > 0 && (
                                     <>
                                         <label htmlFor="recipe-tag" className="sr-only">Filter by tag</label>
-                                        <select id="recipe-tag" aria-label="Filter by tag" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
-                                            <option value="">All Tags</option>
+                                        <select id="recipe-tag" aria-label="Filter by tag" className="px-4 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-medium text-stone-700 dark:text-stone-200 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 min-h-11" value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
+                                            <option value="">All tags</option>
                                             {allTags.map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                     </>
                                 )}
                                 <label htmlFor="recipe-sort" className="sr-only">Sort recipes</label>
-                                <select id="recipe-sort" aria-label="Sort recipes" className="px-8 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base font-bold text-stone-600 dark:text-stone-200 cursor-pointer hover:bg-white dark:hover:bg-[var(--bg-tertiary)] min-h-[2.75rem]" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                                <select id="recipe-sort" aria-label="Sort recipes" className="px-4 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-medium text-stone-700 dark:text-stone-200 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 min-h-11" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                                     <option value="title-asc">A–Z</option>
                                     <option value="title-desc">Z–A</option>
                                     <option value="category">Category</option>
@@ -1304,12 +1577,18 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowAddRecipeModal(true)}
-                                        className="px-6 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#2D4635]/90 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                                        className="px-5 py-3 bg-[#A0522D] text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#A0522D]/90 transition-colors min-h-11 whitespace-nowrap"
                                     >
-                                        + Add New Recipe
+                                        + New recipe
                                     </button>
                                 )}
                             </div>
+                        </div>
+                        <div className="hidden md:flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 px-2">
+                            <span>{sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}{activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}` : ''}</span>
+                            {activeFilterCount > 0 && (
+                                <button type="button" onClick={clearRecipeFilters} className="text-[#A0522D] hover:underline">Reset filters</button>
+                            )}
                         </div>
 
                         <div
@@ -1369,7 +1648,7 @@ const App: React.FC = () => {
                         const hasQuickAccess = recentRecipes.length > 0 || favRecipes.length > 0;
                         if (!hasQuickAccess) return null;
                         return (
-                            <div className="space-y-6">
+                            <div id="quick-access-recipes" className="scroll-mt-40 space-y-6">
                                 {favRecipes.length > 0 && (
                                     <section aria-label="Favorite recipes">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">❤️ Favorites</h3>
@@ -1421,85 +1700,101 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {sortedRecipes.map(recipe => (
-                                <div
-                                    key={recipe.id}
-                                    onClick={() => handleSelectRecipe(recipe)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            handleSelectRecipe(recipe);
-                                        }
-                                    }}
-                                    tabIndex={0}
-                                    role="button"
-                                    aria-label={`View recipe: ${recipe.title}`}
-                                    className="group cursor-pointer relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-stone-200 shadow-md hover:shadow-2xl transition-all duration-500 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7]"
-                                >
-                                    {/* Affiliated recipe image or placeholder */}
-                                    <RecipeCardImage recipe={recipe} />
-
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/20 to-[#A0522D]/20 group-[.fallback-gradient]:from-[#2D4635] group-[.fallback-gradient]:to-[#A0522D]" />
-
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end">
-                                        <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                            <div className="flex justify-between items-center mb-2 opacity-80">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-200">{recipe.category}</span>
-                                                {isFamilyApproved(recipe.id) && (
-                                                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-300 flex items-center gap-1">⭐ Approved</span>
-                                                )}
-                                            </div>
-                                            <h3 className="text-xl md:text-2xl font-serif italic text-white leading-none mb-1 shadow-black drop-shadow-md">{recipe.title}</h3>
-                                            <div className="flex items-center gap-3 mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity delay-100">
-                                                <p className="text-[10px] text-stone-300 uppercase tracking-widest flex items-center gap-1">
-                                                    By <img src={getAvatar(recipe.contributor)} className="w-4 h-4 rounded-full inline-block object-cover align-middle" alt={recipe.contributor} onError={avatarOnError} /> {recipe.contributor}
-                                                </p>
-                                                {recipe.prepTime && (
-                                                    <span className="text-[9px] text-stone-400">⏱ {recipe.prepTime}</span>
-                                                )}
-                                                {getAverageRating(recipe.id) > 0 && (
-                                                    <span className="text-[9px] text-amber-400">★ {getAverageRating(recipe.id).toFixed(1)}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Favorite button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleToggleFavorite(recipe.id);
-                                        }}
-                                        className={`absolute top-4 left-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-20 ${
-                                            favoriteIds.has(recipe.id)
-                                                ? 'bg-red-50/90 text-red-500'
-                                                : 'bg-white/90 text-stone-400 hover:text-red-400'
-                                        }`}
-                                        title={favoriteIds.has(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                        aria-label={favoriteIds.has(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+                            {sortedRecipes.map(recipe => {
+                                const isFav = favoriteIds.has(recipe.id);
+                                const rating = getAverageRating(recipe.id);
+                                const ratingCount = getRatingCount(recipe.id);
+                                const approved = isFamilyApproved(recipe.id);
+                                const contribAvatar = getAvatar(recipe.contributor);
+                                return (
+                                    <article
+                                        key={recipe.id}
+                                        className="group relative flex flex-col rounded-2xl md:rounded-[1.5rem] overflow-hidden bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-[#2D4635] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:focus-within:ring-offset-stone-950"
                                     >
-                                        <span className="text-lg">{favoriteIds.has(recipe.id) ? '❤️' : '🤍'}</span>
-                                    </button>
-                                    {/* Admin Quick-Action Button */}
-                                    {currentUser?.role === 'admin' && (
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setEditingRecipe(recipe);
-                                                handleSetTab('Profile');
-                                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                            }}
-                                            className="absolute top-4 right-4 w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-white/90 backdrop-blur-sm text-[#A0522D] flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg hover:scale-110 hover:bg-white z-20"
-                                            title="Edit with AI"
-                                            aria-label={`Edit ${recipe.title} with AI`}
+                                            type="button"
+                                            onClick={() => handleSelectRecipe(recipe)}
+                                            aria-label={`Open recipe: ${recipe.title}`}
+                                            className="flex flex-col text-left w-full h-full"
                                         >
-                                            ✨
+                                            <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
+                                                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]">
+                                                    <RecipeCardImage recipe={recipe} />
+                                                </div>
+                                                {recipe.cookTime && (
+                                                    <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white">
+                                                        <span aria-hidden>⏱</span>
+                                                        <span>{recipe.cookTime}</span>
+                                                    </span>
+                                                )}
+                                                {approved && (
+                                                    <span className="absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-50/95 backdrop-blur px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 shadow-sm">
+                                                        ★ Approved
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span aria-hidden className="block h-0.5 bg-[#A0522D]/85" />
+                                            <div className="flex-1 p-3 sm:p-4 space-y-2">
+                                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
+                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
+                                                    {recipe.title}
+                                                </h3>
+                                                <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                                                    <span className="flex items-center gap-1.5 min-w-0">
+                                                        <img
+                                                            src={contribAvatar}
+                                                            alt=""
+                                                            aria-hidden
+                                                            onError={avatarOnError}
+                                                            className="w-5 h-5 rounded-full object-cover border border-stone-200 dark:border-stone-700 shrink-0"
+                                                        />
+                                                        <span className="truncate font-serif italic">{recipe.contributor}</span>
+                                                    </span>
+                                                    {rating > 0 && (
+                                                        <span className="flex items-center gap-0.5 text-amber-600 font-semibold shrink-0" aria-label={`Rated ${rating.toFixed(1)} out of 5 from ${ratingCount} ratings`}>
+                                                            ★ {rating.toFixed(1)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {ratingCount >= 3 && (
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                                        🍴 Cooked by {ratingCount} family
+                                                    </p>
+                                                )}
+                                            </div>
                                         </button>
-                                    )}
-                                </div>
-                            ))}
+
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); handleToggleFavorite(recipe.id); }}
+                                            className={`absolute top-2 left-2 z-20 flex h-11 w-11 min-h-[2.75rem] min-w-[2.75rem] items-center justify-center rounded-full backdrop-blur transition-transform hover:scale-110 active:scale-95 ${
+                                                isFav ? 'bg-white/95 text-red-500 shadow-md' : 'bg-black/30 text-white hover:bg-white/95 hover:text-red-500'
+                                            }`}
+                                            title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                                            aria-label={isFav ? `Remove ${recipe.title} from favorites` : `Add ${recipe.title} to favorites`}
+                                        >
+                                            <span className="text-lg leading-none">{isFav ? '♥' : '♡'}</span>
+                                        </button>
+                                        {currentUser?.role === 'admin' && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingRecipe(recipe);
+                                                    handleSetTab('Profile');
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }}
+                                                className="absolute top-2 right-2 z-20 flex h-11 w-11 min-h-[2.75rem] min-w-[2.75rem] items-center justify-center rounded-full bg-white/95 text-[#A0522D] shadow-md backdrop-blur transition-transform hover:scale-110 active:scale-95"
+                                                title="Edit with AI"
+                                                aria-label={`Edit ${recipe.title} with AI`}
+                                            >
+                                                ✨
+                                            </button>
+                                        )}
+                                    </article>
+                                );
+                            })}
                         </div>
                     )}
 
@@ -1507,29 +1802,38 @@ const App: React.FC = () => {
                         <div className="py-20 text-center space-y-6">
                             <span className="text-5xl" aria-hidden="true">🍂</span>
                             <div className="space-y-2">
-                                <p className="font-serif italic text-stone-600 text-lg">
+                                <p className="font-serif italic text-stone-600 text-xl">
                                     {recipes.length === 0
-                                        ? 'No recipes found in the archive.'
-                                        : 'No recipes match your current filters.'}
+                                        ? 'The recipe archive is ready for its first card.'
+                                        : 'No recipes match that path yet.'}
                                 </p>
-                                <p className="text-stone-400 text-sm">
+                                <p className="text-stone-500 text-sm max-w-md mx-auto">
                                     {recipes.length === 0
-                                        ? (currentUser?.role === 'admin' ? 'Use Add New Recipe to add recipes.' : 'Ask an administrator to add recipes.')
-                                        : 'Try a different search or filter.'}
+                                        ? (currentUser?.role === 'admin' ? 'Add the first family recipe, then the archive will generate the browsing experience around it.' : 'Ask an administrator to add the first family recipe.')
+                                        : 'Try clearing filters, browsing by category, or searching a family member, ingredient, or dish name.'}
                                 </p>
                                 {recipes.length > 0 ? (
-                                    <button
-                                        type="button"
-                                        onClick={clearRecipeFilters}
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
-                                    >
-                                        Clear filters
-                                    </button>
+                                    <div className="flex flex-wrap justify-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={clearRecipeFilters}
+                                            className="inline-flex min-h-11 items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
+                                        >
+                                            Clear filters
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { clearRecipeFilters(); setCategory('Main'); }}
+                                            className="inline-flex min-h-11 items-center gap-2 px-6 py-3 bg-white border border-stone-200 text-stone-600 text-sm font-bold uppercase tracking-widest rounded-full hover:bg-stone-50 transition-colors"
+                                        >
+                                            Browse mains
+                                        </button>
+                                    </div>
                                 ) : currentUser?.role === 'admin' && (
                                     <button
                                         type="button"
                                         onClick={() => setShowAddRecipeModal(true)}
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
+                                        className="inline-flex min-h-11 items-center gap-2 px-6 py-3 bg-[#2D4635] text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-[#2D4635]/90 transition-colors"
                                     >
                                         Add New Recipe
                                     </button>
@@ -1544,6 +1848,10 @@ const App: React.FC = () => {
                 <Suspense fallback={<IndexSkeleton />}>
                     <AlphabeticalIndex recipes={recipes} onSelect={handleSelectRecipe} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
                 </Suspense>
+            )}
+
+            {(tab === 'Family Story' || tab === 'Contributors') && (
+                <FamilyHub activeTab={tab} onSelect={handleSetTab} galleryCount={gallery.length} triviaCount={trivia.length} contributorCount={contributorsForDisplay.length} />
             )}
 
             {tab === 'Family Story' && (
@@ -1574,7 +1882,10 @@ const App: React.FC = () => {
             {tab === 'Grocery List' && (
                 <Suspense fallback={<TabFallback />}>
                     <main id="main-content-grocery" role="main" aria-label="Grocery list" tabIndex={-1}>
-                        <GroceryListView />
+                        <GroceryListView
+                            onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onOpenCollections={() => { handleSetTab('Collections'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        />
                     </main>
                 </Suspense>
             )}

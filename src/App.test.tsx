@@ -3,17 +3,19 @@ import { screen, fireEvent, within } from '@testing-library/react';
 import App from './App';
 import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithProviders } from './test/utils';
 
-function loginAndNavigateToGallery(_initialTab = 'Recipes') {
+function login(name = 'Alice') {
+    fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: name } });
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+}
+
+async function loginAndNavigateToGallery(_initialTab = 'Recipes') {
     const recipes = [createMockRecipe()];
     localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
     renderWithProviders(<App />);
-    const input = screen.getByPlaceholderText(/e.g. Grandma Joan/);
-    fireEvent.change(input, { target: { value: 'Alice' } });
-    fireEvent.click(screen.getByText('Enter The Archive'));
-    return screen.findByText('Test Recipe', {}, { timeout: 3000 }).then(() => {
-        const galleryBtns = screen.getAllByRole('button', { name: /^Gallery$/i });
-        fireEvent.click(galleryBtns[0]);
-    });
+    login('Alice');
+    // After login user lands on Home; click Family in nav.
+    const familyBtns = await screen.findAllByRole('button', { name: /^Family$/i }, { timeout: 3000 });
+    fireEvent.click(familyBtns[0]);
 }
 
 describe('App', () => {
@@ -24,17 +26,16 @@ describe('App', () => {
 
     it('should show login form when not authenticated', async () => {
         renderWithProviders(<App />);
-        expect(await screen.findByText('Welcome to the Family Table')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/e.g. Grandma Joan/)).toBeInTheDocument();
+        expect(await screen.findByText(/who's cooking/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/your name/i)).toBeInTheDocument();
     });
 
-    it('should login and show Recipes tab when name is submitted', async () => {
+    it('should login and land on Home tab when name is submitted', async () => {
         localStorage.setItem('schafer_db_recipes', JSON.stringify([createMockRecipe()]));
         renderWithProviders(<App />);
-        const input = screen.getByPlaceholderText(/e.g. Grandma Joan/);
-        fireEvent.change(input, { target: { value: 'Alice' } });
-        fireEvent.click(screen.getByText('Enter The Archive'));
-        await screen.findByText('Test Recipe', {}, { timeout: 3000 });
+        login('Alice');
+        // Home tab should be visible (greeting present)
+        await screen.findByText(/good (morning|afternoon|evening|night)/i, {}, { timeout: 3000 });
         expect(screen.getAllByRole('button', { name: /^Recipes$/i }).length).toBeGreaterThan(0);
     });
 });
@@ -119,10 +120,9 @@ describe('Gallery', () => {
         localStorage.setItem('schafer_db_recipes', JSON.stringify([createMockRecipe()]));
 
         renderWithProviders(<App />);
-        fireEvent.change(screen.getByPlaceholderText(/e.g. Grandma Joan/), { target: { value: 'kyle' } });
-        fireEvent.click(screen.getByText('Enter The Archive'));
-        await screen.findByText('Test Recipe', {}, { timeout: 3000 });
-        fireEvent.click(screen.getAllByRole('button', { name: /^Gallery$/i })[0]);
+        login('kyle');
+        await screen.findByText(/good (morning|afternoon|evening|night)/i, {}, { timeout: 3000 });
+        fireEvent.click(screen.getAllByRole('button', { name: /^Family$/i })[0]);
 
         const deleteButton = screen.getByRole('button', { name: /remove "admin delete test" from gallery/i });
         expect(deleteButton).toBeInTheDocument();
@@ -160,39 +160,29 @@ describe('App Navigation (Lazy loaded views)', () => {
         localStorage.clear();
     });
 
-    it('should navigate to Index, Family Story, Contributors, and Profile tabs', async () => {
+    it('should navigate to Recipes, Family, Cook, and Profile tabs', async () => {
         const recipes = [createMockRecipe({ title: 'Apple Pie' })];
         localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
         renderWithProviders(<App />);
 
-        // Login
-        fireEvent.change(screen.getByPlaceholderText(/e.g. Grandma Joan/), { target: { value: 'Alice' } });
-        fireEvent.click(screen.getByText('Enter The Archive'));
+        login('Alice');
+        await screen.findByText(/good (morning|afternoon|evening|night)/i, {}, { timeout: 3000 });
+
+        // Recipes tab — primary nav
+        fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
         await screen.findByText('Apple Pie', {}, { timeout: 3000 });
 
-        // Navigate to Index
-        fireEvent.click(screen.getAllByRole('button', { name: /A–Z/i })[0]);
-        await screen.findByText(/Archival Index/i, {}, { timeout: 3000 }).catch(() => { });
+        // Family tab
+        fireEvent.click(screen.getAllByRole('button', { name: /^Family$/i })[0]);
+        await screen.findByRole('main', { name: /family gallery/i }, { timeout: 3000 }).catch(() => { });
 
-        // Navigate to Family Story
-        const familyStoryBtns = screen.queryAllByRole('button', { name: /Family Story/i });
-        if (familyStoryBtns.length > 0) {
-            fireEvent.click(familyStoryBtns[0]);
-            await screen.findByText(/The Oehler Family/i, {}, { timeout: 3000 }).catch(() => { });
-        }
+        // Cook tab
+        fireEvent.click(screen.getAllByRole('button', { name: /^Cook$/i })[0]);
 
-        // Navigate to Contributors
-        const contributorsBtns = screen.queryAllByRole('button', { name: /Contributors/i });
-        if (contributorsBtns.length > 0) {
-            fireEvent.click(contributorsBtns[0]);
-            await screen.findByText(/The Contributors/i, {}, { timeout: 3000 }).catch(() => { });
-        }
-
-        // Navigate to Profile
+        // Profile tab via Me
         const profileElements = screen.queryAllByTestId(/nav-profile/i);
         if (profileElements.length > 0) {
             fireEvent.click(profileElements[0]);
-            await screen.findByText(/Display Identity/i, {}, { timeout: 3000 }).catch(() => { });
         }
     });
 });

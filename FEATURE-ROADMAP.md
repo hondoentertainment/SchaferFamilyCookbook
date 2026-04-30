@@ -10,6 +10,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | Area | Capability | Status |
 |------|------------|--------|
 | **Recipes** | Browse, search, filter (category/contributor), sort (A–Z, recently viewed), grid/list | Solid |
+| **Recipe Images** | Full local `public/recipe-images` coverage with recipe-specific WebP fallback assets and Imagen-ready generation tooling | Solid |
 | **Recipe Modal** | View details, scale ingredients, print, share link, prev/next navigation | Solid |
 | **Cook Mode** | Step-by-step view, ingredient scaling, keyboard + **swipe** navigation on mobile | Solid |
 | **Favorites** | Heart recipes (local + optional cloud sync via `userPrefs`) | Solid |
@@ -22,7 +23,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Profile** | Display name, avatar, my recipes, contribution log, favorites & recently viewed | Solid |
 | **Admin** | Records, Gallery, Trivia, Directory, AI (Magic Import, Imagen), merge, bulk upload, **JSON/CSV export** | Solid |
 | **Share / SEO (Vercel)** | `api/og` (1200×630 PNG), `api/share` HTML with OG + redirect when `VITE_SHARE_BASE` is set | Solid |
-| **Mobile** | Bottom nav, safe areas, touch targets, PWA, haptics, **Vibration API** where supported | Solid |
+| **Mobile / IA** | Four-area navigation (**Browse**, **Cook**, **Family**, **Me**), bottom nav, safe areas, touch targets, PWA, haptics | Solid |
 | **E2E** | Playwright on **dedicated preview port**; CI: unit job + emulators + Chromium E2E | Solid |
 
 ### Gaps & Opportunities
@@ -42,7 +43,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ### 2. Housekeeping
 - [x] **Roadmap** — This file aligned to shipped features (grocery, profile, swipe, cloud trivia, share API, admin export)
-- [ ] **Optional:** A–Z in bottom nav (product decision; desktop has full nav)
+- [x] **IA reset** — Bottom nav simplified to Browse/Cook/Family/Me; A–Z lives under Browse and More sections
 
 ### 3. Technical debt
 - [x] **Admin export** — JSON/CSV recipe export available from Admin → Records (`Export JSON` / `Export CSV`)
