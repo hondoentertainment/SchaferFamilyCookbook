@@ -34,8 +34,8 @@ describe('App', () => {
         localStorage.setItem('schafer_db_recipes', JSON.stringify([createMockRecipe()]));
         renderWithProviders(<App />);
         login('Alice');
-        // Home tab should be visible (greeting present)
-        await screen.findByText(/good (morning|afternoon|evening|night)/i, {}, { timeout: 3000 });
+        // Home tab should be visible (any time-of-day greeting variant from HomeView)
+        await screen.findByText(/(good (morning|afternoon|evening))|(late night)/i, {}, { timeout: 3000 });
         expect(screen.getAllByRole('button', { name: /^Recipes$/i }).length).toBeGreaterThan(0);
     });
 });
@@ -121,7 +121,7 @@ describe('Gallery', () => {
 
         renderWithProviders(<App />);
         login('kyle');
-        await screen.findByText(/good (morning|afternoon|evening|night)/i, {}, { timeout: 3000 });
+        await screen.findByText(/(good (morning|afternoon|evening))|(late night)/i, {}, { timeout: 3000 });
         fireEvent.click(screen.getAllByRole('button', { name: /^Family$/i })[0]);
 
         const deleteButton = screen.getByRole('button', { name: /remove "admin delete test" from gallery/i });
@@ -166,7 +166,7 @@ describe('App Navigation (Lazy loaded views)', () => {
         renderWithProviders(<App />);
 
         login('Alice');
-        await screen.findByText(/good (morning|afternoon|evening|night)/i, {}, { timeout: 3000 });
+        await screen.findByText(/(good (morning|afternoon|evening))|(late night)/i, {}, { timeout: 3000 });
 
         // Recipes tab — primary nav
         fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
