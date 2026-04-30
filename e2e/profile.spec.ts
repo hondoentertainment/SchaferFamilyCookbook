@@ -12,35 +12,34 @@ test.describe('Profile', () => {
   test('displays profile with identity and role', async ({ page }) => {
     await page.getByTestId('nav-profile').click();
 
-    await expect(page.getByLabel(/Display Identity/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /Save Profile/i })).toBeVisible();
-    await expect(page.getByText(/Family Member|Legacy Custodian/i)).toBeVisible();
+    await expect(page.getByTestId('profile-display-name')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Edit display name/i })).toBeVisible();
+    await expect(page.getByLabel(/Family Member|Legacy Custodian/i).first()).toBeVisible();
   });
 
   test('shows current user name in display', async ({ page }) => {
     await page.getByTestId('nav-profile').click();
 
-    const nameInput = page.getByLabel(/Display Identity/i);
-    await expect(nameInput).toHaveValue('Alice');
+    await expect(page.getByTestId('profile-display-name')).toHaveText('Alice');
   });
 
   test('can edit display name', async ({ page }) => {
     await page.getByTestId('nav-profile').click();
 
-    const nameInput = page.getByLabel(/Display Identity/i);
-    await nameInput.clear();
+    await page.getByRole('button', { name: /Edit display name/i }).click();
+    const nameInput = page.getByLabel(/^Display name$/i);
+    await expect(nameInput).toBeVisible();
     await nameInput.fill('Alice Smith');
-    await page.getByRole('button', { name: /Save Profile/i }).click();
+    await page.getByRole('button', { name: /Save display name/i }).click();
 
-    await expect(page.getByText(/Profile [Uu]pdated/i).first()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/display name updated/i).first()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId('profile-display-name')).toHaveText('Alice Smith');
   });
 
   test('avatar picker button is present', async ({ page }) => {
     await page.getByTestId('nav-profile').click();
 
-    await expect(page.getByRole('button', { name: /🎭/ }).or(
-      page.locator('button').filter({ hasText: '🎭' })
-    )).toBeVisible();
+    await expect(page.getByRole('button', { name: /Change avatar/i })).toBeVisible();
   });
 
   test('shows user recipes section', async ({ page }) => {

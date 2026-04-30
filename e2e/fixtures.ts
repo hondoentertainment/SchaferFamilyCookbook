@@ -26,7 +26,7 @@ export async function loginAs(
   // Wait for the Home tab greeting to confirm we're past login. Then
   // navigate to Recipes for downstream specs that depend on the search box.
   await page
-    .getByRole('heading', { name: /Good (morning|afternoon|evening|night)/i })
+    .getByRole('heading', { name: /(Good (morning|afternoon|evening))|(Late night)/i })
     .waitFor({ state: 'visible', timeout: 15000 });
 
   await page.getByRole('button', { name: /^Recipes$/, exact: true }).first().click();
