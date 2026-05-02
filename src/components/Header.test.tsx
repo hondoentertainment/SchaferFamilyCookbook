@@ -43,7 +43,7 @@ describe('Header', () => {
         expect(screen.getByRole('button', { name: /^Home$/ })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Recipes$/ })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Family$/ })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /^Cook$/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Groceries$/ })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Me$/ })).toBeInTheDocument();
     });
 

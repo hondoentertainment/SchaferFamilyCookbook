@@ -176,6 +176,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const [scaleFlash, setScaleFlash] = useState(false);
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(() => new Set());
     const scaleInitRef = useRef(true);
+    const [detailMode, setDetailMode] = useState<'read' | 'cook' | 'share'>('read');
     const hasValidImage =
         !!recipe?.image &&
         !imageBroken &&
@@ -252,6 +253,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         setLightboxImageBroken(false);
         setOverflowOpen(false);
         setCheckedIngredients(new Set());
+        setDetailMode('read');
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
 
@@ -454,10 +456,9 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     aria-label="Enlarged recipe image"
                     className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
                 >
-                    <button
-                        type="button"
-                        className="absolute inset-0 cursor-zoom-out bg-black/95 backdrop-blur-lg"
-                        aria-label="Dismiss enlarged image backdrop"
+                    <div
+                        role="presentation"
+                        className="absolute inset-0 cursor-zoom-out bg-black/95 backdrop-blur-lg motion-reduce:backdrop-blur-none"
                         onClick={() => setLightboxOpen(false)}
                     />
                     <button
@@ -633,8 +634,42 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             </div>
                         </header>
 
+                        <div className="print:hidden px-5 pt-4 md:px-8 lg:px-10 flex justify-center sticky top-0 z-[5] bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2">
+                            <div
+                                role="tablist"
+                                aria-label="Recipe view mode"
+                                className="inline-flex max-w-full flex-wrap gap-1 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)]/95 p-1 shadow-sm"
+                            >
+                                {(
+                                    [
+                                        { id: 'read' as const, label: 'Read' },
+                                        { id: 'cook' as const, label: 'Cook' },
+                                        { id: 'share' as const, label: 'Share' },
+                                    ]
+                                ).map(({ id, label }) => (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={detailMode === id}
+                                        onClick={() => {
+                                            hapticLight();
+                                            setDetailMode(id);
+                                        }}
+                                        className={`min-h-10 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors motion-reduce:transition-none ${
+                                            detailMode === id
+                                                ? 'bg-[#2D4635] text-white shadow-sm'
+                                                : 'text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-[var(--bg-tertiary)]'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <main className="p-5 md:p-8 lg:p-10 space-y-8">
-                            {storyPreview && (
+                            {detailMode === 'read' && storyPreview && (
                                 <section className="print-simplify rounded-3xl bg-gradient-to-br from-[#2D4635]/5 to-[#A0522D]/10 dark:from-[#2D4635]/20 dark:to-[#A0522D]/20 border border-[#2D4635]/10 dark:border-[#2D4635]/30 p-6 md:p-8">
                                     <div className="space-y-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Heirloom Notes</p>
@@ -648,7 +683,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 </section>
                             )}
 
-                            {recipe.tags && recipe.tags.length > 0 && (
+                            {detailMode === 'read' && recipe.tags && recipe.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 print:hidden" aria-label="Recipe tags">
                                     {recipe.tags.map(tag => (
                                         <span
@@ -661,6 +696,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 </div>
                             )}
 
+                            {(detailMode === 'read' || detailMode === 'cook') && (
                             <section className="grid lg:grid-cols-[minmax(17rem,21rem)_1fr] gap-6 lg:gap-8 items-start">
                                 <aside className={`print-simplify lg:sticky lg:top-6 space-y-4 bg-white/85 dark:bg-[var(--card-bg)]/85 p-5 md:p-6 rounded-3xl border border-stone-200/80 dark:border-[var(--border-color)] shadow-sm transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`}>
                                     <div className="flex items-start justify-between gap-3">
@@ -817,8 +853,9 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     </div>
                                 </div>
                             </section>
+                            )}
 
-                            {hasValidImage && (
+                            {detailMode === 'read' && hasValidImage && (
                                 <section className="print:hidden rounded-3xl bg-white/60 dark:bg-[var(--card-bg)] border border-stone-200 dark:border-[var(--border-color)] p-5 md:p-6">
                                     <h3 className="font-serif italic text-xl text-[#2D4635] dark:text-emerald-300 mb-3">Photos</h3>
                                     <div className="grid sm:grid-cols-3 gap-3">
@@ -838,6 +875,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 </section>
                             )}
 
+                            {detailMode === 'read' && (
                             <details className="print:hidden rounded-3xl border border-stone-200 dark:border-[var(--border-color)] bg-white/65 dark:bg-[var(--card-bg)] p-5 md:p-6">
                                 <summary className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300">
                                     Notes, ratings, and sharing
@@ -860,6 +898,31 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     )}
                                 </div>
                             </details>
+                            )}
+
+                            {detailMode === 'share' && (
+                                <section
+                                    aria-label="Share recipe"
+                                    className="print:hidden rounded-3xl border border-stone-200 dark:border-[var(--border-color)] bg-white/65 dark:bg-[var(--card-bg)] p-5 md:p-8 space-y-8"
+                                >
+                                    <div className="space-y-2">
+                                        <h3 className="font-serif italic text-2xl text-[#2D4635] dark:text-emerald-300">Share with family</h3>
+                                        <p className="text-sm text-stone-600 dark:text-stone-400">
+                                            Copy the link or send an invite — ratings and personal notes stay below.
+                                        </p>
+                                    </div>
+                                    <ShareRecipe recipe={recipe} variant="featured" />
+                                    <RatingSection
+                                        recipeId={recipe.id}
+                                        recipeTitle={recipe.title}
+                                        currentUserName={currentUserName}
+                                        onChange={() => setRatingsVersion((v) => v + 1)}
+                                    />
+                                    {currentUserName && (
+                                        <RecipeNotes recipeId={recipe.id} recipeTitle={recipe.title} currentUserName={currentUserName} />
+                                    )}
+                                </section>
+                            )}
                         </main>
                     </div>
 

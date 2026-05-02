@@ -36,6 +36,8 @@ export interface SiteConfig {
     placeholder: string;
     cta: string;
     helpText: string;
+    /** Short trust bullets shown under the sign-in card */
+    trustStrip?: string[];
   };
 
   /** Copy for gallery section */
@@ -67,11 +69,17 @@ const defaultConfig: SiteConfig = {
   superAdminIdentifiers: ['kyle', 'hondo4185@gmail.com'],
   categories: RECIPE_CATEGORIES,
   loginCopy: {
-    title: 'Identify Yourself',
-    subtitle: 'Welcome to the Schafer Family Archive.',
-    placeholder: 'e.g. Grandma Joan',
-    cta: 'Enter The Archive',
-    helpText: 'Need access? Contact an administrator.',
+    title: "Who's cooking?",
+    subtitle:
+      'Choose your name to personalize favorites, notes, and the recipes you return to in the family archive.',
+    placeholder: 'Your name or nickname',
+    cta: 'Continue',
+    helpText: 'Need access? Contact a cookbook custodian.',
+    trustStrip: [
+      'No password — pick the name your family knows you by.',
+      'Favorites and notes stay on this device; cloud sync depends on family setup.',
+      'Custodians manage the shared recipe directory.',
+    ],
   },
   galleryCopy: {
     title: 'Family Gallery',

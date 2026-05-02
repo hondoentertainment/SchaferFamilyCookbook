@@ -7,8 +7,8 @@ const MAIN_TABS = [
     { id: 'Home', label: 'Home', group: ['Home'] },
     { id: 'Recipes', label: 'Recipes', group: ['Recipes', 'Index', 'Collections'] },
     { id: 'Gallery', label: 'Family', group: ['Gallery', 'Trivia', 'Family Story', 'Contributors'] },
-    { id: 'Grocery List', label: 'Cook', group: ['Grocery List'] },
-    { id: 'Profile', label: 'Me', group: ['Profile', 'Privacy'] },
+    { id: 'Grocery List', label: 'Groceries', group: ['Grocery List'] },
+    { id: 'Profile', label: 'Me', group: ['Profile', 'Privacy', 'Help'] },
 ] as const;
 
 const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {

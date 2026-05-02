@@ -6,6 +6,7 @@ import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithP
 function login(name = 'Alice') {
     fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: name } });
     fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /yes, open the cookbook/i }));
 }
 
 async function loginAndNavigateToGallery(_initialTab = 'Recipes') {
@@ -160,7 +161,7 @@ describe('App Navigation (Lazy loaded views)', () => {
         localStorage.clear();
     });
 
-    it('should navigate to Recipes, Family, Cook, and Profile tabs', async () => {
+    it('should navigate to Recipes, Family, Groceries, and Profile tabs', async () => {
         const recipes = [createMockRecipe({ title: 'Apple Pie' })];
         localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
         renderWithProviders(<App />);
@@ -176,8 +177,8 @@ describe('App Navigation (Lazy loaded views)', () => {
         fireEvent.click(screen.getAllByRole('button', { name: /^Family$/i })[0]);
         await screen.findByRole('main', { name: /family gallery/i }, { timeout: 3000 }).catch(() => { });
 
-        // Cook tab
-        fireEvent.click(screen.getAllByRole('button', { name: /^Cook$/i })[0]);
+        // Groceries tab
+        fireEvent.click(screen.getAllByRole('button', { name: /^Groceries$/i })[0]);
 
         // Profile tab via Me
         const profileElements = screen.queryAllByTestId(/nav-profile/i);

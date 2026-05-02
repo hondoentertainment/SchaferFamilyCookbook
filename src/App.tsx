@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { useUI } from './context/UIContext';
 import { shouldToastImageError } from './utils/imageErrorToast';
@@ -29,7 +29,7 @@ import { trackEvent } from './services/analytics';
 import { listenForForegroundMessages } from './services/pushNotifications';
 import { queueUpload } from './services/offlineUploadQueue';
 import { useOfflineUploadQueue } from './hooks/useOfflineUploadQueue';
-import { isSuperAdmin } from './config/site';
+import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 import {
@@ -55,6 +55,8 @@ const ContributorSpotlight = lazy(() => import('./components/ContributorSpotligh
 const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 const CollectionsView = lazy(() => import('./components/CollectionsView').then(m => ({ default: m.CollectionsView })));
 const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => ({ default: m.InstallPrompt })));
+const HelpView = lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })));
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -366,10 +368,9 @@ const GalleryLightbox: React.FC<{ item: GalleryItem; onClose: () => void }> = ({
             aria-label={isVideo ? 'Fullscreen gallery video' : 'Enlarged gallery image'}
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
         >
-            <button
-                type="button"
-                className="absolute inset-0 cursor-zoom-out bg-black/95 backdrop-blur-lg"
-                aria-label="Dismiss gallery lightbox"
+            <div
+                role="presentation"
+                className="absolute inset-0 cursor-zoom-out bg-black/95 backdrop-blur-lg motion-reduce:backdrop-blur-none"
                 onClick={onClose}
             />
             <button
@@ -565,7 +566,7 @@ const RECIPE_HASH_REGEX = /^#recipe\/(.+)$/;
 const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
 const App: React.FC = () => {
-    const { toast } = useUI();
+    const { toast, confirm } = useUI();
     const [tab, setTab] = useState('Home');
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -614,6 +615,7 @@ const App: React.FC = () => {
 
     const [loginName, setLoginName] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
     // Filters
     const [search, setSearch] = useState('');
@@ -792,32 +794,58 @@ const App: React.FC = () => {
         onToast: toast,
     });
 
-    const handleLoginSubmit = (e: React.FormEvent) => {
+    const finalizeLogin = useCallback(
+        (trimmed: string) => {
+            const existing = contributors.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+            const isSuper = isSuperAdmin(trimmed);
+            const email = isSuper && trimmed.includes('@') ? trimmed : existing?.email;
+            const u: UserProfile = {
+                id: existing?.id || 'u' + Date.now(),
+                name: existing?.name || trimmed,
+                picture: existing?.avatar ?? contributorAvatarUrlForName(trimmed),
+                role: isSuper ? 'admin' : existing?.role || (trimmed.toLowerCase() === 'admin' ? 'admin' : 'user'),
+                email,
+            };
+            localStorage.setItem('schafer_user', JSON.stringify(u));
+            setCurrentUser(u);
+            if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
+                setShowOnboarding(true);
+            }
+        },
+        [contributors]
+    );
+
+    const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!loginName.trim() || isLoggingIn) return;
+        const trimmed = loginName.trim();
+        if (!trimmed || isLoggingIn) return;
+
+        const ok = await confirm(`You'll use the cookbook as "${trimmed}". Sound right?`, {
+            confirmLabel: 'Yes, open the cookbook',
+            cancelLabel: 'Edit name',
+        });
+        if (!ok) return;
 
         setIsLoggingIn(true);
-
-        const name = loginName.trim();
-        const existing = contributors.find(c => c.name.toLowerCase() === name.toLowerCase());
-        const isSuper = isSuperAdmin(name);
-        const email = isSuper && name.includes('@') ? name : existing?.email;
-
-        const u: UserProfile = {
-            id: existing?.id || 'u' + Date.now(),
-            name: existing?.name || name,
-            picture: existing?.avatar ?? contributorAvatarUrlForName(name),
-            role: isSuper ? 'admin' : (existing?.role || (name.toLowerCase() === 'admin' ? 'admin' : 'user')),
-            email: email
-        };
-        localStorage.setItem('schafer_user', JSON.stringify(u));
-        setCurrentUser(u);
+        finalizeLogin(trimmed);
         setIsLoggingIn(false);
-        // Show onboarding for first-time users
-        if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
-            setShowOnboarding(true);
-        }
     };
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey) return;
+            const el = e.target as HTMLElement | null;
+            if (!el) return;
+            if (el.isContentEditable || el.closest('[contenteditable="true"]')) return;
+            const tag = el.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            e.preventDefault();
+            setShortcutsOpen(true);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [currentUser]);
 
     const getAvatar = (name: string) => {
         const normalized = normalizeContributorName(name);
@@ -995,25 +1023,15 @@ const App: React.FC = () => {
 
     if (!currentUser) {
         const quickFamily = contributorsForDisplay.slice(0, 6);
-        const submitLogin = (name: string) => {
-            const trimmed = name.trim();
-            if (!trimmed) return;
-            const existing = contributors.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
-            const isSuper = isSuperAdmin(trimmed);
-            const email = isSuper && trimmed.includes('@') ? trimmed : existing?.email;
-            const u: UserProfile = {
-                id: existing?.id || 'u' + Date.now(),
-                name: existing?.name || trimmed,
-                picture: existing?.avatar ?? contributorAvatarUrlForName(trimmed),
-                role: isSuper ? 'admin' : (existing?.role || (trimmed.toLowerCase() === 'admin' ? 'admin' : 'user')),
-                email,
-            };
-            localStorage.setItem('schafer_user', JSON.stringify(u));
-            setCurrentUser(u);
-            if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
-                setShowOnboarding(true);
-            }
-        };
+        const lc = siteConfig.loginCopy;
+        const loginTitle = lc?.title ?? "Who's cooking?";
+        const loginSubtitle =
+            lc?.subtitle ??
+            'Choose your name to personalize favorites, notes, and the recipes you return to.';
+        const loginPlaceholder = lc?.placeholder ?? 'Your name';
+        const loginCta = lc?.cta ?? 'Continue';
+        const loginHelp = lc?.helpText ?? 'Need access? Contact an administrator.';
+        const trustStrip = lc?.trustStrip ?? [];
         return (
             <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6 lg:p-10">
                 <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
@@ -1056,9 +1074,9 @@ const App: React.FC = () => {
                             <div className="mx-auto max-w-xl">
                                 <div className="family-script-rule mb-7 text-center md:mb-9">
                                     <p className="text-xs font-black uppercase tracking-[0.3em] text-[#7A3F22] dark:text-orange-200">The Schafer Cookbook</p>
-                                    <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100 md:text-5xl">Who's cooking?</h1>
+                                    <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100 md:text-5xl">{loginTitle}</h1>
                                     <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-stone-700 dark:text-stone-300">
-                                        Choose your name to personalize favorites, notes, and the recipes you return to.
+                                        {loginSubtitle}
                                     </p>
                                 </div>
 
@@ -1070,7 +1088,7 @@ const App: React.FC = () => {
                                                 <button
                                                     key={c.id}
                                                     type="button"
-                                                    onClick={() => submitLogin(c.name)}
+                                                    onClick={() => finalizeLogin(c.name.trim())}
                                                     className="group flex min-h-[6.25rem] flex-col items-center justify-center gap-2 rounded-3xl border border-stone-200/80 bg-white/80 p-3 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A0522D]/35 hover:bg-[#FFF8EC] hover:shadow-md active:scale-[0.98] dark:border-stone-700 dark:bg-stone-900/70 dark:hover:bg-stone-800"
                                                     aria-label={`Sign in as ${c.name}`}
                                                 >
@@ -1100,7 +1118,7 @@ const App: React.FC = () => {
                                             <input
                                                 id="login-name"
                                                 type="text"
-                                                placeholder="Your name"
+                                                placeholder={loginPlaceholder}
                                                 autoComplete="name"
                                                 disabled={isLoggingIn}
                                                 aria-busy={isLoggingIn}
@@ -1128,12 +1146,24 @@ const App: React.FC = () => {
                                         aria-busy={isLoggingIn}
                                         className="w-full min-h-14 rounded-2xl bg-[#2D4635] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
                                     >
-                                        {isLoggingIn ? 'Opening…' : 'Continue'}
+                                        {isLoggingIn ? 'Opening…' : loginCta}
                                     </button>
                                     <p className="pt-1 text-center text-sm text-stone-700 dark:text-stone-300">
-                                        Not listed?{' '}
+                                        {loginHelp}{' '}
                                         <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[#2D4635] dark:text-orange-200 dark:hover:text-emerald-100">Email an admin for access.</a>
                                     </p>
+                                    {trustStrip.length > 0 && (
+                                        <ul className="mt-6 space-y-2 rounded-2xl border border-stone-200/80 bg-white/50 p-4 text-left dark:border-stone-700 dark:bg-stone-900/40">
+                                            {trustStrip.map((line) => (
+                                                <li key={line} className="flex gap-2 text-xs text-stone-600 dark:text-stone-400 leading-snug">
+                                                    <span className="mt-1 shrink-0 text-[#A0522D]" aria-hidden>
+                                                        ✓
+                                                    </span>
+                                                    <span>{line}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </form>
                             </div>
                         </section>
@@ -1356,6 +1386,7 @@ const App: React.FC = () => {
                         />
                     </Suspense>
                 )}
+                <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
                 <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
@@ -1420,6 +1451,7 @@ const App: React.FC = () => {
                         />
                     </Suspense>
                 )}
+                <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
                 <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
@@ -1483,7 +1515,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', 'Grocery List': 'Grocery List', Collections: 'Collections' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
                 </Suspense>
@@ -1980,6 +2012,12 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
+            {tab === 'Help' && (
+                <Suspense fallback={<TabFallback />}>
+                    <HelpView />
+                </Suspense>
+            )}
+
             {tab === 'Grocery List' && (
                 <Suspense fallback={<TabFallback />}>
                     <section id="main-content-grocery" aria-label="Grocery list" tabIndex={-1}>
@@ -2190,6 +2228,7 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
+            <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
             <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
             <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>

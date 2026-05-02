@@ -10,6 +10,7 @@ import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
 import { hapticLight } from '../utils/haptics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
+import { CloudArchive } from '../services/db';
 import { addActivity, getActivityFeed, formatTimeAgo } from '../utils/activityFeed';
 import { getFavoriteIds } from '../utils/favorites';
 import { getRecentlyViewedEntries } from '../utils/recentlyViewed';
@@ -405,6 +406,17 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
         }
     };
 
+    const handleNavigateToHelp = () => {
+        hapticLight();
+        try {
+            window.dispatchEvent(new CustomEvent('schafer:navigate', { detail: 'Help' }));
+        } catch {
+            // ignore
+        }
+    };
+
+    const archiveProvider = useMemo(() => CloudArchive.getProvider(), []);
+
     const scrollToActivityFeed = () => {
         activityFeedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
@@ -533,6 +545,21 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
                             <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap pt-1">
                                 {roleBadge}
+                                <span
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                                        archiveProvider === 'firebase'
+                                            ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200 border-sky-200 dark:border-sky-800'
+                                            : 'bg-stone-50 dark:bg-stone-900/50 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                                    }`}
+                                    title={
+                                        archiveProvider === 'firebase'
+                                            ? 'Recipes and gallery sync with the shared family archive when online.'
+                                            : 'Running from bundled data on this device — sync may be unavailable offline.'
+                                    }
+                                >
+                                    <span aria-hidden="true">{archiveProvider === 'firebase' ? '☁️' : '💾'}</span>
+                                    {archiveProvider === 'firebase' ? 'Family cloud sync' : 'On this device'}
+                                </span>
                                 {currentUser.email && (
                                     <span className="text-xs text-stone-400 dark:text-stone-500 font-serif italic truncate max-w-full">
                                         {currentUser.email}
@@ -755,6 +782,25 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             <section aria-labelledby="profile-notifications-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-notifications-heading">Notifications</SectionHeading>
                 <NotificationsSection userName={currentUser.name} />
+            </section>
+
+            {/* ── Help ───────────────────────────────────────────────── */}
+            <section aria-labelledby="profile-help-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+                <SectionHeading id="profile-help-heading">Help</SectionHeading>
+                <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm space-y-4">
+                    <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic leading-relaxed">
+                        Shortcuts, tips, and a link to privacy — press <kbd className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 font-mono text-xs dark:border-stone-600 dark:bg-stone-800">?</kbd> anytime
+                        (when you are not typing) to open the shortcut sheet.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleNavigateToHelp}
+                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                        aria-label="Open Help and shortcuts"
+                    >
+                        Open Help &amp; shortcuts →
+                    </button>
+                </div>
             </section>
 
             {/* ── Privacy & Data ───────────────────────────────────────── */}

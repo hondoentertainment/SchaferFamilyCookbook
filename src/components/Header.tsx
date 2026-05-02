@@ -16,8 +16,8 @@ const PRIMARY_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
     { id: 'Home', title: 'Your personalized cookbook home', label: 'Home' },
     { id: 'Recipes', title: 'Search recipes, collections, and the A–Z index', label: 'Recipes' },
     { id: 'Gallery', title: 'Family photos, story, contributors, and trivia', label: 'Family' },
-    { id: 'Grocery List', title: 'Plan shopping and cooking from saved recipes', label: 'Cook' },
-    { id: 'Profile', title: 'Profile, preferences, admin tools, and privacy', label: 'Me' },
+    { id: 'Grocery List', title: 'Grocery list and meal planning from saved recipes', label: 'Groceries' },
+    { id: 'Profile', title: 'Profile, preferences, admin tools, privacy, and help', label: 'Me' },
 ];
 
 const NAV_GROUPS: Record<string, string[]> = {
@@ -25,7 +25,7 @@ const NAV_GROUPS: Record<string, string[]> = {
     Recipes: ['Recipes', 'Index', 'Collections'],
     'Grocery List': ['Grocery List'],
     Gallery: ['Gallery', 'Trivia', 'Family Story', 'Contributors'],
-    Profile: ['Profile', 'Privacy'],
+    Profile: ['Profile', 'Privacy', 'Help'],
 };
 
 interface HeaderProps {

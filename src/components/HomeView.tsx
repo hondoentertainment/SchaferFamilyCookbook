@@ -187,7 +187,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             {greeting}, <span className="text-[#A0522D]">{currentUser.name.split(' ')[0]}</span>.
                         </h1>
                         <p className="max-w-2xl font-serif text-lg italic leading-relaxed text-stone-700 dark:text-stone-300">
-                            {recipes.length} recipes from the people who taught us how to cook. Pick up where you left off, or try something new tonight.
+                            Heirloom recipes and notes from the family archive — pick up where you left off, or try something new tonight.
                         </p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
