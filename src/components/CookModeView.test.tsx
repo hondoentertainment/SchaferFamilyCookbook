@@ -92,4 +92,42 @@ describe('CookModeView', () => {
 
         expect(screen.queryByText(/Tip: Swipe left\/right to navigate/i)).not.toBeInTheDocument();
     });
+
+    it('requests speech synthesis when Listen is pressed on a cooking step', () => {
+        const speak = vi.fn();
+        const cancel = vi.fn();
+        vi.stubGlobal(
+            'speechSynthesis',
+            Object.assign(Object.create(EventTarget.prototype), {
+                speak,
+                cancel,
+                getVoices: vi.fn(() => []),
+                speaking: false,
+                pending: false,
+                paused: false,
+                pause: vi.fn(),
+                resume: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            }),
+        );
+        vi.stubGlobal(
+            'SpeechSynthesisUtterance',
+            vi.fn(function MockUtter(this: { text: string; rate: number }, txt: string) {
+                this.text = txt;
+                this.rate = 1;
+            }),
+        );
+
+        try {
+            renderWithProviders(<CookModeView {...defaultProps} />);
+            const body = screen.getByText('Ingredients').closest('div[class*="overflow-y-auto"]')!;
+            swipe(body, 250, 100, 80, 105);
+
+            fireEvent.click(screen.getByTestId('cook-mode-listen'));
+            expect(speak).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
 });

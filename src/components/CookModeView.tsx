@@ -50,6 +50,10 @@ function formatTimer(seconds: number): string {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+function speechSupported(): boolean {
+    return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+}
+
 async function cacheRecipeImage(imageUrl: string): Promise<'saved' | 'already' | 'unsupported'> {
     if (!('caches' in window)) return 'unsupported';
     const cache = await caches.open('recipe-images-cache');
@@ -70,6 +74,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const [isComplete, setIsComplete] = useState(false);
     const [showIngredientsDrawer, setShowIngredientsDrawer] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
+    const [speechActive, setSpeechActive] = useState(false);
     const [showNotifyNudge, setShowNotifyNudge] = useState<boolean>(() => {
         if (typeof window === 'undefined' || !('Notification' in window)) return false;
         try {
@@ -141,10 +146,65 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         if (containerRef.current) containerRef.current.focus();
     }, [stepIndex]);
 
+    const stopSpeech = useCallback(() => {
+        if (speechSupported()) {
+            window.speechSynthesis.cancel();
+        }
+        setSpeechActive(false);
+    }, []);
+
     useEffect(() => {
         setShowIngredientsDrawer(false);
         setTimerSeconds(null);
-    }, [stepIndex]);
+        stopSpeech();
+    }, [stepIndex, stopSpeech]);
+
+    useEffect(() => () => stopSpeech(), [stopSpeech]);
+
+    useEffect(() => {
+        if (isComplete) stopSpeech();
+    }, [isComplete, stopSpeech]);
+
+    const speakCurrentCookScreen = useCallback(() => {
+        if (!speechSupported()) {
+            toast('Read aloud is not supported in this browser.', 'info');
+            return;
+        }
+        if (speechActive) {
+            stopSpeech();
+            return;
+        }
+        let text: string | null = null;
+        if (stepIndex === 0) {
+            const ing = ingredients.join('. ');
+            text = `${recipe.title}. Ingredients for ${scaleTo} serving${scaleTo !== 1 ? 's' : ''}. ${ing}`;
+        } else if (currentStep) {
+            text = `Step ${stepIndex} of ${steps.length}. ${currentStep}`;
+        }
+        if (!text) return;
+        try {
+            trackEvent('cook_speech_start', { recipeId: recipe.id, stepIndex });
+        } catch {
+            /* ignore */
+        }
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 0.92;
+        utter.onend = () => setSpeechActive(false);
+        utter.onerror = () => setSpeechActive(false);
+        setSpeechActive(true);
+        window.speechSynthesis.speak(utter);
+    }, [
+        speechActive,
+        stopSpeech,
+        stepIndex,
+        ingredients,
+        recipe.title,
+        recipe.id,
+        scaleTo,
+        currentStep,
+        steps.length,
+        toast,
+    ]);
 
     useEffect(() => {
         if (timerSeconds === null || timerSeconds <= 0) return;
@@ -464,6 +524,22 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    {speechSupported() ? (
+                        <button
+                            type="button"
+                            data-testid="cook-mode-listen"
+                            onClick={() => {
+                                hapticLight();
+                                speakCurrentCookScreen();
+                            }}
+                            className="w-12 h-12 min-w-[3rem] min-h-[3rem] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-lg"
+                            aria-pressed={speechActive}
+                            aria-label={speechActive ? 'Stop reading aloud' : 'Read current screen aloud'}
+                            title={speechActive ? 'Stop reading' : 'Listen'}
+                        >
+                            {speechActive ? '⏹' : '🔊'}
+                        </button>
+                    ) : null}
                     <button
                         type="button"
                         onClick={() => setShowIngredientsDrawer(true)}

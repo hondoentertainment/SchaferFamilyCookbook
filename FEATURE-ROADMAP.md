@@ -54,10 +54,10 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 | Feature | Description | Effort | Notes |
 |---------|-------------|--------|--------|
-| **Recipe share card (discoverability)** | Ensure `VITE_SHARE_BASE` and `/api/og` + `/api/share` are set in production | S | Implementation exists on Vercel |
-| **Collections** | User-created recipe lists | M | |
-| **Cook Mode polish** | e.g. voice read-aloud (PRD) | M | |
-| **”Send to family”** | Pre-filled message template with share URL | S | |
+| **Recipe share card (discoverability)** | Production builds default `VITE_SHARE_BASE` via `.env.production`; `/api/og` + `/api/share` unchanged | S | Override in Vercel env if the canonical domain changes |
+| **Collections** | User-created lists (`CollectionsView`, local persistence) | M | Baseline shipped |
+| **Cook Mode polish** | Read-aloud via Web Speech API (Listen / Stop); clears when changing steps | M | Tap-to-play only — no autoplay |
+| **”Send to family”** | SMS + mailto invites with heirloom copy (`ShareRecipe`) | S | Uses OG-rich share URL when base is set |
 
 ---
 
@@ -123,4 +123,4 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ---
 
-*Last updated: April 2026*
+*Last updated: May 2026*

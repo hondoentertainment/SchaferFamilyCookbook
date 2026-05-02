@@ -3,37 +3,10 @@ import { hapticLight } from '../utils/haptics';
 import { useUI } from '../context/UIContext';
 import type { Recipe } from '../types';
 import { trackEvent } from '../services/analytics';
+import { buildFamilyInviteBody, buildFamilyInviteSubject, getRecipeShareUrl } from '../utils/shareRecipe';
 
 interface ShareRecipeProps {
   recipe: Recipe;
-}
-
-/**
- * Build the URL to share for a given recipe.
- *
- * When `VITE_SHARE_BASE` is set (Vercel deployment), we return
- * `${base}/share/recipe/<id>` which hits the serverless `/api/share` handler
- * that serves an HTML document with OG meta tags + a meta-refresh to the SPA.
- * Crawlers (iMessage, Slack, WhatsApp) see the card; humans get redirected.
- *
- * When `VITE_SHARE_BASE` is NOT set (GitHub Pages, static-only), we fall back
- * to the existing hash route on the current origin. OG previews won't work
- * there, but the link still opens the recipe.
- *
- * Exported for unit tests.
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function getRecipeShareUrl(
-  recipeId: string,
-  shareBase?: string,
-  windowOrigin?: string
-): string {
-  if (shareBase) {
-    const trimmed = shareBase.replace(/\/+$/, '');
-    return `${trimmed}/share/recipe/${encodeURIComponent(recipeId)}`;
-  }
-  const origin = windowOrigin ?? (typeof window !== 'undefined' ? window.location.origin : '');
-  return `${origin}/#recipe/${encodeURIComponent(recipeId)}`;
 }
 
 export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
@@ -102,12 +75,19 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
     }
   };
 
-  const handleTextMessage = () => {
+  const handleTextFamily = () => {
     hapticLight();
-    const text = encodeURIComponent(
-      `Check out this recipe!\n\n${recipe.title}\nBy ${recipe.contributor}\n\n${shareUrl}\n\nFrom the Schafer Family Cookbook`
-    );
-    window.open(`sms:?body=${text}`, '_blank');
+    const body = encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl));
+    window.open(`sms:?body=${body}`, '_blank');
+    trackEvent('recipe_shared_family_sms', { recipeId: recipe.id });
+  };
+
+  const handleEmailFamily = () => {
+    hapticLight();
+    const subject = encodeURIComponent(buildFamilyInviteSubject(recipe));
+    const body = encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl));
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    trackEvent('recipe_shared_family_email', { recipeId: recipe.id });
   };
 
   return (
@@ -143,12 +123,21 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe }) => {
       </button>
       <button
         type="button"
-        onClick={handleTextMessage}
+        onClick={handleTextFamily}
         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400 transition-colors min-h-11"
-        aria-label="Text recipe to someone"
+        aria-label="Text recipe invite to family"
       >
         <span aria-hidden>💬</span>
-        Text
+        Text family
+      </button>
+      <button
+        type="button"
+        onClick={handleEmailFamily}
+        className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400 transition-colors min-h-11"
+        aria-label="Email recipe invite to family"
+      >
+        <span aria-hidden>✉️</span>
+        Email family
       </button>
     </div>
   );

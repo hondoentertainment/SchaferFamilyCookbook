@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { ShareRecipe, getRecipeShareUrl } from './ShareRecipe';
+import { ShareRecipe } from './ShareRecipe';
+import { buildFamilyInviteBody, getRecipeShareUrl } from '../utils/shareRecipe';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
 describe('getRecipeShareUrl', () => {
@@ -30,6 +31,18 @@ describe('getRecipeShareUrl', () => {
     });
 });
 
+describe('buildFamilyInviteBody', () => {
+    it('includes title, contributor context, URL, and sign-off', () => {
+        const recipe = createMockRecipe({ title: 'Apple Pie', contributor: 'Ada' });
+        const url = 'https://example.com/share/recipe/apple';
+        const body = buildFamilyInviteBody(recipe, url);
+        expect(body).toContain('Apple Pie');
+        expect(body).toContain("From Ada's corner of the archive.");
+        expect(body).toContain(url);
+        expect(body).toContain('Schafer Family Cookbook');
+    });
+});
+
 describe('ShareRecipe component', () => {
     it('renders the share buttons', () => {
         const recipe = createMockRecipe({ id: 'abc123', title: 'Test Dish' });
@@ -37,7 +50,8 @@ describe('ShareRecipe component', () => {
         expect(screen.getByRole('button', { name: /share via system/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /copy share link/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /copy recipe as text/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /text recipe/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /text recipe invite/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /email recipe invite/i })).toBeInTheDocument();
     });
 
     it('exposes the computed share URL on the Copy Link button (fallback origin)', () => {
@@ -133,5 +147,19 @@ describe('ShareRecipe component', () => {
         await waitFor(() => {
             expect(screen.getByTestId('toast-stack')).toHaveTextContent(/copied to clipboard/i);
         });
+    });
+
+    it('opens SMS and mailto links for family invites', () => {
+        const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+        const recipe = createMockRecipe({ id: 'abc123', title: 'Pie', contributor: 'Grandma' });
+        renderWithProviders(<ShareRecipe recipe={recipe} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /text recipe invite/i }));
+        expect(openSpy.mock.calls[0]?.[0]).toMatch(/^sms:\?body=/);
+
+        fireEvent.click(screen.getByRole('button', { name: /email recipe invite/i }));
+        expect(openSpy.mock.calls[1]?.[0]).toMatch(/^mailto:\?subject=/);
+
+        openSpy.mockRestore();
     });
 });

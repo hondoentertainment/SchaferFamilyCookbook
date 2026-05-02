@@ -56,7 +56,7 @@ After push to `main`: CI runs lint, type-check, unit tests, build, then a **sepa
    - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook and Firebase Admin.
    - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
    - `VITE_SENTRY_DSN` – optional client error reporting (production only).
-   - `VITE_SHARE_BASE` – optional. Base URL (no trailing slash) the client uses for share links, e.g. `https://schafer-cookbook.vercel.app`. When set, the share UI copies `${VITE_SHARE_BASE}/share/recipe/<id>`, which the Vercel rewrite sends to `/api/share?id=<id>`. That endpoint returns HTML with `og:image` → `/api/og?recipeId=<id>` (a 1200×630 PNG rendered by `sharp`) plus a meta-refresh to the SPA hash route. This is what makes iMessage / WhatsApp / Slack / Discord show a rich recipe preview card. When unset (e.g. GitHub Pages), share links fall back to the plain `#recipe/<id>` hash URL.
+   - `VITE_SHARE_BASE` – optional canonical share base (no trailing slash). **`vite build`** loads **`.env.production`**, which defaults this to `https://schafer-family-cookbook.vercel.app`, so links like `${VITE_SHARE_BASE}/share/recipe/<id>` work without setting Vercel dashboard vars (override there if the domain changes). That route serves `/api/share` HTML with `og:image` → `/api/og?recipeId=<id>` plus a redirect to `/#recipe/<id>` for rich previews (iMessage, Slack, WhatsApp). Without this env (e.g. GitHub Pages), the UI falls back to hash-only URLs (no crawler card).
 3. Deploy.
 
 ### Share card (`/api/og`)
