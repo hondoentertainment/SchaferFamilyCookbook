@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, recipeCardOpenInMainGrid } from './fixtures';
 
 test.describe('Recipes tab', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,14 +10,16 @@ test.describe('Recipes tab', () => {
   });
 
   test('displays hero section and recipe count', async ({ page }) => {
-    await expect(page.getByText(/A family table, written down\./)).toBeVisible();
+    await expect(page.getByText(/Find something worth cooking tonight/i)).toBeVisible();
     await expect(page.getByText(/The Schafer Cookbook/i)).toBeVisible();
-    await expect(page.getByText(/recipes from the people who taught us how to cook/i)).toBeVisible();
+    await expect(page.getByText(/Search \d+ family recipes by dish, ingredient, person, season, or occasion/i)).toBeVisible();
   });
 
   test('search filter narrows recipes', async ({ page }) => {
     await page.getByRole('textbox', { name: /Search recipes, ingredients/i }).fill('Festive');
-    await expect(page.getByRole('button', { name: /Open recipe: Festive/i })).toBeVisible({ timeout: 3000 });
+    await expect(recipeCardOpenInMainGrid(page).filter({ has: page.getByAltText(/Festive/) })).toBeVisible({
+      timeout: 3000,
+    });
   });
 
   test('category filter works', async ({ page }) => {
@@ -32,6 +34,6 @@ test.describe('Recipes tab', () => {
 
   test('empty filter shows empty message', async ({ page }) => {
     await page.getByRole('textbox', { name: /Search recipes, ingredients/i }).fill('xyznonexistent123');
-    await expect(page.getByText(/No recipes match that path yet/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/No recipes match your search or filters/i)).toBeVisible({ timeout: 3000 });
   });
 });

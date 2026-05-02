@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, loginAsAdmin } from './fixtures';
+import { loginAs, loginAsAdmin, recipeCardOpenInMainGrid } from './fixtures';
 
 test.describe('Admin (non-admin user)', () => {
   test.beforeEach(async ({ page }) => {
@@ -114,7 +114,7 @@ test.describe('Admin (admin user)', () => {
   });
 
   test('admin quick-edit button appears on recipe cards', async ({ page }) => {
-    const recipeCard = page.getByRole('button', { name: /Open recipe:/i }).first();
+    const recipeCard = recipeCardOpenInMainGrid(page).first();
     await recipeCard.hover();
 
     const editBtn = page.getByRole('button', { name: /Edit .* with AI/i }).first();

@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // --- Mock state (configurable per test) ---
@@ -130,7 +131,7 @@ describe('webhook', () => {
     it('should return 405 for non-POST', async () => {
         const handler = (await import('./webhook')).default;
         const r = res();
-        await handler({ method: 'GET' } as any, r as any);
+        await handler({ method: 'GET' } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.status).toHaveBeenCalledWith(405);
     });
 
@@ -140,7 +141,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '0', Body: 'test' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.setHeader).toHaveBeenCalledWith('Content-Type', 'text/xml');
         expect(r.send).toHaveBeenCalled();
         expect(r.send.mock.calls[0][0]).toContain('no media detected');
@@ -152,7 +153,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', Body: 'test' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.setHeader).toHaveBeenCalledWith('Content-Type', 'text/xml');
         expect(r.send.mock.calls[0][0]).toContain('no media detected');
     });
@@ -163,7 +164,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/123', Body: 'test' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.send.mock.calls[0][0]).toContain('invalid sender number');
     });
 
@@ -177,7 +178,7 @@ describe('webhook', () => {
             method: 'POST',
             headers: { 'x-twilio-signature': 'bad_sig', host: 'localhost:3000' },
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/1', Body: 'x' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.status).toHaveBeenCalledWith(403);
         expect(r.json).toHaveBeenCalledWith({ error: 'Invalid signature' });
     });
@@ -188,7 +189,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'my caption' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.status).toHaveBeenCalledWith(200);
         expect(r.setHeader).toHaveBeenCalledWith('Content-Type', 'text/xml');
         expect(r.send).toHaveBeenCalled();
@@ -213,7 +214,7 @@ describe('webhook', () => {
             method: 'POST',
             headers: { 'x-twilio-signature': 'valid_sig', host: 'localhost:3000' },
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'caption' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
 
         const expectedAuth = `Basic ${Buffer.from('AC123:auth_token').toString('base64')}`;
         expect(mockFetch).toHaveBeenCalledWith('https://api.twilio.com/media/1', {
@@ -232,7 +233,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'caption' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.send.mock.calls[0][0]).toContain('jane doe');
         const galleryPayload = mockGallerySet.mock.calls[0][0];
         expect(galleryPayload.contributor).toBe('Jane Doe');
@@ -246,7 +247,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: '' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         const galleryPayload = mockGallerySet.mock.calls[0][0];
         expect(galleryPayload.type).toBe('video');
     });
@@ -259,7 +260,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
         expect(mockGallerySet).not.toHaveBeenCalled();
     });
@@ -272,7 +273,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
     });
 
@@ -284,7 +285,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
     });
 
@@ -296,7 +297,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.send.mock.calls[0][0]).toContain('error preserving memory');
     });
 
@@ -305,7 +306,7 @@ describe('webhook', () => {
         await handler({
             method: 'POST',
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1' }
-        } as any, res() as any);
+        } as unknown as VercelRequest, res() as unknown as VercelResponse);
         const galleryPayload = mockGallerySet.mock.calls[0][0];
         expect(galleryPayload.caption).toBe('Preserved via MMS');
     });
@@ -320,7 +321,7 @@ describe('webhook', () => {
             method: 'POST',
             headers: { 'x-twilio-signature': 'valid_sig', host: 'localhost:3000' },
             body: { From: '+15551234567', NumMedia: '1', MediaUrl0: 'https://api.twilio.com/media/1', Body: 'x' }
-        } as any, r as any);
+        } as unknown as VercelRequest, r as unknown as VercelResponse);
         expect(r.status).toHaveBeenCalledWith(200);
         expect(r.send.mock.calls[0][0]).toContain('memory preserved');
     });

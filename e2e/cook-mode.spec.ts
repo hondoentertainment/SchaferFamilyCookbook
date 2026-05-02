@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, openRecipeCardInMainGridByTitle } from './fixtures';
 
 /**
  * Cook-mode swipe gesture e2e.
@@ -19,8 +19,9 @@ test.describe('Cook Mode swipe navigation', () => {
 
     test('swipe-left on the step body advances the step', async ({ page }) => {
         // Open a recipe that has instructions.
-        await page.getByRole('button', { name: /Open recipe:/i }).first().click();
-        await expect(page.getByRole('dialog')).toBeVisible();
+        // Seed data: guaranteed multi-step instructions (ingredients screen + recipe steps).
+        await openRecipeCardInMainGridByTitle(page, 'Festive Apple Dip');
+        await expect(page.getByRole('dialog', { name: /recipe details/i })).toBeVisible();
 
         // Enter cook mode.
         const cookBtn = page.getByRole('button', { name: /Start Cook/i }).first();
@@ -36,7 +37,12 @@ test.describe('Cook Mode swipe navigation', () => {
 
         // Dispatch a synthetic horizontal swipe on the ingredients body.
         await page.evaluate(() => {
-            const body = document.querySelector('[role="application"] [class*="overflow-y-auto"]') as HTMLElement | null;
+            const root = document.querySelector(
+                '[role="application"][aria-label^="Cook mode:"]',
+            ) as HTMLElement | null;
+            const body =
+                (root?.querySelector('.flex-1.overflow-y-auto') as HTMLElement | null) ??
+                (root?.querySelector('[class*="overflow-y-auto"]') as HTMLElement | null);
             if (!body) throw new Error('Could not find cook-mode step body');
             const makeTouch = (x: number, y: number) =>
                 new Touch({ identifier: 0, target: body, clientX: x, clientY: y });

@@ -23,11 +23,15 @@ export async function loginAs(
   await page.getByPlaceholder(/your name/i).fill(name);
   await page.getByRole('button', { name: /^continue$/i }).click();
 
-  // Wait for the Home tab greeting to confirm we're past login. Then
-  // navigate to Recipes for downstream specs that depend on the search box.
-  await page
-    .getByRole('heading', { name: /(Good (morning|afternoon|evening))|(Late night)/i })
-    .waitFor({ state: 'visible', timeout: 15000 });
+  // Login asks for confirmation before finalizeLogin runs (Sign-in → Confirm dialog → Home).
+  const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });
+  await openCookbook.waitFor({ state: 'visible', timeout: 15000 });
+  await openCookbook.click();
+
+  // Home renders the greeting inside an <h1> (not always picked up cleanly by generic "heading").
+  await page.locator('#main-content-home').getByRole('heading', { level: 1 }).filter({
+    hasText: /Good (morning|afternoon|evening)|Late night/i,
+  }).waitFor({ state: 'visible', timeout: 15000 });
 
   await page.getByRole('button', { name: /^Recipes$/, exact: true }).first().click();
   await page
@@ -41,6 +45,36 @@ export async function loginAs(
   }
 }
 
+/** Main Recipes grid recipe openers — excludes horizontal shelf cards. */
+export function recipeCardOpenInMainGrid(page: import('@playwright/test').Page) {
+  return page.getByTestId('recipe-card-grid').getByTestId('recipe-card-open');
+}
+
+export async function openFirstRecipeCardInMainGrid(page: import('@playwright/test').Page) {
+  await recipeCardOpenInMainGrid(page).first().click();
+}
+
+/** Opens a visible grid card hero by exact image alt (recipe title). */
+export async function openRecipeCardInMainGridByTitle(
+  page: import('@playwright/test').Page,
+  title: string,
+) {
+  await recipeCardOpenInMainGrid(page)
+    .filter({ has: page.getByAltText(title, { exact: true }) })
+    .first()
+    .click();
+}
+
+/** Opens a visible grid card when the recipe title substring appears in alt text */
+export async function openRecipeCardInMainGridMatchingAlt(
+  page: import('@playwright/test').Page,
+  partialTitle: RegExp,
+) {
+  await recipeCardOpenInMainGrid(page)
+    .filter({ has: page.getByAltText(partialTitle) })
+    .first()
+    .click();
+}
 /**
  * Helper to log in as admin (Kyle or hondo4185@gmail.com gets admin role)
  */

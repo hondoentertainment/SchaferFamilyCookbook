@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { useUI } from './context/UIContext';
 import { shouldToastImageError } from './utils/imageErrorToast';
@@ -15,7 +15,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { PLACEHOLDER_AVATAR } from './constants';
 import { getAverageRating, getRatingCount, isFamilyApproved } from './utils/ratings';
 import { STORAGE_KEYS } from './constants/storage';
-import { addActivity } from './utils/activityFeed';
+import { addActivity, countRecipeCooksLastDays } from './utils/activityFeed';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
@@ -24,7 +24,7 @@ import { useUserPrefsSync } from './services/useUserPrefsSync';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
-import { hapticLight } from './utils/haptics';
+import { hapticLight, hapticSuccess } from './utils/haptics';
 import { trackEvent } from './services/analytics';
 import { listenForForegroundMessages } from './services/pushNotifications';
 import { queueUpload } from './services/offlineUploadQueue';
@@ -471,6 +471,7 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
                     src={recipe.image}
                     width={800}
                     height={600}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
                     className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                     loading="lazy"
                     decoding="async"
@@ -530,17 +531,43 @@ const getRecipeTimeLabel = (recipe: Recipe) => {
 
 const parseTimeMinutes = (value?: string): number => {
     if (!value) return 0;
-    const lower = value.toLowerCase();
-    let minutes = 0;
-    const hourMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)/);
-    const minuteMatch = lower.match(/(\d+)\s*(?:m|min|mins|minute|minutes)/);
-    if (hourMatch) minutes += Math.round(Number(hourMatch[1]) * 60);
-    if (minuteMatch) minutes += Number(minuteMatch[1]);
-    if (!hourMatch && !minuteMatch) {
-        const firstNumber = lower.match(/\d+/);
-        if (firstNumber) minutes += Number(firstNumber[0]);
+    let s = value.trim().toLowerCase();
+    s = s
+        .replace(/½/g, '.5')
+        .replace(/¼/g, '.25')
+        .replace(/¾/g, '.75')
+        .replace(/⅓/g, '.33')
+        .replace(/⅔/g, '.67');
+
+    const numericRangeMinutes = s.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\b/);
+    if (numericRangeMinutes) {
+        return Math.round(Math.max(Number(numericRangeMinutes[1]), Number(numericRangeMinutes[2])));
     }
-    return Number.isFinite(minutes) ? minutes : 0;
+
+    let minutes = 0;
+    const combinedHoursRange = s.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b/);
+    if (combinedHoursRange) {
+        return Math.round(Math.max(Number(combinedHoursRange[1]), Number(combinedHoursRange[2])) * 60);
+    }
+
+    const hourMatch = s.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b/);
+    const minuteMatch = s.match(/(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\b/);
+
+    const bareRange = (!hourMatch && !minuteMatch
+        ? s.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)(?!\s*(?:m|min|h|hr|hour))/i)
+        : null);
+    if (bareRange && !combinedHoursRange && !numericRangeMinutes) {
+        return Math.round(Math.max(Number(bareRange[1]), Number(bareRange[2])));
+    }
+
+    if (hourMatch) minutes += Number(hourMatch[1]) * 60;
+    if (minuteMatch) minutes += Number(minuteMatch[1]);
+
+    if (!hourMatch && !minuteMatch) {
+        const firstNumber = s.match(/(\d+(?:\.\d+)?)/);
+        if (firstNumber) minutes += Number(firstNumber[1]);
+    }
+    return Number.isFinite(minutes) ? Math.round(minutes) : 0;
 };
 
 const getRecipeEffortLabel = (recipe: Recipe): string => {
@@ -590,15 +617,19 @@ const RecipeShelfCard: React.FC<{
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
     wasViewed?: boolean;
-}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false }) => {
+    cookActivityEpoch?: number;
+}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false, cookActivityEpoch = 0 }) => {
     const rating = getAverageRating(recipe.id);
     const ratingCount = getRatingCount(recipe.id);
     const effortLabel = getRecipeEffortLabel(recipe);
+    const cookCount = useMemo(() => countRecipeCooksLastDays(recipe.title), [recipe.title, cookActivityEpoch]);
     return (
         <article className="recipe-card-surface group relative w-60 shrink-0 overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
             <button
                 type="button"
                 onClick={() => onSelect(recipe)}
+                data-testid="recipe-card-open"
+                data-recipe-id={recipe.id}
                 className="block w-full text-left"
                 aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed)}
             >
@@ -623,7 +654,14 @@ const RecipeShelfCard: React.FC<{
                     </p>
                     <div className="flex items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-stone-400">
                         <span className="truncate font-serif italic">By {recipe.contributor}</span>
-                        {rating > 0 && <span className="font-bold text-amber-600">★ {rating.toFixed(1)}</span>}
+                        <span className="flex shrink-0 items-center gap-1">
+                            {cookCount >= 2 && (
+                                <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" title={`Cooked ${cookCount} times recently`}>
+                                    🔥 {cookCount}x
+                                </span>
+                            )}
+                            {rating > 0 && <span className="font-bold text-amber-600">★ {rating.toFixed(1)}</span>}
+                        </span>
                     </div>
                     <span className="inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#2D4635] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-colors group-hover:bg-[#24392B]">
                         View recipe
@@ -722,6 +760,16 @@ const App: React.FC = () => {
     });
 
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
+    const [recipeCardActivityEpoch, setRecipeCardActivityEpoch] = useState(0);
+    const prevCookRecipeRef = useRef<Recipe | null>(null);
+
+    useEffect(() => {
+        if (prevCookRecipeRef.current !== null && cookModeRecipe === null) {
+            setRecipeCardActivityEpoch((epoch) => epoch + 1);
+        }
+        prevCookRecipeRef.current = cookModeRecipe;
+    }, [cookModeRecipe]);
+
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
@@ -1002,6 +1050,14 @@ const App: React.FC = () => {
         }
     }, [filteredRecipes, sortBy, recentIds]);
 
+    const cookCountsByRecipeId = useMemo(() => {
+        const map = new Map<string, number>();
+        for (const recipe of sortedRecipes) {
+            map.set(recipe.id, countRecipeCooksLastDays(recipe.title));
+        }
+        return map;
+    }, [sortedRecipes, recipeCardActivityEpoch]);
+
     const recentlyViewedRecipes = useMemo(() => {
         return getRecentlyViewedEntries()
             .map((entry) => recipes.find((recipe) => recipe.id === entry.id))
@@ -1089,9 +1145,11 @@ const App: React.FC = () => {
     };
 
     const handleToggleFavorite = (id: string) => {
+        const wasFav = favoriteIds.has(id);
         const next = toggleFavorite(id);
         setFavoriteIds(next);
-        hapticLight();
+        if (next.has(id) && !wasFav) hapticSuccess();
+        else hapticLight();
         const name = recipes.find(r => r.id === id)?.title ?? 'Recipe';
         toast(next.has(id) ? `Added "${name}" to favorites` : `Removed "${name}" from favorites`, next.has(id) ? 'success' : 'info');
         if (next.has(id) && currentUser) {
@@ -1903,6 +1961,7 @@ const App: React.FC = () => {
                                                 isFavorite={favoriteIds.has(recipe.id)}
                                                 onToggleFavorite={handleToggleFavorite}
                                                 wasViewed={recentIds.includes(recipe.id)}
+                                                cookActivityEpoch={recipeCardActivityEpoch}
                                             />
                                         ))}
                                     </div>
@@ -1914,7 +1973,7 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6" data-testid="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
@@ -1926,6 +1985,7 @@ const App: React.FC = () => {
                                 const microcopy = getRecipeCardMicrocopy(recipe, ratingCount, isFav, wasViewed);
                                 const timeLabel = getRecipeTimeLabel(recipe);
                                 const normalizedContributor = normalizeContributorName(recipe.contributor);
+                                const cookCount = cookCountsByRecipeId.get(recipe.id) ?? 0;
                                 return (
                                     <article
                                         key={recipe.id}
@@ -1935,6 +1995,8 @@ const App: React.FC = () => {
                                             type="button"
                                             onClick={() => handleSelectRecipe(recipe)}
                                             aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
+                                            data-testid="recipe-card-open"
+                                            data-recipe-id={recipe.id}
                                             className="block w-full text-left"
                                         >
                                             <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-stone-800">
@@ -1953,7 +2015,7 @@ const App: React.FC = () => {
                                                     </span>
                                                 )}
                                                 {(isFav || wasViewed) && (
-                                                    <span className="absolute top-2 right-2 z-10 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#2D4635] shadow-sm backdrop-blur">
+                                                    <span className="pointer-events-none absolute top-2 left-[3.65rem] z-10 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#2D4635] shadow-sm backdrop-blur">
                                                         {isFav ? 'Saved' : 'Viewed'}
                                                     </span>
                                                 )}
@@ -1991,7 +2053,7 @@ const App: React.FC = () => {
                                                 <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
                                                     {recipe.title}
                                                 </h3>
-                                                <p className="mt-1 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-stone-500 dark:text-stone-400">
+                                                <p className="mt-1 line-clamp-2 min-h-0 text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:min-h-[2rem]">
                                                     {microcopy}
                                                 </p>
                                             </button>
@@ -2027,6 +2089,11 @@ const App: React.FC = () => {
                                             </div>
 
                                             <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+                                                {cookCount >= 2 && (
+                                                    <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-orange-800 dark:bg-orange-950/40 dark:text-orange-300">
+                                                        🔥 Cooked {cookCount}x (30 days)
+                                                    </span>
+                                                )}
                                                 {ratingCount >= 3 && (
                                                     <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                                                         Family approved by {ratingCount}

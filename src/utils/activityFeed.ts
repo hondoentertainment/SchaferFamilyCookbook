@@ -72,3 +72,22 @@ export function getActivityIcon(type: ActivityEvent['type']): string {
     case 'profile_updated': return '👤';
   }
 }
+
+const COOKED_DETAIL_RE = /^cooked "(.+)"$/i;
+
+/** Count `recipe_cooked` events in the last `days` days whose detail matches `cooked "<title>"` (case-insensitive). */
+export function countRecipeCooksLastDays(recipeTitle: string, days = 30): number {
+  const needle = recipeTitle.trim().toLowerCase();
+  if (!needle) return 0;
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  let n = 0;
+  for (const e of getActivityFeed()) {
+    if (e.type !== 'recipe_cooked') continue;
+    const ts = new Date(e.timestamp).getTime();
+    if (!Number.isFinite(ts) || ts < cutoff) continue;
+    const m = e.detail.match(COOKED_DETAIL_RE);
+    if (!m) continue;
+    if (m[1].trim().toLowerCase() === needle) n += 1;
+  }
+  return n;
+}

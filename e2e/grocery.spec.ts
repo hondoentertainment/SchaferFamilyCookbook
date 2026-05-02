@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, openFirstRecipeCardInMainGrid } from './fixtures';
 
 test.describe('Grocery list', () => {
     test.beforeEach(async ({ page }) => {
@@ -10,12 +10,9 @@ test.describe('Grocery list', () => {
     });
 
     test('add recipe ingredients, check one off, clear checked, and clear all', async ({ page }) => {
-        // Open the first recipe
-        await page
-            .getByRole('button', { name: /Open recipe:/i })
-            .first()
-            .click();
-        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+        // Open the first recipe in the main grid (exclude horizontal shelves).
+        await openFirstRecipeCardInMainGrid(page);
+        await expect(page.getByRole('dialog', { name: /recipe details/i })).toBeVisible({ timeout: 5000 });
 
         // Click "Add to Grocery List"
         const addBtn = page.getByTestId('recipe-modal-add-to-grocery');
@@ -28,11 +25,10 @@ test.describe('Grocery list', () => {
         });
 
         // Close the modal
-        await page.getByRole('button', { name: /Close recipe/i }).click();
-        await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3000 });
+        await page.getByRole('dialog', { name: /recipe details/i }).getByRole('button', { name: /Close recipe/i }).click();
+        await expect(page.getByRole('dialog', { name: /recipe details/i })).not.toBeVisible({ timeout: 3000 });
 
-        // Navigate to the Cook tab, which opens the Grocery List.
-        await page.getByRole('button', { name: 'Cook', exact: true }).first().click();
+        await page.getByRole('button', { name: /^Groceries$/i }).click();
 
         await expect(page.getByRole('heading', { name: /grocery list/i, level: 2 })).toBeVisible();
 
@@ -68,7 +64,7 @@ test.describe('Grocery list', () => {
 
     test('manual "Add item" input adds a standalone entry', async ({ page }) => {
         // Navigate straight to Grocery List via the Cook tab.
-        await page.getByRole('button', { name: 'Cook', exact: true }).first().click();
+        await page.getByRole('button', { name: /^Groceries$/i }).click();
 
         await page.getByLabel(/Add an item to your grocery list/i).fill('12 limes');
         await page.getByRole('button', { name: /^Add$/i }).click();

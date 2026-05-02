@@ -4,6 +4,7 @@ import {
     addActivity,
     formatTimeAgo,
     getActivityIcon,
+    countRecipeCooksLastDays,
     type ActivityEvent,
 } from './activityFeed';
 
@@ -265,12 +266,48 @@ describe('activityFeed utility', () => {
                 'note_added',
                 'collection_created',
                 'favorite_added',
+                'recipe_cooked',
+                'profile_updated',
             ];
             types.forEach((type) => {
                 const icon = getActivityIcon(type);
                 expect(typeof icon).toBe('string');
                 expect(icon.length).toBeGreaterThan(0);
             });
+        });
+    });
+
+    describe('countRecipeCooksLastDays', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('counts recipe_cooked events with matching cooked title within the window', () => {
+            const now = new Date('2026-05-02T12:00:00.000Z');
+            vi.setSystemTime(now);
+            const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString();
+            const events: ActivityEvent[] = [
+                { id: '1', type: 'recipe_cooked', userName: 'A', detail: 'cooked "Apple Pie"', timestamp: fiveDaysAgo },
+                { id: '2', type: 'recipe_cooked', userName: 'B', detail: 'cooked "Apple Pie"', timestamp: now.toISOString() },
+                { id: '3', type: 'recipe_cooked', userName: 'C', detail: 'cooked "Other"', timestamp: now.toISOString() },
+            ];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+            expect(countRecipeCooksLastDays('Apple Pie', 30)).toBe(2);
+        });
+
+        it('ignores events older than the window', () => {
+            const now = new Date('2026-05-02T12:00:00.000Z');
+            vi.setSystemTime(now);
+            const fortyDaysAgo = new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000).toISOString();
+            const events: ActivityEvent[] = [
+                { id: '1', type: 'recipe_cooked', userName: 'A', detail: 'cooked "Stew"', timestamp: fortyDaysAgo },
+            ];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+            expect(countRecipeCooksLastDays('Stew', 30)).toBe(0);
         });
     });
 });
