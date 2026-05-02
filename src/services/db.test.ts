@@ -74,6 +74,37 @@ describe('CloudArchive', () => {
             expect(recipes[0].imageSource).toBe('upload');
         });
 
+        it('should preserve bundled /recipe-images assets without swapping to Pollinations (e.g. missing imageSource)', async () => {
+            const bundledRecipe = createMockRecipe({
+                id: 'recipe-bundled-webp',
+                image: '/recipe-images/749d8765.webp',
+                imageSource: undefined,
+            });
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([bundledRecipe]));
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes[0].image).toBe('/recipe-images/749d8765.webp');
+            expect(recipes[0].imageSource).toBeUndefined();
+        });
+
+        it('should migrate old Pollinations placeholders back to bundled images for known seed recipe ids', async () => {
+            const polluted = createMockRecipe({
+                id: '749d8765',
+                title: 'Festive Apple Dip',
+                category: 'Dip/Sauce',
+                image: 'https://image.pollinations.ai/prompt/fake-placeholder',
+                imageSource: 'pollinations',
+            });
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([polluted]));
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes[0].image).toBe('/recipe-images/749d8765.webp');
+            expect(recipes[0].imageSource).toBe('local-generated');
+
+            const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
+            expect(stored[0].image).toBe('/recipe-images/749d8765.webp');
+        });
+
         it('should upsert a new recipe', async () => {
             const newRecipe = createMockRecipe({ id: 'recipe-new' });
             await CloudArchive.upsertRecipe(newRecipe);

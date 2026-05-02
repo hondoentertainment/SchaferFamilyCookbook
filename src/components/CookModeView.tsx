@@ -54,12 +54,20 @@ function speechSupported(): boolean {
     return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
 }
 
+/** Resolve relative `/recipe-images/...` URLs for the Cache API (consistent with SW keys). */
+function toAbsoluteRecipeAssetUrl(imageUrl: string): string {
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
+    if (typeof window === 'undefined') return imageUrl;
+    return new URL(imageUrl, window.location.origin).href;
+}
+
 async function cacheRecipeImage(imageUrl: string): Promise<'saved' | 'already' | 'unsupported'> {
     if (!('caches' in window)) return 'unsupported';
+    const absolute = toAbsoluteRecipeAssetUrl(imageUrl);
     const cache = await caches.open('recipe-images-cache');
-    const existing = await cache.match(imageUrl);
-    if (!existing && imageUrl) {
-        await cache.add(imageUrl);
+    const existing = await cache.match(absolute);
+    if (!existing && absolute) {
+        await cache.add(absolute);
         return 'saved';
     }
     return 'already';
@@ -248,15 +256,16 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
             return;
         }
         const imageUrl = recipe.image;
+        const absoluteUrl = toAbsoluteRecipeAssetUrl(imageUrl);
         const run = async () => {
             try {
                 const cache = await caches.open('recipe-images-cache');
-                const existing = await cache.match(imageUrl);
+                const existing = await cache.match(absoluteUrl);
                 if (existing) {
                     setImageCached(true);
                 } else {
                     // Auto-cache when Cook Mode opens
-                    await cache.add(imageUrl);
+                    await cache.add(absoluteUrl);
                     setImageCached(true);
                 }
             } catch {

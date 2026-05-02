@@ -81,9 +81,35 @@ function isCuratedImageSource(source?: Recipe['imageSource']): boolean {
     return source === 'upload' || source === 'nano-banana' || source === 'local-generated';
 }
 
-/** Legacy JSON used random `/recipe-images/imported_*.jpg` paths per recipe. */
-function isLegacyBundledRecipeImage(image?: string): boolean {
-    return !!image && image.startsWith('/recipe-images/');
+/** Ship manifest: bundled hero paths keyed by recipe id (from default seed data). */
+const SEED_BUNDLED_IMAGE_BY_ID = (() => {
+    const m = new Map<string, string>();
+    for (const r of defaultRecipes as Recipe[]) {
+        if (typeof r.image === 'string' && r.image.startsWith('/recipe-images/')) {
+            m.set(r.id, r.image);
+        }
+    }
+    return m;
+})();
+
+/**
+ * Older builds rewrote `/recipe-images/*` to Pollinations URLs when `imageSource` was missing.
+ * Restore static bundled heroes for known seed IDs so images load reliably offline.
+ */
+function migratePollinationsToBundledIfSeeded(recipes: Recipe[]): Recipe[] {
+    return recipes.map((recipe) => {
+        const bundled = SEED_BUNDLED_IMAGE_BY_ID.get(recipe.id);
+        if (!bundled) return recipe;
+        const img = recipe.image ?? '';
+        const looksLikePollinations =
+            img.includes('pollinations.ai') || recipe.imageSource === 'pollinations';
+        if (!looksLikePollinations) return recipe;
+        return {
+            ...recipe,
+            image: bundled,
+            imageSource: 'local-generated',
+        };
+    });
 }
 
 function shouldUseRecipeSpecificImage(image?: string): boolean {
@@ -99,12 +125,9 @@ function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
         if (isCuratedImageSource(recipe.imageSource)) {
             return normalizedRecipe;
         }
-        if (isLegacyBundledRecipeImage(recipe.image)) {
-            return {
-                ...normalizedRecipe,
-                image: getRecipeSpecificImage(normalizedRecipe),
-                imageSource: 'pollinations',
-            };
+        /** Static assets under /public/recipe-images — never replace with remote placeholders. */
+        if (recipe.image?.startsWith('/recipe-images/')) {
+            return normalizedRecipe;
         }
         if (!shouldUseRecipeSpecificImage(recipe.image)) {
             return normalizedRecipe;
@@ -165,7 +188,8 @@ export const CloudArchive = {
             const recipes = snapshot.docs
                 .map(doc => doc.data())
                 .filter(validateRecipe);
-            callback(normalizeRecipeImages(normalizeRecipes(recipes)));
+            const normalizedList = normalizeRecipes(recipes);
+            callback(normalizeRecipeImages(migratePollinationsToBundledIfSeeded(normalizedList)));
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeRecipes error:', error);
@@ -401,7 +425,8 @@ export const CloudArchive = {
     async getRecipes(): Promise<Recipe[]> {
         const parsed = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
         if (parsed.length > 0) {
-            const normalized = normalizeRecipeImages(parsed);
+            const migrated = migratePollinationsToBundledIfSeeded(parsed);
+            const normalized = normalizeRecipeImages(migrated);
             if (JSON.stringify(normalized) !== JSON.stringify(parsed)) {
                 localStorage.setItem('schafer_db_recipes', JSON.stringify(normalized));
             }
@@ -410,7 +435,7 @@ export const CloudArchive = {
 
         // Return default seeded data
         // Also save it to localStorage so future edits are saved
-        const seeded = normalizeRecipeImages(defaultRecipes as Recipe[]);
+        const seeded = normalizeRecipeImages(migratePollinationsToBundledIfSeeded(defaultRecipes as Recipe[]));
         localStorage.setItem('schafer_db_recipes', JSON.stringify(seeded));
         return seeded;
     },

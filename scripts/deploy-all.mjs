@@ -14,16 +14,15 @@ import process from 'node:process';
 
 const args = process.argv.slice(2);
 const skipSmoke = args.includes('--skip-smoke');
-const messageArg = args.filter((a) => !a.startsWith('--'))[0];
-
-const isWindows = process.platform === 'win32';
+const messageArg = args.filter((a) => !a.startsWith('--')).join(' ').trim() || undefined;
 
 function run(cmd, cmdArgs, opts = {}) {
   const label = `${cmd} ${cmdArgs.join(' ')}`;
   console.log(`\n› ${label}`);
   const result = spawnSync(cmd, cmdArgs, {
     stdio: opts.capture ? ['inherit', 'pipe', 'inherit'] : 'inherit',
-    shell: isWindows,
+    // Avoid shell on Windows so spaces in `git commit -m "..."` stay one argument.
+    shell: false,
     encoding: 'utf8',
     ...opts,
   });
@@ -36,7 +35,7 @@ function run(cmd, cmdArgs, opts = {}) {
 }
 
 function capture(cmd, cmdArgs) {
-  const r = spawnSync(cmd, cmdArgs, { shell: isWindows, encoding: 'utf8' });
+  const r = spawnSync(cmd, cmdArgs, { shell: false, encoding: 'utf8' });
   return (r.stdout ?? '').trim();
 }
 

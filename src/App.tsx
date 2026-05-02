@@ -528,38 +528,124 @@ const getRecipeTimeLabel = (recipe: Recipe) => {
     return recipe.cookTime || recipe.prepTime || '';
 };
 
+const parseTimeMinutes = (value?: string): number => {
+    if (!value) return 0;
+    const lower = value.toLowerCase();
+    let minutes = 0;
+    const hourMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)/);
+    const minuteMatch = lower.match(/(\d+)\s*(?:m|min|mins|minute|minutes)/);
+    if (hourMatch) minutes += Math.round(Number(hourMatch[1]) * 60);
+    if (minuteMatch) minutes += Number(minuteMatch[1]);
+    if (!hourMatch && !minuteMatch) {
+        const firstNumber = lower.match(/\d+/);
+        if (firstNumber) minutes += Number(firstNumber[0]);
+    }
+    return Number.isFinite(minutes) ? minutes : 0;
+};
+
+const getRecipeEffortLabel = (recipe: Recipe): string => {
+    const tags = (recipe.tags ?? []).map((tag) => tag.toLowerCase());
+    if (tags.some((tag) => tag.includes('make-ahead') || tag.includes('make ahead'))) return 'Make ahead';
+    const totalMinutes = parseTimeMinutes(recipe.prepTime) + parseTimeMinutes(recipe.cookTime);
+    if (totalMinutes > 0) {
+        if (totalMinutes <= 30) return 'Easy';
+        if (totalMinutes <= 75) return 'Weeknight';
+        if (totalMinutes <= 150) return 'Weekend';
+        return 'Family project';
+    }
+    if (recipe.ingredients.length <= 6 && recipe.instructions.length <= 4) return 'Easy';
+    if (recipe.instructions.length >= 8) return 'Weekend';
+    return 'Family classic';
+};
+
+const getRecipeCardMicrocopy = (recipe: Recipe, ratingCount: number, isFavorite: boolean, wasViewed: boolean): string => {
+    if (isFavorite) return 'Saved to your family table';
+    if (wasViewed) return 'Recently viewed - pick up where you left off';
+    if (ratingCount >= 5) return `Loved by ${ratingCount} family cooks`;
+    if (recipe.collections?.[0]) return `From the ${recipe.collections[0]} collection`;
+    if (recipe.tags?.[0]) return `${getTagLabel(recipe.tags[0])} favorite`;
+    return `From ${recipe.contributor.split(' ')[0]}'s recipe box`;
+};
+
+const getRecipeCardAriaLabel = (
+    recipe: Recipe,
+    rating: number,
+    ratingCount: number,
+    effortLabel: string,
+    isFavorite: boolean,
+    wasViewed: boolean,
+) => {
+    const parts = [`Open recipe: ${recipe.title}`, `from ${recipe.contributor}`, recipe.category, effortLabel];
+    const time = getRecipeTimeLabel(recipe);
+    if (time) parts.push(time);
+    if (rating > 0) parts.push(`rated ${rating.toFixed(1)} out of 5 from ${ratingCount} ratings`);
+    if (isFavorite) parts.push('saved to favorites');
+    if (wasViewed) parts.push('recently viewed');
+    return parts.join(', ');
+};
+
 const RecipeShelfCard: React.FC<{
     recipe: Recipe;
     onSelect: (recipe: Recipe) => void;
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
-}> = ({ recipe, onSelect, isFavorite, onToggleFavorite }) => (
-    <article className="recipe-card-surface group relative w-60 shrink-0 overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl dark:border-stone-800">
-        <button type="button" onClick={() => onSelect(recipe)} className="block w-full text-left" aria-label={`Open recipe: ${recipe.title}`}>
-            <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                <RecipeCardImage recipe={recipe} />
-            </div>
-            <div className="space-y-1.5 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]">{recipe.category}</p>
-                <h3 className="line-clamp-2 font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
-                <p className="truncate text-xs text-stone-500 dark:text-stone-400">By {recipe.contributor}</p>
-            </div>
-        </button>
-        <button
-            type="button"
-            onClick={(event) => {
-                event.stopPropagation();
-                onToggleFavorite(recipe.id);
-            }}
-            className={`absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur transition-transform active:scale-95 ${
-                isFavorite ? 'bg-white/95 text-red-500 shadow-md' : 'bg-black/35 text-white hover:bg-white/95 hover:text-red-500'
-            }`}
-            aria-label={isFavorite ? `Remove ${recipe.title} from favorites` : `Add ${recipe.title} to favorites`}
-        >
-            <span aria-hidden="true">{isFavorite ? '♥' : '♡'}</span>
-        </button>
-    </article>
-);
+    wasViewed?: boolean;
+}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false }) => {
+    const rating = getAverageRating(recipe.id);
+    const ratingCount = getRatingCount(recipe.id);
+    const effortLabel = getRecipeEffortLabel(recipe);
+    return (
+        <article className="recipe-card-surface group relative w-60 shrink-0 overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
+            <button
+                type="button"
+                onClick={() => onSelect(recipe)}
+                className="block w-full text-left"
+                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed)}
+            >
+                <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
+                    <RecipeCardImage recipe={recipe} />
+                    {(isFavorite || wasViewed) && (
+                        <span className="absolute bottom-2 left-2 z-10 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#2D4635] shadow-sm backdrop-blur">
+                            {isFavorite ? 'Saved' : 'Viewed'}
+                        </span>
+                    )}
+                </div>
+                <div className="space-y-2 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]">{recipe.category}</p>
+                        <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#2D4635] dark:bg-stone-800 dark:text-emerald-100">
+                            {effortLabel}
+                        </span>
+                    </div>
+                    <h3 className="line-clamp-2 font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
+                    <p className="line-clamp-1 text-xs text-stone-500 dark:text-stone-400">
+                        {getRecipeCardMicrocopy(recipe, ratingCount, isFavorite, wasViewed)}
+                    </p>
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-stone-400">
+                        <span className="truncate font-serif italic">By {recipe.contributor}</span>
+                        {rating > 0 && <span className="font-bold text-amber-600">★ {rating.toFixed(1)}</span>}
+                    </div>
+                    <span className="inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#2D4635] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-colors group-hover:bg-[#24392B]">
+                        View recipe
+                    </span>
+                </div>
+            </button>
+            <button
+                type="button"
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onToggleFavorite(recipe.id);
+                }}
+                className={`absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur transition-transform active:scale-95 ${
+                    isFavorite ? 'bg-white/95 text-red-500 shadow-md' : 'bg-black/35 text-white hover:bg-white/95 hover:text-red-500'
+                }`}
+                aria-label={isFavorite ? `Remove ${recipe.title} from favorites` : `Add ${recipe.title} to favorites`}
+            >
+                <span aria-hidden="true">{isFavorite ? '♥' : '♡'}</span>
+            </button>
+        </article>
+    );
+};
 
 const RECIPE_HASH_REGEX = /^#recipe\/(.+)$/;
 
@@ -1816,6 +1902,7 @@ const App: React.FC = () => {
                                                 onSelect={handleSelectRecipe}
                                                 isFavorite={favoriteIds.has(recipe.id)}
                                                 onToggleFavorite={handleToggleFavorite}
+                                                wasViewed={recentIds.includes(recipe.id)}
                                             />
                                         ))}
                                     </div>
@@ -1834,6 +1921,11 @@ const App: React.FC = () => {
                                 const ratingCount = getRatingCount(recipe.id);
                                 const approved = isFamilyApproved(recipe.id);
                                 const contribAvatar = getAvatar(recipe.contributor);
+                                const effortLabel = getRecipeEffortLabel(recipe);
+                                const wasViewed = recentIds.includes(recipe.id);
+                                const microcopy = getRecipeCardMicrocopy(recipe, ratingCount, isFav, wasViewed);
+                                const timeLabel = getRecipeTimeLabel(recipe);
+                                const normalizedContributor = normalizeContributorName(recipe.contributor);
                                 return (
                                     <article
                                         key={recipe.id}
@@ -1842,17 +1934,17 @@ const App: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleSelectRecipe(recipe)}
-                                            aria-label={`Open recipe: ${recipe.title}`}
-                                            className="flex h-full w-full flex-col text-left"
+                                            aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
+                                            className="block w-full text-left"
                                         >
                                             <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-stone-800">
                                                 <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]">
                                                     <RecipeCardImage recipe={recipe} />
                                                 </div>
-                                                {recipe.cookTime && (
+                                                {timeLabel && (
                                                     <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white">
                                                         <span aria-hidden>⏱</span>
-                                                        <span>{recipe.cookTime}</span>
+                                                        <span>{timeLabel}</span>
                                                     </span>
                                                 )}
                                                 {approved && (
@@ -1860,49 +1952,128 @@ const App: React.FC = () => {
                                                         ★ Approved
                                                     </span>
                                                 )}
-                                            </div>
-                                            <div className="flex-1 p-3 sm:p-4 space-y-2.5">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
-                                                    {getRecipeTimeLabel(recipe) && (
-                                                        <span className="truncate text-[10px] font-semibold text-stone-500 dark:text-stone-400">
-                                                            {getRecipeTimeLabel(recipe)}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
-                                                    {recipe.title}
-                                                </h3>
-                                                <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-stone-500 dark:text-stone-400">
-                                                    <span className="flex items-center gap-1.5 min-w-0">
-                                                        <img
-                                                            src={contribAvatar}
-                                                            alt=""
-                                                            aria-hidden
-                                                            onError={avatarOnError}
-                                                            className="w-5 h-5 rounded-full object-cover border border-stone-200 dark:border-stone-700 shrink-0"
-                                                        />
-                                                        <span className="truncate font-serif italic">{recipe.contributor}</span>
+                                                {(isFav || wasViewed) && (
+                                                    <span className="absolute top-2 right-2 z-10 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#2D4635] shadow-sm backdrop-blur">
+                                                        {isFav ? 'Saved' : 'Viewed'}
                                                     </span>
-                                                    {rating > 0 && (
-                                                        <span className="flex items-center gap-0.5 text-amber-600 font-semibold shrink-0" aria-label={`Rated ${rating.toFixed(1)} out of 5 from ${ratingCount} ratings`}>
-                                                            ★ {rating.toFixed(1)}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {ratingCount >= 3 && (
-                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                                                        Family approved by {ratingCount}
-                                                    </p>
                                                 )}
                                             </div>
                                         </button>
 
+                                        <div className="flex flex-1 flex-col p-3 sm:p-4 space-y-2.5">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSearch('');
+                                                        setSelectedTag('');
+                                                        setContributor('All');
+                                                        setCategory(recipe.category);
+                                                        hapticLight();
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    }}
+                                                    className="min-h-8 truncate rounded-full bg-[#FDF6EC] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#A0522D] transition-colors hover:bg-[#F3E4D2] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:bg-stone-800 dark:text-amber-300"
+                                                    aria-label={`Filter recipes by ${recipe.category}`}
+                                                >
+                                                    {recipe.category}
+                                                </button>
+                                                <span className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#2D4635] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100">
+                                                    {effortLabel}
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSelectRecipe(recipe)}
+                                                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
+                                                className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
+                                            >
+                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
+                                                    {recipe.title}
+                                                </h3>
+                                                <p className="mt-1 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-stone-500 dark:text-stone-400">
+                                                    {microcopy}
+                                                </p>
+                                            </button>
+
+                                            <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSearch('');
+                                                        setSelectedTag('');
+                                                        setCategory('All');
+                                                        setContributor(normalizedContributor);
+                                                        hapticLight();
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    }}
+                                                    className="flex min-h-9 min-w-0 items-center gap-1.5 rounded-full pr-2 text-left transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:hover:bg-stone-800"
+                                                    aria-label={`Filter recipes by contributor ${recipe.contributor}`}
+                                                >
+                                                    <img
+                                                        src={contribAvatar}
+                                                        alt=""
+                                                        aria-hidden
+                                                        onError={avatarOnError}
+                                                        className="w-6 h-6 rounded-full object-cover border border-stone-200 dark:border-stone-700 shrink-0"
+                                                    />
+                                                    <span className="truncate font-serif italic">{recipe.contributor}</span>
+                                                </button>
+                                                {rating > 0 && (
+                                                    <span className="flex items-center gap-0.5 text-amber-600 font-semibold shrink-0" aria-label={`Rated ${rating.toFixed(1)} out of 5 from ${ratingCount} ratings`}>
+                                                        ★ {rating.toFixed(1)}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+                                                {ratingCount >= 3 && (
+                                                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                                        Family approved by {ratingCount}
+                                                    </span>
+                                                )}
+                                                {wasViewed && (
+                                                    <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                                                        Pick up again
+                                                    </span>
+                                                )}
+                                                {isFav && (
+                                                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-red-600 dark:bg-red-950/40 dark:text-red-300">
+                                                        Saved
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSelectRecipe(recipe)}
+                                                    className="min-h-11 rounded-full bg-[#2D4635] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-[#24392B] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950"
+                                                    aria-label={`View recipe details for ${recipe.title}`}
+                                                >
+                                                    View Recipe
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        recordRecipeView(recipe.id, recipe.title);
+                                                        setCookModeRecipe(recipe);
+                                                        hapticLight();
+                                                        trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'recipe_card' });
+                                                    }}
+                                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#2D4635] transition-colors hover:bg-[#FDF6EC] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100 dark:hover:bg-stone-800"
+                                                    aria-label={`Start cooking ${recipe.title}`}
+                                                >
+                                                    Start Cooking
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <button
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); handleToggleFavorite(recipe.id); }}
-                                            className={`absolute top-2 left-2 z-20 flex h-11 w-11 min-h-[2.75rem] min-w-[2.75rem] items-center justify-center rounded-full backdrop-blur transition-transform hover:scale-110 active:scale-95 ${
-                                                isFav ? 'bg-white/95 text-red-500 shadow-md' : 'bg-black/30 text-white hover:bg-white/95 hover:text-red-500'
+                                            className={`absolute top-2 left-2 z-20 flex h-11 w-11 min-h-[2.75rem] min-w-[2.75rem] items-center justify-center rounded-full backdrop-blur transition-all hover:scale-110 active:scale-95 ${
+                                                isFav ? 'bg-white/95 text-red-500 shadow-md ring-2 ring-red-100' : 'bg-black/30 text-white hover:bg-white/95 hover:text-red-500'
                                             }`}
                                             title={isFav ? 'Remove from favorites' : 'Add to favorites'}
                                             aria-label={isFav ? `Remove ${recipe.title} from favorites` : `Add ${recipe.title} to favorites`}
