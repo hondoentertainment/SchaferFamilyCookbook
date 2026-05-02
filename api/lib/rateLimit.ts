@@ -63,3 +63,9 @@ export function getClientIp(req: {
 
 /** Default: 45 Gemini API calls per IP per rolling minute. */
 export const GEMINI_RATE_LIMIT = { max: 45, windowMs: 60_000 };
+
+/** Crawler-heavy HTML landing for recipe shares. */
+export const SHARE_PAGE_RATE_LIMIT = { max: 120, windowMs: 60_000 };
+
+/** PNG OG cards are CPU-heavy — tighter cap than HTML. */
+export const OG_IMAGE_RATE_LIMIT = { max: 90, windowMs: 60_000 };

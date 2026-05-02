@@ -12,7 +12,7 @@ test.describe('Grocery list', () => {
     test('add recipe ingredients, check one off, clear checked, and clear all', async ({ page }) => {
         // Open the first recipe in the main grid (exclude horizontal shelves).
         await openFirstRecipeCardInMainGrid(page);
-        await expect(page.getByRole('dialog', { name: /recipe details/i })).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('[role="dialog"][aria-label="Recipe details"]')).toBeVisible({ timeout: 5000 });
 
         // Click "Add to Grocery List"
         const addBtn = page.getByTestId('recipe-modal-add-to-grocery');
@@ -25,8 +25,8 @@ test.describe('Grocery list', () => {
         });
 
         // Close the modal
-        await page.getByRole('dialog', { name: /recipe details/i }).getByRole('button', { name: /Close recipe/i }).click();
-        await expect(page.getByRole('dialog', { name: /recipe details/i })).not.toBeVisible({ timeout: 3000 });
+        await page.locator('[role="dialog"][aria-label="Recipe details"]').getByRole('button', { name: /Close recipe/i }).click();
+        await expect(page.locator('[role="dialog"][aria-label="Recipe details"]')).not.toBeVisible({ timeout: 3000 });
 
         await page.getByRole('button', { name: /^Groceries$/i }).click();
 

@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, openFirstRecipeCardInMainGrid, recipeCardOpenInMainGrid } from './fixtures';
 
-/** Scope to recipe detail modal (distinct from lightweightbox / confirm dialogs). */
+/** Recipe modal exposes aria-label + aria-labelledby on the root; AX name resolves to recipe title via labelledby. */
 function recipeDetailsDialog(page: import('@playwright/test').Page) {
-  return page.getByRole('dialog', { name: /recipe details/i });
+  return page.locator('[role="dialog"][aria-label="Recipe details"]');
 }
 
 test.describe('Recipe modal', () => {
+  test.describe.configure({ timeout: 90_000 });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());

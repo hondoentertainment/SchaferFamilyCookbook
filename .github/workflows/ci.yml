@@ -22,6 +22,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Block PRs introducing known-critical dependency issues (transitives may remain moderate/high until upstream bumps).
+      - name: Dependency audit (critical severity)
+        run: npm audit --audit-level=critical
+
       - name: Lint
         run: npm run lint
 

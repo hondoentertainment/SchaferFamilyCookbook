@@ -21,7 +21,7 @@ test.describe('Cook Mode swipe navigation', () => {
         // Open a recipe that has instructions.
         // Seed data: guaranteed multi-step instructions (ingredients screen + recipe steps).
         await openRecipeCardInMainGridByTitle(page, 'Festive Apple Dip');
-        await expect(page.getByRole('dialog', { name: /recipe details/i })).toBeVisible();
+        await expect(page.locator('[role="dialog"][aria-label="Recipe details"]')).toBeVisible();
 
         // Enter cook mode.
         const cookBtn = page.getByRole('button', { name: /Start Cook/i }).first();
@@ -32,8 +32,9 @@ test.describe('Cook Mode swipe navigation', () => {
         }
         await cookBtn.click();
 
-        await expect(page.getByRole('application', { name: /Cook mode/i })).toBeVisible({ timeout: 5000 });
-        await expect(page.getByText(/Step 1 of/i)).toBeVisible();
+        await expect(page.getByRole('application', { name: /Cook mode:/i })).toBeVisible({ timeout: 5000 });
+        const cookApp = page.getByRole('application', { name: /Cook mode:/i });
+        await expect(cookApp.getByText(/Step 1 of \d+/).first()).toBeVisible();
 
         // Dispatch a synthetic horizontal swipe on the ingredients body.
         await page.evaluate(() => {
@@ -64,6 +65,6 @@ test.describe('Cook Mode swipe navigation', () => {
             body.dispatchEvent(end);
         });
 
-        await expect(page.getByText(/Step 2 of/i)).toBeVisible({ timeout: 3000 });
+        await expect(cookApp.getByText(/Step 2 of \d+/).first()).toBeVisible({ timeout: 3000 });
     });
 });

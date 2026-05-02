@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import recipesJson from '../src/data/recipes.json' with { type: 'json' };
+import { getClientIp, SHARE_PAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
 
 /**
  * Share landing page.
@@ -56,6 +57,7 @@ function originFromReq(req: VercelRequest): string {
 export function renderShareHtml(recipe: RecipeLike, origin: string): string {
     const title = `${recipe.title} — Schafer Family Cookbook`;
     const description = `A family recipe contributed by ${recipe.contributor}.`;
+    const shareCanonicalUrl = `${origin}/share/recipe/${encodeURIComponent(recipe.id)}`;
     const ogImage = `${origin}/api/og?recipeId=${encodeURIComponent(recipe.id)}`;
     const appUrl = `${origin}/#recipe/${encodeURIComponent(recipe.id)}`;
 
@@ -71,14 +73,14 @@ export function renderShareHtml(recipe: RecipeLike, origin: string): string {
 <meta property="og:image" content="${escapeHtml(ogImage)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="${escapeHtml(appUrl)}">
+<meta property="og:url" content="${escapeHtml(shareCanonicalUrl)}">
 <meta property="og:site_name" content="Schafer Family Cookbook">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(recipe.title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
 <meta name="twitter:image" content="${escapeHtml(ogImage)}">
 <meta http-equiv="refresh" content="0; url=${escapeHtml(appUrl)}">
-<link rel="canonical" href="${escapeHtml(appUrl)}">
+<link rel="canonical" href="${escapeHtml(shareCanonicalUrl)}">
 </head>
 <body>
 <p>Redirecting to <a href="${escapeHtml(appUrl)}">${escapeHtml(recipe.title)}</a>…</p>
@@ -89,6 +91,18 @@ export function renderShareHtml(recipe: RecipeLike, origin: string): string {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method && req.method !== 'GET' && req.method !== 'HEAD') {
         res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+
+    const ipKey = `share-html:${getClientIp(req)}`;
+    if (
+        !slidingWindowAllow(
+            ipKey,
+            SHARE_PAGE_RATE_LIMIT.max,
+            SHARE_PAGE_RATE_LIMIT.windowMs
+        )
+    ) {
+        res.status(429).setHeader('Retry-After', '60').send('Too many requests');
         return;
     }
 

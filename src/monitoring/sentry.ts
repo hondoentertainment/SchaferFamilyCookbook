@@ -8,9 +8,14 @@ export function initSentry(): void {
     const dsn = import.meta.env.VITE_SENTRY_DSN;
     if (!dsn || typeof dsn !== 'string') return;
 
+    const release = import.meta.env.VITE_SENTRY_RELEASE?.trim();
+    const environment =
+        import.meta.env.VITE_SENTRY_ENVIRONMENT?.trim() || import.meta.env.MODE;
+
     Sentry.init({
         dsn,
-        environment: import.meta.env.MODE,
+        environment,
+        ...(release ? { release } : {}),
         integrations: [Sentry.browserTracingIntegration()],
         tracesSampleRate: 0.05,
         replaysSessionSampleRate: 0,

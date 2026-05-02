@@ -2,6 +2,10 @@
 
 interface ImportMetaEnv {
     readonly VITE_SENTRY_DSN?: string;
+    /** Release string (typically git SHA); CI/Vercel can inject via `define` */
+    readonly VITE_SENTRY_RELEASE?: string;
+    /** e.g. production / preview — defaults to MODE when unset */
+    readonly VITE_SENTRY_ENVIRONMENT?: string;
     /**
      * Base URL (no trailing slash) for OG share links, e.g.
      * `https://schafer-cookbook.vercel.app`. When set, the share UI copies

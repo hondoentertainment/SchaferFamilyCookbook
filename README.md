@@ -11,7 +11,8 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
 1. Install dependencies: `npm install`
 2. Create `.env.local` with (no `.env.example` in repo):
    - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
-   - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`).
+   - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`). Release/environment are taken from **`VERCEL_GIT_COMMIT_SHA` / `VERCEL_ENV`** on Vercel and **`GITHUB_SHA`** in GitHub Actions when present; override with **`VITE_SENTRY_RELEASE`** / **`VITE_SENTRY_ENVIRONMENT`** if needed.
+   - **Uploading browser source maps to Sentry (optional):** set **`SENTRY_ORG`**, **`SENTRY_PROJECT`**, and a **`SENTRY_AUTH_TOKEN`** (build-only secret, not `VITE_`) in CI or Vercel. The production Vite build then emits **`hidden` sourcemaps** and the `@sentry/vite-plugin` upload step runs automatically.
 3. Run: `npm run dev`
 
 ### AI Features in Local Dev

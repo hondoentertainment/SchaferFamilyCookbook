@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import recipesJson from '../src/data/recipes.json' with { type: 'json' };
+import { getClientIp, OG_IMAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
 
 /**
  * OG share-card image.
@@ -187,6 +188,18 @@ export async function renderOgPng(recipe: RecipeLike): Promise<Buffer> {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method && req.method !== 'GET' && req.method !== 'HEAD') {
         res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+
+    const ipKey = `og-png:${getClientIp(req)}`;
+    if (
+        !slidingWindowAllow(
+            ipKey,
+            OG_IMAGE_RATE_LIMIT.max,
+            OG_IMAGE_RATE_LIMIT.windowMs
+        )
+    ) {
+        res.status(429).json({ error: 'Too many requests' });
         return;
     }
 

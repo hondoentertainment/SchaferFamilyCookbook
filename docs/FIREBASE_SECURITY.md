@@ -40,3 +40,15 @@ The **name-based “login”** in the app is **not** Firebase Auth. It only cont
 - `firebase/firestore.rules`, `firebase/storage.rules`
 - `api/gemini.ts` — rate limiting per IP on Vercel
 - `api/webhook.ts` — Twilio signature when `TWILIO_AUTH_TOKEN` is set
+
+## CI / Emulator testing
+
+- **Emulator-based rules tests in CI** — TODO. Automated runs against the Firebase Emulator Suite for `firestore.rules` are not wired up yet; treat this as future work when adding or changing rules.
+- **Deploying Firestore rules** — Custodians should run `firebase deploy --only firestore:rules` (with the correct `--project`) deliberately: confirm the diff matches intent, avoid deploying from stale checkouts, and coordinate if multiple people touch rules.
+- **Source of truth** — Review and edit `firebase/firestore.rules` in the repo before deploy; keep production aligned with what is merged.
+
+## CI / Emulator testing
+
+- **Emulator-based rules tests in CI** — TODO. Automated runs against the Firebase Emulator Suite for `firestore.rules` are not wired up yet; treat this as future work when adding or changing rules.
+- **Deploying Firestore rules** — Custodians should run `firebase deploy --only firestore:rules` (with the correct `--project`) deliberately: confirm the diff matches intent, avoid deploying from stale checkouts, and coordinate if multiple people touch rules.
+- **Source of truth** — Review and edit `firebase/firestore.rules` in the repo before deploy; keep production aligned with what is merged.

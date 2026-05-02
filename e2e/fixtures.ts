@@ -21,7 +21,7 @@ export async function loginAs(
   await page.reload();
 
   await page.getByPlaceholder(/your name/i).fill(name);
-  await page.getByRole('button', { name: /^continue$/i }).click();
+  await page.keyboard.press('Enter');
 
   // Login asks for confirmation before finalizeLogin runs (Sign-in → Confirm dialog → Home).
   const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });

@@ -45,7 +45,11 @@ function createMockRes() {
 
 describe('GET /api/og (OG share-card image handler)', () => {
     it('returns 400 when recipeId is missing', async () => {
-        const req = { method: 'GET', query: {}, headers: {} } as unknown as Parameters<
+        const req = {
+            method: 'GET',
+            query: {},
+            headers: { 'x-forwarded-for': '198.51.100.41' },
+        } as unknown as Parameters<
             typeof handler
         >[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
@@ -58,7 +62,7 @@ describe('GET /api/og (OG share-card image handler)', () => {
         const req = {
             method: 'GET',
             query: { recipeId: 'does-not-exist' },
-            headers: {},
+            headers: { 'x-forwarded-for': '198.51.100.42' },
         } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
         await handler(req, res);
@@ -70,7 +74,7 @@ describe('GET /api/og (OG share-card image handler)', () => {
         const req = {
             method: 'GET',
             query: { recipeId: sampleRecipe.id },
-            headers: {},
+            headers: { 'x-forwarded-for': '198.51.100.43' },
         } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
         await handler(req, res);
@@ -106,7 +110,7 @@ describe('GET /api/og (OG share-card image handler)', () => {
         const req = {
             method: 'POST',
             query: { recipeId: sampleRecipe.id },
-            headers: {},
+            headers: { 'x-forwarded-for': '198.51.100.44' },
         } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
         await handler(req, res);
@@ -120,7 +124,7 @@ describe('GET /api/og (OG share-card image handler)', () => {
         const req = {
             method: 'GET',
             query: { recipeId: sampleRecipe.id },
-            headers: {},
+            headers: { 'x-forwarded-for': '198.51.100.45' },
         } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

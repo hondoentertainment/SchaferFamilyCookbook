@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 18
+    groups:
+      vite-react-ecosystem:
+        patterns:
+          - "@vitejs/*"
+          - "vite*"
+          - "react"
+          - "react-dom"
+      testing:
+        patterns:
+          - "@playwright/*"
+          - "@testing-library/*"
+          - "vitest*"
+          - "happy-dom"
+          - "jsdom"
+      sentry:
+        patterns:
+          - "@sentry/*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

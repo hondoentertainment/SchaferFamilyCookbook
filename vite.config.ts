@@ -4,10 +4,23 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   const base = process.env.BASE_PATH || '/';
+
+  const release =
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.GITHUB_SHA ||
+    process.env.CF_PAGES_COMMIT_SHA ||
+    '';
+  const sentryEnv =
+    process.env.VERCEL_ENV || (mode === 'production' ? 'production' : mode);
+
+  const sentryAuthOk =
+    !!(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT);
+
   return {
     base,
     server: {
@@ -145,10 +158,21 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
+      ...(sentryAuthOk
+        ? [
+            sentryVitePlugin({
+              org: process.env.SENTRY_ORG!,
+              project: process.env.SENTRY_PROJECT!,
+              authToken: process.env.SENTRY_AUTH_TOKEN!,
+              telemetry: false,
+            }),
+          ]
+        : []),
     ],
     build: {
       target: 'es2022',
       minify: 'esbuild',
+      sourcemap: sentryAuthOk ? 'hidden' : false,
       rollupOptions: {
         output: {
           manualChunks: {
@@ -163,7 +187,9 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
       'process.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY)
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
+      'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(release || env.VITE_SENTRY_RELEASE || ''),
+      'import.meta.env.VITE_SENTRY_ENVIRONMENT': JSON.stringify(env.VITE_SENTRY_ENVIRONMENT || sentryEnv || ''),
     },
     resolve: {
       alias: {
