@@ -36,6 +36,20 @@ function isMobileDevice(): boolean {
     return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
 }
 
+function getStepMinutes(step: string | null): number | null {
+    if (!step) return null;
+    const match = /(\d+)\s*(?:-|to)?\s*(?:\d+)?\s*(?:minutes?|mins?)/i.exec(step);
+    if (!match) return null;
+    const minutes = parseInt(match[1], 10);
+    return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+}
+
+function formatTimer(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 async function cacheRecipeImage(imageUrl: string): Promise<'saved' | 'already' | 'unsupported'> {
     if (!('caches' in window)) return 'unsupported';
     const cache = await caches.open('recipe-images-cache');
@@ -54,6 +68,8 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const [imageCached, setImageCached] = useState<boolean | null>(null); // null = unknown
     const [isOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
     const [isComplete, setIsComplete] = useState(false);
+    const [showIngredientsDrawer, setShowIngredientsDrawer] = useState(false);
+    const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
     const [showNotifyNudge, setShowNotifyNudge] = useState<boolean>(() => {
         if (typeof window === 'undefined' || !('Notification' in window)) return false;
         try {
@@ -80,6 +96,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     const steps = recipe.instructions || [];
     const totalSteps = 1 + steps.length;
     const currentStep = stepIndex === 0 ? null : steps[stepIndex - 1];
+    const currentStepMinutes = getStepMinutes(currentStep);
     const isFirst = stepIndex === 0;
     const isLast = stepIndex === totalSteps - 1;
 
@@ -124,13 +141,34 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
         if (containerRef.current) containerRef.current.focus();
     }, [stepIndex]);
 
+    useEffect(() => {
+        setShowIngredientsDrawer(false);
+        setTimerSeconds(null);
+    }, [stepIndex]);
+
+    useEffect(() => {
+        if (timerSeconds === null || timerSeconds <= 0) return;
+        const id = window.setInterval(() => {
+            setTimerSeconds((remaining) => {
+                if (remaining === null) return null;
+                if (remaining <= 1) {
+                    hapticSuccess();
+                    toast('Timer done', 'success');
+                    return 0;
+                }
+                return remaining - 1;
+            });
+        }, 1000);
+        return () => window.clearInterval(id);
+    }, [timerSeconds, toast]);
+
     // Wake lock: keep screen on during cook mode
     useEffect(() => {
-        let wakeLock: { release: () => Promise<void> } | null = null;
+        let wakeLock: WakeLockSentinel | null = null;
         const requestWakeLock = async () => {
             try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await (navigator as any).wakeLock.request('screen');
+                if (navigator.wakeLock) {
+                    wakeLock = await navigator.wakeLock.request('screen');
                 }
             } catch {
                 toast('Could not keep screen awake. Your device may lock during cooking.', 'info');
@@ -425,18 +463,27 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                         Step {stepIndex + 1} of {totalSteps}
                     </p>
                 </div>
-                {hasImage ? (
+                <div className="flex items-center gap-2">
                     <button
-                        onClick={handleSaveForOffline}
+                        type="button"
+                        onClick={() => setShowIngredientsDrawer(true)}
                         className="w-12 h-12 min-w-[3rem] min-h-[3rem] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                        aria-label={imageCached ? 'Recipe image already saved for offline use' : 'Save recipe for offline use'}
-                        title={imageCached ? 'Saved for offline' : 'Save for offline'}
+                        aria-label="Show ingredients"
+                        title="Ingredients"
                     >
-                        {imageCached ? '✓' : '⬇'}
+                        🥘
                     </button>
-                ) : (
-                    <div className="w-12" aria-hidden />
-                )}
+                    {hasImage ? (
+                        <button
+                            onClick={handleSaveForOffline}
+                            className="hidden sm:flex w-12 h-12 min-w-[3rem] min-h-[3rem] rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-colors"
+                            aria-label={imageCached ? 'Recipe image already saved for offline use' : 'Save recipe for offline use'}
+                            title={imageCached ? 'Saved for offline' : 'Save for offline'}
+                        >
+                            {imageCached ? '✓' : '⬇'}
+                        </button>
+                    ) : null}
+                </div>
             </header>
 
             {showSwipeHint && (
@@ -454,6 +501,47 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                     >
                         Got it
                     </button>
+                </div>
+            )}
+
+            {showIngredientsDrawer && (
+                <div className="absolute inset-0 z-20 bg-black/45 backdrop-blur-sm flex justify-end">
+                    <button
+                        type="button"
+                        className="absolute inset-0 cursor-default"
+                        onClick={() => setShowIngredientsDrawer(false)}
+                        aria-label="Close ingredients drawer"
+                    />
+                    <aside
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Ingredients for cook mode"
+                        className="relative z-10 h-full w-full max-w-md bg-[#FDFBF7] text-stone-900 shadow-2xl p-6 overflow-y-auto"
+                    >
+                        <div className="flex items-start justify-between gap-4 mb-6">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Cook Mode</p>
+                                <h2 className="font-serif italic text-3xl text-[#2D4635]">Ingredients</h2>
+                                <p className="text-sm text-stone-500 mt-1">Scaled for {scaleTo} serving{scaleTo !== 1 ? 's' : ''}.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowIngredientsDrawer(false)}
+                                className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center"
+                                aria-label="Close ingredients"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <ul className="space-y-3">
+                            {ingredients.map((ing, i) => (
+                                <li key={`${ing}-${i}`} className="flex items-start gap-3 rounded-2xl bg-white border border-stone-200 p-3 text-base leading-relaxed">
+                                    <span className="mt-2 w-2 h-2 rounded-full bg-[#A0522D] shrink-0" aria-hidden="true" />
+                                    <span>{ing}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </aside>
                 </div>
             )}
 
@@ -526,6 +614,31 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                         <p className="text-xl md:text-3xl font-serif italic leading-relaxed">
                             {currentStep}
                         </p>
+                        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowIngredientsDrawer(true)}
+                                className="min-h-12 px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-widest transition-colors"
+                                aria-label="View ingredients for this recipe"
+                            >
+                                Ingredients
+                            </button>
+                            {currentStepMinutes && timerSeconds === null && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTimerSeconds(currentStepMinutes * 60)}
+                                    className="min-h-12 px-5 py-3 rounded-full bg-[#F4A460] text-[#2D4635] font-bold text-xs uppercase tracking-widest transition-colors hover:bg-[#F4A460]/90"
+                                    aria-label={`Start ${currentStepMinutes} minute timer`}
+                                >
+                                    Start {currentStepMinutes} min timer
+                                </button>
+                            )}
+                            {timerSeconds !== null && (
+                                <div className={`min-h-12 px-5 py-3 rounded-full font-bold text-sm uppercase tracking-widest ${timerSeconds === 0 ? 'bg-emerald-400 text-[#2D4635]' : 'bg-white text-[#2D4635]'}`} role="timer" aria-live="polite">
+                                    {timerSeconds === 0 ? 'Timer done' : formatTimer(timerSeconds)}
+                                </div>
+                            )}
+                        </div>
                         <p className="text-white/30 text-xs mt-6 md:hidden">← swipe →</p>
                     </div>
                 </div>

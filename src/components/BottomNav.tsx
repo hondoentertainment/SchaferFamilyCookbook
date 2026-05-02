@@ -65,23 +65,26 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
 
     return (
         <nav
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-stone-950/95 backdrop-blur-xl border-t border-stone-200 dark:border-stone-800 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)]"
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E8DCCB]/90 bg-[#FFF8EC]/95 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_34px_rgba(45,70,53,0.12)] backdrop-blur-xl md:hidden dark:border-stone-800 dark:bg-stone-950/95"
             role="navigation"
             aria-label="Main navigation"
         >
-            <div className="flex items-stretch justify-around min-h-16 px-1">
+            <div className="flex min-h-16 items-stretch justify-around px-1">
                 {MAIN_TABS.map(({ id, label, group }) => {
                     const isActive = group.some((tabId) => tabId === activeTab);
                     return (
                         <button
                             key={id}
+                            type="button"
                             data-testid={id === 'Profile' ? 'bottom-nav-profile' : undefined}
                             onClick={() => {
                                 hapticLight();
                                 setTab(id);
                             }}
                             aria-current={isActive ? 'page' : undefined}
-                            className="relative flex flex-col items-center justify-center flex-1 min-w-0 min-h-11 py-1.5 px-0.5 touch-manipulation active:scale-95 transition-transform motion-reduce:transition-none"
+                            className={`relative flex min-h-11 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center rounded-2xl px-0.5 py-1.5 transition-all active:scale-95 motion-reduce:transition-none ${
+                                isActive ? 'bg-white/65 shadow-sm dark:bg-stone-900/70' : 'hover:bg-white/45 dark:hover:bg-stone-900/50'
+                            }`}
                             aria-label={id === 'Profile' ? `${currentUser.name}, view profile` : label}
                         >
                             <span
@@ -90,7 +93,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                                 }`}
                                 aria-hidden
                             />
-                            <span className={`mb-0.5 transition-transform ${isActive ? 'scale-105' : ''} ${isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-400 dark:text-stone-500'}`}>
+                            <span className={`mb-0.5 transition-transform ${isActive ? 'scale-105' : ''} ${isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-600 dark:text-stone-300'}`}>
                                 {id === 'Profile' ? (
                                     <img
                                         src={currentUser.picture}
@@ -105,8 +108,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                                 )}
                             </span>
                             <span
-                                className={`text-[10px] font-bold tracking-wider truncate max-w-full px-0.5 ${
-                                    isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-500 dark:text-stone-400'
+                                className={`max-w-full truncate px-0.5 text-[10px] font-black tracking-wider ${
+                                    isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-700 dark:text-stone-300'
                                 }`}
                             >
                                 {label}

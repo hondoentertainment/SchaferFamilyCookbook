@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { UserProfile, Recipe, HistoryEntry, GalleryItem, Trivia, DBStats, ContributorProfile } from '../types';
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
-import { AdminView, type FirebaseCustodianProps } from './AdminView';
+import type { FirebaseCustodianProps } from './AdminView';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 import { PreferencesPanel } from './PreferencesPanel';
@@ -19,6 +19,7 @@ const PUSH_ENABLED_KEY = 'schafer_push_enabled';
 const SECTION_HEADING_CLASS =
     'text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[var(--color-warmth)] mb-4';
 const SECTION_DIVIDER_CLASS = 'border-t border-stone-100 dark:border-[var(--border-color)]';
+const AdminView = lazy(() => import('./AdminView').then(m => ({ default: m.AdminView })));
 
 const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
     const { toast } = useUI();
@@ -809,28 +810,30 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         </div>
 
                         <div className="rounded-[1.5rem] md:rounded-[2rem] bg-white/80 dark:bg-[var(--card-bg)]/60 p-2 md:p-4 shadow-inner ring-1 ring-white/60 dark:ring-[var(--border-color)]">
-                            <AdminView
-                                editingRecipe={adminSectionProps.editingRecipe}
-                                clearEditing={adminSectionProps.clearEditing}
-                                recipes={adminSectionProps.recipes}
-                                trivia={adminSectionProps.trivia}
-                                contributors={adminSectionProps.contributors}
-                                currentUser={currentUser}
-                                dbStats={adminSectionProps.dbStats}
-                                gallery={adminSectionProps.gallery}
-                                onAddRecipe={adminSectionProps.onAddRecipe}
-                                onAddGallery={adminSectionProps.onAddGallery}
-                                onAddTrivia={adminSectionProps.onAddTrivia}
-                                onDeleteTrivia={adminSectionProps.onDeleteTrivia}
-                                onDeleteRecipe={adminSectionProps.onDeleteRecipe}
-                                onDeleteGalleryItem={adminSectionProps.onDeleteGalleryItem}
-                                onUpdateGalleryItem={adminSectionProps.onUpdateGalleryItem}
-                                onUpdateContributor={adminSectionProps.onUpdateContributor}
-                                onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
-                                onEditRecipe={adminSectionProps.onEditRecipe}
-                                defaultRecipeIds={adminSectionProps.defaultRecipeIds}
-                                firebaseCustodian={adminSectionProps.firebaseCustodian}
-                            />
+                            <Suspense fallback={<div className="p-8 text-sm text-stone-600 dark:text-stone-300">Loading admin tools...</div>}>
+                                <AdminView
+                                    editingRecipe={adminSectionProps.editingRecipe}
+                                    clearEditing={adminSectionProps.clearEditing}
+                                    recipes={adminSectionProps.recipes}
+                                    trivia={adminSectionProps.trivia}
+                                    contributors={adminSectionProps.contributors}
+                                    currentUser={currentUser}
+                                    dbStats={adminSectionProps.dbStats}
+                                    gallery={adminSectionProps.gallery}
+                                    onAddRecipe={adminSectionProps.onAddRecipe}
+                                    onAddGallery={adminSectionProps.onAddGallery}
+                                    onAddTrivia={adminSectionProps.onAddTrivia}
+                                    onDeleteTrivia={adminSectionProps.onDeleteTrivia}
+                                    onDeleteRecipe={adminSectionProps.onDeleteRecipe}
+                                    onDeleteGalleryItem={adminSectionProps.onDeleteGalleryItem}
+                                    onUpdateGalleryItem={adminSectionProps.onUpdateGalleryItem}
+                                    onUpdateContributor={adminSectionProps.onUpdateContributor}
+                                    onUpdateArchivePhone={adminSectionProps.onUpdateArchivePhone}
+                                    onEditRecipe={adminSectionProps.onEditRecipe}
+                                    defaultRecipeIds={adminSectionProps.defaultRecipeIds}
+                                    firebaseCustodian={adminSectionProps.firebaseCustodian}
+                                />
+                            </Suspense>
                         </div>
                     </div>
                 </section>

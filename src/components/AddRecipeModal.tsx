@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Recipe, ContributorProfile, UserProfile } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
-import { CATEGORY_IMAGES } from '../constants';
+import { CATEGORY_IMAGES, RECIPE_CATEGORIES, normalizeRecipe } from '../constants';
 import { useUI } from '../context/UIContext';
 
 interface AddRecipeModalProps {
@@ -173,7 +173,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         setIsSubmitting(true);
         try {
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
-            await onAddRecipe({
+            await onAddRecipe(normalizeRecipe({
                 ...recipeForm as Recipe,
                 id: recipeForm.id || 'r' + Date.now(),
                 contributor: recipeForm.contributor || currentUser?.name || 'Family',
@@ -181,17 +181,13 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                 imageSource: imageSource || undefined,
                 ingredients,
                 instructions
-            }, recipeFile || undefined);
+            }), recipeFile || undefined);
             toast('Recipe saved', 'success');
             onClose();
         } finally { setIsSubmitting(false); }
     };
 
     const isAICooldownActive = aiCooldownSecondsLeft > 0;
-
-    const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) onClose();
-    }, [onClose]);
 
     useEffect(() => {
         const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -200,8 +196,14 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
     }, [onClose]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="add-recipe-modal-title" onClick={handleBackdropClick}>
-            <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="add-recipe-modal-title">
+            <button
+                type="button"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                aria-label="Dismiss dialog backdrop"
+                onClick={onClose}
+            />
+            <div className="relative bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-start mb-6">
                     <h2 id="add-recipe-modal-title" className="text-2xl font-serif italic text-[#2D4635]">Add New Recipe</h2>
                     <button
@@ -274,7 +276,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         <div>
                             <label htmlFor="add-recipe-category" className="sr-only">Category</label>
                             <select id="add-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as Recipe['category'] })}>
-                                {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
+                                {RECIPE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                             </select>
                         </div>
                         <div>

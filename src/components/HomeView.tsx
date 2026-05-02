@@ -87,17 +87,17 @@ const RecipeMiniCard: React.FC<{
     const rating = getAverageRating(recipe.id);
     const ratingCount = getRatingCount(recipe.id);
     return (
-        <article className="group relative shrink-0 w-44 sm:w-48">
+        <article className="group relative w-48 shrink-0 sm:w-52">
             <button
                 type="button"
                 onClick={onClick}
                 aria-label={`Open recipe: ${recipe.title}`}
-                className="block w-full text-left rounded-2xl overflow-hidden bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635]"
+                className="recipe-card-surface block w-full overflow-hidden rounded-3xl border text-left transition-all hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] dark:border-stone-800"
             >
                 <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
                     <SimpleCardImage recipe={recipe} className="transition-transform duration-500 group-hover:scale-[1.04]" />
                 </div>
-                <div className="p-3 space-y-1">
+                <div className="space-y-1.5 p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
                     <h3 className="text-sm font-serif italic text-[#2D4635] dark:text-emerald-100 line-clamp-2 leading-snug">{recipe.title}</h3>
                     <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
@@ -109,7 +109,7 @@ const RecipeMiniCard: React.FC<{
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-                className={`absolute top-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition-transform hover:scale-110 active:scale-95 ${
+                className={`absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition-transform hover:scale-110 active:scale-95 ${
                     isFavorite ? 'bg-white/95 text-red-500 shadow-md' : 'bg-black/35 text-white hover:bg-white/95 hover:text-red-500'
                 }`}
                 title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -174,38 +174,56 @@ export const HomeView: React.FC<HomeViewProps> = ({
             tabIndex={-1}
             role="main"
             aria-label="Home"
-            className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-5 md:py-10 space-y-8 md:space-y-12"
+            className="relative z-10 mx-auto max-w-[1400px] space-y-8 px-4 py-5 sm:px-6 md:space-y-12 md:px-8 md:py-10"
         >
             {/* Greeting + quick actions */}
-            <section className="space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#A0522D]/85">
-                    {season.emoji} {season.label}
-                </p>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic text-[#2D4635] dark:text-emerald-100 leading-[1.05]">
-                    {greeting}, <span className="text-[#A0522D]">{currentUser.name.split(' ')[0]}</span>.
-                </h1>
-                <p className="text-stone-500 dark:text-stone-400 text-sm md:text-base font-serif italic max-w-xl">
-                    {recipes.length} recipes from the people who taught us how to cook. Pick up where you left off, or try something new tonight.
-                </p>
-                <div className="flex flex-wrap gap-2 pt-2">
+            <section className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7 md:rounded-[2.75rem] md:p-10">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-3xl space-y-3">
+                        <p className="text-xs font-black uppercase tracking-[0.28em] text-[#7A3F22] dark:text-orange-200">
+                            {season.emoji} {season.label}
+                        </p>
+                        <h1 className="font-serif text-4xl italic leading-[1.02] text-[#2D4635] dark:text-emerald-100 sm:text-5xl md:text-6xl">
+                            {greeting}, <span className="text-[#A0522D]">{currentUser.name.split(' ')[0]}</span>.
+                        </h1>
+                        <p className="max-w-2xl font-serif text-lg italic leading-relaxed text-stone-700 dark:text-stone-300">
+                            {recipes.length} recipes from the people who taught us how to cook. Pick up where you left off, or try something new tonight.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
+                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
+                            <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{recipes.length}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Recipes</p>
+                        </div>
+                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
+                            <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{favoriteRecipes.length}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Saved</p>
+                        </div>
+                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
+                            <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{contributors.length}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Cooks</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-3 pt-6">
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Recipes'); }}
-                        className="min-h-11 rounded-full bg-[#2D4635] px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
+                        className="min-h-12 rounded-full bg-[#2D4635] px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[0_12px_26px_rgba(45,70,53,0.24)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] active:scale-[0.98]"
                     >
                         Browse all recipes
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Grocery List'); }}
-                        className="min-h-11 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300"
+                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-xs font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                     >
                         Plan & shop
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Gallery'); }}
-                        className="min-h-11 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300"
+                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-xs font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                     >
                         Family hub
                     </button>
@@ -232,7 +250,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         type="button"
                         onClick={() => onSelectRecipe(recipeOfWeek)}
                         aria-label={`Open recipe: ${recipeOfWeek.title}`}
-                        className="block w-full text-left group relative rounded-3xl overflow-hidden bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635]"
+                        className="recipe-card-surface group relative block w-full overflow-hidden rounded-[2rem] border text-left transition-all hover:-translate-y-1 hover:shadow-2xl active:scale-[0.995] dark:border-stone-800"
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[18rem] overflow-hidden bg-stone-100 dark:bg-stone-800">

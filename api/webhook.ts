@@ -171,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.setHeader('Content-Type', 'text/xml');
         return res.status(200).send(twiml.toString());
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('MMS Webhook Error:', error);
         const twiml = new twilio.twiml.MessagingResponse();
         twiml.message('archive keeper: error preserving memory. please try again later.');

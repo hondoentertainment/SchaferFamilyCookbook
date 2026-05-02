@@ -109,14 +109,19 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
             {/* Confirm Modal */}
             {confirmState && (
                 <div
-                    className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+                    className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-200 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="confirm-title"
                     aria-describedby="confirm-desc"
-                    onClick={(e) => { if (e.target === e.currentTarget) handleCancel(); }}
                 >
-                    <div ref={confirmContainerRef} className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+                        aria-label="Cancel confirmation"
+                        onClick={handleCancel}
+                    />
+                    <div ref={confirmContainerRef} className="relative bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
                         <h3 id="confirm-title" className="text-xl font-serif italic text-[#2D4635] mb-4">
                             {confirmState.options.title || 'Confirm'}
                         </h3>

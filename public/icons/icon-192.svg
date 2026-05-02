@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Schafer Cookbook">
+  <rect width="192" height="192" rx="42" fill="#2D4635"/>
+  <circle cx="96" cy="96" r="56" fill="#FDFBF7"/>
+  <path d="M64 83c18-20 46-20 64 0 10 11 10 28 0 39-18 20-46 20-64 0-10-11-10-28 0-39Z" fill="#A0522D"/>
+  <path d="M76 96h40M82 112h28" stroke="#FDFBF7" stroke-width="10" stroke-linecap="round"/>
+  <path d="M96 42v28M96 122v28M42 96h24M126 96h24" stroke="#F4A460" stroke-width="8" stroke-linecap="round"/>
+</svg>

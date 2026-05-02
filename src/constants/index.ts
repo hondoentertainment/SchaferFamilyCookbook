@@ -1,5 +1,27 @@
 export { COLORS, Z_INDEX, TIMING } from './theme';
 export { STORAGE_KEYS } from './storage';
+export {
+    CATEGORY_META,
+    CONTRIBUTOR_ALIASES,
+    CONTRIBUTOR_LABELS_AS_TAGS,
+    RECIPE_CATEGORIES,
+    TAG_LABELS,
+    contributorFacetFromRecipe,
+    deriveRecipeCollections,
+    deriveRecipeOccasions,
+    deriveRecipeSeason,
+    deriveRecipeTags,
+    getContributorOptions,
+    getTagLabel,
+    getTagOptions,
+    normalizeCategory,
+    normalizeContributorName,
+    normalizeKey,
+    normalizeRecipe,
+    normalizeRecipes,
+    normalizeTag,
+    type RecipeCategory,
+} from './taxonomy';
 
 export const CATEGORY_IMAGES: Record<string, string> = {
     Breakfast: '/recipe-images/imported_0mcur1qkv.jpg',

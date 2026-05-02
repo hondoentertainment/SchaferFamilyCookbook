@@ -17,7 +17,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://fcm.googleapis.com; frame-ancestors 'none'; worker-src 'self' blob:"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://storage.googleapis.com https://image.pollinations.ai https://api.dicebear.com https://randomuser.me; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://fcm.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://image.pollinations.ai; frame-ancestors 'none'; worker-src 'self' blob:"
         }
       ]
     },

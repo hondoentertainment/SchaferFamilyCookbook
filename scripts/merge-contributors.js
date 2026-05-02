@@ -1,7 +1,7 @@
 /**
  * Contributor Merge Script for Schafer Family Cookbook
  * 
- * This script merges "Dawn Schafer Tessmer" recipes into "Dawn"
+ * This script merges contributor variants across recipes, gallery, and trivia
  * and removes the duplicate contributor profile.
  * 
  * Run in browser console while logged in as admin at:
@@ -11,8 +11,8 @@
 // You can copy-paste this into the browser console when logged in
 
 (async function mergeContributors() {
-    const FROM_NAME = "Dawn Schafer Tessmer";
-    const TO_NAME = "Dawn";
+    const FROM_NAME = "Dawn";
+    const TO_NAME = "Dawn (Schafer) Tessmer";
 
     console.log(`🔄 Starting merge: "${FROM_NAME}" → "${TO_NAME}"`);
 
@@ -34,23 +34,28 @@
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 1. Update all recipes with the old contributor name
-    console.log("📖 Fetching recipes...");
-    const recipesRef = collection(db, "recipes");
-    const recipesSnapshot = await getDocs(recipesRef);
+    const targets = [
+        { name: "recipes", field: "contributor", label: "title" },
+        { name: "gallery", field: "contributor", label: "caption" },
+        { name: "trivia", field: "contributor", label: "question" },
+    ];
 
-    let updatedCount = 0;
-    for (const recipeDoc of recipesSnapshot.docs) {
-        const recipe = recipeDoc.data();
-        if (recipe.contributor === FROM_NAME) {
-            console.log(`  📝 Updating recipe: "${recipe.title}"`);
-            await updateDoc(doc(db, "recipes", recipeDoc.id), { contributor: TO_NAME });
-            updatedCount++;
+    for (const target of targets) {
+        console.log(`📖 Fetching ${target.name}...`);
+        const snapshot = await getDocs(collection(db, target.name));
+        let updatedCount = 0;
+        for (const itemDoc of snapshot.docs) {
+            const item = itemDoc.data();
+            if (item[target.field] === FROM_NAME) {
+                console.log(`  📝 Updating ${target.name}: "${item[target.label] || itemDoc.id}"`);
+                await updateDoc(doc(db, target.name, itemDoc.id), { [target.field]: TO_NAME });
+                updatedCount++;
+            }
         }
+        console.log(`✅ Updated ${updatedCount} ${target.name}`);
     }
-    console.log(`✅ Updated ${updatedCount} recipes`);
 
-    // 2. Find and delete the old contributor profile
+    // Find and delete the old contributor profile
     console.log("👤 Checking contributors...");
     const contributorsRef = collection(db, "contributors");
     const contributorsSnapshot = await getDocs(contributorsRef);

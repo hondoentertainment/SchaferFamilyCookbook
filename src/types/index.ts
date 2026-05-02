@@ -1,12 +1,16 @@
+import type { RecipeCategory } from '../constants/taxonomy';
+
 export interface Recipe {
   id: string;
   title: string;
   contributor: string;
-  category: 'Breakfast' | 'Main' | 'Dessert' | 'Side' | 'Appetizer' | 'Bread' | 'Dip/Sauce' | 'Snack';
+  category: RecipeCategory;
   ingredients: string[];
   instructions: string[];
   notes?: string;
   image: string;
+  /** Optional instructional images aligned by instruction index. */
+  stepImages?: string[];
   /** How the image was sourced; used for AI badge and accuracy tracking. */
   imageSource?: 'upload' | 'nano-banana' | 'pollinations' | 'local-generated';
   prepTime?: string;
@@ -15,6 +19,9 @@ export interface Recipe {
   /** Number of servings (e.g. 4) or yield description (e.g. "2 dozen cookies") */
   servings?: string | number;
   tags?: string[];
+  collections?: string[];
+  occasions?: string[];
+  season?: string;
   created_at?: string;
 }
 

@@ -32,13 +32,16 @@ export default defineConfig(({ mode }) => {
               params: {
                 overrides: {
                   cleanupNumericValues: false,
-                  removeViewBox: false,
                 },
                 cleanupIds: {
                   minify: false,
                   remove: false,
                 },
               },
+            },
+            {
+              name: 'removeViewBox',
+              active: false,
             },
             'sortAttrs',
             {
@@ -78,15 +81,15 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           icons: [
             {
-              src: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=192',
+              src: '/icons/icon-192.svg',
               sizes: '192x192',
-              type: 'image/jpeg',
+              type: 'image/svg+xml',
               purpose: 'any maskable',
             },
             {
-              src: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=512',
+              src: '/icons/icon-512.svg',
               sizes: '512x512',
-              type: 'image/jpeg',
+              type: 'image/svg+xml',
               purpose: 'any maskable',
             },
           ],
@@ -152,6 +155,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
             'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/storage'],
+            'vendor-firebase-auth': ['firebase/auth'],
           },
         },
       },

@@ -29,16 +29,18 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300"
       role="dialog"
       aria-modal="true"
       aria-label={`${contributor.name}'s recipe spotlight`}
     >
-      <div
-        className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-12 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+        aria-label="Close contributor spotlight"
+        onClick={onClose}
+      />
+      <div className="relative bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-12 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300">
         <button
           type="button"
           onClick={onClose}

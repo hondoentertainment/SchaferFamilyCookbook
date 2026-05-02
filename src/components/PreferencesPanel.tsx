@@ -52,8 +52,8 @@ export const PreferencesPanel: React.FC = () => {
       </h3>
 
       {/* Theme */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-stone-600 dark:text-stone-400">Theme</label>
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-bold text-stone-600 dark:text-stone-400">Theme</legend>
         <div className="flex gap-2">
           {themeOptions.map((opt) => (
             <button
@@ -72,11 +72,11 @@ export const PreferencesPanel: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Font Size */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-stone-600 dark:text-stone-400">Text Size</label>
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-bold text-stone-600 dark:text-stone-400">Text Size</legend>
         <div className="flex gap-2">
           {fontOptions.map((opt, i) => (
             <button
@@ -96,7 +96,7 @@ export const PreferencesPanel: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* High Contrast */}
       <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-xl border border-stone-200 dark:border-[var(--border-color)]">

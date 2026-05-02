@@ -26,6 +26,8 @@ dist-ssr
 .cache
 
 # Playwright and test artifacts
+.playwright-cli/
+output/playwright/
 playwright-report/
 test-results/
 e2e-output.txt

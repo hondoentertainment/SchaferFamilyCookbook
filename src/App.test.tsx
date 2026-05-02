@@ -170,7 +170,7 @@ describe('App Navigation (Lazy loaded views)', () => {
 
         // Recipes tab — primary nav
         fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
-        await screen.findByText('Apple Pie', {}, { timeout: 3000 });
+        await screen.findAllByText('Apple Pie', {}, { timeout: 3000 });
 
         // Family tab
         fireEvent.click(screen.getAllByRole('button', { name: /^Family$/i })[0]);

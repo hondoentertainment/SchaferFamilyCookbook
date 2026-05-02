@@ -1,11 +1,12 @@
 // Contributor merge script - Node.js version
-// Run with: node scripts/merge-contributors-node.mjs
+// Run with: node scripts/merge-contributors-node.mjs "Old Name" "New Name"
+// Defaults normalize the historical Dawn variants used by the cookbook.
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-const FROM_NAME = "Dawn Schafer Tessmer";
-const TO_NAME = "Dawn";
+const FROM_NAME = process.argv[2] || "Dawn";
+const TO_NAME = process.argv[3] || "Dawn (Schafer) Tessmer";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDZYjGjQZvjMDQPuCjA1-3k5-HN3P5ddiI",
@@ -22,20 +23,26 @@ async function mergeContributors() {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Update recipes
-    console.log("📖 Fetching recipes...");
-    const recipesSnapshot = await getDocs(collection(db, "recipes"));
+    const collections = [
+        { name: "recipes", field: "contributor", label: "title" },
+        { name: "gallery", field: "contributor", label: "caption" },
+        { name: "trivia", field: "contributor", label: "question" },
+    ];
 
-    let updatedCount = 0;
-    for (const recipeDoc of recipesSnapshot.docs) {
-        const recipe = recipeDoc.data();
-        if (recipe.contributor === FROM_NAME) {
-            console.log(`  📝 Updating: "${recipe.title}"`);
-            await updateDoc(doc(db, "recipes", recipeDoc.id), { contributor: TO_NAME });
-            updatedCount++;
+    for (const target of collections) {
+        console.log(`📦 Fetching ${target.name}...`);
+        const snapshot = await getDocs(collection(db, target.name));
+        let updatedCount = 0;
+        for (const itemDoc of snapshot.docs) {
+            const item = itemDoc.data();
+            if (item[target.field] === FROM_NAME) {
+                console.log(`  📝 Updating: "${item[target.label] || itemDoc.id}"`);
+                await updateDoc(doc(db, target.name, itemDoc.id), { [target.field]: TO_NAME });
+                updatedCount++;
+            }
         }
+        console.log(`✅ Updated ${updatedCount} ${target.name}`);
     }
-    console.log(`✅ Updated ${updatedCount} recipes`);
 
     // Remove old contributor profile
     console.log("👤 Checking contributors...");

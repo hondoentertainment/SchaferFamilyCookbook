@@ -58,12 +58,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
     const isTabActive = (id: string) => NAV_GROUPS[id]?.includes(activeTab) ?? activeTab === id;
 
     return (
-        <header className="sticky top-0 z-50 bg-white/90 dark:bg-[var(--header-bg)] backdrop-blur-md border-b border-stone-100 dark:border-stone-800 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 flex items-center justify-between gap-2 min-h-[3.5rem] md:min-h-0">
+        <header className="sticky top-0 z-50 border-b border-[#E8DCCB]/80 bg-[#FFF8EC]/90 pt-[env(safe-area-inset-top)] shadow-[0_8px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl dark:border-stone-800 dark:bg-[var(--header-bg)]">
+            <div className="mx-auto flex min-h-[3.75rem] max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-3 md:min-h-0 md:px-6 md:py-4">
                 <div className="flex items-center gap-2 sm:gap-3 md:gap-5 min-w-0 flex-1">
                     <button
                         type="button"
-                        className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:rounded-lg min-h-11 min-w-11 md:min-h-0 md:min-w-0 justify-center md:justify-start -m-2 p-2 md:m-0 md:p-0"
+                        className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl p-2 transition-colors hover:bg-white/70 active:scale-[0.98] sm:gap-3 md:m-0 md:min-h-0 md:min-w-0 md:justify-start md:p-1"
                         onClick={() => { hapticLight(); setTab('Home'); }}
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hapticLight(); setTab('Home'); } }}
                         aria-label={`${siteConfig.siteName} — go to home`}
@@ -75,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             onError={() => setLogoFailed(true)}
                         />
                         <span
-                            className="font-serif italic text-base sm:text-lg md:text-xl text-[#2D4635] dark:text-emerald-100/90 hidden sm:block max-w-[11rem] lg:max-w-[14rem] truncate"
+                            className="hidden max-w-[11rem] truncate font-serif text-base italic text-[#2D4635] sm:block sm:text-lg md:text-xl lg:max-w-[14rem] dark:text-emerald-100/90"
                             title={siteConfig.siteName}
                         >
                             {brandLabel}
@@ -90,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             return (
                                 <button
                                     key={id}
+                                    type="button"
                                     id={`tab-${id}`}
                                     onClick={() => {
                                         hapticLight();
@@ -106,7 +107,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                     title={title}
                                     data-testid={id === 'Profile' ? 'nav-profile' : undefined}
                                     aria-current={isTabActive(id) ? 'page' : undefined}
-                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors whitespace-nowrap min-h-[2.75rem] motion-reduce:transition-none ${isTabActive(id) ? 'bg-[#2D4635] text-white shadow-lg' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+                                    className={`min-h-[2.75rem] whitespace-nowrap rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all motion-reduce:transition-none ${
+                                        isTabActive(id)
+                                            ? 'bg-[#2D4635] text-white shadow-[0_10px_24px_rgba(45,70,53,0.22)]'
+                                            : 'text-stone-700 hover:bg-white/75 hover:text-[#2D4635] dark:text-stone-300 dark:hover:bg-stone-800'
+                                    }`}
                                 >
                                     {(tab as NavTab).label || id}
                                 </button>
@@ -119,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     <button
                         type="button"
                         onClick={handleThemeToggle}
-                        className="min-h-11 min-w-11 flex items-center justify-center rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                        className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-transparent text-stone-700 transition-colors hover:border-[#E8DCCB] hover:bg-white/75 dark:text-stone-300 dark:hover:bg-stone-800"
                         title={THEME_LABELS[themeMode]}
                         aria-label={`Toggle theme (currently ${THEME_LABELS[themeMode]})`}
                     >
@@ -128,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     {currentUser && (
                         <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
                             <div
-                                className="hidden md:flex items-center gap-2 rounded-full min-h-11 min-w-11 justify-center px-2"
+                                className="hidden min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#E8DCCB]/80 bg-white/55 px-2 shadow-sm md:flex dark:border-stone-700 dark:bg-stone-900/60"
                                 aria-label={`${currentUser.name}, signed in`}
                             >
                                 <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-stone-700 object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
@@ -137,8 +142,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 </span>
                             </div>
                             <button
+                                type="button"
                                 onClick={onLogout}
-                                className="px-3 sm:px-4 py-3 min-h-11 min-w-11 flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-full transition-colors motion-reduce:transition-none"
+                                className="flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-3 text-[10px] font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white/75 hover:text-[#2D4635] sm:px-4 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 motion-reduce:transition-none"
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >

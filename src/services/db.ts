@@ -3,6 +3,7 @@ import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, qu
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
+import { normalizeRecipe, normalizeRecipes } from '../constants/taxonomy';
 
 async function retryWithBackoff<T>(
     fn: () => Promise<T>,
@@ -94,22 +95,23 @@ function shouldUseRecipeSpecificImage(image?: string): boolean {
 
 function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
     return recipes.map((recipe) => {
+        const normalizedRecipe = normalizeRecipe(recipe);
         if (isCuratedImageSource(recipe.imageSource)) {
-            return recipe;
+            return normalizedRecipe;
         }
         if (isLegacyBundledRecipeImage(recipe.image)) {
             return {
-                ...recipe,
-                image: getRecipeSpecificImage(recipe),
+                ...normalizedRecipe,
+                image: getRecipeSpecificImage(normalizedRecipe),
                 imageSource: 'pollinations',
             };
         }
         if (!shouldUseRecipeSpecificImage(recipe.image)) {
-            return recipe;
+            return normalizedRecipe;
         }
         return {
-            ...recipe,
-            image: getRecipeSpecificImage(recipe),
+            ...normalizedRecipe,
+            image: getRecipeSpecificImage(normalizedRecipe),
             imageSource: 'pollinations',
         };
     });
@@ -121,7 +123,8 @@ export const CloudArchive = {
     _storage: null as FirebaseStorage | null,
 
     getProvider(): 'local' | 'firebase' {
-        return (localStorage.getItem('schafer_active_provider') as any) || 'local';
+        const provider = localStorage.getItem('schafer_active_provider');
+        return provider === 'firebase' ? 'firebase' : 'local';
     },
 
     getFirebase() {
@@ -162,7 +165,7 @@ export const CloudArchive = {
             const recipes = snapshot.docs
                 .map(doc => doc.data())
                 .filter(validateRecipe);
-            callback(normalizeRecipeImages(recipes));
+            callback(normalizeRecipeImages(normalizeRecipes(recipes)));
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeRecipes error:', error);
@@ -280,7 +283,7 @@ export const CloudArchive = {
             await deleteDoc(doc(fb.db, 'recipes', id));
         } else {
             const current = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
-            localStorage.setItem('schafer_db_recipes', JSON.stringify(current.filter((r: any) => r.id !== id)));
+            localStorage.setItem('schafer_db_recipes', JSON.stringify(current.filter((r) => r.id !== id)));
         }
     },
 
@@ -292,7 +295,7 @@ export const CloudArchive = {
             await deleteDoc(doc(fb.db, 'gallery', id));
         } else {
             const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
-            localStorage.setItem('schafer_db_gallery', JSON.stringify(current.filter((g: any) => g.id !== id)));
+            localStorage.setItem('schafer_db_gallery', JSON.stringify(current.filter((g) => g.id !== id)));
         }
     },
 
@@ -332,13 +335,13 @@ export const CloudArchive = {
             await deleteDoc(doc(fb.db, 'trivia', id));
         } else {
             const current = safeParseArray<Trivia>(localStorage.getItem('schafer_db_trivia'));
-            localStorage.setItem('schafer_db_trivia', JSON.stringify(current.filter((t: any) => t.id !== id)));
+            localStorage.setItem('schafer_db_trivia', JSON.stringify(current.filter((t) => t.id !== id)));
         }
     },
 
     async upsertRecipe(recipe: Recipe, contributorName?: string): Promise<void> {
         const provider = this.getProvider();
-        const payload = { ...recipe, created_at: recipe.created_at || new Date().toISOString() };
+        const payload = { ...normalizeRecipe(recipe), created_at: recipe.created_at || new Date().toISOString() };
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
@@ -356,7 +359,7 @@ export const CloudArchive = {
             }
         } else {
             const current = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
-            const index = current.findIndex((r: any) => r.id === recipe.id);
+            const index = current.findIndex((r) => r.id === recipe.id);
             if (index > -1) current[index] = payload;
             else current.push(payload);
             localStorage.setItem('schafer_db_recipes', JSON.stringify(current));
@@ -372,7 +375,7 @@ export const CloudArchive = {
             await setDoc(doc(fb.db, 'trivia', item.id), payload);
         } else {
             const current = safeParseArray<Trivia>(localStorage.getItem('schafer_db_trivia'));
-            const index = current.findIndex((t: any) => t.id === item.id);
+            const index = current.findIndex((t) => t.id === item.id);
             if (index > -1) current[index] = payload;
             else current.push(payload);
             localStorage.setItem('schafer_db_trivia', JSON.stringify(current));
@@ -388,7 +391,7 @@ export const CloudArchive = {
             await setDoc(doc(fb.db, 'gallery', item.id), payload);
         } else {
             const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
-            const index = current.findIndex((g: any) => g.id === item.id);
+            const index = current.findIndex((g) => g.id === item.id);
             if (index > -1) current[index] = payload;
             else current.push(payload);
             localStorage.setItem('schafer_db_gallery', JSON.stringify(current));
@@ -431,7 +434,7 @@ export const CloudArchive = {
             await setDoc(doc(fb.db, 'contributors', profile.id), profile);
         } else {
             const current = safeParseArray<ContributorProfile>(localStorage.getItem('schafer_db_contributors'));
-            const index = current.findIndex((c: any) => c.id === profile.id);
+            const index = current.findIndex((c) => c.id === profile.id);
             if (index > -1) current[index] = profile;
             else current.push(profile);
             localStorage.setItem('schafer_db_contributors', JSON.stringify(current));
@@ -446,7 +449,7 @@ export const CloudArchive = {
             await deleteDoc(doc(fb.db, 'contributors', id));
         } else {
             const current = safeParseArray<ContributorProfile>(localStorage.getItem('schafer_db_contributors'));
-            localStorage.setItem('schafer_db_contributors', JSON.stringify(current.filter((c: any) => c.id !== id)));
+            localStorage.setItem('schafer_db_contributors', JSON.stringify(current.filter((c) => c.id !== id)));
         }
     },
 

@@ -1,3 +1,6 @@
+import { RECIPE_CATEGORIES } from '../constants/taxonomy';
+import { COLORS } from '../constants/theme';
+
 /**
  * Site configuration for multi-tenant / forkable recipe platforms.
  * Customize this file to rebrand the app for your family or organization.
@@ -56,13 +59,13 @@ const defaultConfig: SiteConfig = {
   tagline: 'The Schafer Collection',
   description: 'A digital archive of heirloom recipes, family photos, and culinary history.',
   baseUrl: 'https://schafer-family-cookbook.vercel.app',
-  logoUrl: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&q=80&w=1000',
-  primary: '#2D4635',
-  accent: '#A0522D',
-  background: '#FDFBF7',
+  logoUrl: '/icons/icon-512.svg',
+  primary: COLORS.primary,
+  accent: COLORS.accent,
+  background: COLORS.background,
   establishedYear: 'Est. 2024',
   superAdminIdentifiers: ['kyle', 'hondo4185@gmail.com'],
-  categories: ['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'],
+  categories: RECIPE_CATEGORIES,
   loginCopy: {
     title: 'Identify Yourself',
     subtitle: 'Welcome to the Schafer Family Archive.',

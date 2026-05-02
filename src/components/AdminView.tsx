@@ -3,7 +3,7 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CloudArchive } from '../services/db';
-import { CATEGORY_IMAGES } from '../constants';
+import { CATEGORY_IMAGES, RECIPE_CATEGORIES, normalizeRecipe } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
@@ -350,7 +350,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setRecipeForm(prev => ({ ...prev, ...parsed }));
             setRawText('');
             toast('Magic import successful!', 'success');
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'AI Analysis failed: ${message}');
         } finally { setIsMagicLoading(false); }
@@ -364,7 +364,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setRecipeForm(prev => ({ ...prev, ...parsed }));
             setImportUrl('');
             toast('Recipe imported from URL!', 'success');
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'URL import failed: ${message}');
         } finally { setIsUrlImporting(false); }
@@ -379,7 +379,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setRecipeFile(file);
             setImageSourceForCurrent(imageSource);
             setPreviewUrl(URL.createObjectURL(file));
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'Failed to generate image: ${message}. Try uploading a heritage photo instead.');
         } finally { setIsGeneratingImage(false); }
@@ -391,7 +391,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
             const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
             await onAddRecipe({ ...recipe, imageSource }, file);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.');
         } finally { setIsGeneratingImage(false); }
@@ -485,7 +485,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             }
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
             try {
-                await onAddRecipe({
+                await onAddRecipe(normalizeRecipe({
                     ...recipeForm as Recipe,
                     id: recipeForm.id || 'r' + Date.now(),
                     contributor: recipeForm.contributor || currentUser?.name || 'Family',
@@ -493,7 +493,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     imageSource: imageSource || undefined,
                     ingredients,
                     instructions
-                }, recipeFile || undefined);
+                }), recipeFile || undefined);
             } catch (saveErr) {
                 const msg = saveErr instanceof Error ? saveErr.message : String(saveErr);
                 toast(msg, 'error');
@@ -570,8 +570,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     contributor: currentUser?.name || 'Family'
                 }, file as File);
                 successCount++;
-            } catch (e: any) {
-                errors.push(`${file.name}: ${e.message}`);
+            } catch (e: unknown) {
+                errors.push(`${file.name}: ${e instanceof Error ? e.message : String(e)}`);
             }
 
             setUploadProgress({ current: i + 1, total: files.length, errors });
@@ -649,7 +649,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         try {
             // Update all recipes with the old contributor name
             for (const recipe of recipesToUpdate) {
-                await onAddRecipe({ ...recipe, contributor: toName });
+                await onAddRecipe(normalizeRecipe({ ...recipe, contributor: toName }));
             }
 
             // Remove the old contributor profile if it exists
@@ -662,8 +662,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             setMergeFrom('');
             setMergeTo('');
             toast(`Successfully merged ${recipesToUpdate.length} recipes from "${fromName}" to "${toName}"!`, 'success');
-        } catch (e: any) {
-            toast(`Merge failed: ${e.message}`, 'error');
+        } catch (e: unknown) {
+            toast(`Merge failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
         } finally {
             setIsMerging(false);
         }
@@ -1066,8 +1066,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                 onClick={async () => {
                                                                     try {
                                                                         await useDefaultImageForRecipe(r);
-                                                                    } catch (e: any) {
-                                                                        toast(`Couldn't set default image: ${e?.message || 'unknown error'}. Try again.`, 'error');
+                                                                    } catch (e: unknown) {
+                                                                        toast(`Couldn't set default image: ${e instanceof Error ? e.message : 'unknown error'}. Try again.`, 'error');
                                                                     }
                                                                 }}
                                                                 className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-stone-50 text-stone-600 border border-stone-200 rounded-lg text-[10px] font-bold uppercase hover:bg-stone-100 flex items-center justify-center"
@@ -1265,8 +1265,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
                                                 <label htmlFor="admin-recipe-category" className="sr-only">Recipe Category</label>
-                                                <select id="admin-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as any })}>
-                                                    {['Breakfast', 'Main', 'Dessert', 'Side', 'Appetizer', 'Bread', 'Dip/Sauce', 'Snack'].map(c => <option key={c}>{c}</option>)}
+                                                <select id="admin-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as Recipe['category'] })}>
+                                                    {RECIPE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                                                 </select>
                                             </div>
                                             <div>
@@ -2015,8 +2015,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             try {
                                                 await CloudArchive.saveStoryContent(storySections);
                                                 toast('Family Story saved!', 'success');
-                                            } catch (e: any) {
-                                                toast(`Save failed: ${e?.message || 'unknown error'}`, 'error');
+                                            } catch (e: unknown) {
+                                                toast(`Save failed: ${e instanceof Error ? e.message : 'unknown error'}`, 'error');
                                             } finally {
                                                 setIsSavingStory(false);
                                             }
@@ -2169,10 +2169,15 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="version-modal-title"
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-                        onClick={e => { if (e.target === e.currentTarget) setVersionModalRecipe(null); }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     >
-                        <div className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden">
+                        <button
+                            type="button"
+                            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                            aria-label="Close version history"
+                            onClick={() => setVersionModalRecipe(null)}
+                        />
+                        <div className="relative bg-white rounded-[2rem] shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden">
                             <div className="p-6 border-b border-stone-100 flex items-center justify-between">
                                 <div>
                                     <h3 id="version-modal-title" className="text-lg font-serif font-bold text-[#2D4635]">Version History</h3>
