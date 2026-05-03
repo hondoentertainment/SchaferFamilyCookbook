@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { confirmCookbookLogin, waitForHomeMainHeading } from './fixtures';
 
 const loginAndOpenTrivia = async (
   page: import('@playwright/test').Page,
@@ -14,7 +15,6 @@ const loginAndOpenTrivia = async (
   await page.goto('/');
   await page.evaluate((seed) => {
     localStorage.clear();
-    // Suppress the onboarding walkthrough in E2E so it doesn't block interactions.
     localStorage.setItem('schafer_onboarding_done', 'true');
     if (seed) {
       localStorage.setItem('schafer_db_trivia', JSON.stringify(seed));
@@ -24,10 +24,8 @@ const loginAndOpenTrivia = async (
 
   await page.getByPlaceholder(/your name/i).fill('Alice');
   await page.getByRole('button', { name: /^continue$/i }).click();
-  // Land on Home, then jump to Family hub ? Trivia tab.
-  await page
-    .getByRole('heading', { name: /Good (morning|afternoon|evening|night)/i })
-    .waitFor({ state: 'visible', timeout: 15000 });
+  await confirmCookbookLogin(page);
+  await waitForHomeMainHeading(page);
   await page.getByRole('button', { name: 'Family', exact: true }).first().click();
   await page.getByRole('button', { name: /^Trivia/i }).first().click();
 };
@@ -108,7 +106,7 @@ test.describe('Trivia', () => {
   });
 
   test('family leaderboard panel is visible after finishing a quiz', async ({ page }) => {
-    // Offline/local mode ó leaderboard should render its shell with an
+    // Offline/local mode ù leaderboard should render its shell with an
     // "Unavailable offline" message since Firebase isn't configured.
     await loginAndOpenTrivia(page, [
       {

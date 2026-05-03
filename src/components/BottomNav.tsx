@@ -5,7 +5,8 @@ import { avatarOnError } from '../utils/avatarFallback';
 
 const MAIN_TABS = [
     { id: 'Home', label: 'Home', group: ['Home'] },
-    { id: 'Recipes', label: 'Recipes', group: ['Recipes', 'Index', 'Collections'] },
+    { id: 'Recipes', label: 'Recipes', group: ['Recipes', 'Collections'] },
+    { id: 'Index', label: 'A–Z', group: ['Index'] },
     { id: 'Gallery', label: 'Family', group: ['Gallery', 'Trivia', 'Family Story', 'Contributors'] },
     { id: 'Grocery List', label: 'Groceries', group: ['Grocery List'] },
     { id: 'Profile', label: 'Me', group: ['Profile', 'Privacy', 'Help'] },
@@ -30,6 +31,14 @@ const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
                 <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" fill={active ? '#2D4635' : 'none'} fillOpacity={active ? 0.08 : 0} />
                 <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" />
                 <path d="M9 8h6M9 12h6M9 16h4" />
+            </svg>
+        );
+    }
+    if (id === 'Index') {
+        return (
+            <svg {...common} aria-hidden>
+                <path d="M6 7h2M6 12h2M6 17h2" />
+                <path d="M11 7h7M11 12h7M11 17h5" />
             </svg>
         );
     }
@@ -76,7 +85,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         <button
                             key={id}
                             type="button"
-                            data-testid={id === 'Profile' ? 'bottom-nav-profile' : undefined}
+                            data-testid={
+                                id === 'Profile' ? 'bottom-nav-profile' : id === 'Index' ? 'bottom-nav-index' : undefined
+                            }
                             onClick={() => {
                                 hapticLight();
                                 setTab(id);

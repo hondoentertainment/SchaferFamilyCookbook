@@ -1,5 +1,25 @@
 import { test as base } from '@playwright/test';
 
+/** Visible on Home after login (time-of-day greeting includes "Late night" variants). */
+const HOME_H1_TEXT_RE = /Good (morning|afternoon|evening)|Late night/i;
+
+/**
+ * After submitting the typed-name login form, confirm the in-app name dialog.
+ */
+export async function confirmCookbookLogin(page: import('@playwright/test').Page): Promise<void> {
+  const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });
+  await openCookbook.waitFor({ state: 'visible', timeout: 15000 });
+  await openCookbook.click();
+}
+
+/** Wait for the Home masthead h1 (stable vs getByRole on split text nodes). */
+export async function waitForHomeMainHeading(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('#main-content-home').getByRole('heading', { level: 1 }).filter({ hasText: HOME_H1_TEXT_RE }).waitFor({
+    state: 'visible',
+    timeout: 15000,
+  });
+}
+
 /**
  * Helper to log in and land on the main app (Recipes tab).
  * Clears storage first to ensure a clean state, then marks the
@@ -23,15 +43,8 @@ export async function loginAs(
   await page.getByPlaceholder(/your name/i).fill(name);
   await page.keyboard.press('Enter');
 
-  // Login asks for confirmation before finalizeLogin runs (Sign-in → Confirm dialog → Home).
-  const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });
-  await openCookbook.waitFor({ state: 'visible', timeout: 15000 });
-  await openCookbook.click();
-
-  // Home renders the greeting inside an <h1> (not always picked up cleanly by generic "heading").
-  await page.locator('#main-content-home').getByRole('heading', { level: 1 }).filter({
-    hasText: /Good (morning|afternoon|evening)|Late night/i,
-  }).waitFor({ state: 'visible', timeout: 15000 });
+  await confirmCookbookLogin(page);
+  await waitForHomeMainHeading(page);
 
   await page.getByRole('button', { name: /^Recipes$/, exact: true }).first().click();
   await page
