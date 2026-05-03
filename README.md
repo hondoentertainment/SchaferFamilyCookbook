@@ -6,7 +6,7 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
 
 ### Run Locally
 
-**Prerequisites:** Node.js 18+
+**Prerequisites:** Node.js 18+. Optional: **Java 21+** on your PATH if you want to run **Firestore rules tests** locally (the emulator is a JVM process).
 
 1. Install dependencies: `npm install`
 2. Create `.env.local` with (no `.env.example` in repo):
@@ -27,28 +27,61 @@ Without a valid key or working proxy, AI buttons will fail with network/API erro
 
 ### Troubleshooting
 
-| Symptom | Cause |
-|--------|-------|
-| AI buttons fail with network error | No `GEMINI_API_KEY` or no working `/api/gemini` proxy (use `vercel dev` or deploy to Vercel) |
-| MMS webhook doesn't receive texts | Needs `FIREBASE_SERVICE_ACCOUNT` and `TWILIO_AUTH_TOKEN` in Vercel env; webhook runs only on Vercel, not GitHub Pages |
+| Symptom                                                              | Cause                                                                                                                   |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| AI buttons fail with network error                                   | No `GEMINI_API_KEY` or no working `/api/gemini` proxy (use `vercel dev` or deploy to Vercel)                            |
+| MMS webhook doesn't receive texts                                    | Needs `FIREBASE_SERVICE_ACCOUNT` and `TWILIO_AUTH_TOKEN` in Vercel env; webhook runs only on Vercel, not GitHub Pages   |
+| Emulator or `firebase emulators:exec` fails (“Could not spawn java”) | Install a **JDK** (recommended 21+) on your PATH; required locally for **`npm run test:rules`** and Firestore emulation |
+
+### Serverless API rate limits (Vercel)
+
+Several routes throttle by client IP (`x-forwarded-for` first hop, then socket address). Limits are enforced per warmed serverless instance (`api/lib/rateLimit.ts`).
+
+| Route                                                          | Requests / window                                                                                         |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `POST /api/gemini`                                             | **45 / 60s** (disable with **`GEMINI_RATE_LIMIT_DISABLED=1`**; override max with **`GEMINI_RATE_LIMIT`**) |
+| `GET` share landing **`/share/recipe/…`** and **`api/share`**  | **120 / 60s**                                                                                             |
+| `GET /api/og`                                                  | **90 / 60s**                                                                                              |
+| `POST /api/webhook` (Twilio MMS)                               | **80 / 60s** (**`429`** + **`Retry-After: 60`**)                                                          |
+| **`POST /api/notify`** (after **`x-notify-secret`** validates) | **24 / 60s** (**`429`**)                                                                                  |
+
+**`/api/notify`** multicasts Firebase Cloud Messaging notifications to tokens in Firestore (**`fcm_tokens`**). Set **`NOTIFY_SECRET`** in Vercel and send header **`x-notify-secret`** with that value plus JSON **`{ "title": "…", "body": "…" }`** (**`body`** optional). Requires **`FIREBASE_SERVICE_ACCOUNT`** (or **`GOOGLE_APPLICATION_CREDENTIALS`**) like the webhook handler.
 
 ### Tests and CI
 
-- **`npm run ci`** runs ESLint, TypeScript check, **Vitest** (unit), and a production build. It does **not** run Playwright; run E2E separately before large UI or routing changes.
-- **Playwright** (`npm run test:e2e` or `npm run test:e2e -- --project=chromium` to mirror the Actions job) builds the app, serves `vite preview` on a **dedicated localhost port** defined in `playwright.config.ts`, then runs the specs. That avoids accidentally testing whatever happens to be bound to Vite’s default preview port (4173). If you need to attach to an already-running server, set `PLAYWRIGHT_BASE_URL` to that origin; to reuse a preview Playwright just started, set `PW_REUSE_E2E_SERVER=1` (see `playwright.config.ts`).
-- **GitHub Actions** runs `ci` first, then a second job starts Firebase emulators and E2E with the env vars in `.github/workflows/ci.yml` (`VITE_FIREBASE_USE_EMULATOR`, etc.). A **`firestore-rules`** job validates `firebase/firestore.rules` via the emulator (`npm run test:rules`).
-- **`npm run test:rules`** runs only under **`firebase emulators:exec`** (wired in Actions); it exercises security rules against an isolated emulator project (`demo-schafer`).
-- After **`CI`** succeeds on **`main`**, **Smoke production** optionally hits `npm run smoke:prod` against the live deployment URLs configured in **`scripts/smoke-prod.mjs`**.
+**Local**
+
+- **`npm run ci`** runs ESLint, TypeScript check, **Vitest** (`src/**/*` and **`api/**/_`**, excluding **`firebase/\*\*/_.rules.test.ts`\*\*), then a production build (no Playwright).
+- **`npm run test:e2e`** (`--project=chromium` mirrors CI) builds the app, serves **`vite preview`** on the port defined in **`playwright.config.ts`**. Set **`PLAYWRIGHT_BASE_URL`** to hit an existing server; set **`PW_REUSE_E2E_SERVER=1`** to reuse preview started by Playwright.
+
+**Firestore rules suite**
+
+- **`npm run test:rules`** uses **`vitest.rules.config.ts`** and **`firebase/firestore.rules.test.ts`**. Locally it must run **inside** the emulator (Firestore is a JVM process):
+
+```bash
+npx firebase-tools emulators:exec --only firestore --project demo-schafer "npm run test:rules"
+```
+
+**GitHub Actions (`.github/workflows/ci.yml`)**
+
+| Job                   | When                                  | What runs                                                                                                   |
+| --------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **`ci`**              | Every push / PR to `main` or `master` | `npm audit` (critical), lint, type-check, **`npm run test:run`**, **`npm run build`**                       |
+| **`e2e`**             | After **`ci`** succeeds               | Playwright Chromium with Firestore + Storage emulators (**`demo-schafer`**; env vars in the workflow file)  |
+| **`firestore-rules`** | After **`ci`** succeeds               | Java 21, Firebase CLI **`emulators:exec`**, **`npm run test:rules`** against **`firebase/firestore.rules`** |
+
+**Smoke production** (`.github/workflows/smoke-prod.yml`) fires when workflow **CI** completes **successfully** on a **push** to **`main`**, runs **`npm ci`**, then **`npm run smoke:prod`** (HTTP checks configured in **`scripts/smoke-prod.mjs`**).
 
 ## Finalize and Deploy
 
 ```bash
-npm run ci              # Lint, type-check, unit tests, build (no Playwright)
+npm run ci              # Lint, type-check, Vitest api+src, build (no Playwright)
 npm run test:e2e        # E2E (e.g. --project=chromium; includes build + preview)
-npm run smoke:prod      # Verify Vercel + GitHub Pages return 200 and expected content
+firebase emulators:exec --only firestore --project demo-schafer "npm run test:rules"
+npm run smoke:prod      # HTTP smoke against URLs in scripts/smoke-prod.mjs
 ```
 
-After push to `main`: CI runs lint, type-check, unit tests, build, then a **separate Playwright E2E** job (Chromium, with emulators as in the workflow). Deploy to GitHub Pages runs from the deploy workflow. Vercel deploys if connected. Verify env vars in Vercel: `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT`, `TWILIO_AUTH_TOKEN`.
+After push to `main`: **`ci`** runs (lint, type-check, Vitest `test:run`, build), **`e2e`** and **`firestore-rules`** jobs follow when **`ci`** passes, then the **Smoke production** workflow hits live URLs **if CI completed successfully**. GitHub Pages deploy runs from the deploy workflow; Vercel deploys if linked. Typical Vercel env: **`GEMINI_API_KEY`**, **`FIREBASE_SERVICE_ACCOUNT`**, **`TWILIO_AUTH_TOKEN`**, optional **`NOTIFY_SECRET`** when using **`/api/notify`**.
 
 ## Deploy (Vercel)
 
@@ -56,8 +89,9 @@ After push to `main`: CI runs lint, type-check, unit tests, build, then a **sepa
 2. Set environment variables:
    - `GEMINI_API_KEY` – required for AI features.
    - `GEMINI_RATE_LIMIT_DISABLED` – set to `1` to turn off per-IP rate limiting on `/api/gemini` (default: **45 requests / 60s** per IP; override max with `GEMINI_RATE_LIMIT`).
-   - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook and Firebase Admin.
+   - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook, Firebase Admin, and **`/api/notify`** (FCM multicast).
    - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
+   - **`NOTIFY_SECRET`** – shared secret for **`POST /api/notify`**; callers must send header **`x-notify-secret`** with this value (**Serverless API rate limits** describes throttling).
    - `VITE_SENTRY_DSN` – optional client error reporting (production only).
    - `VITE_SHARE_BASE` – optional canonical share base (no trailing slash). **`vite build`** loads **`.env.production`**, which defaults this to `https://schafer-family-cookbook.vercel.app`, so links like `${VITE_SHARE_BASE}/share/recipe/<id>` work without setting Vercel dashboard vars (override there if the domain changes). That route serves `/api/share` HTML with `og:image` → `/api/og?recipeId=<id>` plus a redirect to `/#recipe/<id>` for rich previews (iMessage, Slack, WhatsApp). Without this env (e.g. GitHub Pages), the UI falls back to hash-only URLs (no crawler card).
 3. Deploy.
@@ -77,7 +111,7 @@ The share landing route `/share/recipe/<id>` (implemented in `api/share.ts`) ser
 ## Deploy (GitHub Pages)
 
 1. Push to GitHub.
-2. In **Settings → Pages**, set *Source* to **GitHub Actions**.
+2. In **Settings → Pages**, set _Source_ to **GitHub Actions**.
 3. Push to `main` triggers the workflow: lint, type-check, tests, build, then deploy.
 
 Site URL: `https://<username>.github.io/<repo-name>/`
@@ -92,11 +126,11 @@ Family members can text photos and videos to a Twilio number; they appear in the
 
 Located in `scripts/`:
 
-| Script | Purpose |
-|--------|---------|
+| Script                       | Purpose                                                                                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `generate-imagen-images.mjs` | Generate Imagen 3 images for all recipes; uses `shared/recipeImagePrompts.mjs` for anti-hallucination rules. Run: `GEMINI_API_KEY=... node scripts/generate-imagen-images.mjs` |
-| `generate-recipe-images.mjs` | Create Pollinations AI image URLs from hand-curated prompts. |
-| `download-recipe-images.mjs` | Download Pollinations URLs to `public/recipe-images/`. |
+| `generate-recipe-images.mjs` | Create Pollinations AI image URLs from hand-curated prompts.                                                                                                                   |
+| `download-recipe-images.mjs` | Download Pollinations URLs to `public/recipe-images/`.                                                                                                                         |
 
 For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATEGY.md. Use: npm run images:dry-run, npm run images:batch, npm run images:resume.
 
@@ -136,7 +170,11 @@ src/
   test/           # setup, utils
 shared/
   recipeImagePrompts.mjs  # Canonical prompt rules
+firebase/
+  firestore.rules             # Deployed Firestore security rules
+  firestore.rules.test.ts     # Rules unit tests (emulator-backed; npm run test:rules)
 api/
   gemini.ts       # Serverless proxy for Gemini/Imagen
   webhook.ts      # Twilio MMS → gallery
+  notify.ts       # Authenticated FCM broadcast (NOTIFY_SECRET)
 ```

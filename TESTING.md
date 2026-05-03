@@ -6,26 +6,28 @@ This plan describes the checks that should pass before merging or deploying. It 
 
 - **Unit/component/API tests:** Vitest with React Testing Library and `happy-dom`.
 - **E2E tests:** Playwright against a Vite preview server on port `4287`.
-- **CI:** GitHub Actions runs lint, type check, unit tests, build, then Chromium E2E with Firebase emulators.
+- **CI:** GitHub Actions **`ci`** job (lint, type check, **`test:run`**, build); parallel follow-ups **`e2e`** and **`firestore-rules`** when **`ci`** passes; optional **Smoke production** after successful **`push`** CI on **`main`**.
+- **Firestore rules:** `firebase/**/*.rules.test.ts` via **`vitest.rules.config.ts`**, exercised under the Firestore emulator in CI (**`firestore-rules`** job) and runnable locally when Java is installed.
 - **Deploy gate:** GitHub Pages deploys only after the `CI` workflow succeeds on `main`.
 
 ## Commands
 
-| Goal | Command |
-| --- | --- |
-| Full local CI check | `npm run ci` |
-| Unit/component/API tests once | `npm run test:run` |
-| Unit/component/API tests in watch mode | `npm run test` |
-| Vitest UI | `npm run test:ui` |
-| Coverage report | `npm run test:coverage` |
-| TypeScript only | `npm run type-check` |
-| Lint only | `npm run lint` |
-| Production build only | `npm run build` |
-| All Playwright projects | `npm run test:e2e` |
-| Chromium Playwright project | `npm run test:e2e:desktop` |
-| Playwright UI | `npm run test:e2e:ui` |
-| Rebuild local recipe fallback images | `npm run images:rebuild:fallback` |
-| Verify recipe image coverage | `npm run images:verify` |
+| Goal                                                                         | Command                                                                                                            |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Full local CI check                                                          | `npm run ci`                                                                                                       |
+| Firestore security rules (`firebase/firestore.rules`; needs Java + emulator) | `firebase emulators:exec --only firestore --project demo-schafer "npm run test:rules"` (or `npx firebase-tools …`) |
+| Unit/component/API tests once                                                | `npm run test:run`                                                                                                 |
+| Unit/component/API tests in watch mode                                       | `npm run test`                                                                                                     |
+| Vitest UI                                                                    | `npm run test:ui`                                                                                                  |
+| Coverage report                                                              | `npm run test:coverage`                                                                                            |
+| TypeScript only                                                              | `npm run type-check`                                                                                               |
+| Lint only                                                                    | `npm run lint`                                                                                                     |
+| Production build only                                                        | `npm run build`                                                                                                    |
+| All Playwright projects                                                      | `npm run test:e2e`                                                                                                 |
+| Chromium Playwright project                                                  | `npm run test:e2e:desktop`                                                                                         |
+| Playwright UI                                                                | `npm run test:e2e:ui`                                                                                              |
+| Rebuild local recipe fallback images                                         | `npm run images:rebuild:fallback`                                                                                  |
+| Verify recipe image coverage                                                 | `npm run images:verify`                                                                                            |
 
 `npm run ci` intentionally does not run Playwright. Use it for the fast merge/deploy confidence check, then add E2E for changed user flows.
 
@@ -34,6 +36,7 @@ This plan describes the checks that should pass before merging or deploying. It 
 1. Install dependencies with `npm ci` (or `npm install` during normal local development).
 2. Install Playwright browsers when needed: `npx playwright install`.
 3. For emulator-backed E2E, start Firestore and Storage emulators or use the GitHub Actions workflow. CI starts them automatically.
+4. For **Firestore rules tests** locally, install **Java 21+** (Firestore emulator requirement) plus Firebase CLI (`npx firebase-tools` is enough), then run the **`emulators:exec`** command in the Commands table below.
 
 Playwright starts its own preview server unless `PLAYWRIGHT_BASE_URL` is set:
 
@@ -116,7 +119,7 @@ $env:PLAYWRIGHT_BASE_URL="https://schafer-family-cookbook.vercel.app"; npm run t
 
 - Run:
   ```bash
-  npx vitest run src/components/AdminView.test.tsx api/webhook.test.ts api/lib/rateLimit.test.ts
+  npx vitest run src/components/AdminView.test.tsx api/webhook.test.ts api/notify.test.ts api/lib/rateLimit.test.ts
   npm run type-check
   ```
 - Run Chromium E2E if the change touches admin navigation, gallery upload/display, Twilio configuration, or archive phone behavior.
@@ -151,6 +154,13 @@ E2E job:
 4. Waits for ports `8080` and `9199`.
 5. Runs `npm run test:e2e -- --project=chromium` with emulator environment variables.
 
+**`firestore-rules` job:**
+
+1. `npm ci`, Java 21, global `firebase-tools`.
+2. `firebase emulators:exec --only firestore --project demo-schafer "npm run test:rules"`.
+
+The **Smoke production** workflow (`smoke-prod.yml`) executes after the **CI** workflow completes successfully on a **push** to **`main`** (`workflow_run`): `npm ci`, then **`npm run smoke:prod`** using **`scripts/smoke-prod.mjs`**.
+
 The GitHub Pages deployment workflow runs after CI succeeds on `main`, or manually through workflow dispatch.
 
 ## Test Coverage Map
@@ -160,7 +170,7 @@ The GitHub Pages deployment workflow runs after CI succeeds on `main`, or manual
 - `src/services/userPrefsSync.test.ts`: favorites/preferences cloud sync behavior.
 - `src/services/leaderboard.test.ts`: trivia leaderboard persistence.
 - `src/services/geminiProxy.test.ts`: recipe image generation proxy behavior.
-- `api/webhook.test.ts` and `api/lib/rateLimit.test.ts`: serverless webhook and rate limiting.
+- `api/webhook.test.ts`, `api/notify.test.ts`, `api/lib/rateLimit.test.ts`: Twilio MMS webhook, FCM notify route, sliding-window limits.
 - `src/components/*.test.tsx`: user-facing components, forms, modals, profile/admin surfaces, navigation, sharing, grocery list, collections, and cook mode.
 - `src/utils/*.test.ts`: ratings, favorites, collections, grocery list, scaling, recent views, haptics, swipes, scoreboards, and activity feed.
 - `e2e/*.spec.ts`: browser-level login, navigation, recipes, recipe modal, gallery, trivia, profile, admin, and auth flows.
