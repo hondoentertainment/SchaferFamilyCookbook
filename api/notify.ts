@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
+import { getClientIp, NOTIFY_PUSH_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
 
 // Initialize Firebase Admin SDK once
 if (!admin.apps.length) {
@@ -36,6 +37,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const callerSecret = req.headers['x-notify-secret'];
     if (!notifySecret || callerSecret !== notifySecret) {
         return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const notifyIp = getClientIp(req);
+    if (
+        !slidingWindowAllow(
+            `notify:${notifyIp}`,
+            NOTIFY_PUSH_RATE_LIMIT.max,
+            NOTIFY_PUSH_RATE_LIMIT.windowMs,
+        )
+    ) {
+        return res.status(429).json({ error: 'Too many requests' });
     }
 
     // 2. Validate request body

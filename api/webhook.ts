@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import twilio from 'twilio';
 import admin from 'firebase-admin';
+import { getClientIp, TWILIO_WEBHOOK_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -37,6 +38,17 @@ function buildTwilioMediaAuthHeader(): string | null {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    const limitIp = getClientIp(req);
+    if (
+        !slidingWindowAllow(
+            `twilio-webhook:${limitIp}`,
+            TWILIO_WEBHOOK_RATE_LIMIT.max,
+            TWILIO_WEBHOOK_RATE_LIMIT.windowMs,
+        )
+    ) {
+        return res.status(429).setHeader('Retry-After', '60').send('Too many requests');
     }
 
     // Validate Twilio signature when TWILIO_AUTH_TOKEN is set (production)

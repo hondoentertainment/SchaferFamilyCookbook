@@ -9,6 +9,11 @@ const buckets = new Map<string, TimestampBucket>();
 
 const MAX_BUCKET_ENTRIES = 10_000;
 
+/** Clears counters — only for Vitest; keeps serverless buckets isolated per instance. */
+export function resetSlidingBucketsForTests(): void {
+    buckets.clear();
+}
+
 /** Evict entries older than windowMs when the map grows too large. */
 function evictStaleBuckets(windowMs: number): void {
     if (buckets.size <= MAX_BUCKET_ENTRIES) return;
@@ -69,3 +74,9 @@ export const SHARE_PAGE_RATE_LIMIT = { max: 120, windowMs: 60_000 };
 
 /** PNG OG cards are CPU-heavy — tighter cap than HTML. */
 export const OG_IMAGE_RATE_LIMIT = { max: 90, windowMs: 60_000 };
+
+/** Twilio inbound webhook — bounded per IP before downstream work. */
+export const TWILIO_WEBHOOK_RATE_LIMIT = { max: 80, windowMs: 60_000 };
+
+/** POST /api/notify after secret auth — per-IP throttle. */
+export const NOTIFY_PUSH_RATE_LIMIT = { max: 24, windowMs: 60_000 };

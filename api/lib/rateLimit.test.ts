@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { slidingWindowAllow, getClientIp } from './rateLimit';
+import { slidingWindowAllow, getClientIp, resetSlidingBucketsForTests } from './rateLimit';
 
 describe('slidingWindowAllow', () => {
     beforeEach(() => {
+        resetSlidingBucketsForTests();
         vi.useFakeTimers();
     });
     afterEach(() => {
