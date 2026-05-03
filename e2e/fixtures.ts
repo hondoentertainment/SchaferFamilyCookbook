@@ -5,11 +5,20 @@ const HOME_H1_TEXT_RE = /Good (morning|afternoon|evening)|Late night/i;
 
 /**
  * After submitting the typed-name login form, confirm the in-app name dialog.
+ * Waits for either the Home masthead (returning users) or the first onboarding chapter (first visit).
  */
 export async function confirmCookbookLogin(page: import('@playwright/test').Page): Promise<void> {
   const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });
   await openCookbook.waitFor({ state: 'visible', timeout: 15000 });
   await openCookbook.click();
+  await Promise.race([
+    page
+      .locator('#main-content-home')
+      .getByRole('heading', { level: 1 })
+      .filter({ hasText: HOME_H1_TEXT_RE })
+      .waitFor({ state: 'visible', timeout: 15000 }),
+    page.getByText(/Chapter 1 of \d+/i).waitFor({ state: 'visible', timeout: 15000 }),
+  ]);
 }
 
 /** Wait for the Home masthead h1 (stable vs getByRole on split text nodes). */

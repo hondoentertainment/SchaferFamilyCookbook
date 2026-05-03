@@ -19,18 +19,12 @@ test.describe('Grocery list', () => {
         await expect(addBtn).toBeVisible();
         await addBtn.click();
 
-        // Toast confirms the add
+        // Toast confirms the add; optional shortcut to grocery tab
         await expect(page.getByText(/Added \d+ items? to Grocery List/i)).toBeVisible({
             timeout: 3000,
         });
-
-        // Close the modal
-        await page.locator('[role="dialog"][aria-label="Recipe details"]').getByRole('button', { name: /Close recipe/i }).click();
-        await expect(page.locator('[role="dialog"][aria-label="Recipe details"]')).not.toBeVisible({ timeout: 3000 });
-
-        await page.getByRole('button', { name: /^Groceries$/i }).click();
-
-        await expect(page.getByRole('heading', { name: /grocery list/i, level: 2 })).toBeVisible();
+        await page.getByTestId('toast-action').click();
+        await expect(page.getByRole('heading', { name: /grocery list/i, level: 2 })).toBeVisible({ timeout: 5000 });
 
         // There should be at least one checkbox for a grocery item
         const checkboxes = page.getByRole('checkbox', { name: /Mark ".+" as bought/i });

@@ -17,6 +17,8 @@ interface HomeViewProps {
     onSelectCategory: (category: string) => void;
     isFavorite: (id: string) => boolean;
     onToggleFavorite: (id: string) => void;
+    /** When > 0, shows a shortcut card to the Family Heritage Quiz */
+    triviaQuestionCount?: number;
 }
 
 const SEASON_TAGS_BY_MONTH: Record<number, { label: string; keywords: string[]; emoji: string }> = {
@@ -132,6 +134,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     onSelectCategory,
     isFavorite,
     onToggleFavorite,
+    triviaQuestionCount = 0,
 }) => {
     const month = new Date().getMonth();
     const season = SEASON_TAGS_BY_MONTH[month] ?? SEASON_TAGS_BY_MONTH[6];
@@ -229,6 +232,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     </button>
                 </div>
             </section>
+
+            {triviaQuestionCount > 0 && (
+                <section
+                    aria-labelledby="home-trivia-teaser-heading"
+                    className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                >
+                    <div className="space-y-1">
+                        <h2 id="home-trivia-teaser-heading" className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
+                            Family Heritage Quiz
+                        </h2>
+                        <p className="font-serif text-lg italic text-[#2D4635] dark:text-emerald-100">
+                            {triviaQuestionCount} question{triviaQuestionCount !== 1 ? 's' : ''} waiting — test what you know about the family.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        data-testid="home-open-trivia"
+                        onClick={() => { hapticLight(); onSetTab('Trivia'); }}
+                        className="min-h-12 shrink-0 rounded-full bg-[#A0522D] px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#8B4513] active:scale-[0.98] transition-all"
+                    >
+                        Play trivia
+                    </button>
+                </section>
+            )}
 
             {/* Recipe of the week */}
             {recipeOfWeek && (

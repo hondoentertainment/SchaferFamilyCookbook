@@ -21,3 +21,9 @@ export const STORAGE_KEYS = {
   onboardingDone: 'schafer_onboarding_done',
   activityFeed: 'schafer_activity_feed',
 } as const;
+
+/** sessionStorage keys — cleared when the browser tab ends */
+export const SESSION_KEYS = {
+  /** User chose "Resume later" on the onboarding tour; skip tour until next tab session */
+  onboardingDefer: 'schafer_onboarding_defer_session',
+} as const;

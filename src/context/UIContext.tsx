@@ -5,10 +5,15 @@ import { TIMING } from '../constants/theme';
 
 export type ToastType = 'success' | 'error' | 'info';
 
+export type ToastAction = { label: string; onClick: () => void };
+
+export type ToastOptions = { duration?: number; action?: ToastAction };
+
 interface ToastMessage {
     id: number;
     message: string;
     type: ToastType;
+    action?: ToastAction;
 }
 
 interface ConfirmOptions {
@@ -19,7 +24,8 @@ interface ConfirmOptions {
 }
 
 interface UIContextValue {
-    toast: (message: string, type?: ToastType, duration?: number) => void;
+    /** Pass a number as the third argument for duration, or a {@link ToastOptions} object for duration and/or action. */
+    toast: (message: string, type?: ToastType, durationOrOptions?: number | ToastOptions) => void;
     confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
 }
 
@@ -40,11 +46,22 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     } | null>(null);
     const toastIdRef = useRef(0);
 
-    const toast = useCallback((message: string, type: ToastType = 'info', duration: number = TIMING.toastDurationMs) => {
+    const toast = useCallback((message: string, type: ToastType = 'info', durationOrOptions: number | ToastOptions = TIMING.toastDurationMs) => {
+        let duration = TIMING.toastDurationMs;
+        let action: ToastAction | undefined;
+        if (typeof durationOrOptions === 'number') {
+            duration = durationOrOptions;
+        } else if (durationOrOptions && typeof durationOrOptions === 'object') {
+            if (typeof durationOrOptions.duration === 'number') duration = durationOrOptions.duration;
+            action = durationOrOptions.action;
+            if (action && durationOrOptions.duration === undefined) {
+                duration = Math.max(duration, 10_000);
+            }
+        }
         const id = ++toastIdRef.current;
         if (type === 'success') hapticSuccess();
         else if (type === 'error') hapticError();
-        setToasts(prev => [...prev, { id, message, type }]);
+        setToasts(prev => [...prev, { id, message, type, action }]);
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id));
         }, duration);
@@ -93,15 +110,28 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
                 {toasts.map(t => (
                     <div
                         key={t.id}
-                        className={`pointer-events-auto px-5 py-4 rounded-2xl shadow-xl border text-center font-bold text-sm uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+                        className={`pointer-events-auto px-5 py-4 rounded-2xl shadow-xl border font-bold text-sm uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col items-center gap-3 ${
                             t.type === 'success'
                                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                 : t.type === 'error'
                                 ? 'bg-red-50 text-red-800 border-red-200'
                                 : 'bg-white text-stone-700 border-stone-200'
-                        }`}
+                        } text-center`}
                     >
-                        {t.message}
+                        <span className="leading-snug">{t.message}</span>
+                        {t.action ? (
+                            <button
+                                type="button"
+                                data-testid="toast-action"
+                                onClick={() => {
+                                    t.action?.onClick();
+                                    setToasts(prev => prev.filter(x => x.id !== t.id));
+                                }}
+                                className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
+                            >
+                                {t.action.label}
+                            </button>
+                        ) : null}
                     </div>
                 ))}
             </div>

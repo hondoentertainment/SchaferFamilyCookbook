@@ -28,6 +28,8 @@ interface RecipeModalProps {
     isFavorite?: (id: string) => boolean;
     onToggleFavorite?: (id: string) => void;
     onStartCook?: () => void;
+    /** Navigate to grocery list (e.g. from toast action after adding ingredients) */
+    onOpenGroceryList?: (recipeTitle: string) => void;
     /** Optional breadcrumb context (e.g. "Recipes", "A–Z") when opened from deep link or other section */
     breadcrumbContext?: string;
     /** Current user name for ratings/notes */
@@ -143,6 +145,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     isFavorite,
     onToggleFavorite,
     onStartCook,
+    onOpenGroceryList,
     breadcrumbContext = 'Recipes',
     currentUserName = '',
 }) => {
@@ -405,7 +408,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         if (added === 0) {
             toast('All ingredients are already on your Grocery List', 'info');
         } else {
-            toast(`Added ${added} item${added === 1 ? '' : 's'} to Grocery List`, 'success');
+            toast(`Added ${added} item${added === 1 ? '' : 's'} to Grocery List`, 'success', {
+                action: onOpenGroceryList
+                    ? {
+                          label: 'View list',
+                          onClick: () => onOpenGroceryList(recipe.title),
+                      }
+                    : undefined,
+            });
         }
     };
 

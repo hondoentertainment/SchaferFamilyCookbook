@@ -39,13 +39,22 @@ function groupByRecipe(items: GroceryItem[]): GroupedItems[] {
 interface GroceryListViewProps {
     onBrowseRecipes?: () => void;
     onOpenCollections?: () => void;
+    /** When set, scrolls to the recipe group and highlights it briefly */
+    highlightRecipeTitle?: string | null;
+    onHighlightConsumed?: () => void;
 }
 
-export const GroceryListView: React.FC<GroceryListViewProps> = ({ onBrowseRecipes, onOpenCollections }) => {
+export const GroceryListView: React.FC<GroceryListViewProps> = ({
+    onBrowseRecipes,
+    onOpenCollections,
+    highlightRecipeTitle = null,
+    onHighlightConsumed,
+}) => {
     const { toast, confirm } = useUI();
     const [items, setItems] = useState<GroceryItem[]>(() => getItems());
     const [manualText, setManualText] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
+    const groupSectionRefs = useRef<(HTMLElement | null)[]>([]);
 
     useEffect(() => {
         const unsubscribe = subscribeGroceryList(() => {
@@ -57,6 +66,19 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({ onBrowseRecipe
     const groups = useMemo(() => groupByRecipe(items), [items]);
     const checkedCount = useMemo(() => items.filter((i) => i.checked).length, [items]);
     const hasItems = items.length > 0;
+
+    useEffect(() => {
+        if (!highlightRecipeTitle || !onHighlightConsumed) return;
+        const idx = groups.findIndex((g) => g.title === highlightRecipeTitle);
+        if (idx < 0) {
+            onHighlightConsumed();
+            return;
+        }
+        const el = groupSectionRefs.current[idx];
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const t = window.setTimeout(() => onHighlightConsumed(), 4500);
+        return () => window.clearTimeout(t);
+    }, [highlightRecipeTitle, groups, onHighlightConsumed]);
 
     const handleAddManual = (e: React.FormEvent) => {
         e.preventDefault();
@@ -223,11 +245,18 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({ onBrowseRecipe
                 </div>
             ) : (
                 <div className="space-y-8">
-                    {groups.map((group) => (
+                    {groups.map((group, gi) => (
                         <section
                             key={group.title}
+                            ref={(el) => {
+                                groupSectionRefs.current[gi] = el;
+                            }}
                             aria-label={`Grocery items from ${group.title}`}
-                            className="bg-white dark:bg-stone-900 rounded-[2rem] border border-stone-100 dark:border-stone-800 overflow-hidden shadow-sm"
+                            className={`bg-white dark:bg-stone-900 rounded-[2rem] border overflow-hidden shadow-sm transition-[box-shadow] duration-500 ${
+                                highlightRecipeTitle === group.title
+                                    ? 'border-amber-400 ring-2 ring-amber-400/80 shadow-amber-100/40'
+                                    : 'border-stone-100 dark:border-stone-800'
+                            }`}
                         >
                             <header className="px-5 py-3 bg-stone-50 dark:bg-stone-800/60 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between gap-3">
                                 <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 truncate">

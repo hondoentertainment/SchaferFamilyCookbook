@@ -18,17 +18,14 @@
 
     // Access Firebase through the app's exposed functions
     const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
-    const { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+    const { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
 
-    // Firebase config (same as app)
-    const firebaseConfig = {
-        apiKey: "AIzaSyDZYjGjQZvjMDQPuCjA1-3k5-HN3P5ddiI",
-        authDomain: "schafer-cookbook.firebaseapp.com",
-        projectId: "schafer-cookbook",
-        storageBucket: "schafer-cookbook.appspot.com",
-        messagingSenderId: "852757582729",
-        appId: "1:852757582729:web:93ce1cdf0be7352cf09a3a"
-    };
+    const raw = localStorage.getItem('schafer_firebase_config');
+    const firebaseConfig = raw ? JSON.parse(raw) : null;
+    if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) {
+        console.error('Open the app, connect Firebase (Admin), then run this snippet so schafer_firebase_config is in localStorage.');
+        return;
+    }
 
     // Initialize Firebase
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

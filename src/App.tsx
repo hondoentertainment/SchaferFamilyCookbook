@@ -14,7 +14,7 @@ import { Header } from './components/Header';
 import { OfflineBanner } from './components/OfflineBanner';
 import { PLACEHOLDER_AVATAR } from './constants';
 import { getAverageRating, getRatingCount, isFamilyApproved } from './utils/ratings';
-import { STORAGE_KEYS } from './constants/storage';
+import { STORAGE_KEYS, SESSION_KEYS } from './constants/storage';
 import { addActivity, countRecipeCooksLastDays } from './utils/activityFeed';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
@@ -685,7 +685,18 @@ const RecipeShelfCard: React.FC<{
     );
 };
 
-const RECIPE_HASH_REGEX = /^#recipe\/(.+)$/;
+function parseRecipeHash(hash: string): { id: string; openCook: boolean } | null {
+    const m = hash.match(/^#recipe\/(.+)$/);
+    if (!m) return null;
+    let path = m[1];
+    const openCook = /\/cook\/?$/i.test(path);
+    if (openCook) path = path.replace(/\/cook\/?$/i, '');
+    try {
+        return { id: decodeURIComponent(path), openCook };
+    } catch {
+        return null;
+    }
+}
 
 const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
@@ -760,6 +771,7 @@ const App: React.FC = () => {
     });
 
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
+    const [groceryHighlightTitle, setGroceryHighlightTitle] = useState<string | null>(null);
     const [recipeCardActivityEpoch, setRecipeCardActivityEpoch] = useState(0);
     const prevCookRecipeRef = useRef<Recipe | null>(null);
 
@@ -777,6 +789,29 @@ const App: React.FC = () => {
     const handleSetTab = (newTab: string) => {
         setTab(newTab);
     };
+
+    const handleCookModeClose = useCallback(() => {
+        setCookModeRecipe(null);
+        const { hash } = window.location;
+        if (!hash.startsWith('#recipe/')) return;
+        if (selectedRecipe) {
+            window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}`);
+            return;
+        }
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }, [selectedRecipe]);
+
+    const openGroceryFromRecipe = useCallback((recipeTitle: string) => {
+        setGroceryHighlightTitle(recipeTitle);
+        setSelectedRecipe(null);
+        if (window.location.hash.match(/^#recipe\//)) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        setTab('Grocery List');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    const clearGroceryHighlight = useCallback(() => setGroceryHighlightTitle(null), []);
 
     const defaultRecipeIds = useMemo(
         () => new Set(normalizeRecipes(defaultRecipes as Recipe[]).map(r => r.id)),
@@ -871,16 +906,20 @@ const App: React.FC = () => {
         return subscribeFirebaseCustodian(setCustodianAuth);
     }, [dbStats.activeProvider, dbStats.isCloudActive]);
 
-    // Deep-link handling: open recipe from #recipe/{id}
+    // Deep-link handling: open recipe from #recipe/{id} or #recipe/{id}/cook
     useEffect(() => {
         const applyHash = () => {
-            const match = window.location.hash.match(RECIPE_HASH_REGEX);
-            if (match) {
-                const id = decodeURIComponent(match[1]);
-                const recipe = recipes.find(r => r.id === id);
-                if (recipe) {
-                    recordRecipeView(recipe.id, recipe.title);
-                    setTab('Recipes');
+            const parsed = parseRecipeHash(window.location.hash);
+            if (!parsed) return;
+            const recipe = recipes.find((r) => r.id === parsed.id);
+            if (recipe) {
+                recordRecipeView(recipe.id, recipe.title);
+                setTab('Recipes');
+                if (parsed.openCook) {
+                    setSelectedRecipe(null);
+                    setCookModeRecipe(recipe);
+                    trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'deep_link' });
+                } else {
                     setSelectedRecipe(recipe);
                 }
             }
@@ -943,7 +982,13 @@ const App: React.FC = () => {
             localStorage.setItem('schafer_user', JSON.stringify(u));
             setCurrentUser(u);
             if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
-                setShowOnboarding(true);
+                let defer = false;
+                try {
+                    defer = !!sessionStorage.getItem(SESSION_KEYS.onboardingDefer);
+                } catch {
+                    /* sessionStorage blocked */
+                }
+                if (!defer) setShowOnboarding(true);
             }
         },
         [contributors]
@@ -1127,7 +1172,7 @@ const App: React.FC = () => {
 
     const handleRecipeClose = () => {
         setSelectedRecipe(null);
-        if (window.location.hash.match(RECIPE_HASH_REGEX)) {
+        if (window.location.hash.match(/^#recipe\//)) {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
     };
@@ -1176,6 +1221,10 @@ const App: React.FC = () => {
         const loginCta = lc?.cta ?? 'Continue';
         const loginHelp = lc?.helpText ?? 'Need access? Contact an administrator.';
         const trustStrip = lc?.trustStrip ?? [];
+        const loginShowcaseRecipe = (() => {
+            const list = normalizeRecipes(defaultRecipes as Recipe[]);
+            return list.find((r) => r.image && isValidImageUrl(r.image)) ?? list[0] ?? null;
+        })();
         return (
             <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6 lg:p-10">
                 <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
@@ -1212,6 +1261,26 @@ const App: React.FC = () => {
                                     <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Memories</p>
                                 </div>
                             </div>
+                            {loginShowcaseRecipe && (
+                                <div className="mt-10 rounded-[2rem] border border-[#A0522D]/25 bg-white/55 p-5 dark:bg-stone-900/55" aria-label="Sample recipe from the archive">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#7A3F22] dark:text-orange-200 mb-4">Peek inside</p>
+                                    <div className="flex gap-4 items-center">
+                                        {loginShowcaseRecipe.image && isValidImageUrl(loginShowcaseRecipe.image) ? (
+                                            <img
+                                                src={loginShowcaseRecipe.image}
+                                                alt=""
+                                                className="w-24 h-24 shrink-0 rounded-2xl object-cover border border-white/80 shadow-md"
+                                            />
+                                        ) : null}
+                                        <div className="min-w-0 space-y-2">
+                                            <p className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100 leading-snug line-clamp-2">{loginShowcaseRecipe.title}</p>
+                                            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+                                                Sign in to browse every recipe, build your grocery list, and use cook mode step by step.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </section>
 
                         <section className="heirloom-card w-full rounded-[2rem] border border-white/80 p-5 shadow-2xl dark:border-stone-800 sm:p-7 md:rounded-[2.5rem] md:p-9 lg:p-10">
@@ -1355,6 +1424,21 @@ const App: React.FC = () => {
                                         </a>
                                     </p>
                                     <p className="text-[10px] text-emerald-600/80 mt-1">Tap the number to open your messaging app</p>
+                                    <button
+                                        type="button"
+                                        data-testid="gallery-copy-archive-phone"
+                                        onClick={async () => {
+                                            try {
+                                                await navigator.clipboard.writeText(archivePhone);
+                                                toast('Number copied', 'success');
+                                            } catch {
+                                                toast('Could not copy — long-press the number instead', 'info');
+                                            }
+                                        }}
+                                        className="mt-3 min-h-10 rounded-full border border-emerald-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-800 hover:bg-emerald-100/80 transition-colors"
+                                    >
+                                        Copy number
+                                    </button>
                                 </div>
                             </div>
                         ) : (
@@ -1516,7 +1600,12 @@ const App: React.FC = () => {
                             onNavigate={handleNavigateToRecipe}
                             isFavorite={(id) => favoriteIds.has(id)}
                             onToggleFavorite={handleToggleFavorite}
-                            onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
+                            onStartCook={() => {
+                                setCookModeRecipe(selectedRecipe);
+                                trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
+                                window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
+                            }}
+                            onOpenGroceryList={openGroceryFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
                         />
@@ -1526,7 +1615,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
-                            onClose={() => setCookModeRecipe(null)}
+                            onClose={handleCookModeClose}
                         />
                     </Suspense>
                 )}
@@ -1581,7 +1670,12 @@ const App: React.FC = () => {
                             onNavigate={handleNavigateToRecipe}
                             isFavorite={(id) => favoriteIds.has(id)}
                             onToggleFavorite={handleToggleFavorite}
-                            onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
+                            onStartCook={() => {
+                                setCookModeRecipe(selectedRecipe);
+                                trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
+                                window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
+                            }}
+                            onOpenGroceryList={openGroceryFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
                         />
@@ -1591,7 +1685,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
-                            onClose={() => setCookModeRecipe(null)}
+                            onClose={handleCookModeClose}
                         />
                     </Suspense>
                 )}
@@ -1658,7 +1752,12 @@ const App: React.FC = () => {
                         onNavigate={handleNavigateToRecipe}
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
-                        onStartCook={() => { setCookModeRecipe(selectedRecipe); trackEvent('cook_mode_started', { recipeId: selectedRecipe.id }); }}
+                        onStartCook={() => {
+                            setCookModeRecipe(selectedRecipe);
+                            trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
+                            window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
+                        }}
+                        onOpenGroceryList={openGroceryFromRecipe}
                         breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
@@ -1669,7 +1768,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                     <CookModeView
                         recipe={cookModeRecipe}
-                        onClose={() => setCookModeRecipe(null)}
+                        onClose={handleCookModeClose}
                     />
                 </Suspense>
             )}
@@ -1687,6 +1786,7 @@ const App: React.FC = () => {
                         onSelectCategory={(c) => { setCategory(c); }}
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
+                        triviaQuestionCount={trivia.length}
                     />
                 </Suspense>
             )}
@@ -2262,6 +2362,8 @@ const App: React.FC = () => {
                         <GroceryListView
                             onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                             onOpenCollections={() => { handleSetTab('Collections'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            highlightRecipeTitle={groceryHighlightTitle}
+                            onHighlightConsumed={clearGroceryHighlight}
                         />
                     </section>
                 </Suspense>

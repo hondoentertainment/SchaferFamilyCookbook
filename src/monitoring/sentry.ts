@@ -1,7 +1,18 @@
 import * as Sentry from '@sentry/react';
 
+function parseSampleRate(raw: string | undefined, fallback: number): number {
+    if (raw === undefined || raw === '') return fallback;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0 || n > 1) return fallback;
+    return n;
+}
+
 /**
  * Optional error monitoring. Set VITE_SENTRY_DSN in Vercel / .env.production.local.
+ *
+ * Optional tuning (all 0–1):
+ * - VITE_SENTRY_TRACES_SAMPLE_RATE (default 0.05)
+ * - VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE (default 0 — set e.g. 0.1 to sample session replay on errors)
  */
 export function initSentry(): void {
     if (!import.meta.env.PROD) return;
@@ -12,14 +23,32 @@ export function initSentry(): void {
     const environment =
         import.meta.env.VITE_SENTRY_ENVIRONMENT?.trim() || import.meta.env.MODE;
 
+    const tracesSampleRate = parseSampleRate(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE, 0.05);
+    const replaysOnErrorSampleRate = parseSampleRate(
+        import.meta.env.VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE,
+        0
+    );
+
     Sentry.init({
         dsn,
         environment,
         ...(release ? { release } : {}),
-        integrations: [Sentry.browserTracingIntegration()],
-        tracesSampleRate: 0.05,
+        integrations: [
+            Sentry.browserTracingIntegration(),
+            ...(replaysOnErrorSampleRate > 0
+                ? [Sentry.replayIntegration({ maskAllText: false, blockAllMedia: false })]
+                : []),
+        ],
+        tracesSampleRate,
         replaysSessionSampleRate: 0,
-        replaysOnErrorSampleRate: 0,
+        replaysOnErrorSampleRate,
+        beforeSend(event, hint) {
+            const err = hint.originalException;
+            if (err && typeof err === 'object' && 'name' in err && (err as Error).name === 'AbortError') {
+                return null;
+            }
+            return event;
+        },
     });
 }
 

@@ -11,7 +11,7 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
 1. Install dependencies: `npm install`
 2. Create `.env.local` with (no `.env.example` in repo):
    - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
-   - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`). Release/environment are taken from **`VERCEL_GIT_COMMIT_SHA` / `VERCEL_ENV`** on Vercel and **`GITHUB_SHA`** in GitHub Actions when present; override with **`VITE_SENTRY_RELEASE`** / **`VITE_SENTRY_ENVIRONMENT`** if needed.
+   - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`). Release/environment are taken from **`VERCEL_GIT_COMMIT_SHA` / `VERCEL_ENV`** on Vercel and **`GITHUB_SHA`** in GitHub Actions when present; override with **`VITE_SENTRY_RELEASE`** / **`VITE_SENTRY_ENVIRONMENT`** if needed. Optional tuning: **`VITE_SENTRY_TRACES_SAMPLE_RATE`** (0–1, default `0.05`) and **`VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE`** (e.g. `0.1` — enables Session Replay on errors only).
    - **Uploading browser source maps to Sentry (optional):** set **`SENTRY_ORG`**, **`SENTRY_PROJECT`**, and a **`SENTRY_AUTH_TOKEN`** (build-only secret, not `VITE_`) in CI or Vercel. The production Vite build then emits **`hidden` sourcemaps** and the `@sentry/vite-plugin` upload step runs automatically.
 3. Run: `npm run dev`
 
@@ -67,10 +67,17 @@ npx firebase-tools emulators:exec --only firestore --project demo-schafer "npm r
 | Job                   | When                                  | What runs                                                                                                   |
 | --------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | **`ci`**              | Every push / PR to `main` or `master` | `npm audit` (critical), lint, type-check, **`npm run test:run`**, **`npm run build`**                       |
-| **`e2e`**             | After **`ci`** succeeds               | Playwright Chromium with Firestore + Storage emulators (**`demo-schafer`**; env vars in the workflow file)  |
+| **`e2e`**             | After **`ci`** succeeds               | Playwright **Chromium + Firefox** with Firestore + Storage emulators (**`demo-schafer`**; env vars in the workflow file)  |
 | **`firestore-rules`** | After **`ci`** succeeds               | Java 21, Firebase CLI **`emulators:exec`**, **`npm run test:rules`** against **`firebase/firestore.rules`** |
 
 **Smoke production** (`.github/workflows/smoke-prod.yml`) fires when workflow **CI** completes **successfully** on a **push** to **`main`**, runs **`npm ci`**, then **`npm run smoke:prod`** (HTTP checks configured in **`scripts/smoke-prod.mjs`**).
+
+**Operations** (deploy URLs, Sentry, incident hints, backups, Lighthouse): see **`RUNBOOK.md`**.
+
+| Workflow | When | Purpose |
+| -------- | ---- | ------- |
+| **Backup recipes JSON** | Weekly + manual | Timestamped copy of `src/data/recipes.json` as an artifact (`scripts/backup-recipes-json.mjs`). |
+| **Lighthouse CI** | Manual | Core Web Vitals / quality report for a URL you choose (`lighthouserc.cjs`). |
 
 ## Finalize and Deploy
 
@@ -139,7 +146,7 @@ For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATE
 ## Security & backups
 
 - **Firestore / Storage rules:** **Public read**, **custodian-only write** (Firebase Auth + custom claim `admin`). Deploy: `firebase deploy --only firestore:rules,storage:rules`. Custodians use **Profile → Admin tools → Sign in with Google**; grant the claim once: `FIREBASE_SERVICE_ACCOUNT='<json>' npm run admin:set-claim -- <uid>`. Details: **[docs/FIREBASE_SECURITY.md](docs/FIREBASE_SECURITY.md)**.
-- **Recipe JSON backup (local):** `npm run backup:recipes` copies `src/data/recipes.json` to `backups/recipes-<timestamp>.json` (folder is gitignored).
+- **Recipe JSON backup (local):** `npm run backup:recipes` copies `src/data/recipes.json` to `backups/recipes-<timestamp>.json` (folder is gitignored). **Backup recipes JSON** (`.github/workflows/backup-recipes.yml`) runs the same script weekly and uploads an artifact.
 - **Automated Firestore backup:** The `weeklyFirestoreBackup` Cloud Function (in `functions/`) exports all collections to `gs://PROJECT_ID.firebasestorage.app/backups/YYYY-MM-DD/` every Sunday at 2:00 AM UTC. Deploy with `firebase deploy --only functions`. To restore a backup, see **[scripts/restore-backup.md](scripts/restore-backup.md)**.
 
 ## Identity & Access

@@ -21,4 +21,9 @@ export const TIMING = {
   aiCooldownMs: 5 * 60 * 1000,
   feedbackDelayMs: 1500,
   scrollThreshold: 200,
-} as const;
+} satisfies {
+  toastDurationMs: number;
+  aiCooldownMs: number;
+  feedbackDelayMs: number;
+  scrollThreshold: number;
+};

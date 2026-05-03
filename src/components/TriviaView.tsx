@@ -59,9 +59,21 @@ function FamilyLeaderboard({
                     className="px-6 pb-6 pt-2 border-t border-stone-100 dark:border-stone-800"
                 >
                     {status === 'unavailable' && (
-                        <p className="text-sm font-serif italic text-stone-400 dark:text-stone-500 py-4" role="status">
-                            Leaderboard unavailable offline.
-                        </p>
+                        <div className="py-4 space-y-3" role="status">
+                            <p className="text-sm font-serif italic text-stone-400 dark:text-stone-500">
+                                Leaderboard unavailable offline.
+                            </p>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                                Live scores need a network connection. Reconnect to Wi‑Fi or cellular, then check again.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => { onRefresh(); }}
+                                className="min-h-10 rounded-full border border-stone-200 dark:border-stone-600 bg-white dark:bg-stone-800 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-200 hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors"
+                            >
+                                Check again
+                            </button>
+                        </div>
                     )}
 
                     {status === 'loading' && (

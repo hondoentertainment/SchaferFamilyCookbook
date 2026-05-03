@@ -1,27 +1,31 @@
 import React, { useState } from 'react';
-import { STORAGE_KEYS } from '../constants/storage';
+import { STORAGE_KEYS, SESSION_KEYS } from '../constants/storage';
 import { hapticLight } from '../utils/haptics';
 
 const STEPS = [
   {
     icon: '📖',
-    title: 'Browse Family Recipes',
-    description: 'Search and filter through the family collection. Tap any recipe card to see the full details, ingredients, and instructions.',
+    title: 'Find recipes',
+    description:
+      'Search and filter the family collection from the Recipes tab. Tap any card for ingredients, notes, and step-by-step cooking when you are ready.',
   },
   {
     icon: '🍳',
-    title: 'Cook Mode',
-    description: 'Open a recipe and tap "Cook Mode" for a hands-free, step-by-step cooking experience. The screen stays awake so you never lose your place.',
+    title: 'Cook mode',
+    description:
+      'Open a recipe and tap “Start cooking” for a focused, step-by-step flow. Your screen can stay awake so you never lose your place.',
   },
   {
-    icon: '❤️',
-    title: 'Favorites & Collections',
-    description: 'Heart recipes to save them as favorites. Create custom collections like "Holiday Baking" or "Weeknight Dinners" to stay organized.',
+    icon: '🛒',
+    title: 'Grocery list',
+    description:
+      'Add all ingredients from a recipe to your list in one tap, then check them off at the store under Groceries.',
   },
   {
-    icon: '⭐',
-    title: 'Rate & Comment',
-    description: 'Rate recipes and leave family notes like "Kids loved this!" or "Use less salt." When 3+ people rate a recipe 4+ stars, it earns the Family Approved badge.',
+    icon: '👨‍👩‍👧',
+    title: 'Family hub',
+    description:
+      'Gallery, trivia, and family stories live under Family on the bottom bar — shortcuts to memories beyond the kitchen.',
   },
 ];
 
@@ -48,7 +52,18 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
     onComplete();
   };
 
+  const handleResumeLater = () => {
+    hapticLight();
+    try {
+      sessionStorage.setItem(SESSION_KEYS.onboardingDefer, '1');
+    } catch {
+      /* sessionStorage blocked — fall through and just close */
+    }
+    onComplete();
+  };
+
   const current = STEPS[step];
+  const chapterLabel = `Chapter ${step + 1} of ${STEPS.length}`;
 
   return (
     <div className="fixed inset-0 z-[400] bg-[#2D4635]/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
@@ -64,6 +79,8 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
           ))}
         </div>
 
+        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#7A3F22] dark:text-orange-200/90">{chapterLabel}</p>
+
         <div className="space-y-4 animate-fade-slide-in" key={step}>
           <span className="text-6xl block">{current.icon}</span>
           <h2 className="text-2xl font-serif italic text-[#2D4635] dark:text-emerald-400">
@@ -74,20 +91,27 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
           </p>
         </div>
 
-        <div className="flex gap-3 justify-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:items-center">
+          <button
+            type="button"
+            onClick={handleResumeLater}
+            className="order-2 sm:order-1 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-700 transition-colors"
+          >
+            Resume later
+          </button>
           <button
             type="button"
             onClick={handleSkip}
-            className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-700 transition-colors"
+            className="order-3 sm:order-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-700 transition-colors"
           >
-            Skip Tour
+            Skip tour
           </button>
           <button
             type="button"
             onClick={handleNext}
-            className="px-8 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] active:scale-95 transition-all"
+            className="order-1 sm:order-3 px-8 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] active:scale-95 transition-all w-full sm:w-auto"
           >
-            {step < STEPS.length - 1 ? 'Next' : "Let's Cook!"}
+            {step < STEPS.length - 1 ? 'Next' : "Let's cook!"}
           </button>
         </div>
       </div>

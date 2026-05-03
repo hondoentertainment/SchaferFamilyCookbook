@@ -22,7 +22,17 @@ export const PrivacyView: React.FC = () => {
                     <ul className="list-disc pl-6 space-y-2">
                         <li>
                             <strong>On your device:</strong> Your display name, avatar URL, favorites, recently viewed
-                            recipes, grocery list, and trivia scores may be kept in browser storage (localStorage).
+                            recipes, star ratings, personal recipe notes, custom collections, grocery list, trivia scores,
+                            activity feed (e.g. cook/favorite events), display preferences (theme, font size, contrast),
+                            Cook Mode hints, optional push-notification nudge state, and the same recipe/gallery/trivia
+                            copy you edit in <strong>local-only</strong> mode may be kept in browser storage
+                            (localStorage). Firebase web client settings you paste into the app are also stored locally
+                            so the browser can connect to your project.
+                        </li>
+                        <li>
+                            <strong>Cloud preferences (optional):</strong> When Firebase is connected and you sign in as
+                            a custodian, favorites and ratings may sync to Firestore under your family project as
+                            described in the app&apos;s preferences sync (see code: user-scoped docs).
                         </li>
                         <li>
                             <strong>Family cloud (optional):</strong> If an administrator connects Firebase, recipes,

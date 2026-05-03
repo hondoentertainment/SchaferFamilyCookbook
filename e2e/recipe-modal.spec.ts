@@ -66,7 +66,8 @@ test.describe('Recipe modal', () => {
     await expect(recipeDetailsDialog(page)).toBeVisible({ timeout: 5000 });
     const recipeId = await page.evaluate(() => {
       const m = window.location.hash.match(/^#recipe\/(.+)$/);
-      return m ? decodeURIComponent(m[1]) : null;
+      if (!m) return null;
+      return decodeURIComponent(m[1].replace(/\/cook\/?$/i, ''));
     });
     expect(recipeId).toBeTruthy();
     // Close modal, then navigate directly via hash to simulate deep-link entry.
@@ -78,6 +79,34 @@ test.describe('Recipe modal', () => {
 
     await expect(recipeDetailsDialog(page)).toBeVisible({ timeout: 5000 });
     await expect(recipeDetailsDialog(page).getByRole('heading', { name: 'Festive Apple Dip' })).toBeVisible();
+  });
+
+  test('deep link with /cook opens cook mode', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await loginAs(page, 'Alice');
+
+    const festiveCard = recipeCardOpenInMainGrid(page)
+      .filter({ has: page.getByAltText('Festive Apple Dip', { exact: true }) })
+      .first();
+    await festiveCard.waitFor({ state: 'visible', timeout: 5000 });
+    await festiveCard.click();
+    await expect(recipeDetailsDialog(page)).toBeVisible({ timeout: 5000 });
+    const recipeId = await page.evaluate(() => {
+      const m = window.location.hash.match(/^#recipe\/(.+)$/);
+      if (!m) return null;
+      return decodeURIComponent(m[1].replace(/\/cook\/?$/i, ''));
+    });
+    expect(recipeId).toBeTruthy();
+    await recipeDetailsDialog(page).getByRole('button', { name: /Close recipe/i }).click();
+    await expect(recipeDetailsDialog(page)).not.toBeVisible({ timeout: 2000 });
+
+    await page.goto(`/#recipe/${encodeURIComponent(recipeId!)}/cook`);
+    await page.reload();
+
+    await expect(page.getByRole('application', { name: /Cook mode:/i })).toBeVisible({ timeout: 10000 });
+    await expect(recipeDetailsDialog(page)).toHaveCount(0);
   });
 
   test('share and print actions are reachable from the More menu', async ({ page }) => {

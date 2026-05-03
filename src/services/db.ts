@@ -3,6 +3,7 @@ import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, qu
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
+import { CATEGORY_IMAGES } from '../constants';
 import { normalizeRecipe, normalizeRecipes } from '../constants/taxonomy';
 
 async function retryWithBackoff<T>(
@@ -59,6 +60,11 @@ function getRecipeImageSeed(recipe: Recipe): number {
         hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
     }
     return hash;
+}
+
+/** Bundled category placeholders — same-origin, reliable in production (no Pollinations dependency). */
+function bundledCategoryHero(category: Recipe['category']): string {
+    return CATEGORY_IMAGES[category] ?? CATEGORY_IMAGES.Generic;
 }
 
 function getRecipeSpecificImage(recipe: Recipe): string {
@@ -131,6 +137,13 @@ function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
         }
         if (!shouldUseRecipeSpecificImage(recipe.image)) {
             return normalizedRecipe;
+        }
+        if (import.meta.env.PROD) {
+            return {
+                ...normalizedRecipe,
+                image: bundledCategoryHero(normalizedRecipe.category),
+                imageSource: 'local-generated',
+            };
         }
         return {
             ...normalizedRecipe,

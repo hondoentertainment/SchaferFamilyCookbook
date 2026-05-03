@@ -589,6 +589,13 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                 </div>
             )}
 
+            <div
+                className="hidden md:flex shrink-0 bg-white/5 text-white/55 text-[10px] uppercase tracking-widest text-center py-2 px-4 border-b border-white/10 justify-center"
+                role="note"
+            >
+                <span>Tip: use ← → arrow keys to move between steps</span>
+            </div>
+
             {showIngredientsDrawer && (
                 <div className="absolute inset-0 z-20 bg-black/45 backdrop-blur-sm flex justify-end">
                     <button

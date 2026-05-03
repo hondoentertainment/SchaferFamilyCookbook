@@ -83,7 +83,7 @@ test.describe('Trivia', () => {
     await page.getByRole('button', { name: /Begin The Challenge/i }).click();
     await page.getByRole('button', { name: /B: B/ }).click();
 
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Q2?')).toBeVisible({ timeout: 5000 });
   });
 

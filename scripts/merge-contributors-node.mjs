@@ -1,5 +1,8 @@
 // Contributor merge script - Node.js version
-// Run with: node scripts/merge-contributors-node.mjs "Old Name" "New Name"
+// Run with:
+//   FIREBASE_WEB_CONFIG='{"apiKey":"...","projectId":"..."}' node scripts/merge-contributors-node.mjs "Old Name" "New Name"
+// Use the same JSON object as Firebase Console → Project settings → Your apps (web).
+//
 // Defaults normalize the historical Dawn variants used by the cookbook.
 
 import { initializeApp } from 'firebase/app';
@@ -8,14 +11,25 @@ import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'fi
 const FROM_NAME = process.argv[2] || "Dawn";
 const TO_NAME = process.argv[3] || "Dawn (Schafer) Tessmer";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDZYjGjQZvjMDQPuCjA1-3k5-HN3P5ddiI",
-    authDomain: "schafer-cookbook.firebaseapp.com",
-    projectId: "schafer-cookbook",
-    storageBucket: "schafer-cookbook.appspot.com",
-    messagingSenderId: "852757582729",
-    appId: "1:852757582729:web:93ce1cdf0be7352cf09a3a"
-};
+function loadFirebaseConfig() {
+    const raw = process.env.FIREBASE_WEB_CONFIG;
+    if (!raw || !raw.trim()) {
+        console.error('Set FIREBASE_WEB_CONFIG to a JSON string of your Firebase web app config (apiKey, projectId, etc.).');
+        process.exit(1);
+    }
+    try {
+        const c = JSON.parse(raw);
+        if (!c.apiKey || !c.projectId) {
+            throw new Error('config must include apiKey and projectId');
+        }
+        return c;
+    } catch (e) {
+        console.error('Invalid FIREBASE_WEB_CONFIG:', e instanceof Error ? e.message : String(e));
+        process.exit(1);
+    }
+}
+
+const firebaseConfig = loadFirebaseConfig();
 
 async function mergeContributors() {
     console.log(`🔄 Starting merge: "${FROM_NAME}" → "${TO_NAME}"`);
