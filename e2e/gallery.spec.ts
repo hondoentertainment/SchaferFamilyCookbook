@@ -156,22 +156,23 @@ test.describe('Gallery', () => {
     await expect(page.getByRole('dialog', { name: /Enlarged gallery image/i })).not.toBeVisible({ timeout: 2000 });
   });
 
-  test('copy archive phone copies to clipboard', async ({ page, context, browserName }) => {
-    if (browserName === 'firefox') {
-      test.skip();
-    }
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await loginAs(page, 'Alice');
-    await page.evaluate(() => localStorage.setItem('schafer_archive_phone', '+15559876543'));
-    await page.reload();
-    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-    await page.getByRole('button', { name: 'Family', exact: true }).click();
-    await page.getByTestId('gallery-copy-archive-phone').click();
-    await expect(page.getByText(/Number copied/i)).toBeVisible({ timeout: 3000 });
-    const clip = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clip).toBe('+15559876543');
+  test.describe('Clipboard (Chromium/WebKit)', () => {
+    test.skip(({ browserName }) => browserName === 'firefox', 'Clipboard permissions API is not supported for Firefox in Playwright');
+
+    test('copy archive phone copies to clipboard', async ({ page, context }) => {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.goto('/');
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await loginAs(page, 'Alice');
+      await page.evaluate(() => localStorage.setItem('schafer_archive_phone', '+15559876543'));
+      await page.reload();
+      await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+      await page.getByRole('button', { name: 'Family', exact: true }).click();
+      await page.getByTestId('gallery-copy-archive-phone').click();
+      await expect(page.getByText(/Number copied/i)).toBeVisible({ timeout: 3000 });
+      const clip = await page.evaluate(() => navigator.clipboard.readText());
+      expect(clip).toBe('+15559876543');
+    });
   });
 });

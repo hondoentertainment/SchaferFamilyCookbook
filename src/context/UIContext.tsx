@@ -47,7 +47,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const toastIdRef = useRef(0);
 
     const toast = useCallback((message: string, type: ToastType = 'info', durationOrOptions: number | ToastOptions = TIMING.toastDurationMs) => {
-        let duration = TIMING.toastDurationMs;
+        let duration: number = TIMING.toastDurationMs;
         let action: ToastAction | undefined;
         if (typeof durationOrOptions === 'number') {
             duration = durationOrOptions;

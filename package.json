@@ -27,6 +27,7 @@
     "images:rebuild:fallback": "node scripts/rebuild-recipe-images.mjs --force-all --fallback-only --clean-old-generated",
     "images:verify": "node scripts/verify-recipe-images.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
+    "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
     "deploy": "node scripts/deploy-all.mjs",
     "deploy:prod": "node scripts/deploy-all.mjs",
     "backup:recipes": "node scripts/backup-recipes-json.mjs",

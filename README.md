@@ -52,7 +52,7 @@ Several routes throttle by client IP (`x-forwarded-for` first hop, then socket a
 **Local**
 
 - **`npm run ci`** runs ESLint, TypeScript check, **Vitest** (`src/**/*` and **`api/**/_`**, excluding **`firebase/\*\*/_.rules.test.ts`\*\*), then a production build (no Playwright).
-- **`npm run test:e2e`** (`--project=chromium` mirrors CI) builds the app, serves **`vite preview`** on the port defined in **`playwright.config.ts`**. Set **`PLAYWRIGHT_BASE_URL`** to hit an existing server; set **`PW_REUSE_E2E_SERVER=1`** to reuse preview started by Playwright.
+- **`npm run test:e2e`** builds the app, serves **`vite preview`** on the port defined in **`playwright.config.ts`**, and runs **Chromium and Firefox** by default (same as CI). Use **`--project=chromium`** to match a quicker local run. Set **`PLAYWRIGHT_BASE_URL`** to hit an existing server; set **`PW_REUSE_E2E_SERVER=1`** to reuse preview started by Playwright.
 
 **Firestore rules suite**
 
@@ -83,7 +83,7 @@ npx firebase-tools emulators:exec --only firestore --project demo-schafer "npm r
 
 ```bash
 npm run ci              # Lint, type-check, Vitest api+src, build (no Playwright)
-npm run test:e2e        # E2E (e.g. --project=chromium; includes build + preview)
+npm run test:e2e        # E2E Chromium + Firefox (includes build + preview)
 firebase emulators:exec --only firestore --project demo-schafer "npm run test:rules"
 npm run smoke:prod      # HTTP smoke against URLs in scripts/smoke-prod.mjs
 ```

@@ -43,7 +43,7 @@ Short reference for keeping the production app healthy. The codebase also docume
 - **Lint, types, unit tests, build, bundled recipe images** (`npm run images:verify`).
 - **E2E:** Chromium and Firefox against Firestore + Storage emulators.
 - **Firestore rules:** emulator test suite.
-- **Lighthouse:** run **Lighthouse CI** workflow manually from GitHub Actions when you want a fresh Core Web Vitals / a11y snapshot (artifacts under `.lighthouseci`).
+- **Lighthouse:** run **Lighthouse CI** workflow manually from GitHub Actions when you want a fresh Core Web Vitals / a11y snapshot (artifacts under `.lighthouseci`), or locally: `npm run lighthouse:ci` (override URL with `LHCI_URL=https://…/`).
 
 ## PWA / offline
 

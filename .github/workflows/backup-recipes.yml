@@ -10,8 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Write timestamped copy of seed recipes
         run: node scripts/backup-recipes-json.mjs
