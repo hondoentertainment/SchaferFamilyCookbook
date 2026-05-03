@@ -157,7 +157,9 @@ test.describe('Gallery', () => {
   });
 
   test('copy archive phone copies to clipboard', async ({ page, context, browserName }) => {
-    test.skip(browserName === 'firefox', 'Playwright does not support clipboard permissions on Firefox');
+    if (browserName === 'firefox') {
+      test.skip();
+    }
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());

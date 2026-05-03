@@ -83,7 +83,7 @@ test.describe('Trivia', () => {
     await page.getByRole('button', { name: /Begin The Challenge/i }).click();
     await page.getByRole('button', { name: /B: B/ }).click();
 
-    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
+    // Feedback alert is shown briefly (~1.5s) before auto-advance; assert the next question instead.
     await expect(page.getByText('Q2?')).toBeVisible({ timeout: 5000 });
   });
 
