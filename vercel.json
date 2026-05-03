@@ -3,8 +3,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/gemini.ts": { "maxDuration": 60, "memory": 1024 },
-    "api/og.ts": { "maxDuration": 30, "memory": 1024 },
+    "api/gemini.ts": { "maxDuration": 60 },
+    "api/og.ts": { "maxDuration": 30 },
     "api/webhook.ts": { "maxDuration": 30 },
     "api/notify.ts": { "maxDuration": 30 },
     "api/share.ts": { "maxDuration": 20 }
