@@ -9,9 +9,10 @@ test.describe('Tab navigation', () => {
     await loginAs(page, 'Alice');
   });
 
-  test('shows the five primary nav tabs and no More menu', async ({ page }) => {
+  test('shows the six primary nav tabs and no More menu', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Recipes', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'A–Z', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Family', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Groceries', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Me', exact: true })).toBeVisible();

@@ -14,7 +14,8 @@ type NavTab = { id: string; title: string; label?: string };
 
 const PRIMARY_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
     { id: 'Home', title: 'Your personalized cookbook home', label: 'Home' },
-    { id: 'Recipes', title: 'Search recipes, collections, and the A–Z index', label: 'Recipes' },
+    { id: 'Recipes', title: 'Search recipes and browse collections', label: 'Recipes' },
+    { id: 'Index', title: 'Alphabetical recipe index (A–Z)', label: 'A–Z' },
     { id: 'Gallery', title: 'Family photos, story, contributors, and trivia', label: 'Family' },
     { id: 'Grocery List', title: 'Grocery list and meal planning from saved recipes', label: 'Groceries' },
     { id: 'Profile', title: 'Profile, preferences, admin tools, privacy, and help', label: 'Me' },
@@ -22,7 +23,8 @@ const PRIMARY_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
 
 const NAV_GROUPS: Record<string, string[]> = {
     Home: ['Home'],
-    Recipes: ['Recipes', 'Index', 'Collections'],
+    Recipes: ['Recipes', 'Collections'],
+    Index: ['Index'],
     'Grocery List': ['Grocery List'],
     Gallery: ['Gallery', 'Trivia', 'Family Story', 'Contributors'],
     Profile: ['Profile', 'Privacy', 'Help'],

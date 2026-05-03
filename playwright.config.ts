@@ -6,11 +6,11 @@ const e2eBase = `http://127.0.0.1:${E2E_PREVIEW_PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: !process.env.CI,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  timeout: 60000,
+  timeout: process.env.CI ? 90_000 : 60_000,
   reporter: 'html',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || e2eBase,

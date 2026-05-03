@@ -164,6 +164,15 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const prevRecipe = navIndex > 0 ? recipeList[navIndex - 1] : null;
     const nextRecipe = navIndex >= 0 && navIndex < recipeList.length - 1 ? recipeList[navIndex + 1] : null;
 
+    /** Same category when possible; otherwise any other recipes from the current list (browse context). */
+    const suggestedRecipes = useMemo(() => {
+        if (!recipe?.id || recipeList.length < 2) return [];
+        const others = recipeList.filter((r) => r.id !== recipe.id);
+        const sameCategory = others.filter((r) => r.category === recipe.category);
+        const pool = sameCategory.length > 0 ? sameCategory : others;
+        return [...pool].sort((a, b) => a.title.localeCompare(b.title)).slice(0, 4);
+    }, [recipe?.id, recipe?.category, recipeList]);
+
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const lightboxCloseRef = useRef<HTMLButtonElement>(null);
     const lightboxRef = useRef<HTMLDivElement>(null);
@@ -853,6 +862,46 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     </div>
                                 </div>
                             </section>
+                            )}
+
+                            {detailMode === 'read' && suggestedRecipes.length > 0 && onNavigate && (
+                                <section
+                                    className="print:hidden rounded-3xl border border-stone-200 dark:border-[var(--border-color)] bg-white/70 dark:bg-[var(--card-bg)] p-5 md:p-6"
+                                    aria-label="You might also like"
+                                >
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+                                        You might also like
+                                    </h3>
+                                    <ul className="flex gap-3 overflow-x-auto pb-1 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                        {suggestedRecipes.map((r) => (
+                                            <li key={r.id} className="shrink-0 w-40 sm:w-44">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        hapticLight();
+                                                        trackEvent('recipe_suggestion_open', { recipeId: r.id, fromRecipeId: recipe.id });
+                                                        onNavigate(r);
+                                                    }}
+                                                    className="block w-full text-left rounded-2xl border border-stone-200/90 dark:border-[var(--border-color)] overflow-hidden bg-white dark:bg-[var(--card-bg)] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.98] motion-reduce:transition-none"
+                                                >
+                                                    <div className="aspect-[4/3] bg-stone-100 dark:bg-stone-800 relative">
+                                                        {r.image && (r.image.startsWith('/') || r.image.startsWith('http')) ? (
+                                                            <img src={r.image} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                                                        ) : (
+                                                            <div className="flex h-full items-center justify-center text-2xl text-[#2D4635]/40 dark:text-emerald-200/40" aria-hidden>
+                                                                {CATEGORY_META[r.category]?.icon || CATEGORY_META.Generic.icon}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-3 space-y-1">
+                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-[#A0522D]/90 line-clamp-1">{r.category}</p>
+                                                        <p className="text-sm font-serif italic text-[#2D4635] dark:text-emerald-100 line-clamp-2 leading-snug">{r.title}</p>
+                                                    </div>
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
                             )}
 
                             {detailMode === 'read' && hasValidImage && (

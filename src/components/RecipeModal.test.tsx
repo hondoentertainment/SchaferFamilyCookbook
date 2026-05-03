@@ -154,4 +154,16 @@ describe('RecipeModal', () => {
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);
     });
+
+    it('shows You might also like and navigates when a suggestion is clicked', () => {
+        const mockNavigate = vi.fn();
+        const r1 = createMockRecipe({ id: 'recipe-a', title: 'Alpha Dish' });
+        const r2 = createMockRecipe({ id: 'recipe-b', title: 'Beta Dish' });
+        renderWithProviders(
+            <RecipeModal {...defaultProps} recipe={r1} recipeList={[r1, r2]} onNavigate={mockNavigate} />
+        );
+        expect(screen.getByLabelText(/You might also like/i)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /Beta Dish/i }));
+        expect(mockNavigate).toHaveBeenCalledWith(r2);
+    });
 });
