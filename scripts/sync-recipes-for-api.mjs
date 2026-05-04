@@ -17,4 +17,6 @@ const banner = `/**
  * Source: src/data/recipes.json
  */
 `;
-writeFileSync(dest, `${banner}export default ${JSON.stringify(data)};\n`, 'utf8');
+/** Embed JSON as JS via JSON.parse(JSON.stringify(raw)) so backslashes etc. cannot break parsing (e.g. \\) in prose). */
+const rawJson = JSON.stringify(data);
+writeFileSync(dest, `${banner}export default JSON.parse(${JSON.stringify(rawJson)});\n`, 'utf8');
