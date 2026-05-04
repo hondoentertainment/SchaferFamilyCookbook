@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "postinstall": "node scripts/sync-recipes-for-api.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run",
+    "test:run": "node scripts/sync-recipes-for-api.mjs && vitest run",
     "test:rules": "vitest run --config vitest.rules.config.ts",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
