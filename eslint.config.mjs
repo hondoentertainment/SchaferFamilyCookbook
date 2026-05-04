@@ -9,7 +9,16 @@ import tsParser from "@typescript-eslint/parser";
 import globals from "globals";
 
 export default defineConfig([
-  { ignores: ["dist/**", "node_modules/**", "coverage/**", "*.config.*", "scripts/**"] },
+  {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "*.config.*",
+      "scripts/**",
+      "api/recipes.seed.generated.ts",
+    ],
+  },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
