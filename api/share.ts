@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import recipesJson from '../src/data/recipes.json' with { type: 'json' };
+import { loadRecipesSeed } from './loadRecipesSeed';
 import { getClientIp, SHARE_PAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
 
 /**
@@ -26,7 +26,7 @@ type RecipeLike = {
     category?: string;
 };
 
-const recipes = recipesJson as RecipeLike[];
+const recipes = loadRecipesSeed();
 
 function escapeHtml(s: string): string {
     return s.replace(/[<>&"']/g, (c) => {

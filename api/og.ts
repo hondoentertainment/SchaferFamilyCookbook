@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sharp from 'sharp';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import recipesJson from '../src/data/recipes.json' with { type: 'json' };
+import { loadRecipesSeed } from './loadRecipesSeed';
 import { getClientIp, OG_IMAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
 
 /**
@@ -29,7 +29,7 @@ type RecipeLike = {
     category?: string;
 };
 
-const recipes = recipesJson as RecipeLike[];
+const recipes = loadRecipesSeed() as RecipeLike[];
 
 const WIDTH = 1200;
 const HEIGHT = 630;
