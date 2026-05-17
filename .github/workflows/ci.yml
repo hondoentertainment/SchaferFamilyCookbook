@@ -66,8 +66,31 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: |
+          for attempt in 1 2 3; do
+            npm install -g firebase-tools && exit 0
+            echo "::warning::firebase-tools install failed (attempt $attempt); retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::firebase-tools install failed after 3 attempts"
+          exit 1
+
+      - name: Prepare Firebase emulators
+        run: |
+          for attempt in 1 2 3; do
+            firebase setup:emulators:firestore && firebase setup:emulators:storage && exit 0
+            echo "::warning::emulator download failed (attempt $attempt); retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::emulator download failed after 3 attempts"
+          exit 1
 
       - name: Start Firebase emulators
         run: firebase emulators:start --only firestore,storage --project demo-schafer &
@@ -106,8 +129,31 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: |
+          for attempt in 1 2 3; do
+            npm install -g firebase-tools && exit 0
+            echo "::warning::firebase-tools install failed (attempt $attempt); retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::firebase-tools install failed after 3 attempts"
+          exit 1
+
+      - name: Prepare Firestore emulator
+        run: |
+          for attempt in 1 2 3; do
+            firebase setup:emulators:firestore && exit 0
+            echo "::warning::Firestore emulator download failed (attempt $attempt); retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::Firestore emulator download failed after 3 attempts"
+          exit 1
 
       - name: Firestore security rules tests
         run: firebase emulators:exec --only firestore --project demo-schafer "npm run test:rules"
