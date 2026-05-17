@@ -14,6 +14,7 @@ import { RecipeNotes } from './RecipeNotes';
 import { ShareRecipe } from './ShareRecipe';
 import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
 import { getAllCollections, addToCollection } from '../utils/collections';
+import { addToMealPlan, getMealPlan, toDateKey, addDays } from '../utils/mealPlan';
 import { addActivity } from '../utils/activityFeed';
 import { addItems as addGroceryItems, getItems as getGroceryItems } from '../utils/groceryList';
 import { trackEvent } from '../services/analytics';
@@ -126,6 +127,82 @@ const OverflowCollectionPicker: React.FC<{ recipeId: string; onAdded?: () => voi
                                 <span>{col.icon}</span>
                                 <span className="flex-1 truncate">{col.name}</span>
                                 {alreadyIn && <span className="text-[10px] text-emerald-500">Added</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+/** Inline meal-plan day picker used inside the overflow menu. */
+const OverflowMealPlanPicker: React.FC<{ recipeId: string; onAdded?: () => void }> = ({ recipeId, onAdded }) => {
+    const { toast } = useUI();
+    const [entries, setEntries] = useState(() => getMealPlan());
+    const [open, setOpen] = useState(false);
+
+    const days = useMemo(() => {
+        const today = new Date();
+        return Array.from({ length: 7 }, (_, i) => addDays(today, i));
+    }, []);
+
+    const plannedCount = entries.filter((e) => e.recipeId === recipeId).length;
+
+    const dayLabel = (d: Date, i: number) =>
+        i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'long' });
+
+    const handleAdd = (d: Date) => {
+        addToMealPlan(toDateKey(d), recipeId);
+        setEntries(getMealPlan());
+        toast('Added to meal plan', 'success');
+        setOpen(false);
+        onAdded?.();
+    };
+
+    return (
+        <div className="px-1">
+            <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                    setEntries(getMealPlan());
+                    setOpen((v) => !v);
+                }}
+                aria-expanded={open}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] transition-colors min-h-11"
+            >
+                <span aria-hidden className="text-lg w-5 text-center">🗓️</span>
+                <span className="flex-1 text-left">
+                    {plannedCount > 0
+                        ? `On ${plannedCount} planned day${plannedCount !== 1 ? 's' : ''}`
+                        : 'Add to meal plan'}
+                </span>
+                <span aria-hidden className="text-stone-600 dark:text-stone-300">{open ? '▾' : '▸'}</span>
+            </button>
+            {open && (
+                <div className="mt-1 ml-8 mr-1 mb-1 max-h-48 overflow-y-auto space-y-0.5 border-l border-stone-200 dark:border-[var(--border-color)] pl-2">
+                    {days.map((d, i) => {
+                        const already = entries.some(
+                            (e) => e.date === toDateKey(d) && e.recipeId === recipeId,
+                        );
+                        return (
+                            <button
+                                key={toDateKey(d)}
+                                type="button"
+                                onClick={() => !already && handleAdd(d)}
+                                disabled={already}
+                                className={`w-full text-left px-2.5 py-2 rounded-md text-xs flex items-center gap-2 transition-colors ${
+                                    already
+                                        ? 'text-stone-400 cursor-default'
+                                        : 'hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] text-stone-700 dark:text-stone-300'
+                                }`}
+                            >
+                                <span className="flex-1 truncate">{dayLabel(d, i)}</span>
+                                <span className="text-[10px] text-stone-400">
+                                    {d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                </span>
+                                {already && <span className="text-[10px] text-emerald-500">Added</span>}
                             </button>
                         );
                     })}
@@ -1078,6 +1155,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         </div>
                                         <div className="my-1 border-t border-stone-100 dark:border-[var(--border-color)]" />
                                         <OverflowCollectionPicker recipeId={recipe.id} onAdded={() => setOverflowOpen(false)} />
+                                        <OverflowMealPlanPicker recipeId={recipe.id} onAdded={() => setOverflowOpen(false)} />
                                     </div>
                                 )}
                             </div>

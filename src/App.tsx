@@ -54,6 +54,7 @@ const OnboardingWalkthrough = lazy(() => import('./components/OnboardingWalkthro
 const ContributorSpotlight = lazy(() => import('./components/ContributorSpotlight').then(m => ({ default: m.ContributorSpotlight })));
 const GroceryListView = lazy(() => import('./components/GroceryListView').then(m => ({ default: m.GroceryListView })));
 const CollectionsView = lazy(() => import('./components/CollectionsView').then(m => ({ default: m.CollectionsView })));
+const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({ default: m.MealPlanView })));
 const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => ({ default: m.InstallPrompt })));
 const HelpView = lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })));
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
@@ -1758,7 +1759,7 @@ const App: React.FC = () => {
                             window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
                         }}
                         onOpenGroceryList={openGroceryFromRecipe}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
                 </Suspense>
@@ -2362,6 +2363,7 @@ const App: React.FC = () => {
                         <GroceryListView
                             onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                             onOpenCollections={() => { handleSetTab('Collections'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onOpenMealPlan={() => { handleSetTab('Meal Plan'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                             highlightRecipeTitle={groceryHighlightTitle}
                             onHighlightConsumed={clearGroceryHighlight}
                         />
@@ -2377,6 +2379,19 @@ const App: React.FC = () => {
                             recipes={recipes}
                             currentUserName={currentUser.name}
                             onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
+                        />
+                    </section>
+                </Suspense>
+            )}
+
+            {tab === 'Meal Plan' && currentUser && (
+                <Suspense fallback={<TabFallback />}>
+                    <section id="main-content-meal-plan" aria-label="Meal plan" tabIndex={-1}>
+                        <MealPlanView
+                            recipes={recipes}
+                            onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
+                            onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onOpenGroceryList={() => { handleSetTab('Grocery List'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         />
                     </section>
                 </Suspense>

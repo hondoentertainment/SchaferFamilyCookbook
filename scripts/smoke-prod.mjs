@@ -14,10 +14,13 @@ const SAMPLE_RECIPE_ID = '749d8765';
 const EXPECTED = 'Schafer Family Cookbook';
 
 async function smokeVercelShareRoutes(vercelBase) {
-  const shareUrl = `${vercelBase.replace(/\/$/, '')}/share/recipe/${SAMPLE_RECIPE_ID}`;
-  const ogUrl = `${vercelBase.replace(/\/$/, '')}/api/og?recipeId=${encodeURIComponent(SAMPLE_RECIPE_ID)}`;
+  const base = vercelBase.replace(/\/$/, '');
+  const shareUrl = `${base}/share/recipe/${SAMPLE_RECIPE_ID}`;
+  const ogUrl = `${base}/api/og?recipeId=${encodeURIComponent(SAMPLE_RECIPE_ID)}`;
+  const pingUrl = `${base}/api/ping`;
 
   for (const { url, name, kind } of [
+    { url: pingUrl, name: 'Vercel API ping', kind: 'ping' },
     { url: shareUrl, name: 'Vercel share HTML', kind: 'html' },
     { url: ogUrl, name: 'Vercel OG PNG', kind: 'png' },
   ]) {
@@ -27,7 +30,13 @@ async function smokeVercelShareRoutes(vercelBase) {
         console.error(`❌ ${name} (${url}): HTTP ${res.status}`);
         return 1;
       }
-      if (kind === 'html') {
+      if (kind === 'ping') {
+        const body = await res.json().catch(() => null);
+        if (!body || body.status !== 'ok' || !(body.recipeSeedCount > 0)) {
+          console.error(`❌ ${name}: serverless seed not loaded (${JSON.stringify(body)})`);
+          return 1;
+        }
+      } else if (kind === 'html') {
         const html = await res.text();
         if (!html.includes('og:image') || !html.includes('/api/og?recipeId=')) {
           console.error(`❌ ${name}: missing expected Open Graph markup`);
