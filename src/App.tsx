@@ -420,6 +420,9 @@ import defaultRecipes from './data/recipes.json';
 const isValidImageUrl = (url: string) =>
     !!url && (url.startsWith('/recipe-images/') || url.startsWith('http://') || url.startsWith('https://'));
 
+const isCookbookCoverImage = (recipe: Recipe) => recipe.imageSource === 'local-generated';
+const isPhotoLikeImage = (recipe: Recipe) => !isCookbookCoverImage(recipe);
+
 const RecipeImageFallback: React.FC<{ category: Recipe['category']; label?: string; compact?: boolean }> = ({ category, label = 'Image unavailable', compact = false }) => (
     <div className="absolute inset-0 overflow-hidden bg-[#2D4635]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(244,164,96,0.35),transparent_32%),radial-gradient(circle_at_75%_80%,rgba(16,185,129,0.22),transparent_36%)]" />
@@ -444,15 +447,10 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const [loaded, setLoaded] = useState(false);
     const { toast } = useUI();
     const hasValidImage = isValidImageUrl(recipe.image) && !broken;
-    const imageSourceLabel = recipe.imageSource === 'nano-banana'
-        ? null
-        : recipe.imageSource === 'pollinations'
-            ? null
-            : recipe.imageSource === 'upload'
-                ? null
-                : recipe.imageSource === 'local-generated'
-                    ? null
-                    : null;
+    const isCover = isCookbookCoverImage(recipe);
+    const imageClassName = isCover
+        ? `absolute inset-0 h-full w-full object-contain p-2.5 transition-opacity duration-500 sm:p-3 ${loaded ? 'opacity-100' : 'opacity-0'}`
+        : `absolute inset-0 h-full w-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? 'opacity-100' : 'opacity-0'}`;
 
     const handleImageError = () => {
         setBroken(true);
@@ -464,26 +462,25 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     if (hasValidImage) {
         return (
             <>
+                <div className={isCover ? 'absolute inset-0 bg-[#203629]' : 'absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300'} />
                 {!loaded && (
                     <div className="absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 animate-pulse" />
+                )}
+                {isCover && (
+                    <div className="pointer-events-none absolute inset-2 rounded-[1.35rem] ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]" aria-hidden="true" />
                 )}
                 <img
                     src={recipe.image}
                     width={800}
                     height={600}
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                    className={imageClassName}
                     loading="lazy"
                     decoding="async"
                     alt={recipe.title}
                     onLoad={() => setLoaded(true)}
                     onError={handleImageError}
                 />
-                {imageSourceLabel && (
-                    <span className="absolute top-4 right-4 z-10 rounded-full border border-white/20 bg-black/35 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-white/85 shadow-lg backdrop-blur-md">
-                        {imageSourceLabel}
-                    </span>
-                )}
             </>
         );
     }
@@ -497,6 +494,25 @@ const HeroRecipeImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const [broken, setBroken] = useState(false);
     if (!isValidImageUrl(recipe.image) || broken) {
         return <RecipeImageFallback category={recipe.category} compact label="Hero image unavailable" />;
+    }
+
+    if (isCookbookCoverImage(recipe)) {
+        return (
+            <>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_25%,rgba(160,82,45,0.35),transparent_34%),radial-gradient(circle_at_20%_75%,rgba(16,185,129,0.18),transparent_36%)]" />
+                <img
+                    src={recipe.image}
+                    alt=""
+                    className="absolute right-8 top-1/2 hidden h-[78%] w-auto max-w-[42%] -translate-y-1/2 rounded-[1.25rem] object-contain opacity-35 shadow-2xl lg:block"
+                    aria-hidden="true"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    onError={() => setBroken(true)}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/98 via-[#1a2a20]/86 to-[#1a2a20]/62" />
+            </>
+        );
     }
 
     return (
@@ -1976,7 +1992,7 @@ const App: React.FC = () => {
                             </div>
                         </div>
                         <div className="hidden md:flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 px-2">
-                            <span>{sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}{activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}` : ''}</span>
+                            <span>{sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}{activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active` : ' · tap a card to view, or start cooking from the card'}</span>
                             {activeFilterCount > 0 && (
                                 <button type="button" onClick={clearRecipeFilters} className="text-[#A0522D] hover:underline">Reset filters</button>
                             )}
@@ -2089,7 +2105,7 @@ const App: React.FC = () => {
                                 return (
                                     <article
                                         key={recipe.id}
-                                        className="recipe-card-surface group relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950"
+                                        className="recipe-card-surface group relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800 dark:focus-within:ring-offset-stone-950"
                                     >
                                         <button
                                             type="button"
