@@ -26,6 +26,7 @@
     "images:batch": "node scripts/generate-imagen-images.mjs --missing-only --limit 20",
     "images:resume": "node scripts/generate-imagen-images.mjs --missing-only --limit 20 --resume",
     "images:rebuild:fallback": "node scripts/rebuild-recipe-images.mjs --force-all --fallback-only --clean-old-generated",
+    "images:generate:local": "node scripts/generate-recipe-derived-local-images.mjs",
     "images:verify": "node scripts/verify-recipe-images.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",

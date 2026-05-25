@@ -14,7 +14,7 @@ export const RECIPE_IMAGE_RULES = {
     `You are describing the finished dish for a food photographer. Be ACCURATE. Use ONLY the recipe data below. Do NOT add parsley, herbs, garnish, side dishes, utensils, or any ingredient not listed unless the recipe explicitly calls for them.`,
   /** Nano Banana suffix: strongly constrain the generated scene. */
   NANO_BANANA_SUFFIX:
-    `Show only the finished recipe as a realistic plated dish. No invented garnish or extra ingredients. No text overlay, no hands, no people. Warm natural lighting, appetizing styling, rustic kitchen table, shallow depth of field.`,
+    `Show only the finished recipe as a realistic plated dish based on the listed ingredients and preparation. No invented garnish or extra ingredients. No text overlay, no hands, no people. Warm natural lighting, appetizing styling, rustic kitchen table, shallow depth of field.`,
   /** Pollinations-style suffix (for hand-curated prompts). */
   POLLINATIONS_ACCURACY: `accurately depicting only this dish with no invented garnish`,
 };
@@ -27,8 +27,9 @@ export const MIN_DESCRIPTION_LENGTH = 10;
  * Fallback when LLM returns empty or unreliable.
  */
 export function buildDeterministicPrompt(recipe) {
-  const topIngredients = (recipe.ingredients || []).slice(0, 8).join(', ');
-  return `the finished dish "${recipe.title}", featuring ${topIngredients || 'the main ingredients'}, plated as cooked`;
+  const topIngredients = (recipe.ingredients || []).slice(0, 10).join(', ');
+  const methodHint = (recipe.instructions || [])[0]?.slice(0, 100) || '';
+  return `the finished dish "${recipe.title}", featuring ${topIngredients || 'the main ingredients'}, prepared as ${methodHint || 'described in the recipe'}, plated as cooked`;
 }
 
 /**
@@ -37,8 +38,8 @@ export function buildDeterministicPrompt(recipe) {
  * @returns {string} Text to send to Gemini
  */
 export function buildLLMPromptText(recipe) {
-  const topIngredients = (recipe.ingredients || []).slice(0, 8).join(', ');
-  const instructionHint = (recipe.instructions || [])[0]?.slice(0, 80) || '';
+  const topIngredients = (recipe.ingredients || []).slice(0, 10).join(', ');
+  const instructionHint = (recipe.instructions || [])[0]?.slice(0, 120) || '';
   return `${RECIPE_IMAGE_RULES.LLM_SYSTEM}
 
 Recipe title: "${recipe.title}"
@@ -46,7 +47,7 @@ Category: ${recipe.category}
 Key ingredients (use only these): ${topIngredients}
 ${instructionHint ? `First step (hint for plating/form): ${instructionHint}` : ''}
 
-Write a 15-25 word visual description: what the dish actually looks like when cooked and plated. Colors, textures, plating. Return ONLY the description, no quotes. Do not invent any ingredients.`;
+Write a 15-25 word visual description of what this recipe actually looks like when cooked and plated, including colors, textures, and form implied by the ingredients and first step. Return ONLY the description, no quotes. Do not invent any ingredients.`;
 }
 
 /**

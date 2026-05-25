@@ -3,7 +3,6 @@ import { getFirestore, collection, setDoc, doc, getDoc, deleteDoc, updateDoc, qu
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
-import { CATEGORY_IMAGES } from '../constants';
 import { normalizeRecipe, normalizeRecipes } from '../constants/taxonomy';
 
 async function retryWithBackoff<T>(
@@ -53,102 +52,46 @@ function safeParseArray<T>(raw: string | null): T[] {
     }
 }
 
-function getRecipeImageSeed(recipe: Recipe): number {
-    const input = `${recipe.id}:${recipe.title}`;
-    let hash = 0;
-    for (let i = 0; i < input.length; i++) {
-        hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
-    }
-    return hash;
+const generatedDefaultImagesById = new Map(
+    (defaultRecipes as Recipe[])
+        .filter(recipe => recipe.imageSource === 'nano-banana' && recipe.image?.startsWith('/recipe-images/'))
+        .map(recipe => [recipe.id, { image: recipe.image, imageSource: recipe.imageSource }])
+);
+
+const generatedDefaultImagesByTitle = new Map(
+    (defaultRecipes as Recipe[])
+        .filter(recipe => recipe.imageSource === 'nano-banana' && recipe.image?.startsWith('/recipe-images/'))
+        .map(recipe => [recipe.title.trim().toLowerCase(), { image: recipe.image, imageSource: recipe.imageSource }])
+);
+
+function isUploadedImageSource(source?: Recipe['imageSource']): boolean {
+    return source === 'upload';
 }
 
-/** Bundled category placeholders — same-origin, reliable in production (no Pollinations dependency). */
-function bundledCategoryHero(category: Recipe['category']): string {
-    return CATEGORY_IMAGES[category] ?? CATEGORY_IMAGES.Generic;
+function findGeneratedDefaultImage(recipe: Recipe) {
+    return generatedDefaultImagesById.get(recipe.id) || generatedDefaultImagesByTitle.get(recipe.title.trim().toLowerCase());
 }
 
-function getRecipeSpecificImage(recipe: Recipe): string {
-    const ingredients = recipe.ingredients
-        .slice(0, 5)
-        .map((ingredient) => ingredient.replace(/\([^)]*\)/g, '').trim())
-        .filter(Boolean)
-        .join(', ');
-    const prompt = [
-        `realistic overhead food photography of ${recipe.title}`,
-        `${recipe.category} family cookbook recipe`,
-        ingredients ? `featuring ${ingredients}` : '',
-        'warm natural window light, rustic table, appetizing, no text, no watermark',
-    ].filter(Boolean).join(', ');
-
-    return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1200&height=900&nologo=true&seed=${getRecipeImageSeed(recipe)}`;
-}
-
-function isCuratedImageSource(source?: Recipe['imageSource']): boolean {
-    return source === 'upload' || source === 'nano-banana' || source === 'local-generated';
-}
-
-/** Ship manifest: bundled hero paths keyed by recipe id (from default seed data). */
-const SEED_BUNDLED_IMAGE_BY_ID = (() => {
-    const m = new Map<string, string>();
-    for (const r of defaultRecipes as Recipe[]) {
-        if (typeof r.image === 'string' && r.image.startsWith('/recipe-images/')) {
-            m.set(r.id, r.image);
-        }
-    }
-    return m;
-})();
-
-/**
- * Older builds rewrote `/recipe-images/*` to Pollinations URLs when `imageSource` was missing.
- * Restore static bundled heroes for known seed IDs so images load reliably offline.
- */
-function migratePollinationsToBundledIfSeeded(recipes: Recipe[]): Recipe[] {
-    return recipes.map((recipe) => {
-        const bundled = SEED_BUNDLED_IMAGE_BY_ID.get(recipe.id);
-        if (!bundled) return recipe;
-        const img = recipe.image ?? '';
-        const looksLikePollinations =
-            img.includes('pollinations.ai') || recipe.imageSource === 'pollinations';
-        if (!looksLikePollinations) return recipe;
-        return {
-            ...recipe,
-            image: bundled,
-            imageSource: 'local-generated',
-        };
-    });
-}
-
-function shouldUseRecipeSpecificImage(image?: string): boolean {
-    if (!image) return true;
-    if (image.startsWith('data:image/')) return false;
-    if (image.includes('storage.googleapis.com') || image.includes('firebasestorage.googleapis.com')) return false;
-    return image.includes('pollinations.ai') || image.includes('images.unsplash.com') || (!image.startsWith('http://') && !image.startsWith('https://'));
+function shouldUseGeneratedDefaultImage(recipe: Recipe): boolean {
+    if (isUploadedImageSource(recipe.imageSource)) return false;
+    const generatedDefault = findGeneratedDefaultImage(recipe);
+    if (!generatedDefault) return false;
+    if (recipe.image !== generatedDefault.image) return true;
+    return recipe.imageSource !== generatedDefault.imageSource;
 }
 
 function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
     return recipes.map((recipe) => {
         const normalizedRecipe = normalizeRecipe(recipe);
-        if (isCuratedImageSource(recipe.imageSource)) {
+        if (!shouldUseGeneratedDefaultImage(normalizedRecipe)) {
             return normalizedRecipe;
         }
-        /** Static assets under /public/recipe-images — never replace with remote placeholders. */
-        if (recipe.image?.startsWith('/recipe-images/')) {
-            return normalizedRecipe;
-        }
-        if (!shouldUseRecipeSpecificImage(recipe.image)) {
-            return normalizedRecipe;
-        }
-        if (import.meta.env.PROD) {
-            return {
-                ...normalizedRecipe,
-                image: bundledCategoryHero(normalizedRecipe.category),
-                imageSource: 'local-generated',
-            };
-        }
+        const generatedDefault = findGeneratedDefaultImage(normalizedRecipe);
+        if (!generatedDefault) return normalizedRecipe;
         return {
             ...normalizedRecipe,
-            image: getRecipeSpecificImage(normalizedRecipe),
-            imageSource: 'pollinations',
+            image: generatedDefault.image,
+            imageSource: generatedDefault.imageSource,
         };
     });
 }
@@ -202,7 +145,7 @@ export const CloudArchive = {
                 .map(doc => doc.data())
                 .filter(validateRecipe);
             const normalizedList = normalizeRecipes(recipes);
-            callback(normalizeRecipeImages(migratePollinationsToBundledIfSeeded(normalizedList)));
+            callback(normalizeRecipeImages(normalizedList));
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeRecipes error:', error);
@@ -438,8 +381,7 @@ export const CloudArchive = {
     async getRecipes(): Promise<Recipe[]> {
         const parsed = safeParseArray<Recipe>(localStorage.getItem('schafer_db_recipes'));
         if (parsed.length > 0) {
-            const migrated = migratePollinationsToBundledIfSeeded(parsed);
-            const normalized = normalizeRecipeImages(migrated);
+            const normalized = normalizeRecipeImages(parsed);
             if (JSON.stringify(normalized) !== JSON.stringify(parsed)) {
                 localStorage.setItem('schafer_db_recipes', JSON.stringify(normalized));
             }
@@ -448,7 +390,7 @@ export const CloudArchive = {
 
         // Return default seeded data
         // Also save it to localStorage so future edits are saved
-        const seeded = normalizeRecipeImages(migratePollinationsToBundledIfSeeded(defaultRecipes as Recipe[]));
+        const seeded = normalizeRecipeImages(defaultRecipes as Recipe[]);
         localStorage.setItem('schafer_db_recipes', JSON.stringify(seeded));
         return seeded;
     },

@@ -421,8 +421,6 @@ const isValidImageUrl = (url: string) =>
     !!url && (url.startsWith('/recipe-images/') || url.startsWith('http://') || url.startsWith('https://'));
 
 const isCookbookCoverImage = (recipe: Recipe) => recipe.imageSource === 'local-generated';
-const isPhotoLikeImage = (recipe: Recipe) => !isCookbookCoverImage(recipe);
-
 const RecipeImageFallback: React.FC<{ category: Recipe['category']; label?: string; compact?: boolean }> = ({ category, label = 'Image unavailable', compact = false }) => (
     <div className="absolute inset-0 overflow-hidden bg-[#2D4635]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(244,164,96,0.35),transparent_32%),radial-gradient(circle_at_75%_80%,rgba(16,185,129,0.22),transparent_36%)]" />
