@@ -1,5 +1,7 @@
 # Mobile-First UX Audit: Schafer Family Cookbook
 
+> **Status: All checklist items shipped as of May 2026.** This document is retained for historical reference and as a baseline for future mobile-UX work. New mobile-polish recommendations should be tracked in `FEATURE-PLAN-NEXT-2-WEEKS.md` or a fresh audit pass rather than re-opening items below.
+
 ## Executive Summary
 The app has solid mobile foundations: PWA manifest, viewport config, responsive Tailwind breakpoints, and touch-target rules. The main gaps are safe-area handling for notched devices, some touch-target consistency, and keyboard/accessibility on video and div-based click handlers.
 

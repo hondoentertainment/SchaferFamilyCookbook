@@ -9,7 +9,20 @@ export type RecipeSeedLike = {
     category?: string;
 };
 
+let cachedSeed: RecipeSeedLike[] | null = null;
+
 /** Seed recipes synchronized from src/data/recipes.json at install/build time */
 export function loadRecipesSeed(): RecipeSeedLike[] {
-    return recipesSeed as RecipeSeedLike[];
+    if (cachedSeed) return cachedSeed;
+    try {
+        const parsed = recipesSeed as RecipeSeedLike[];
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            throw new Error('Recipe seed is empty or not an array');
+        }
+        cachedSeed = parsed;
+        return cachedSeed;
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        throw new Error(`Failed to load recipe seed for API routes: ${message}`);
+    }
 }

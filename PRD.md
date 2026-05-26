@@ -17,8 +17,9 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 - **Sort Options:** A–Z or recently viewed (by recency).
 - **Detailed Recipe View:** Full ingredients, step-by-step instructions, prep/cook times, calories, and heirloom notes.
 - **Ingredient Scaling:** Adjust servings; ingredients scale proportionally in both recipe modal and Cook Mode.
-- **Favorites:** Heart recipes to save (localStorage; local-only).
-- **Recently Viewed:** Track viewed recipes; sort by recency (localStorage; local-only).
+- **Favorites:** Heart recipes to save (localStorage; optional cloud sync via `userPrefs` when Firebase is configured).
+- **Collections:** User-created recipe lists (`CollectionsView`, modal picker, Profile section; optional cloud sync via `userPrefs`).
+- **Recently Viewed:** Track viewed recipes; sort by recency (localStorage; Profile sections).
 - **Recipe Deep-Linking:** Shareable URLs `#recipe/{id}`; opening link loads recipe modal directly.
 - **Alphabetical Index:** A–Z table (tab labeled "A–Z"); grouping for numeric/symbol titles under "#".
 - **Image Accuracy:** Anti-hallucination prompt rules in `shared/recipeImagePrompts.mjs`; images match recipe content.
@@ -73,6 +74,7 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 - **Role Display:** "Legacy Custodian" (admin) or "Family Member".
 - **My Favorites:** Section showing favorited recipes; click to view.
 - **Recently Viewed:** Section showing recently viewed recipes; click to view.
+- **Collections:** User-created lists under Preferences; create/manage in Profile; add from Recipe modal.
 - **My Shared Recipes:** Recipes contributed by the user; admins can edit via "Edit recipe".
 - **My Contribution Log:** History of contributions (recipes, gallery, trivia) with timestamps.
 
@@ -115,7 +117,9 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 - **Code Splitting:** Lazy load for AdminView, TriviaView, HistoryView, AlphabeticalIndex, ContributorsView, ProfileView, GroceryListView.
 - **Bundle Optimization:** `manualChunks` for Firebase and @google/genai.
-- **API Routes:** `/api/gemini` (Gemini/Imagen), `/api/webhook` (Twilio MMS → gallery).
+- **API Routes:** `/api/gemini` (Gemini/Imagen), `/api/webhook` (Twilio MMS → gallery), `/api/og` + `/api/share` (social cards), `/api/ping` (diagnostic), `/api/notify` (FCM broadcast).
+- **Recipe seed for serverless:** `scripts/sync-recipes-for-api.mjs` generates `api/recipes.seed.generated.ts` (slim fields for OG/share); runs on `postinstall` and before tests.
+- **User prefs sync:** `userPrefsSync` + `useUserPrefsSync` mirror favorites, ratings, and collections to Firestore when configured.
 - **UIContext:** Global toast and confirm dialogs; haptic feedback on success/error.
 - **Offline Banner:** Fixed banner when navigator is offline; dismisses when back online.
 
@@ -142,9 +146,10 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 ### 5.6 Mobile & Polish
 
-- **Haptic Feedback:** Light tap on nav, success/error on toast; respects `prefers-reduced-motion`.
-- **PWA:** Startup image, safe areas, touch targets.
+- **Haptic Feedback:** Light tap on nav, success/error on toast; Vibration API on trivia and key actions; respects `prefers-reduced-motion`.
+- **PWA:** Startup image, safe areas, touch targets; FCM service worker with build-time Firebase config injection.
 - **Grocery / Profile:** Requires authenticated user (Profile and Grocery hidden when logged out).
+- **Push notifications:** Profile → Notifications; tokens in Firestore `fcm_tokens`; broadcast via `/api/notify`.
 
 ## 6. MMS Archive (Twilio)
 
@@ -162,14 +167,19 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 ## 8. Testing
 
-- **Vitest + React Testing Library:** Component and integration tests.
-- **Playwright E2E:** Navigation, Profile, Gallery, Admin, recipe modal.
-- **Coverage:** AdminView, AvatarPicker, RecipeModal, webhook, db, Header, etc.
-- **Mocks:** Firebase, GenAI, Twilio.
+- **Vitest + React Testing Library:** Component, service, API, and script tests (~700+ cases). Coverage thresholds enforced in CI (`vitest.config.ts`).
+- **Playwright E2E:** Login, navigation, recipes, recipe modal, profile (favorites, recently viewed, collections), gallery, admin, cook mode.
+- **Firestore rules:** Emulator-backed suite (`npm run test:rules`) in CI **`firestore-rules`** job.
+- **Production smoke:** `npm run smoke:prod` — hosts, `/api/ping`, share HTML, OG PNG on Vercel.
+- **Bundle budget:** `scripts/check-bundle-size.mjs` gates total/per-file gzipped JS after build.
+- **Recipe data integrity:** `src/data/recipes.test.ts` validates `recipes.json` shape.
+- **Mocks:** Firebase, GenAI, Twilio, IntersectionObserver (scroll spy tests).
+
+See [TESTING.md](TESTING.md) for the change-type validation matrix.
 
 ## 9. Access & Deployment
 
 - **Production URL:** [https://schafer-family-cookbook.vercel.app](https://schafer-family-cookbook.vercel.app)
 - **GitHub Pages:** Optional; static deploy via Actions. AI features and MMS webhook require Vercel.
 - **Admin Login:** Use "Admin" (or designated name) for full privileges.
-- **Env Vars:** `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT` (for webhook).
+- **Env Vars:** `GEMINI_API_KEY`, `FIREBASE_SERVICE_ACCOUNT` (webhook, notify, Admin SDK), `TWILIO_AUTH_TOKEN`, `NOTIFY_SECRET`, optional `VITE_FIREBASE_*` + `VITE_FCM_VAPID_KEY` for push, `VITE_SENTRY_DSN` for error reporting.

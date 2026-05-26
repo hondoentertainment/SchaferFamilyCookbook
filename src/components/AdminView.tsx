@@ -1089,6 +1089,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase ${getRecipeImageStatus(r).tone === 'green' ? 'bg-emerald-100 text-emerald-700' : getRecipeImageStatus(r).tone === 'amber' ? 'bg-amber-100 text-amber-700' : getRecipeImageStatus(r).tone === 'blue' ? 'bg-blue-100 text-blue-700' : getRecipeImageStatus(r).tone === 'red' ? 'bg-red-100 text-red-700' : 'bg-stone-100 text-stone-600'}`} title={getRecipeImageStatus(r).description}>
                                                                         {getRecipeImageStatus(r).label}
                                                                     </span>
+                                                                    {r.featured === true && (
+                                                                        <span
+                                                                            className="text-[8px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold uppercase inline-flex items-center gap-1 border border-amber-200"
+                                                                            title="This recipe is featured on the Recipes tab"
+                                                                            aria-label={`${r.title} is featured`}
+                                                                        >
+                                                                            <span aria-hidden="true">★</span>
+                                                                            Featured
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1434,6 +1444,32 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     ))}
                                                 </div>
                                             )}
+                                        </div>
+
+                                        {/* Featured toggle — surfaces the recipe in the Featured strip on the Recipes tab */}
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block">Visibility</p>
+                                            <label
+                                                htmlFor="admin-recipe-featured"
+                                                className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-amber-200 bg-amber-50/60 cursor-pointer hover:bg-amber-50 transition-colors min-h-[44px] dark:border-amber-900/40 dark:bg-amber-900/10"
+                                            >
+                                                <span className="flex items-center gap-3">
+                                                    <span aria-hidden="true" className="text-xl leading-none">★</span>
+                                                    <span className="flex flex-col">
+                                                        <span className="text-sm font-bold text-[#2D4635] dark:text-emerald-100">Feature on Home/Recipes</span>
+                                                        <span className="text-[11px] text-stone-500 dark:text-stone-400">Highlight this recipe in the Featured strip at the top of the Recipes tab.</span>
+                                                    </span>
+                                                </span>
+                                                <input
+                                                    id="admin-recipe-featured"
+                                                    type="checkbox"
+                                                    role="switch"
+                                                    aria-label="Feature on Home and Recipes"
+                                                    className="h-5 w-5 accent-amber-600 cursor-pointer flex-shrink-0"
+                                                    checked={recipeForm.featured === true}
+                                                    onChange={e => setRecipeForm({ ...recipeForm, featured: e.target.checked })}
+                                                />
+                                            </label>
                                         </div>
 
                                         <div className="flex gap-4">

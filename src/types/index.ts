@@ -35,6 +35,8 @@ export interface Recipe {
   /** Number of servings (e.g. 4) or yield description (e.g. "2 dozen cookies") */
   servings?: string | number;
   tags?: string[];
+  /** Curated flag — when true, the recipe surfaces in the Featured strip on the Recipes tab. */
+  featured?: boolean;
   collections?: string[];
   occasions?: string[];
   season?: string;

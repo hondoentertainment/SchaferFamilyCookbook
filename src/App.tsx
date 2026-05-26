@@ -56,6 +56,7 @@ const GroceryListView = lazy(() => import('./components/GroceryListView').then(m
 const CollectionsView = lazy(() => import('./components/CollectionsView').then(m => ({ default: m.CollectionsView })));
 const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => ({ default: m.InstallPrompt })));
 const HelpView = lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })));
+const FeaturedStrip = lazy(() => import('./components/FeaturedStrip').then(m => ({ default: m.FeaturedStrip })));
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 
 const TabFallback = () => (
@@ -1840,6 +1841,12 @@ const App: React.FC = () => {
                             </div>
                         </div>
                     </section>
+
+                    {recipes.some(r => r.featured === true) && (
+                        <Suspense fallback={null}>
+                            <FeaturedStrip recipes={recipes} onSelect={handleSelectRecipe} />
+                        </Suspense>
+                    )}
 
                     {/* Compact guided browse strip */}
                     <section aria-label="Quick browse" className="-mx-1 px-1">

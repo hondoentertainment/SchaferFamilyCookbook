@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { RecipeModal } from './RecipeModal';
-import { createMockRecipe, renderWithProviders } from '../test/utils';
+import { createMockRecipe, renderWithProviders, setupLocalStorage } from '../test/utils';
+import { STORAGE_KEYS } from '../constants/storage';
 
 describe('RecipeModal', () => {
     const mockOnClose = vi.fn();
@@ -12,6 +13,7 @@ describe('RecipeModal', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('should render recipe details correctly', () => {
@@ -153,6 +155,33 @@ describe('RecipeModal', () => {
         expect(shareBtn).toBeInTheDocument();
         expect(shareBtn).toHaveAttribute('aria-label');
         expect(shareBtn.getAttribute('aria-label')).toMatch(/Open in .*: Test Recipe/);
+    });
+
+    it('adds recipe to a collection from the overflow menu and shows a success toast', async () => {
+        setupLocalStorage();
+        localStorage.setItem(
+            STORAGE_KEYS.collections,
+            JSON.stringify([
+                {
+                    id: 'col-test-1',
+                    name: 'Weeknight Dinners',
+                    recipeIds: [],
+                    createdBy: 'Test User',
+                    icon: '🍳',
+                    timestamp: new Date().toISOString(),
+                },
+            ]),
+        );
+
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
+        fireEvent.click(screen.getByRole('menuitem', { name: /save to collection/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Weeknight Dinners/i }));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('toast-stack')).toHaveTextContent(/Added to "Weeknight Dinners"/i);
+        });
     });
 
     it('shows You might also like and navigates when a suggestion is clicked', () => {

@@ -29,7 +29,14 @@ type RecipeLike = {
     category?: string;
 };
 
-const recipes = loadRecipesSeed() as RecipeLike[];
+const recipes = (() => {
+    try {
+        return loadRecipesSeed() as RecipeLike[];
+    } catch (err) {
+        console.error('[api/og] Failed to load recipe seed:', err);
+        return [] as RecipeLike[];
+    }
+})();
 
 const WIDTH = 1200;
 const HEIGHT = 630;

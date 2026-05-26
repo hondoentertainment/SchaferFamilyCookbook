@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { CloudArchive } from './db';
 import { Sentry } from '../monitoring/sentry';
+import type { RecipeCollection } from '../types';
 
 // --- Local-change notification bus ---------------------------------------
 // Components mutate local state through utils/favorites.ts and utils/ratings.ts.
@@ -30,14 +31,14 @@ export function notifyPrefsChanged(): void {
 }
 
 /**
- * Cloud-sync layer for user-specific preferences (favorites + ratings).
+ * Cloud-sync layer for user-specific preferences (favorites + ratings + collections).
  *
  * Stored per-user at `userPrefs/{userId}` as:
- *   { favorites: string[], ratings: Record<recipeId, rating>, updatedAt: Timestamp }
+ *   { favorites: string[], ratings: Record<recipeId, rating>, collections: RecipeCollection[], updatedAt: Timestamp }
  *
- * Local utilities in `src/utils/favorites.ts` and `src/utils/ratings.ts` remain
- * the source of truth for component state; this module opportunistically
- * mirrors them to Firestore when cloud is configured.
+ * Local utilities in `src/utils/favorites.ts`, `src/utils/ratings.ts`, and
+ * `src/utils/collections.ts` remain the source of truth for component state;
+ * this module opportunistically mirrors them to Firestore when cloud is configured.
  *
  * All operations degrade gracefully: if Firebase is not configured or the
  * network fails, local state keeps working and callers never throw.
@@ -46,6 +47,78 @@ export function notifyPrefsChanged(): void {
 export interface UserPrefsPayload {
     favorites: string[];
     ratings: Record<string, number>;
+    collections: RecipeCollection[];
+}
+
+function parseCollectionEntry(raw: unknown): RecipeCollection | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const o = raw as Record<string, unknown>;
+    if (typeof o.id !== 'string' || !o.id) return null;
+    if (typeof o.name !== 'string') return null;
+    if (typeof o.createdBy !== 'string') return null;
+    if (typeof o.icon !== 'string') return null;
+    if (typeof o.timestamp !== 'string') return null;
+    const recipeIds = Array.isArray(o.recipeIds)
+        ? (o.recipeIds as unknown[]).filter((x): x is string => typeof x === 'string')
+        : [];
+    const description = typeof o.description === 'string' ? o.description : undefined;
+    return {
+        id: o.id,
+        name: o.name,
+        description,
+        recipeIds: [...new Set(recipeIds)],
+        createdBy: o.createdBy,
+        icon: o.icon,
+        timestamp: o.timestamp,
+    };
+}
+
+function parseCollections(raw: unknown): RecipeCollection[] {
+    if (!Array.isArray(raw)) return [];
+    const out: RecipeCollection[] = [];
+    for (const item of raw) {
+        const c = parseCollectionEntry(item);
+        if (c) out.push(c);
+    }
+    return out;
+}
+
+/**
+ * Merge two collection lists: union by id; for matching ids union recipeIds;
+ * prefer the newer timestamp for name, description, and icon.
+ */
+export function mergeCollections(
+    local: RecipeCollection[],
+    remote: RecipeCollection[]
+): RecipeCollection[] {
+    const byId = new Map<string, RecipeCollection>();
+
+    const mergeTwo = (a: RecipeCollection, b: RecipeCollection): RecipeCollection => {
+        const recipeIdSet = new Set([...a.recipeIds, ...b.recipeIds]);
+        const aTime = Date.parse(a.timestamp) || 0;
+        const bTime = Date.parse(b.timestamp) || 0;
+        const newer = bTime >= aTime ? b : a;
+        const older = bTime >= aTime ? a : b;
+        return {
+            id: a.id,
+            name: newer.name,
+            description: newer.description ?? older.description,
+            recipeIds: [...recipeIdSet],
+            createdBy: newer.createdBy || older.createdBy,
+            icon: newer.icon,
+            timestamp: newer.timestamp,
+        };
+    };
+
+    for (const c of [...local, ...remote]) {
+        const existing = byId.get(c.id);
+        if (!existing) {
+            byId.set(c.id, { ...c, recipeIds: [...new Set(c.recipeIds)] });
+        } else {
+            byId.set(c.id, mergeTwo(existing, c));
+        }
+    }
+    return [...byId.values()];
 }
 
 /**
@@ -111,7 +184,8 @@ export async function fetchRemotePrefs(userId: string): Promise<UserPrefsPayload
                 ratings[k] = Math.max(1, Math.min(5, v));
             }
         }
-        return { favorites, ratings };
+        const collections = parseCollections(data?.collections);
+        return { favorites, ratings, collections };
     } catch (err) {
         logSyncError('fetchRemotePrefs', err);
         return null;
@@ -135,6 +209,7 @@ export async function writeRemotePrefs(
             {
                 favorites: [...new Set(payload.favorites)],
                 ratings: payload.ratings,
+                collections: payload.collections,
                 updatedAt: serverTimestamp(),
             },
             { merge: true }
@@ -153,6 +228,8 @@ export async function writeRemotePrefs(
  *     the user explicitly set them on some device — last writer wins is
  *     implicit via updatedAt, but the cheap merge is "prefer remote value
  *     when present; otherwise keep local").
+ *   - collections: union by id; matching ids union recipeIds; metadata from
+ *     the side with the newer timestamp (see mergeCollections).
  */
 export function mergePrefs(
     local: UserPrefsPayload,
@@ -166,6 +243,7 @@ export function mergePrefs(
     return {
         favorites: [...favSet],
         ratings,
+        collections: mergeCollections(local.collections, remote.collections),
     };
 }
 

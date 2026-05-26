@@ -1,19 +1,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { AlphabeticalIndex } from './AlphabeticalIndex';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
 describe('AlphabeticalIndex', () => {
     const mockOnSelect = vi.fn();
     let scrollToSpy: ReturnType<typeof vi.fn>;
+    /** @type {((entries: IntersectionObserverEntry[]) => void) | null} */
+    let intersectionCallback: ((entries: IntersectionObserverEntry[]) => void) | null = null;
 
     beforeEach(() => {
         scrollToSpy = vi.fn();
+        intersectionCallback = null;
         Object.defineProperty(window, 'scrollTo', { value: scrollToSpy, writable: true });
+        class MockIntersectionObserver {
+            observe = vi.fn();
+            unobserve = vi.fn();
+            disconnect = vi.fn();
+            constructor(callback: (entries: IntersectionObserverEntry[]) => void) {
+                intersectionCallback = callback;
+            }
+        }
+        vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('should render empty state when no recipes', () => {
@@ -93,5 +106,30 @@ describe('AlphabeticalIndex', () => {
         expect(browseBtn).toBeInTheDocument();
         fireEvent.click(browseBtn);
         expect(mockOnGoToRecipes).toHaveBeenCalled();
+    });
+
+    it('updates aria-current on letter buttons when a section intersects', async () => {
+        const recipes = [
+            createMockRecipe({ id: '1', title: 'Apple Pie' }),
+            createMockRecipe({ id: '2', title: 'Banana Bread' }),
+        ];
+        renderWithProviders(<AlphabeticalIndex recipes={recipes} onSelect={mockOnSelect} />);
+
+        const bSection = document.getElementById('idx-B');
+        expect(bSection).toBeTruthy();
+        expect(intersectionCallback).toBeTruthy();
+
+        intersectionCallback!([
+            {
+                target: bSection!,
+                isIntersecting: true,
+            } as unknown as IntersectionObserverEntry,
+        ]);
+
+        await waitFor(() => {
+            const bButtons = screen.getAllByRole('button', { name: /Jump to recipes starting with B \(current section\)/i });
+            expect(bButtons.length).toBeGreaterThan(0);
+            bButtons.forEach((btn) => expect(btn).toHaveAttribute('aria-current', 'true'));
+        });
     });
 });

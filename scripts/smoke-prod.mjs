@@ -52,6 +52,35 @@ async function smokeRecipeImageAsset(siteBase, siteName) {
   }
 }
 
+async function smokeVercelPing(vercelBase) {
+  const pingUrl = `${vercelBase.replace(/\/$/, '')}/api/ping`;
+  const name = 'Vercel /api/ping';
+
+  try {
+    const res = await fetch(pingUrl, { redirect: 'follow' });
+    const contentType = res.headers.get('content-type') ?? '';
+    const body = (await res.text()).trim();
+
+    if (!res.ok) {
+      console.error(`❌ ${name} (${pingUrl}): HTTP ${res.status}`);
+      return 1;
+    }
+    if (body !== 'ok') {
+      console.error(`❌ ${name}: expected body "ok", got "${body}"`);
+      return 1;
+    }
+    if (!contentType.includes('text/plain')) {
+      console.error(`❌ ${name}: expected content-type text/plain, got "${contentType}"`);
+      return 1;
+    }
+    console.log(`✅ ${name}`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${name} (${pingUrl}): ${err.message}`);
+    return 1;
+  }
+}
+
 async function smokeVercelShareRoutes(vercelBase) {
   const shareUrl = `${vercelBase.replace(/\/$/, '')}/share/recipe/${SAMPLE_RECIPE_ID}`;
   const ogUrl = `${vercelBase.replace(/\/$/, '')}/api/og?recipeId=${encodeURIComponent(SAMPLE_RECIPE_ID)}`;
@@ -114,6 +143,7 @@ async function smoke() {
   }
 
   if (vercel) {
+    failed += await smokeVercelPing(vercel.url);
     failed += await smokeVercelShareRoutes(vercel.url);
   }
 

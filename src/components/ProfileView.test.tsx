@@ -197,4 +197,14 @@ describe('ProfileView', () => {
         expect(screen.getByRole('heading', { name: /^notifications$/i })).toBeInTheDocument();
         expect(screen.getByRole('heading', { name: /privacy/i })).toBeInTheDocument();
     });
+
+    it('should render Collections section with CollectionsView', () => {
+        renderWithProviders(
+            <ProfileView {...defaultProps} allRecipes={[createMockRecipe({ title: 'Archive Recipe' })]} />,
+        );
+
+        expect(screen.getByRole('heading', { name: /📚 Collections/i })).toBeInTheDocument();
+        expect(screen.getByRole('region', { name: /Recipe collections/i })).toBeInTheDocument();
+        expect(screen.getByText(/Collections \(\d+\)/)).toBeInTheDocument();
+    });
 });

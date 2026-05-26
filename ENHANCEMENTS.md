@@ -1,5 +1,36 @@
 # Site Review: Enhancements & Bug Fixes
 
+## Completed Fixes (2026)
+
+### Vercel API recipe seed bundling (Fixed — late May 2026)
+- **Symptom:** `/api/og` and `/share/recipe/<id>` (rewrites to `/api/share`) returned HTTP 500 in production after deploy. Local invocations worked.
+- **Root cause:** Vercel's serverless bundler did not trace `src/data/recipes.json` when API routes loaded it via dynamic paths or `fs.readFile`, so the seed file was missing from the deployed function.
+- **Fix:** Generated TypeScript seed module — `scripts/sync-recipes-for-api.mjs` (wired into `postinstall` and `test:run`) emits `api/recipes.seed.generated.ts` from `src/data/recipes.json`. `api/loadRecipesSeed.ts` re-exports it and `api/og.ts` / `api/share.ts` consume it directly. Bundler now sees the seed as a plain TS import, guaranteed to be included. Generated file is committed for deterministic builds.
+- **Diagnostics:** New `/api/ping` route returns `200 "ok"` so smoke tests / on-call can confirm functions deploy independently of seed state. See `RUNBOOK.md` → **Vercel API recipe seed loading** for verification steps.
+- Commits: `6db959d`, `7c8f186`, `5fe2746`, `760f48a`, `d693bfc`, `ad49a2d`, `fcd9c1e`, `423f3f3`, `7e99a26`.
+
+### Featured Recipes (Shipped — late May 2026)
+- **Admin curation:** New "★ Featured" toggle on the Add/Edit recipe form in `AdminView`; Featured badge shown on each recipe row in Manage Recipes. Backed by a new optional `featured?: boolean` field on `Recipe`.
+- **Recipes tab strip:** New `FeaturedStrip` component renders a horizontally-scrollable hero row above the main grid when at least one recipe is featured. Lazy-loaded; cap of 6 cards, sorted by `created_at` desc with stable insertion-order tiebreaker.
+- **Tests:** `src/utils/featured.test.ts` (11 tests) for sort/cap/empty cases; `src/components/FeaturedStrip.test.tsx` (6 tests) for render/empty/click; extensions to `AdminView.test.tsx` and `App.test.tsx`; two new Playwright tests in `e2e/admin.spec.ts` for the admin toggle and the user-facing strip.
+
+### Firebase Cloud Messaging service worker — build-time config (Shipped — late May 2026)
+- **Problem:** `public/firebase-messaging-sw.js` shipped with `REPLACE_WITH_*` placeholders, so background push was silently broken in production.
+- **Fix:** New `scripts/sync-firebase-sw-config.mjs` (cross-platform Node ESM) injects a JSON config built from `VITE_FIREBASE_*` env vars into `dist/firebase-messaging-sw.js` during `vite build`. Source `public/firebase-messaging-sw.js` keeps a `null` placeholder + safe-by-default guard that warns in console and skips `initializeApp` when config is missing.
+- **Operator docs:** `docs/FIREBASE_PUSH_NOTIFICATIONS.md` covers required env vars, where they come from, how to verify FCM with `/api/notify`, and the intentional fail-safe.
+- **Tests:** `scripts/sync-firebase-sw-config.test.mjs` (8 tests) covering placeholder substitution, missing-env error path, dev-mode warning, output validity. Vitest `include` extended to pick up `scripts/**/*.test.mjs`.
+
+### Other shipped polish (May 2026)
+- **Vibration / haptic feedback** — `src/utils/vibration.ts` integrated in Trivia, favorites, and Profile save.
+- **Profile sections** — Favorites and Recently Viewed lists rendered in `ProfileView`.
+- **Alphabetical Index scroll spy** — `IntersectionObserver` + `aria-current` on active letter.
+- **Header `aria-current="page"`** — active tab announced to screen readers.
+- **AdminView form labels** — all inputs (category, prep/cook/calories, ingredients, instructions, gallery caption, archive phone, tag input, heirloom notes) now have matched `htmlFor`/`id`.
+- **Trivia ARIA** — answer options use native `<button>` + `aria-pressed`, not `role="listitem"`.
+- **`e2e/admin.spec.ts` TODO cleanup** — replaced TODO comments about Firestore-emulator persistence with explicit notes documenting that local-provider round-trips run in Playwright while emulator-backed assertions live in `firebase/firestore.rules.test.ts`.
+
+---
+
 ## Completed Fixes (2025)
 
 ### Gallery delete (Fixed)

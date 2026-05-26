@@ -1,35 +1,51 @@
 // Firebase Cloud Messaging service worker.
+//
 // This file must live at /firebase-messaging-sw.js (served from the public root).
 //
-// IMPORTANT: The Firebase config values below are read from the project's
-// Firebase initialisation. Because this app loads its Firebase config
-// dynamically from localStorage at runtime, these values act as placeholders
-// that must be replaced with real values before FCM will work in production.
-// The easiest way is to copy the config object from the Firebase console
-// (Project settings → Your apps → SDK setup and configuration).
+// Build pipeline:
+//   The `null` after the `@inject-firebase-config` marker is replaced at
+//   `vite build` time by scripts/sync-firebase-sw-config.mjs with a JSON
+//   config object derived from the VITE_FIREBASE_* env vars. The source file
+//   in public/ is left untouched; only dist/firebase-messaging-sw.js is
+//   rewritten. See docs/FIREBASE_PUSH_NOTIFICATIONS.md for operator setup.
+//
+// Safe-by-default: if the placeholder remains (no env vars set, dev mode, or
+// `vite preview` without configuration), the worker still installs but skips
+// FCM initialisation and logs a single explanatory warning. This prevents
+// dev/preview builds from crashing when push isn't configured yet.
 
-importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  // TODO: Replace with your actual Firebase project config values.
-  // These must match the config used when initialising Firebase in the main app.
-  apiKey: self.__FIREBASE_API_KEY__ || 'REPLACE_WITH_API_KEY',
-  authDomain: self.__FIREBASE_AUTH_DOMAIN__ || 'REPLACE_WITH_AUTH_DOMAIN',
-  projectId: self.__FIREBASE_PROJECT_ID__ || 'REPLACE_WITH_PROJECT_ID',
-  storageBucket: self.__FIREBASE_STORAGE_BUCKET__ || 'REPLACE_WITH_STORAGE_BUCKET',
-  messagingSenderId: self.__FIREBASE_MESSAGING_SENDER_ID__ || 'REPLACE_WITH_MESSAGING_SENDER_ID',
-  appId: self.__FIREBASE_APP_ID__ || 'REPLACE_WITH_APP_ID',
-});
+/* @inject-firebase-config */
+const FIREBASE_CONFIG = null;
 
-const messaging = firebase.messaging();
-
-// Handle messages that arrive while the app is in the background or closed.
-messaging.onBackgroundMessage((payload) => {
-  const { title, body } = payload.notification ?? {};
-  self.registration.showNotification(title ?? 'New Recipe!', {
-    body: body ?? 'A new recipe has been added to the Schafer Family Cookbook.',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+const REQUIRED_FIELDS = ['apiKey', 'projectId', 'messagingSenderId', 'appId'];
+const isUnconfigured =
+  !FIREBASE_CONFIG ||
+  typeof FIREBASE_CONFIG !== 'object' ||
+  REQUIRED_FIELDS.some((field) => {
+    const value = FIREBASE_CONFIG[field];
+    return typeof value !== 'string' || value.length === 0;
   });
-});
+
+if (isUnconfigured) {
+  console.warn(
+    '[firebase-messaging-sw] Firebase Cloud Messaging config is missing or ' +
+      'incomplete. Background push notifications are disabled. Set the ' +
+      'VITE_FIREBASE_* env vars at build time. See ' +
+      'docs/FIREBASE_PUSH_NOTIFICATIONS.md for operator setup.'
+  );
+} else {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const messaging = firebase.messaging();
+
+  messaging.onBackgroundMessage((payload) => {
+    const { title, body } = payload.notification ?? {};
+    self.registration.showNotification(title ?? 'New Recipe!', {
+      body: body ?? 'A new recipe has been added to the Schafer Family Cookbook.',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+    });
+  });
+}

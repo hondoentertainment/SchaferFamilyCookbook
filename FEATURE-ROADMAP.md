@@ -13,7 +13,8 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Recipe Images** | Full local `public/recipe-images` coverage with recipe-specific WebP fallback assets and Imagen-ready generation tooling | Solid |
 | **Recipe Modal** | View details, scale ingredients, print, share link, prev/next navigation | Solid |
 | **Cook Mode** | Step-by-step view, ingredient scaling, keyboard + **swipe** navigation on mobile | Solid |
-| **Favorites** | Heart recipes (local + optional cloud sync via `userPrefs`) | Solid |
+| **Favorites** | Heart recipes (local + cloud sync via `userPrefs` when Firebase configured) | Solid |
+| **Collections** | User-created lists (`CollectionsView`, modal picker + Profile sections; cloud sync via `userPrefs`) | Solid |
 | **Recently Viewed** | Track viewed recipes; **Profile** sections for favorites and recent | Solid |
 | **Grocery List** | Add from recipe modal, list view, local persistence | Solid |
 | **Gallery** | Photos/videos, lightbox, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
@@ -29,7 +30,8 @@ A strategic roadmap for the next phases of development, informed by the current 
 ### Gaps & Opportunities
 - Favorites / recent / ratings sync is **opt-in** via `userPrefs` in Firestore; not full “restore everywhere” for every guest
 - Trivia has **both** a local run history and a **cloud** leaderboard; local scores remain for offline / comparison
-- No **meal planning** or **user collections** (beyond roadmap ideas)
+- **Collections cloud sync** — shipped via `userPrefs` (`userPrefsSync`, Firestore rules); same opt-in model as favorites/ratings when Firebase is configured
+- No **meal planning** yet
 - No **explicit offline recipe cache** for Cook Mode (PWA network caching only)
 - **Family Story** is static in-repo (not CMS-editable in Admin)
 
@@ -37,16 +39,20 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ## Immediate Next Steps (1–2 weeks)
 
-### 1. Automation confidence
-- [x] **Playwright** — Preview bound to a dedicated port in `playwright.config.ts`; document `npm run ci` vs E2E in README
-- [x] **Firebase index** for `triviaScores` (score ↓, completedAt ↑) in `firebase/firestore.indexes.json` — deploy with `firebase deploy --only firestore:indexes` when project updates
+### 1. Product (next sprint)
+- [ ] **Meal plan MVP** — simple week view, local persistence, add-from-modal
+- [ ] **Ingredient search** — match against `ingredients[]` in browse search
+- [ ] **Featured recipes polish** — strip ordering, empty state, admin E2E coverage
+- [ ] **Lighthouse baseline** — run `npm run lighthouse:ci` on production; track scores in CI artifacts
 
-### 2. Housekeeping
-- [x] **Roadmap** — This file aligned to shipped features (grocery, profile, swipe, cloud trivia, share API, admin export)
-- [x] **IA reset** — Bottom nav simplified to Browse/Cook/Family/Me; A–Z lives under Browse and More sections
-
-### 3. Technical debt
-- [x] **Admin export** — JSON/CSV recipe export available from Admin → Records (`Export JSON` / `Export CSV`)
+### 2. Done (recent)
+- [x] **Mobile vibration / haptics**, **E2E stabilization**, **Profile favorites & recent**, **collections in Profile**, **recipe modal collection picker**, **a11y batch**
+- [x] **Collections cloud sync** — `userPrefs` payload, Firestore rules, debounced sync via `useUserPrefsSync` (late May 2026)
+- [x] **Featured recipes** — admin curation + hero strip (late May 2026)
+- [x] **Vercel API recipe seed** — generated module + `postinstall` sync + smoke `/api/ping` (late May 2026)
+- [x] **Playwright** — Preview bound to a dedicated port; document `npm run ci` vs E2E in README
+- [x] **Firebase index** for `triviaScores` — deploy with `firebase deploy --only firestore:indexes` when project updates
+- [x] **Admin export** — JSON/CSV recipe export from Admin → Records
 
 ---
 
@@ -55,7 +61,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | Feature | Description | Effort | Notes |
 |---------|-------------|--------|--------|
 | **Recipe share card (discoverability)** | Production builds default `VITE_SHARE_BASE` via `.env.production`; `/api/og` + `/api/share` unchanged | S | Override in Vercel env if the canonical domain changes |
-| **Collections** | User-created lists (`CollectionsView`, local persistence) | M | Baseline shipped |
+| **Collections cloud sync** | Extend `userPrefs` to mirror custom lists across devices | M | **Shipped** (late May 2026) |
 | **Cook Mode polish** | Read-aloud via Web Speech API (Listen / Stop); clears when changing steps | M | Tap-to-play only — no autoplay |
 | **”Send to family”** | SMS + mailto invites with heirloom copy (`ShareRecipe`) | S | Uses OG-rich share URL when base is set |
 
@@ -74,7 +80,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | Feature | Description | Effort |
 |---------|-------------|--------|
 | **Family Story CMS** | Firestore-backed sections editable in Admin | L |
-| **Featured recipes** | Admin-curated on Recipes tab | S |
+| **Featured recipes** | Admin-curated on Recipes tab | S | **Shipped** (late May 2026) |
 | **Search** | By ingredient, fuzzy | M |
 
 ---
@@ -108,9 +114,10 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ## Recommended Sequencing
 
-1. **Done (baseline)** — Mobile polish (haptics, vibration, Cook swipe), Grocery, Profile sections, family trivia leaderboard + rules, Vercel OG/share, admin export + gallery edit, E2E port isolation
-2. **Next** — **Collections** or **Meal plan** (pick one focus), then featured recipes
-3. **Next quarter** — Family Story CMS, search-by-ingredient, cross-device story for non-custodian users if you add real auth
+1. **Done (baseline)** — Mobile polish (haptics, vibration, Cook swipe), Grocery, Profile sections, family trivia leaderboard + rules, Vercel OG/share, admin export + gallery edit, E2E port isolation, **Vercel API recipe seed bundling** (late May 2026 — see `RUNBOOK.md`)
+2. **Just shipped (multi-agent run, late May 2026)** — **Featured recipes**, **FCM SW build config**, **Profile favorites/recent**, **collections UI** (Profile + modal picker), **collections cloud sync**, **a11y batch**, **E2E fixes**, **mobile vibration**. See `ENHANCEMENTS.md` and `FEATURE-PLAN-NEXT-2-WEEKS.md`.
+3. **Next (2 weeks)** — **Meal plan MVP**, **ingredient search**, **featured strip polish**, **Lighthouse baseline**
+4. **Next quarter** — **Family Story CMS** or stronger cross-device prefs; offline recipe cache for Cook Mode
 
 ---
 
@@ -123,4 +130,4 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ---
 
-*Last updated: May 2026*
+*Last updated: 25 May 2026*

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import handler, { renderShareHtml } from './share';
+import { loadRecipesSeed } from './loadRecipesSeed';
 import recipesJson from '../src/data/recipes.json' with { type: 'json' };
 
 type RecipeLike = { id: string; title: string; contributor: string; image?: string };
@@ -20,6 +21,7 @@ function createMockRes() {
         },
         setHeader(name: string, value: string | number) {
             headers[name.toLowerCase()] = value;
+            return this;
         },
         getHeader(name: string) {
             return headers[name.toLowerCase()];
@@ -44,6 +46,12 @@ function createMockRes() {
 }
 
 describe('GET /api/share (recipe share HTML handler)', () => {
+    it('loadRecipesSeed returns entries with ids used by smoke tests', () => {
+        const seed = loadRecipesSeed();
+        expect(seed.some((r) => r.id === '749d8765')).toBe(true);
+        expect(seed.length).toBe((recipesJson as unknown[]).length);
+    });
+
     it('returns 400 when id is missing', async () => {
         const req = {
             method: 'GET',

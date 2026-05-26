@@ -1,5 +1,7 @@
 # UX Design Review: Schafer Family Cookbook
 
+> **Last reviewed: May 2026.** Most of the recommendations below have shipped — form labels, Trivia ARIA roles, safe-area padding, Gallery video focus handlers, and Gallery skeleton are now in production. See the **Prioritized List** section at the bottom for current status. Remaining open items: breadcrumb for deep-linked recipes, a `aria-live` polite region for ProfileView save announcements (tracked in `AUDIT-FEATURE-RATING.md` and `FEATURE-PLAN-NEXT-2-WEEKS.md`).
+
 ## Executive Summary
 The app delivers a clear, family-focused recipe archive with strong information architecture and thoughtful flows. The main improvements are in accessibility (labels, keyboard, ARIA), visual consistency of interactive elements, and mobile polish (safe area, touch targets).
 
@@ -58,6 +60,18 @@ The app delivers a clear, family-focused recipe archive with strong information 
 | Code splitting | Lazy load for Admin, Trivia, Index, etc. | ✓ Good |
 
 ## Prioritized List
-- **High**: Fix form label associations; add keyboard handlers to clickable divs; fix Trivia ARIA roles.
-- **Medium**: Safe-area padding; Gallery video focus handlers; skeleton for Gallery.
-- **Lower**: Breadcrumb for deep links; `aria-current` on Admin subtabs; `apple-touch-startup-image`.
+
+### High — all shipped (May 2026)
+- ~~Fix form label associations~~ **DONE** — AdminView/Profile/Login inputs now have `htmlFor`/`id`. See `AUDIT-FEATURE-RATING.md` for line refs.
+- ~~Add keyboard handlers to clickable divs~~ **DONE** — Header logo/profile-area buttons use `role="button" tabIndex={0} onKeyDown` (Enter/Space). Recipe cards rendered as `<button>` elements.
+- ~~Fix Trivia ARIA roles~~ **DONE** — Trivia answer options in `TriviaView.tsx` (line ~657) are native `<button>` elements with `aria-pressed`, not `role="listitem"`. The remaining `role="listitem"` (line 527) is on score-breakdown chips inside `role="list"`, which is the correct semantic.
+
+### Medium — all shipped (May 2026)
+- ~~Safe-area padding~~ **DONE** — `env(safe-area-inset-*)` applied to main padding and bottom nav.
+- ~~Gallery video focus handlers~~ **DONE** — Gallery videos now have `onFocus`/`onBlur` paired with `onMouseOver`/`onMouseOut`.
+- ~~Skeleton for Gallery~~ **DONE** — Gallery shows a loading skeleton on initial load.
+
+### Lower — mixed status (May 2026)
+- **Breadcrumb for deep links** — still open. When `RecipeModal` is opened from `AlphabeticalIndex`, `ContributorsView`, or a `#recipe/<id>` deep link, show a small breadcrumb like "Recipes › *Title*" or "A–Z › *Title*" so users have orientation. Tracked in `FEATURE-PLAN-NEXT-2-WEEKS.md`.
+- ~~`aria-current` on Admin subtabs~~ **DONE** — `src/components/AdminView.tsx` line 764 sets `aria-current={activeSubtab === tab.id ? 'true' : undefined}` on each subnav button.
+- ~~`apple-touch-startup-image`~~ **DONE** (see `AUDIT-MOBILE-UX.md` checklist).
