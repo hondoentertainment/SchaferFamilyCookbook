@@ -127,7 +127,7 @@ describe('firestore.rules (emulator)', () => {
             }),
         );
         const snap = await getDoc(leaf);
-        expect(snap.exists).toBe(false);
+        expect(snap.exists()).toBe(false);
     });
 
     it('recipe_versions subtree: admin can write', async () => {
