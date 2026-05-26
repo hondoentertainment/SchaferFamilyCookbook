@@ -17,6 +17,18 @@ export interface Recipe {
   generatedImageFallback?: boolean;
   /** Prompt used to create the temporary generated food photo, retained for traceability. */
   generatedImagePrompt?: string;
+  /** Creator/custodian workflow state for replacing generated placeholders with actual family photos. */
+  imageApprovalStatus?: 'generated-fallback' | 'pending-review' | 'approved' | 'needs-actual';
+  /** Name or email of the person who uploaded the creator-supplied actual photo. */
+  actualImageUploadedBy?: string;
+  /** ISO timestamp when the creator-supplied actual photo was uploaded. */
+  actualImageUploadedAt?: string;
+  /** Name or email of the custodian who approved the actual photo for recipe use. */
+  imageApprovedBy?: string;
+  /** ISO timestamp when the current actual photo was approved. */
+  imageApprovedAt?: string;
+  /** Optional internal note about image replacement, provenance, or creator follow-up. */
+  imageReplacementNotes?: string;
   prepTime?: string;
   cookTime?: string;
   calories?: number;

@@ -1,4 +1,4 @@
-import recipesSeed from './recipes.seed.generated';
+import recipesSeed from './recipes.seed.generated.js';
 
 /** Minimal recipe fields needed by OG/share routes */
 export type RecipeSeedLike = {

@@ -3,6 +3,8 @@
  * Production smoke test. Fetches Vercel and GitHub Pages URLs and verifies
  * they return 200 and contain expected content. Run: npm run smoke:prod
  */
+import fs from 'node:fs';
+
 const URLS = [
   { url: 'https://schafer-family-cookbook.vercel.app', name: 'Vercel' },
   { url: 'https://hondoentertainment.github.io/SchaferFamilyCookbook/', name: 'GitHub Pages' },
@@ -12,6 +14,43 @@ const URLS = [
 const SAMPLE_RECIPE_ID = '749d8765';
 
 const EXPECTED = 'Schafer Family Cookbook';
+const recipes = JSON.parse(fs.readFileSync(new URL('../src/data/recipes.json', import.meta.url), 'utf8'));
+const sampleRecipe = recipes.find((recipe) => recipe.id === SAMPLE_RECIPE_ID) ?? recipes[0];
+
+function isRecognizedImageContentType(contentType) {
+  return /image\/(avif|gif|jpeg|jpg|png|webp)/i.test(contentType ?? '');
+}
+
+async function smokeRecipeImageAsset(siteBase, siteName) {
+  if (!sampleRecipe?.image || !sampleRecipe.image.startsWith('/')) {
+    console.error(`❌ ${siteName} recipe image: sample recipe has no site-relative image path`);
+    return 1;
+  }
+
+  const imageUrl = new URL(sampleRecipe.image.replace(/^\//, ''), `${siteBase.replace(/\/$/, '')}/`).toString();
+  try {
+    const res = await fetch(imageUrl, { redirect: 'follow' });
+    if (!res.ok) {
+      console.error(`❌ ${siteName} recipe image (${imageUrl}): HTTP ${res.status}`);
+      return 1;
+    }
+    const contentType = res.headers.get('content-type') ?? '';
+    const contentLength = Number(res.headers.get('content-length') ?? '0');
+    if (!isRecognizedImageContentType(contentType)) {
+      console.error(`❌ ${siteName} recipe image (${imageUrl}): unexpected content-type ${contentType}`);
+      return 1;
+    }
+    if (contentLength > 0 && contentLength < 1024) {
+      console.error(`❌ ${siteName} recipe image (${imageUrl}): unexpectedly small image (${contentLength} bytes)`);
+      return 1;
+    }
+    console.log(`✅ ${siteName} recipe image (${sampleRecipe.image})`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${siteName} recipe image (${imageUrl}): ${err.message}`);
+    return 1;
+  }
+}
 
 async function smokeVercelShareRoutes(vercelBase) {
   const shareUrl = `${vercelBase.replace(/\/$/, '')}/share/recipe/${SAMPLE_RECIPE_ID}`;
@@ -70,6 +109,8 @@ async function smoke() {
       console.error(`❌ ${name} (${url}): ${err.message}`);
       failed++;
     }
+
+    failed += await smokeRecipeImageAsset(url, name);
   }
 
   if (vercel) {

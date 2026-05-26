@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loadRecipesSeed } from './loadRecipesSeed';
-import { getClientIp, SHARE_PAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
+import { loadRecipesSeed } from './loadRecipesSeed.js';
+import { getClientIp, SHARE_PAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit.js';
 
 /**
  * Share landing page.

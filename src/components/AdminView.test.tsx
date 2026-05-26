@@ -23,7 +23,10 @@ describe('AdminView', () => {
     const defaultProps = {
         editingRecipe: null,
         clearEditing: mockClearEditing,
-        recipes: [createMockRecipe({ id: 'r1', title: 'Apple Pie' }), createMockRecipe({ id: 'r2', title: 'Banana Bread' })],
+        recipes: [
+            createMockRecipe({ id: 'r1', title: 'Apple Pie', imageSource: 'upload', generatedImageFallback: false, imageApprovalStatus: 'approved' }),
+            createMockRecipe({ id: 'r2', title: 'Banana Bread', imageSource: 'upload', generatedImageFallback: false, imageApprovalStatus: 'approved' }),
+        ],
         trivia: [createMockTrivia({ id: 't1', question: 'Test?' })],
         contributors: [createMockContributor({ name: 'Alice' })],
         currentUser: {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
@@ -9,6 +9,7 @@ import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { useFocusTrap } from '../utils/focusTrap';
+import { getRecipeImageStatus, markRecipeImageAsApprovedActual, summarizeRecipeImageStatuses } from '../utils/imageProvenance';
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -227,6 +228,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         r.contributor?.toLowerCase().includes(recipeSearch.toLowerCase())
     );
 
+    const imageStatusSummary = useMemo(() => summarizeRecipeImageStatuses(recipes), [recipes]);
+    const recipesNeedingActualPhotos = useMemo(
+        () => recipes
+            .filter(recipe => getRecipeImageStatus(recipe).needsCreatorActual)
+            .sort((a, b) => a.title.localeCompare(b.title)),
+        [recipes]
+    );
+
     const isSuperAdmin = currentUser?.name.toLowerCase() === 'kyle' || currentUser?.email === 'hondo4185@gmail.com';
 
 
@@ -307,12 +316,24 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         const defaultImage = getDefaultImageForCategory(recipeForm.category);
         setRecipeFile(null);
         setPreviewUrl(defaultImage);
-        setRecipeForm(prev => ({ ...prev, image: defaultImage, imageSource: undefined }));
+        setRecipeForm(prev => ({
+            ...prev,
+            image: defaultImage,
+            imageSource: undefined,
+            generatedImageFallback: false,
+            imageApprovalStatus: 'needs-actual',
+        }));
     };
 
     const useDefaultImageForRecipe = async (recipe: Recipe) => {
         const defaultImage = getDefaultImageForCategory(recipe.category);
-        await onAddRecipe({ ...recipe, image: defaultImage, imageSource: undefined });
+        await onAddRecipe({
+            ...recipe,
+            image: defaultImage,
+            imageSource: undefined,
+            generatedImageFallback: false,
+            imageApprovalStatus: 'needs-actual',
+        });
         setSuccessMessage(`✓ "${recipe.title}" now uses the default ${recipe.category} image.`);
         setTimeout(() => setSuccessMessage(''), 4000);
     };
@@ -390,7 +411,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         try {
             const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
             const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
-            await onAddRecipe({ ...recipe, imageSource }, file);
+            await onAddRecipe({
+                ...recipe,
+                imageSource,
+                generatedImageFallback: true,
+                imageApprovalStatus: 'generated-fallback',
+            }, file);
         } catch (e: unknown) {
             console.error(e);
             handleAIError(e, 'Quick generation failed: ${message}. Try uploading a photo for this recipe.');
@@ -430,7 +456,12 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
             try {
                 const { imageBase64, mimeType, imageSource } = await geminiProxy.generateImage(recipe);
                 const file = base64ToFile(imageBase64, `recipe-${Date.now()}.${getFileExtension(mimeType)}`, mimeType);
-                await onAddRecipe({ ...recipe, imageSource }, file);
+                await onAddRecipe({
+                ...recipe,
+                imageSource,
+                generatedImageFallback: true,
+                imageApprovalStatus: 'generated-fallback',
+            }, file);
                 successCount++;
             } catch (e) {
                 console.error(`Failed to generate image for "${recipe.title}":`, e);
@@ -484,16 +515,22 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 }
             }
             const imageSource = recipeFile ? (imageSourceForCurrent || 'upload') : recipeForm.imageSource;
+            const submittedRecipe = normalizeRecipe({
+                ...recipeForm as Recipe,
+                id: recipeForm.id || 'r' + Date.now(),
+                contributor: recipeForm.contributor || currentUser?.name || 'Family',
+                image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic,
+                imageSource: imageSource || undefined,
+                generatedImageFallback: imageSource === 'nano-banana' ? true : recipeForm.generatedImageFallback,
+                imageApprovalStatus: imageSource === 'nano-banana' ? 'generated-fallback' : recipeForm.imageApprovalStatus,
+                ingredients,
+                instructions
+            });
+            const recipeToSave = recipeFile && imageSource === 'upload'
+                ? markRecipeImageAsApprovedActual(submittedRecipe, currentUser?.name || currentUser?.email || 'Custodian')
+                : submittedRecipe;
             try {
-                await onAddRecipe(normalizeRecipe({
-                    ...recipeForm as Recipe,
-                    id: recipeForm.id || 'r' + Date.now(),
-                    contributor: recipeForm.contributor || currentUser?.name || 'Family',
-                    image: recipeForm.image || CATEGORY_IMAGES[recipeForm.category || 'Main'] || CATEGORY_IMAGES.Generic,
-                    imageSource: imageSource || undefined,
-                    ingredients,
-                    instructions
-                }), recipeFile || undefined);
+                await onAddRecipe(recipeToSave, recipeFile || undefined);
             } catch (saveErr) {
                 const msg = saveErr instanceof Error ? saveErr.message : String(saveErr);
                 toast(msg, 'error');
@@ -1049,6 +1086,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                             {r.imageSource === 'nano-banana' ? 'Imagen' : r.imageSource === 'upload' ? 'Upload' : r.imageSource === 'local-generated' ? 'Local' : r.imageSource}
                                                                         </span>
                                                                     )}
+                                                                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase ${getRecipeImageStatus(r).tone === 'green' ? 'bg-emerald-100 text-emerald-700' : getRecipeImageStatus(r).tone === 'amber' ? 'bg-amber-100 text-amber-700' : getRecipeImageStatus(r).tone === 'blue' ? 'bg-blue-100 text-blue-700' : getRecipeImageStatus(r).tone === 'red' ? 'bg-red-100 text-red-700' : 'bg-stone-100 text-stone-600'}`} title={getRecipeImageStatus(r).description}>
+                                                                        {getRecipeImageStatus(r).label}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1102,9 +1142,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                                                 }}
                                                                 className="min-w-[2.75rem] min-h-[2.75rem] px-3 py-2 bg-[#2D4635] text-white rounded-lg text-[10px] font-bold uppercase flex items-center justify-center"
-                                                                aria-label={`Edit ${r.title}`}
+                                                                aria-label={`${getRecipeImageStatus(r).needsCreatorActual ? 'Replace generated image for' : 'Edit'} ${r.title}`}
                                                             >
-                                                                Edit
+                                                                {getRecipeImageStatus(r).needsCreatorActual ? 'Replace Actual' : 'Edit'}
                                                             </button>
                                                             <button
                                                                 onClick={async () => {
@@ -1124,6 +1164,50 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                     {!editingRecipe && (
                                         <div className="space-y-4">
+                                            <section className="p-5 bg-white rounded-[2rem] border border-stone-100 shadow-sm" aria-labelledby="image-replacement-dashboard-title">
+                                                <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+                                                    <div>
+                                                        <h4 id="image-replacement-dashboard-title" className="text-[10px] font-black uppercase tracking-widest text-[#2D4635]">Creator actual-photo workflow</h4>
+                                                        <p className="text-sm text-stone-600 mt-1">Track temporary generated photos and replace them with creator-supplied actuals as they arrive.</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-serif text-[#2D4635]">{imageStatusSummary.actualCoveragePercent}%</p>
+                                                        <p className="text-[9px] uppercase tracking-widest text-stone-400 font-black">Actual coverage</p>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                                                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100"><p className="text-lg font-bold text-emerald-700">{imageStatusSummary['approved-actual']}</p><p className="text-[9px] uppercase tracking-widest text-emerald-700 font-black">Approved actual</p></div>
+                                                    <div className="p-3 rounded-2xl bg-amber-50 border border-amber-100"><p className="text-lg font-bold text-amber-700">{imageStatusSummary['generated-fallback']}</p><p className="text-[9px] uppercase tracking-widest text-amber-700 font-black">Generated fallback</p></div>
+                                                    <div className="p-3 rounded-2xl bg-blue-50 border border-blue-100"><p className="text-lg font-bold text-blue-700">{imageStatusSummary['pending-review']}</p><p className="text-[9px] uppercase tracking-widest text-blue-700 font-black">Pending review</p></div>
+                                                    <div className="p-3 rounded-2xl bg-stone-50 border border-stone-100"><p className="text-lg font-bold text-stone-700">{imageStatusSummary['default-placeholder']}</p><p className="text-[9px] uppercase tracking-widest text-stone-500 font-black">Placeholder</p></div>
+                                                    <div className="p-3 rounded-2xl bg-red-50 border border-red-100"><p className="text-lg font-bold text-red-700">{imageStatusSummary.missing}</p><p className="text-[9px] uppercase tracking-widest text-red-700 font-black">Missing</p></div>
+                                                </div>
+                                                <div className="rounded-2xl bg-stone-50 border border-stone-100 p-4">
+                                                    <div className="flex items-center justify-between gap-3 mb-3">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Needs creator actual ({imageStatusSummary.needsCreatorActual})</p>
+                                                        <p className="text-[10px] text-stone-500">Upload an actual photo while editing a recipe to approve it.</p>
+                                                    </div>
+                                                    {recipesNeedingActualPhotos.length === 0 ? (
+                                                        <p className="text-sm text-emerald-700 font-medium">Every recipe has an approved actual photo.</p>
+                                                    ) : (
+                                                        <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto custom-scrollbar">
+                                                            {recipesNeedingActualPhotos.slice(0, 18).map(recipe => (
+                                                                <button
+                                                                    key={recipe.id}
+                                                                    type="button"
+                                                                    onClick={() => { onEditRecipe(recipe); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                                                    className="px-3 py-2 bg-white border border-stone-200 rounded-full text-[10px] font-bold text-[#2D4635] hover:border-[#A0522D]/40 hover:text-[#A0522D] transition-colors"
+                                                                    title={getRecipeImageStatus(recipe).description}
+                                                                >
+                                                                    {recipe.title}
+                                                                </button>
+                                                            ))}
+                                                            {recipesNeedingActualPhotos.length > 18 && <span className="px-3 py-2 text-[10px] text-stone-500">+{recipesNeedingActualPhotos.length - 18} more</span>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </section>
+
                                             {/* Recipe images progress */}
                                             <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Recipe images</h4>
@@ -1198,6 +1282,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <form noValidate onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
                                         <div className="space-y-2">
                                             <label htmlFor="admin-recipe-image-upload" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
+                                            <div className="mt-2 mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-100 text-sm text-amber-900">
+                                                <p className="font-bold">{getRecipeImageStatus(recipeForm as Recipe).label}</p>
+                                                <p className="text-xs mt-1">{getRecipeImageStatus(recipeForm as Recipe).needsCreatorActual ? 'Upload a creator-supplied actual photo here to replace the temporary generated image and mark it approved.' : 'This recipe already has an approved actual photo; uploading another image will record the replacement as the current approved actual.'}</p>
+                                            </div>
 
                                             {previewUrl && (
                                                 <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner group">
@@ -1227,7 +1315,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
                                                         <span className="text-lg">📁</span>
                                                         <span className="text-[10px] font-black uppercase tracking-widest">
-                                                            {recipeFile ? recipeFile.name : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
+                                                            {recipeFile ? recipeFile.name : getRecipeImageStatus(recipeForm as Recipe).needsCreatorActual ? 'Upload Creator Actual Photo' : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
                                                         </span>
                                                     </div>
                                                 </label>

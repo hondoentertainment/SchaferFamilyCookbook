@@ -19,6 +19,13 @@ for (const recipe of recipes) {
 const failures = [];
 const warnings = [];
 const rows = [];
+const provenanceCounts = {
+  approvedActual: 0,
+  generatedFallback: 0,
+  pendingReview: 0,
+  needsActual: 0,
+  missing: 0,
+};
 
 function csvEscape(value) {
   const text = String(value ?? '');
@@ -52,6 +59,38 @@ for (const recipe of recipes) {
     failures.push(`${recipe.title}: missing imageSource metadata`);
   }
 
+  if (recipe.generatedImageFallback === true || recipe.imageSource === 'nano-banana' || recipe.imageSource === 'local-generated') {
+    provenanceCounts.generatedFallback += 1;
+    if (recipe.imageApprovalStatus && recipe.imageApprovalStatus !== 'generated-fallback') {
+      failures.push(`${recipe.title}: generated fallback has inconsistent imageApprovalStatus (${recipe.imageApprovalStatus})`);
+    }
+    if (!recipe.generatedImagePrompt?.trim()) {
+      warnings.push(`${recipe.title}: generated fallback is missing generatedImagePrompt provenance`);
+    }
+  } else if (recipe.imageSource === 'upload') {
+    if (recipe.imageApprovalStatus === 'pending-review') {
+      provenanceCounts.pendingReview += 1;
+    } else {
+      provenanceCounts.approvedActual += 1;
+      if (recipe.generatedImageFallback === true) {
+        failures.push(`${recipe.title}: uploaded actual is still marked generatedImageFallback`);
+      }
+      if (recipe.imageApprovalStatus && recipe.imageApprovalStatus !== 'approved') {
+        failures.push(`${recipe.title}: uploaded actual has unsupported imageApprovalStatus (${recipe.imageApprovalStatus})`);
+      }
+      if (!recipe.actualImageUploadedAt && !recipe.imageApprovedAt) {
+        warnings.push(`${recipe.title}: uploaded actual lacks upload/approval timestamp provenance`);
+      }
+    }
+  } else if (!image) {
+    provenanceCounts.missing += 1;
+  } else {
+    provenanceCounts.needsActual += 1;
+    if (recipe.imageApprovalStatus && recipe.imageApprovalStatus !== 'needs-actual') {
+      warnings.push(`${recipe.title}: unverified image has unexpected imageApprovalStatus (${recipe.imageApprovalStatus})`);
+    }
+  }
+
   if (usageCount > 1) {
     failures.push(`${recipe.title}: shared image path ${image} is reused ${usageCount} times`);
   }
@@ -81,6 +120,10 @@ for (const recipe of recipes) {
     recipe.category,
     image,
     recipe.imageSource || '',
+    recipe.generatedImageFallback === true ? 'true' : 'false',
+    recipe.imageApprovalStatus || '',
+    recipe.actualImageUploadedAt || '',
+    recipe.imageApprovedAt || '',
     usageCount,
     exists,
     width,
@@ -91,7 +134,7 @@ for (const recipe of recipes) {
 }
 
 const csvLines = [
-  ['id', 'title', 'category', 'image', 'imageSource', 'usageCount', 'exists', 'width', 'height', 'sizeBytes', 'aspectRatio'].join(','),
+  ['id', 'title', 'category', 'image', 'imageSource', 'generatedImageFallback', 'imageApprovalStatus', 'actualImageUploadedAt', 'imageApprovedAt', 'usageCount', 'exists', 'width', 'height', 'sizeBytes', 'aspectRatio'].join(','),
   ...rows.map((row) => row.map(csvEscape).join(',')),
 ];
 writeFileSync(auditCsvPath, csvLines.join('\n') + '\n');
@@ -100,6 +143,10 @@ console.log('\nRecipe image audit');
 console.log('='.repeat(60));
 console.log(`Recipes checked: ${recipes.length}`);
 console.log(`Unique image paths: ${usageCounts.size}`);
+console.log(`Approved actual photos: ${provenanceCounts.approvedActual}`);
+console.log(`Generated fallbacks awaiting actuals: ${provenanceCounts.generatedFallback}`);
+console.log(`Pending review photos: ${provenanceCounts.pendingReview}`);
+console.log(`Needs actual/default placeholders: ${provenanceCounts.needsActual}`);
 console.log(`Warnings: ${warnings.length}`);
 console.log(`Failures: ${failures.length}`);
 console.log(`Audit report: ${auditCsvPath}`);
