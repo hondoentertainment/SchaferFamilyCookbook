@@ -98,10 +98,13 @@ describe('CloudArchive', () => {
             const recipes = await CloudArchive.getRecipes();
             expect(recipes[0].image).toBe('/recipe-images/749d8765.webp');
             expect(recipes[0].imageSource).toBe('nano-banana');
+            expect(recipes[0].generatedImageFallback).toBe(true);
+            expect(recipes[0].generatedImagePrompt).toContain('Realistic appetizing food photography of Festive Apple Dip');
 
             const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
             expect(stored[0].image).toBe(recipes[0].image);
             expect(stored[0].imageSource).toBe('nano-banana');
+            expect(stored[0].generatedImageFallback).toBe(true);
         });
 
         it('should preserve local recipe-derived generated image assets', async () => {
@@ -120,10 +123,12 @@ describe('CloudArchive', () => {
             const recipes = await CloudArchive.getRecipes();
             expect(recipes[0].image).toBe('/recipe-images/749d8765.webp');
             expect(recipes[0].imageSource).toBe('nano-banana');
+            expect(recipes[0].generatedImageFallback).toBe(true);
 
             const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
             expect(stored[0].image).toBe(recipes[0].image);
             expect(stored[0].imageSource).toBe('nano-banana');
+            expect(stored[0].generatedImageFallback).toBe(true);
         });
 
         it('should upsert a new recipe', async () => {

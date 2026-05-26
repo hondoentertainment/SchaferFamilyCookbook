@@ -13,6 +13,10 @@ export interface Recipe {
   stepImages?: string[];
   /** How the image was sourced; used for AI badge and accuracy tracking. */
   imageSource?: 'upload' | 'nano-banana' | 'pollinations' | 'local-generated';
+  /** True when the committed image is a temporary generated food photo pending a creator-uploaded actual. */
+  generatedImageFallback?: boolean;
+  /** Prompt used to create the temporary generated food photo, retained for traceability. */
+  generatedImagePrompt?: string;
   prepTime?: string;
   cookTime?: string;
   calories?: number;

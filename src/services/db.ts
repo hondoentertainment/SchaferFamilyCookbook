@@ -55,13 +55,23 @@ function safeParseArray<T>(raw: string | null): T[] {
 const generatedDefaultImagesById = new Map(
     (defaultRecipes as Recipe[])
         .filter(recipe => recipe.imageSource === 'nano-banana' && recipe.image?.startsWith('/recipe-images/'))
-        .map(recipe => [recipe.id, { image: recipe.image, imageSource: recipe.imageSource }])
+        .map(recipe => [recipe.id, {
+            image: recipe.image,
+            imageSource: recipe.imageSource,
+            generatedImageFallback: recipe.generatedImageFallback,
+            generatedImagePrompt: recipe.generatedImagePrompt,
+        }])
 );
 
 const generatedDefaultImagesByTitle = new Map(
     (defaultRecipes as Recipe[])
         .filter(recipe => recipe.imageSource === 'nano-banana' && recipe.image?.startsWith('/recipe-images/'))
-        .map(recipe => [recipe.title.trim().toLowerCase(), { image: recipe.image, imageSource: recipe.imageSource }])
+        .map(recipe => [recipe.title.trim().toLowerCase(), {
+            image: recipe.image,
+            imageSource: recipe.imageSource,
+            generatedImageFallback: recipe.generatedImageFallback,
+            generatedImagePrompt: recipe.generatedImagePrompt,
+        }])
 );
 
 function isUploadedImageSource(source?: Recipe['imageSource']): boolean {
@@ -77,7 +87,9 @@ function shouldUseGeneratedDefaultImage(recipe: Recipe): boolean {
     const generatedDefault = findGeneratedDefaultImage(recipe);
     if (!generatedDefault) return false;
     if (recipe.image !== generatedDefault.image) return true;
-    return recipe.imageSource !== generatedDefault.imageSource;
+    return recipe.imageSource !== generatedDefault.imageSource
+        || recipe.generatedImageFallback !== generatedDefault.generatedImageFallback
+        || recipe.generatedImagePrompt !== generatedDefault.generatedImagePrompt;
 }
 
 function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
@@ -92,6 +104,8 @@ function normalizeRecipeImages(recipes: Recipe[]): Recipe[] {
             ...normalizedRecipe,
             image: generatedDefault.image,
             imageSource: generatedDefault.imageSource,
+            generatedImageFallback: generatedDefault.generatedImageFallback,
+            generatedImagePrompt: generatedDefault.generatedImagePrompt,
         };
     });
 }
