@@ -25,7 +25,7 @@ const NAV_GROUPS: Record<string, string[]> = {
     Home: ['Home'],
     Recipes: ['Recipes', 'Collections'],
     Index: ['Index'],
-    'Grocery List': ['Grocery List'],
+    'Grocery List': ['Grocery List', 'Meal Plan'],
     Gallery: ['Gallery', 'Trivia', 'Family Story', 'Contributors'],
     Profile: ['Profile', 'Privacy', 'Help'],
 };

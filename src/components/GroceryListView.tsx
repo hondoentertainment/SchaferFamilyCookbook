@@ -39,6 +39,7 @@ function groupByRecipe(items: GroceryItem[]): GroupedItems[] {
 interface GroceryListViewProps {
     onBrowseRecipes?: () => void;
     onOpenCollections?: () => void;
+    onOpenMealPlan?: () => void;
     /** When set, scrolls to the recipe group and highlights it briefly */
     highlightRecipeTitle?: string | null;
     onHighlightConsumed?: () => void;
@@ -47,6 +48,7 @@ interface GroceryListViewProps {
 export const GroceryListView: React.FC<GroceryListViewProps> = ({
     onBrowseRecipes,
     onOpenCollections,
+    onOpenMealPlan,
     highlightRecipeTitle = null,
     onHighlightConsumed,
 }) => {
@@ -148,7 +150,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                         ? `${items.length} item${items.length === 1 ? '' : 's'} · ${checkedCount} checked`
                         : 'Pull ingredients straight from a recipe, or jot anything down below.'}
                 </p>
-                {(onBrowseRecipes || onOpenCollections) && (
+                {(onBrowseRecipes || onOpenCollections || onOpenMealPlan) && (
                     <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {onBrowseRecipes && (
                             <button
@@ -157,6 +159,15 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                 className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
                             >
                                 ＋ Recipes
+                            </button>
+                        )}
+                        {onOpenMealPlan && (
+                            <button
+                                type="button"
+                                onClick={onOpenMealPlan}
+                                className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                            >
+                                Meal Plan
                             </button>
                         )}
                         {onOpenCollections && (

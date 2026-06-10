@@ -8,7 +8,7 @@ const MAIN_TABS = [
     { id: 'Recipes', label: 'Recipes', group: ['Recipes', 'Collections'] },
     { id: 'Index', label: 'A–Z', group: ['Index'] },
     { id: 'Gallery', label: 'Family', group: ['Gallery', 'Trivia', 'Family Story', 'Contributors'] },
-    { id: 'Grocery List', label: 'Groceries', group: ['Grocery List'] },
+    { id: 'Grocery List', label: 'Groceries', group: ['Grocery List', 'Meal Plan'] },
     { id: 'Profile', label: 'Me', group: ['Profile', 'Privacy', 'Help'] },
 ] as const;
 
