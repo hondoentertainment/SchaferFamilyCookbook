@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, openFirstRecipeCardInMainGrid } from './fixtures';
+
+function recipeDetailsDialog(page: import('@playwright/test').Page) {
+  return page.locator('[role="dialog"][aria-label="Recipe details"]');
+}
 
 test.describe('Profile', () => {
   test.beforeEach(async ({ page }) => {
@@ -46,5 +50,49 @@ test.describe('Profile', () => {
     await page.getByTestId('nav-profile').click();
 
     await expect(page.getByRole('heading', { name: /My Shared Recipes/i })).toBeVisible({ timeout: 3000 });
+  });
+
+  test('shows favorited recipe in My Favorites after favoriting from browse', async ({ page }) => {
+    const article = page.getByTestId('recipe-card-grid').locator('article').first();
+    const title = await article.getByTestId('recipe-card-open').locator('img').first().getAttribute('alt');
+    expect(title).toBeTruthy();
+
+    await article.getByRole('button', { name: `Add ${title} to favorites` }).click();
+    await expect(article.getByRole('button', { name: `Remove ${title} from favorites` })).toBeVisible();
+
+    await page.getByTestId('nav-profile').click();
+
+    const favoritesSection = page.locator('[aria-label="My favorites"]');
+    await expect(favoritesSection.getByText(title!, { exact: true })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('shows recipe in Recently Viewed after viewing from browse', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    await expect(recipeDetailsDialog(page)).toBeVisible({ timeout: 5000 });
+
+    const title = await recipeDetailsDialog(page).getByRole('heading', { level: 2 }).first().textContent();
+    expect(title?.trim()).toBeTruthy();
+
+    await recipeDetailsDialog(page).getByRole('button', { name: /Close recipe/i }).click();
+    await expect(recipeDetailsDialog(page)).not.toBeVisible({ timeout: 3000 });
+
+    await page.getByTestId('nav-profile').click();
+
+    const recentSection = page.locator('[aria-label="Recently viewed"]');
+    await expect(recentSection.getByText(title!.trim(), { exact: true })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('creates a collection from Profile Preferences and shows it', async ({ page }) => {
+    await page.getByTestId('nav-profile').click();
+
+    const newCollectionBtn = page.getByRole('button', { name: /\+ New Collection/i });
+    await newCollectionBtn.scrollIntoViewIfNeeded();
+    await newCollectionBtn.click();
+
+    await page.getByPlaceholder(/Collection name/i).fill('Holiday Baking');
+    await page.getByRole('button', { name: /^Create$/i }).click();
+
+    await expect(page.getByText('Holiday Baking')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Collections \(1\)/)).toBeVisible();
   });
 });

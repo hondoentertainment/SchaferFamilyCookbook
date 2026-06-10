@@ -17,9 +17,6 @@ function createMockRes() {
             headers[name.toLowerCase()] = value;
             return this;
         },
-        getHeader(name: string) {
-            return headers[name.toLowerCase()];
-        },
         status(code: number) {
             statusCode = code;
             return this;
@@ -28,31 +25,53 @@ function createMockRes() {
             body = payload;
             return this;
         },
-        json(payload: unknown) {
-            body = payload;
-            return this;
-        },
-        end(payload?: unknown) {
-            if (payload !== undefined) body = payload;
-            return this;
-        },
     };
 }
 
-describe('GET /api/ping (serverless diagnostics)', () => {
-    it('returns 200 JSON reporting a non-empty bundled recipe seed', () => {
-        const req = { method: 'GET', query: {}, headers: {} } as unknown as Parameters<typeof handler>[0];
+describe('GET /api/ping (diagnostic route)', () => {
+    it('returns 200 OK with a plain-text body', () => {
+        const req = {
+            method: 'GET',
+            headers: {},
+        } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
+
         handler(req, res);
+
         const rr = res as unknown as ReturnType<typeof createMockRes>;
-
         expect(rr.statusCode).toBe(200);
-        expect(rr.headers['content-type']).toBe('application/json');
+        expect(rr.body).toBe('ok');
+        expect(rr.headers['content-type']).toBe('text/plain');
+    });
 
-        const payload = JSON.parse(rr.body as string);
-        expect(payload.status).toBe('ok');
-        expect(payload.recipeSeedCount).toBeGreaterThan(0);
-        expect(typeof payload.time).toBe('string');
-        expect(Number.isNaN(Date.parse(payload.time))).toBe(false);
+    it('responds even when the request method is unusual (no method gate)', () => {
+        const req = {
+            method: 'POST',
+            headers: {},
+        } as unknown as Parameters<typeof handler>[0];
+        const res = createMockRes() as unknown as Parameters<typeof handler>[1];
+
+        handler(req, res);
+
+        const rr = res as unknown as ReturnType<typeof createMockRes>;
+        // Diagnostic endpoint deliberately accepts all methods so on-call can
+        // reach it from any HTTP client without a method-mismatch failure.
+        expect(rr.statusCode).toBe(200);
+        expect(rr.body).toBe('ok');
+    });
+
+    it('does not allocate large payloads (smoke check for cold-start cost)', () => {
+        const req = {
+            method: 'GET',
+            headers: {},
+        } as unknown as Parameters<typeof handler>[0];
+        const res = createMockRes() as unknown as Parameters<typeof handler>[1];
+
+        const start = process.hrtime.bigint();
+        handler(req, res);
+        const elapsedMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+
+        // Generous bound — the route is two synchronous setHeader/send calls.
+        expect(elapsedMs).toBeLessThan(50);
     });
 });

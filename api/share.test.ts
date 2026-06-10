@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import handler, { renderShareHtml } from './share';
+import { loadRecipesSeed } from './loadRecipesSeed';
 import recipesJson from '../src/data/recipes.json' with { type: 'json' };
 
 type RecipeLike = { id: string; title: string; contributor: string; image?: string };
@@ -44,72 +45,95 @@ function createMockRes() {
     };
 }
 
-function makeReq(query: Record<string, string>, ip: string) {
-    return {
-        method: 'GET',
-        query,
-        headers: { 'x-forwarded-for': ip, host: 'example.com', 'x-forwarded-proto': 'https' },
-    } as unknown as Parameters<typeof handler>[0];
-}
-
-describe('renderShareHtml', () => {
-    it('embeds Open Graph + Twitter tags pointing at the OG image route', () => {
-        const html = renderShareHtml(
-            { id: 'abc', title: 'Plum Cake', contributor: 'Grandma' },
-            'https://example.com',
-        );
-        expect(html).toContain('og:image');
-        expect(html).toContain('/api/og?recipeId=abc');
-        expect(html).toContain('twitter:card');
-        expect(html).toContain('Plum Cake');
+describe('GET /api/share (recipe share HTML handler)', () => {
+    it('loadRecipesSeed returns entries with ids used by smoke tests', () => {
+        const seed = loadRecipesSeed();
+        expect(seed.some((r) => r.id === '749d8765')).toBe(true);
+        expect(seed.length).toBe((recipesJson as unknown[]).length);
     });
 
-    it('escapes HTML-significant characters in recipe fields', () => {
-        const html = renderShareHtml(
-            { id: 'x', title: '<script>"&', contributor: 'Tester' },
-            'https://example.com',
-        );
-        expect(html).not.toContain('<script>"&');
-        expect(html).toContain('&lt;script&gt;');
-    });
-});
-
-describe('GET /api/share (share landing page handler)', () => {
-    it('returns 200 text/html with OG markup for a real recipe id', async () => {
-        const req = makeReq({ id: sampleRecipe.id }, '203.0.113.10');
+    it('returns 400 when id is missing', async () => {
+        const req = {
+            method: 'GET',
+            query: {},
+            headers: { 'x-forwarded-for': '203.0.113.11', host: 'example.test' },
+        } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
-        await handler(req, res);
-        const rr = res as unknown as ReturnType<typeof createMockRes>;
 
-        expect(rr.statusCode).toBe(200);
-        expect(String(rr.headers['content-type'])).toContain('text/html');
-        const html = rr.body as string;
-        expect(html).toContain('og:image');
-        expect(html).toContain(`/api/og?recipeId=${encodeURIComponent(sampleRecipe.id)}`);
-    });
-
-    it('returns 400 when the id is missing', async () => {
-        const req = makeReq({}, '203.0.113.11');
-        const res = createMockRes() as unknown as Parameters<typeof handler>[1];
         await handler(req, res);
+
         const rr = res as unknown as ReturnType<typeof createMockRes>;
         expect(rr.statusCode).toBe(400);
+        expect(rr.body).toBe('Missing id');
     });
 
     it('returns 404 when the recipe id does not exist', async () => {
-        const req = makeReq({ id: 'does-not-exist' }, '203.0.113.12');
+        const req = {
+            method: 'GET',
+            query: { id: 'does-not-exist' },
+            headers: { 'x-forwarded-for': '203.0.113.12', host: 'example.test' },
+        } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
+
         await handler(req, res);
+
         const rr = res as unknown as ReturnType<typeof createMockRes>;
         expect(rr.statusCode).toBe(404);
+        expect(rr.body).toBe('Recipe not found');
+    });
+
+    it('returns crawler-friendly Open Graph HTML for a real recipe id', async () => {
+        const req = {
+            method: 'GET',
+            query: { id: sampleRecipe.id },
+            headers: {
+                'x-forwarded-for': '203.0.113.13',
+                'x-forwarded-proto': 'https',
+                'x-forwarded-host': 'cookbook.example.test',
+            },
+        } as unknown as Parameters<typeof handler>[0];
+        const res = createMockRes() as unknown as Parameters<typeof handler>[1];
+
+        await handler(req, res);
+
+        const rr = res as unknown as ReturnType<typeof createMockRes>;
+        const html = rr.body as string;
+        expect(rr.statusCode).toBe(200);
+        expect(rr.headers['content-type']).toBe('text/html; charset=utf-8');
+        expect(rr.headers['cache-control']).toContain('s-maxage=3600');
+        expect(html).toContain('<meta property="og:image" content="https://cookbook.example.test/api/og?recipeId=');
+        expect(html).toContain(`<meta property="og:url" content="https://cookbook.example.test/share/recipe/${sampleRecipe.id}">`);
+        expect(html).toContain(`<meta http-equiv="refresh" content="0; url=https://cookbook.example.test/#recipe/${sampleRecipe.id}">`);
+        expect(html).toContain('Schafer Family Cookbook');
+    });
+
+    it('escapes recipe text before placing it in HTML metadata', () => {
+        const html = renderShareHtml(
+            {
+                id: 'special id',
+                title: 'A <Great> & "Quoted" Recipe',
+                contributor: "O'Family & Friends",
+            },
+            'https://cookbook.example.test'
+        );
+
+        expect(html).toContain('A &lt;Great&gt; &amp; &quot;Quoted&quot; Recipe');
+        expect(html).toContain('O&#39;Family &amp; Friends');
+        expect(html).not.toContain('<Great>');
     });
 
     it('returns 405 for non-GET methods', async () => {
-        const req = makeReq({ id: sampleRecipe.id }, '203.0.113.13');
-        (req as { method: string }).method = 'POST';
+        const req = {
+            method: 'POST',
+            query: { id: sampleRecipe.id },
+            headers: { 'x-forwarded-for': '203.0.113.14', host: 'example.test' },
+        } as unknown as Parameters<typeof handler>[0];
         const res = createMockRes() as unknown as Parameters<typeof handler>[1];
+
         await handler(req, res);
+
         const rr = res as unknown as ReturnType<typeof createMockRes>;
         expect(rr.statusCode).toBe(405);
+        expect(rr.body).toEqual({ error: 'Method Not Allowed' });
     });
 });

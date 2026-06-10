@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sharp from 'sharp';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadRecipesSeed } from './loadRecipesSeed';
-import { getClientIp, OG_IMAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
+import { loadRecipesSeed } from './loadRecipesSeed.js';
+import { getClientIp, OG_IMAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit.js';
 
 /**
  * OG share-card image.
@@ -29,7 +29,14 @@ type RecipeLike = {
     category?: string;
 };
 
-const recipes = loadRecipesSeed() as RecipeLike[];
+const recipes = (() => {
+    try {
+        return loadRecipesSeed() as RecipeLike[];
+    } catch (err) {
+        console.error('[api/og] Failed to load recipe seed:', err);
+        return [] as RecipeLike[];
+    }
+})();
 
 const WIDTH = 1200;
 const HEIGHT = 630;

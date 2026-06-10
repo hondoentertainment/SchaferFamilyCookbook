@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loadRecipesSeed } from './loadRecipesSeed';
-import { getClientIp, SHARE_PAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
+import { loadRecipesSeed } from './loadRecipesSeed.js';
+import { getClientIp, SHARE_PAGE_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit.js';
 
 /**
  * Share landing page.
@@ -26,7 +26,14 @@ type RecipeLike = {
     category?: string;
 };
 
-const recipes = loadRecipesSeed();
+const recipes = (() => {
+    try {
+        return loadRecipesSeed();
+    } catch (err) {
+        console.error('[api/share] Failed to load recipe seed:', err);
+        return [] as RecipeLike[];
+    }
+})();
 
 function escapeHtml(s: string): string {
     return s.replace(/[<>&"']/g, (c) => {

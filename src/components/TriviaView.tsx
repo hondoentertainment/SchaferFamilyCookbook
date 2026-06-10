@@ -520,11 +520,10 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 {answerLog.length > 0 && (
                     <div className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-6 md:p-8 border border-stone-100 dark:border-stone-800 shadow-xl text-left">
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4">Score breakdown</h4>
-                        <div className="flex flex-wrap gap-2" role="list" aria-label="Question results">
+                        <ul className="flex flex-wrap gap-2 list-none p-0 m-0" aria-label="Question results">
                             {answerLog.map((log, i) => (
-                                <span
+                                <li
                                     key={i}
-                                    role="listitem"
                                     className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold ${
                                         log.isCorrect
                                             ? 'bg-[#2D4635]/15 dark:bg-[#2D4635]/30 text-[#2D4635] dark:text-emerald-300 border border-[#2D4635]/30'
@@ -532,10 +531,13 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                                     }`}
                                     title={log.isCorrect ? `Question ${i + 1}: Correct` : `Question ${i + 1}: Incorrect`}
                                 >
-                                    {log.isCorrect ? '✓' : '✗'}
-                                </span>
+                                    <span aria-hidden="true">{log.isCorrect ? '✓' : '✗'}</span>
+                                    <span className="sr-only">
+                                        {log.isCorrect ? `Question ${i + 1}: Correct` : `Question ${i + 1}: Incorrect`}
+                                    </span>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     </div>
                 )}
 

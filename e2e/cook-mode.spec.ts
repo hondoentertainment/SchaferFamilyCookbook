@@ -37,6 +37,8 @@ test.describe('Cook Mode swipe navigation', () => {
         await expect(cookApp.getByText(/Step 1 of \d+/).first()).toBeVisible();
 
         // Dispatch a synthetic horizontal swipe on the ingredients body.
+        // Firefox in CI does not expose TouchEvent/Touch constructors on desktop,
+        // so create plain Events and attach the touch lists React's handler reads.
         await page.evaluate(() => {
             const root = document.querySelector(
                 '[role="application"][aria-label^="Cook mode:"]',
@@ -45,24 +47,23 @@ test.describe('Cook Mode swipe navigation', () => {
                 (root?.querySelector('.flex-1.overflow-y-auto') as HTMLElement | null) ??
                 (root?.querySelector('[class*="overflow-y-auto"]') as HTMLElement | null);
             if (!body) throw new Error('Could not find cook-mode step body');
-            const makeTouch = (x: number, y: number) =>
-                new Touch({ identifier: 0, target: body, clientX: x, clientY: y });
-            const start = new TouchEvent('touchstart', {
-                bubbles: true,
-                cancelable: true,
-                touches: [makeTouch(260, 120)],
-                targetTouches: [makeTouch(260, 120)],
-                changedTouches: [makeTouch(260, 120)],
-            });
-            const end = new TouchEvent('touchend', {
-                bubbles: true,
-                cancelable: true,
-                touches: [],
-                targetTouches: [],
-                changedTouches: [makeTouch(60, 120)],
-            });
-            body.dispatchEvent(start);
-            body.dispatchEvent(end);
+
+            const dispatchTouchLikeEvent = (
+                type: 'touchstart' | 'touchend',
+                touches: Array<{ clientX: number; clientY: number }>,
+                changedTouches: Array<{ clientX: number; clientY: number }>,
+            ) => {
+                const event = new Event(type, { bubbles: true, cancelable: true });
+                Object.defineProperties(event, {
+                    touches: { value: touches },
+                    targetTouches: { value: touches },
+                    changedTouches: { value: changedTouches },
+                });
+                body.dispatchEvent(event);
+            };
+
+            dispatchTouchLikeEvent('touchstart', [{ clientX: 260, clientY: 120 }], [{ clientX: 260, clientY: 120 }]);
+            dispatchTouchLikeEvent('touchend', [], [{ clientX: 60, clientY: 120 }]);
         });
 
         await expect(cookApp.getByText(/Step 2 of \d+/).first()).toBeVisible({ timeout: 3000 });

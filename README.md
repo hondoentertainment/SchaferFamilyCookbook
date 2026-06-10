@@ -13,6 +13,7 @@ A digital archive for preserving and celebrating the Schafer family's culinary h
    - `GEMINI_API_KEY` – for AI features (Magic Import, Imagen). **Note:** In production, the key is used server-side via `/api/gemini`; set `GEMINI_API_KEY` in Vercel environment variables.
    - `VITE_SENTRY_DSN` (optional) – enables Sentry in production builds only (`src/monitoring/sentry.ts`). Release/environment are taken from **`VERCEL_GIT_COMMIT_SHA` / `VERCEL_ENV`** on Vercel and **`GITHUB_SHA`** in GitHub Actions when present; override with **`VITE_SENTRY_RELEASE`** / **`VITE_SENTRY_ENVIRONMENT`** if needed. Optional tuning: **`VITE_SENTRY_TRACES_SAMPLE_RATE`** (0–1, default `0.05`) and **`VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE`** (e.g. `0.1` — enables Session Replay on errors only).
    - **Uploading browser source maps to Sentry (optional):** set **`SENTRY_ORG`**, **`SENTRY_PROJECT`**, and a **`SENTRY_AUTH_TOKEN`** (build-only secret, not `VITE_`) in CI or Vercel. The production Vite build then emits **`hidden` sourcemaps** and the `@sentry/vite-plugin` upload step runs automatically.
+   - **Push notifications (optional):** six **`VITE_FIREBASE_*`** vars plus **`VITE_FCM_VAPID_KEY`** — injected into `dist/firebase-messaging-sw.js` at build time. See **[docs/FIREBASE_PUSH_NOTIFICATIONS.md](docs/FIREBASE_PUSH_NOTIFICATIONS.md)**.
 3. Run: `npm run dev`
 
 ### AI Features in Local Dev
@@ -30,6 +31,7 @@ Without a valid key or working proxy, AI buttons will fail with network/API erro
 | Symptom                                                              | Cause                                                                                                                   |
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | AI buttons fail with network error                                   | No `GEMINI_API_KEY` or no working `/api/gemini` proxy (use `vercel dev` or deploy to Vercel)                            |
+| `/api/og` or `/share/recipe/…` returns 500                         | Recipe seed bundle — see **`RUNBOOK.md`** (API seed loading). Start with **`GET /api/ping`** (expect **200**, body **`ok`**) |
 | MMS webhook doesn't receive texts                                    | Needs `FIREBASE_SERVICE_ACCOUNT` and `TWILIO_AUTH_TOKEN` in Vercel env; webhook runs only on Vercel, not GitHub Pages   |
 | Emulator or `firebase emulators:exec` fails (“Could not spawn java”) | Install a **JDK** (recommended 21+) on your PATH; required locally for **`npm run test:rules`** and Firestore emulation |
 
@@ -39,6 +41,7 @@ Several routes throttle by client IP (`x-forwarded-for` first hop, then socket a
 
 | Route                                                          | Requests / window                                                                                         |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `GET /api/ping`                                                | No rate limit (diagnostic; returns **`ok`**)                                                              |
 | `POST /api/gemini`                                             | **45 / 60s** (disable with **`GEMINI_RATE_LIMIT_DISABLED=1`**; override max with **`GEMINI_RATE_LIMIT`**) |
 | `GET` share landing **`/share/recipe/…`** and **`api/share`**  | **120 / 60s**                                                                                             |
 | `GET /api/og`                                                  | **90 / 60s**                                                                                              |
@@ -51,8 +54,9 @@ Several routes throttle by client IP (`x-forwarded-for` first hop, then socket a
 
 **Local**
 
-- **`npm run ci`** runs ESLint, TypeScript check, **Vitest** (`src/**/*` and **`api/**/_`**, excluding **`firebase/\*\*/_.rules.test.ts`\*\*), then a production build (no Playwright).
-- **`npm run test:e2e`** builds the app, serves **`vite preview`** on the port defined in **`playwright.config.ts`**, and runs **Chromium and Firefox** by default (same as CI). Use **`--project=chromium`** to match a quicker local run. Set **`PLAYWRIGHT_BASE_URL`** to hit an existing server; set **`PW_REUSE_E2E_SERVER=1`** to reuse preview started by Playwright.
+- **`npm run ci`** runs ESLint, TypeScript check, **Vitest with coverage thresholds** (`src/**`, `api/**`, `scripts/**` tests; excludes `firebase/**/*.rules.test.ts`), production build, and **bundle-size budget** gate (`scripts/check-bundle-size.mjs`). Does not run Playwright.
+- **`npm run test:run`** syncs the API recipe seed (`postinstall` / `scripts/sync-recipes-for-api.mjs`) then runs Vitest once without coverage.
+- **`npm run test:e2e`** builds the app, serves **`vite preview`** on port **4287** (`playwright.config.ts`), and runs **Chromium and Firefox** by default (same as CI). Use **`--project=chromium`** for a quicker local run. Set **`PLAYWRIGHT_BASE_URL`** to hit an existing server; set **`PW_REUSE_E2E_SERVER=1`** to reuse preview started by Playwright.
 
 **Firestore rules suite**
 
@@ -66,11 +70,11 @@ npx firebase-tools emulators:exec --only firestore --project demo-schafer "npm r
 
 | Job                   | When                                  | What runs                                                                                                   |
 | --------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **`ci`**              | Every push / PR to `main` or `master` | `npm audit` (critical), lint, type-check, **`npm run test:run`**, **`npm run build`**                       |
-| **`e2e`**             | After **`ci`** succeeds               | Playwright **Chromium + Firefox** with Firestore + Storage emulators (**`demo-schafer`**; env vars in the workflow file)  |
+| **`ci`**              | Every push / PR to `main` or `master` | `images:verify`, `npm audit` (critical), lint, type-check, **`test:coverage`**, build, **`test:bundle-size`** |
+| **`e2e`**             | After **`ci`** succeeds               | Playwright **Chromium + Firefox** with Firestore + Storage emulators (**`demo-schafer`**)                   |
 | **`firestore-rules`** | After **`ci`** succeeds               | Java 21, Firebase CLI **`emulators:exec`**, **`npm run test:rules`** against **`firebase/firestore.rules`** |
 
-**Smoke production** (`.github/workflows/smoke-prod.yml`) fires when workflow **CI** completes **successfully** on a **push** to **`main`**, runs **`npm ci`**, then **`npm run smoke:prod`** (HTTP checks configured in **`scripts/smoke-prod.mjs`**).
+**Smoke production** (`.github/workflows/smoke-prod.yml`) fires when workflow **CI** completes **successfully** on a **push** to **`main`**, runs **`npm ci`**, then **`npm run smoke:prod`**: both hosts, **`GET /api/ping`**, share HTML, and OG PNG on Vercel (see **`scripts/smoke-prod.mjs`**).
 
 **Operations** (deploy URLs, Sentry, incident hints, backups, Lighthouse): see **`RUNBOOK.md`**.
 
@@ -82,10 +86,10 @@ npx firebase-tools emulators:exec --only firestore --project demo-schafer "npm r
 ## Finalize and Deploy
 
 ```bash
-npm run ci              # Lint, type-check, Vitest api+src, build (no Playwright)
+npm run ci              # Lint, type-check, coverage+thresholds, build, bundle budget
 npm run test:e2e        # E2E Chromium + Firefox (includes build + preview)
 firebase emulators:exec --only firestore --project demo-schafer "npm run test:rules"
-npm run smoke:prod      # HTTP smoke against URLs in scripts/smoke-prod.mjs
+npm run smoke:prod      # Live HTTP smoke: hosts, /api/ping, share HTML, OG PNG
 ```
 
 After push to `main`: **`ci`** runs (lint, type-check, Vitest `test:run`, build), **`e2e`** and **`firestore-rules`** jobs follow when **`ci`** passes, then the **Smoke production** workflow hits live URLs **if CI completed successfully**. GitHub Pages deploy runs from the deploy workflow; Vercel deploys if linked. Typical Vercel env: **`GEMINI_API_KEY`**, **`FIREBASE_SERVICE_ACCOUNT`**, **`TWILIO_AUTH_TOKEN`**, optional **`NOTIFY_SECRET`** when using **`/api/notify`**.
@@ -100,20 +104,31 @@ After push to `main`: **`ci`** runs (lint, type-check, Vitest `test:run`, build)
    - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
    - **`NOTIFY_SECRET`** – shared secret for **`POST /api/notify`**; callers must send header **`x-notify-secret`** with this value (**Serverless API rate limits** describes throttling).
    - `VITE_SENTRY_DSN` – optional client error reporting (production only).
+   - **`VITE_FIREBASE_*`** (six vars) + optional **`VITE_FCM_VAPID_KEY`** – push notifications; injected into `dist/firebase-messaging-sw.js` at build. See **`docs/FIREBASE_PUSH_NOTIFICATIONS.md`**.
    - `VITE_SHARE_BASE` – optional canonical share base (no trailing slash). **`vite build`** loads **`.env.production`**, which defaults this to `https://schafer-family-cookbook.vercel.app`, so links like `${VITE_SHARE_BASE}/share/recipe/<id>` work without setting Vercel dashboard vars (override there if the domain changes). That route serves `/api/share` HTML with `og:image` → `/api/og?recipeId=<id>` plus a redirect to `/#recipe/<id>` for rich previews (iMessage, Slack, WhatsApp). Without this env (e.g. GitHub Pages), the UI falls back to hash-only URLs (no crawler card).
 3. Deploy.
 
-### Share card (`/api/og`)
+### Share card (`/api/og` + `/api/share`)
 
-The serverless `api/og.ts` endpoint renders a 1200×630 PNG share card for any recipe. It reads `src/data/recipes.json`, loads the recipe image from `public/recipe-images/` (or fetches it if the image is an absolute URL), and composites the title, contributor, category, and site branding using SVG text overlay via `sharp`. If the recipe image cannot be loaded, it falls back to a clean wordmark-only composition on the parchment/forest palette.
+Vercel serverless routes read recipe metadata from a **slim generated seed** (`api/recipes.seed.generated.ts`), not from `fs` at runtime. The seed is regenerated from `src/data/recipes.json` on **`postinstall`** and before **`npm run test:run`** via **`scripts/sync-recipes-for-api.mjs`** (only fields needed for OG/share: id, title, contributor, image, category).
 
-Test locally:
+| Route | Purpose |
+| ----- | ------- |
+| **`GET /api/ping`** | Diagnostic — returns **`ok`** (use after deploy to confirm functions are warm) |
+| **`GET /api/og?recipeId=`** | 1200×630 PNG share card via `sharp` + SVG text overlay |
+| **`GET /share/recipe/<id>`** | HTML landing with Open Graph tags → redirects humans to `/#recipe/<id>` |
+
+`api/og.ts` loads the recipe thumbnail from `public/recipe-images/` when the image is site-relative, or fetches absolute URLs. On image failure it falls back to a wordmark-only composition on the parchment/forest palette.
+
+Test locally (requires **`vercel dev`** or a Vercel preview — `npm run dev` does not serve `api/*`):
 
 ```bash
+curl -i 'http://localhost:3000/api/ping'
 curl -o og.png 'http://localhost:3000/api/og?recipeId=749d8765'
+curl -i 'http://localhost:3000/share/recipe/749d8765'
 ```
 
-The share landing route `/share/recipe/<id>` (implemented in `api/share.ts`) serves an HTML document with full Open Graph + Twitter Card meta tags for crawlers, and a `<meta http-equiv="refresh">` that redirects human visitors to `/#recipe/<id>`.
+If OG or share returns **500** in production while ping is **200**, see **`RUNBOOK.md`** (API seed loading).
 
 ## Deploy (GitHub Pages)
 
@@ -153,6 +168,7 @@ For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATE
 
 - **Login:** Name-based (no password). Identity stored in localStorage.
 - **Roles:** `user` (read) and `admin` (full CRUD, AI tools). Super-admin (Kyle) can manage permissions.
+- **Cloud prefs:** When Firebase is configured, favorites, ratings, and **collections** sync to Firestore **`userPrefs/{userId}`** via `src/services/userPrefsSync.ts` (debounced writes; merge on login).
 - Suitable for family/internal use; document limitations in public deployments.
 
 ## Testing
@@ -170,18 +186,48 @@ See [TESTING.md](TESTING.md) for details.
 
 ```
 src/
-  components/     # React components
-  services/       # db.ts, geminiProxy.ts
-  constants/      # Category images, avatars
-  data/           # recipes.json, trivia seed
-  test/           # setup, utils
+  components/     # React UI (Browse, Cook, Family, Me areas)
+  services/       # db, geminiProxy, userPrefsSync, pushNotifications, analytics
+  utils/          # favorites, collections, groceryList, ratings, haptics, …
+  constants/      # storage keys, taxonomy, theme
+  data/           # recipes.json (canonical), trivia seed
+  test/           # Vitest setup + render helpers
 shared/
-  recipeImagePrompts.mjs  # Canonical prompt rules
+  recipeImagePrompts.mjs  # Canonical Imagen prompt rules
 firebase/
-  firestore.rules             # Deployed Firestore security rules
-  firestore.rules.test.ts     # Rules unit tests (emulator-backed; npm run test:rules)
+  firestore.rules           # Public read, custodian write
+  firestore.rules.test.ts   # Emulator-backed rules tests (npm run test:rules)
 api/
-  gemini.ts       # Serverless proxy for Gemini/Imagen
-  webhook.ts      # Twilio MMS → gallery
-  notify.ts       # Authenticated FCM broadcast (NOTIFY_SECRET)
+  gemini.ts                 # Gemini/Imagen proxy
+  og.ts, share.ts           # Share cards + OG HTML landing
+  loadRecipesSeed.ts        # Slim seed loader for OG/share
+  recipes.seed.generated.ts # AUTO-GENERATED — do not edit by hand
+  ping.ts                   # Diagnostic route
+  webhook.ts                # Twilio MMS → gallery
+  notify.ts                 # Authenticated FCM broadcast (NOTIFY_SECRET)
+scripts/
+  sync-recipes-for-api.mjs  # Regenerate api/recipes.seed.generated.ts
+  sync-firebase-sw-config.mjs  # Inject VITE_FIREBASE_* into FCM SW at build
+  smoke-prod.mjs            # Production HTTP smoke checks
+  check-bundle-size.mjs     # Post-build JS budget gate
+e2e/                        # Playwright specs
+docs/
+  FIREBASE_SECURITY.md
+  FIREBASE_PUSH_NOTIFICATIONS.md
 ```
+
+## Documentation index
+
+| Topic | File |
+| ----- | ---- |
+| Run, deploy, env, share cards | [README.md](README.md) |
+| Test plan and verification matrix | [TESTING.md](TESTING.md) |
+| Production ops, incidents, API seed | [RUNBOOK.md](RUNBOOK.md) |
+| Feature roadmap and priorities | [FEATURE-ROADMAP.md](FEATURE-ROADMAP.md) |
+| Next 2-week sprint plan | [FEATURE-PLAN-NEXT-2-WEEKS.md](FEATURE-PLAN-NEXT-2-WEEKS.md) |
+| Product requirements | [PRD.md](PRD.md) |
+| AI / Cursor context | [cursor.md](cursor.md) |
+| Firestore security model | [docs/FIREBASE_SECURITY.md](docs/FIREBASE_SECURITY.md) |
+| Push notifications setup | [docs/FIREBASE_PUSH_NOTIFICATIONS.md](docs/FIREBASE_PUSH_NOTIFICATIONS.md) |
+| Twilio MMS gallery | [TWILIO_SETUP.md](TWILIO_SETUP.md) |
+| Recipe image batch strategy | [IMAGE_GENERATION_STRATEGY.md](IMAGE_GENERATION_STRATEGY.md) |

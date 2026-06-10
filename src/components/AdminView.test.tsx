@@ -23,7 +23,10 @@ describe('AdminView', () => {
     const defaultProps = {
         editingRecipe: null,
         clearEditing: mockClearEditing,
-        recipes: [createMockRecipe({ id: 'r1', title: 'Apple Pie' }), createMockRecipe({ id: 'r2', title: 'Banana Bread' })],
+        recipes: [
+            createMockRecipe({ id: 'r1', title: 'Apple Pie', imageSource: 'upload', generatedImageFallback: false, imageApprovalStatus: 'approved' }),
+            createMockRecipe({ id: 'r2', title: 'Banana Bread', imageSource: 'upload', generatedImageFallback: false, imageApprovalStatus: 'approved' }),
+        ],
         trivia: [createMockTrivia({ id: 't1', question: 'Test?' })],
         contributors: [createMockContributor({ name: 'Alice' })],
         currentUser: {
@@ -383,5 +386,81 @@ describe('AdminView', () => {
         renderWithProviders(<AdminView {...defaultProps} />);
         fireEvent.click(screen.getByText('⬇️ Export as CSV'));
         expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    });
+
+    describe('Featured recipes', () => {
+        it('shows a Featured badge in the Manage Recipes list for featured recipes', () => {
+            const recipesWithFeatured = [
+                createMockRecipe({ id: 'f1', title: 'Hero Pie', featured: true }),
+                createMockRecipe({ id: 'f2', title: 'Plain Bread' }),
+            ];
+            renderWithProviders(<AdminView {...defaultProps} recipes={recipesWithFeatured} />);
+            expect(screen.getByLabelText(/Hero Pie is featured/i)).toBeInTheDocument();
+        });
+
+        it('does not show a Featured badge for non-featured recipes', () => {
+            renderWithProviders(<AdminView {...defaultProps} />);
+            expect(screen.queryByLabelText(/Apple Pie is featured/i)).not.toBeInTheDocument();
+            expect(screen.queryByLabelText(/Banana Bread is featured/i)).not.toBeInTheDocument();
+        });
+
+        it('renders the Feature on Home/Recipes toggle when editing a recipe', () => {
+            const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+            renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+            const toggle = screen.getByRole('switch', { name: /Feature on Home and Recipes/i });
+            expect(toggle).toBeInTheDocument();
+            expect(toggle).not.toBeChecked();
+        });
+
+        it('initializes the toggle to checked when the editing recipe is already featured', () => {
+            const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie', featured: true });
+            renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+            const toggle = screen.getByRole('switch', { name: /Feature on Home and Recipes/i });
+            expect(toggle).toBeChecked();
+        });
+
+        it('submits featured=true when the toggle is checked and form is saved', async () => {
+            const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie' });
+            renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+
+            const toggle = screen.getByRole('switch', { name: /Feature on Home and Recipes/i });
+            fireEvent.click(toggle);
+            expect(toggle).toBeChecked();
+
+            fireEvent.change(screen.getByPlaceholderText('Recipe Title'), { target: { value: 'Featured Pie' } });
+            fireEvent.change(screen.getByPlaceholderText('Ingredients (one per line)'), { target: { value: 'Apple' } });
+            fireEvent.change(screen.getByPlaceholderText('Instructions (one per line)'), { target: { value: 'Bake' } });
+
+            fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+
+            await waitFor(() => {
+                expect(mockOnAddRecipe).toHaveBeenCalledWith(
+                    expect.objectContaining({ title: 'Featured Pie', featured: true }),
+                    undefined,
+                );
+            });
+        });
+
+        it('submits featured=false when the toggle is unchecked on a previously featured recipe', async () => {
+            const editingRecipe = createMockRecipe({ id: 'r1', title: 'Apple Pie', featured: true });
+            renderWithProviders(<AdminView {...defaultProps} editingRecipe={editingRecipe} />);
+
+            const toggle = screen.getByRole('switch', { name: /Feature on Home and Recipes/i });
+            expect(toggle).toBeChecked();
+            fireEvent.click(toggle);
+            expect(toggle).not.toBeChecked();
+
+            fireEvent.change(screen.getByPlaceholderText('Ingredients (one per line)'), { target: { value: 'Apple' } });
+            fireEvent.change(screen.getByPlaceholderText('Instructions (one per line)'), { target: { value: 'Bake' } });
+
+            fireEvent.click(screen.getByRole('button', { name: /Update Record/i }));
+
+            await waitFor(() => {
+                expect(mockOnAddRecipe).toHaveBeenCalledWith(
+                    expect.objectContaining({ featured: false }),
+                    undefined,
+                );
+            });
+        });
     });
 });

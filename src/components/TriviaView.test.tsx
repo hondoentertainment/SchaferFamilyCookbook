@@ -288,4 +288,19 @@ describe('TriviaView', () => {
         // Start button must NOT be present – quiz can't run without questions
         expect(screen.queryByText('Begin The Challenge')).not.toBeInTheDocument();
     });
+
+    it('renders score breakdown with semantic ul/li list markup', () => {
+        renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByText('Begin The Challenge'));
+
+        fireEvent.click(screen.getByText('Love'));
+        fireEvent.click(screen.getByText('Next Archival Record'));
+        fireEvent.click(screen.getByText('45 min'));
+        fireEvent.click(screen.getByText('Finish Archive Challenge'));
+
+        const breakdown = screen.getByLabelText('Question results');
+        expect(breakdown.tagName).toBe('UL');
+        expect(breakdown.querySelectorAll('li').length).toBe(2);
+        expect(breakdown.querySelector('[role="listitem"]')).not.toBeInTheDocument();
+    });
 });

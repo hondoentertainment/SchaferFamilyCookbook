@@ -42,23 +42,18 @@ describe('CloudArchive', () => {
             expect(recipes.length).toBeGreaterThan(0);
         });
 
-        it('should migrate generic recipe image URLs to recipe-specific generated images', async () => {
-            const oldRecipe = createMockRecipe({
-                id: 'recipe-old-image',
+        it('should leave existing remote-generated image URLs unchanged during normalization', async () => {
+            const remoteRecipe = createMockRecipe({
+                id: 'recipe-remote-image',
                 category: 'Dessert',
                 image: 'https://image.pollinations.ai/prompt/old',
                 imageSource: 'pollinations'
             });
-            localStorage.setItem('schafer_db_recipes', JSON.stringify([oldRecipe]));
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([remoteRecipe]));
 
             const recipes = await CloudArchive.getRecipes();
-            expect(recipes[0].image).toContain('https://image.pollinations.ai/prompt/');
-            expect(recipes[0].image).toContain('Test%20Recipe');
+            expect(recipes[0].image).toBe(remoteRecipe.image);
             expect(recipes[0].imageSource).toBe('pollinations');
-
-            const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
-            expect(stored[0].image).toBe(recipes[0].image);
-            expect(stored[0].imageSource).toBe('pollinations');
         });
 
         it('should preserve uploaded recipe images during normalization', async () => {
@@ -87,22 +82,53 @@ describe('CloudArchive', () => {
             expect(recipes[0].imageSource).toBeUndefined();
         });
 
-        it('should migrate old Pollinations placeholders back to bundled images for known seed recipe ids', async () => {
-            const polluted = createMockRecipe({
+        it('should migrate stale stored generated images to local recipe-derived assets', async () => {
+            const staleRecipe = createMockRecipe({
                 id: '749d8765',
                 title: 'Festive Apple Dip',
+                contributor: 'Wren',
                 category: 'Dip/Sauce',
-                image: 'https://image.pollinations.ai/prompt/fake-placeholder',
+                image: 'https://image.pollinations.ai/prompt/old',
                 imageSource: 'pollinations',
+                ingredients: ['Apples', 'Cream cheese', 'Brown sugar'],
+                instructions: ['Mix the dip until smooth and serve with sliced apples.'],
             });
-            localStorage.setItem('schafer_db_recipes', JSON.stringify([polluted]));
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([staleRecipe]));
 
             const recipes = await CloudArchive.getRecipes();
             expect(recipes[0].image).toBe('/recipe-images/749d8765.webp');
-            expect(recipes[0].imageSource).toBe('local-generated');
+            expect(recipes[0].imageSource).toBe('nano-banana');
+            expect(recipes[0].generatedImageFallback).toBe(true);
+            expect(recipes[0].generatedImagePrompt).toContain('Realistic appetizing food photography of Festive Apple Dip');
 
             const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
-            expect(stored[0].image).toBe('/recipe-images/749d8765.webp');
+            expect(stored[0].image).toBe(recipes[0].image);
+            expect(stored[0].imageSource).toBe('nano-banana');
+            expect(stored[0].generatedImageFallback).toBe(true);
+        });
+
+        it('should preserve local recipe-derived generated image assets', async () => {
+            const generatedRecipe = createMockRecipe({
+                id: '749d8765',
+                title: 'Festive Apple Dip',
+                contributor: 'Wren',
+                category: 'Dip/Sauce',
+                image: '/recipe-images/749d8765.webp',
+                imageSource: 'nano-banana',
+                ingredients: ['Apples', 'Cream cheese', 'Brown sugar'],
+                instructions: ['Mix the dip until smooth and serve with sliced apples.'],
+            });
+            localStorage.setItem('schafer_db_recipes', JSON.stringify([generatedRecipe]));
+
+            const recipes = await CloudArchive.getRecipes();
+            expect(recipes[0].image).toBe('/recipe-images/749d8765.webp');
+            expect(recipes[0].imageSource).toBe('nano-banana');
+            expect(recipes[0].generatedImageFallback).toBe(true);
+
+            const stored = JSON.parse(localStorage.getItem('schafer_db_recipes') || '[]');
+            expect(stored[0].image).toBe(recipes[0].image);
+            expect(stored[0].imageSource).toBe('nano-banana');
+            expect(stored[0].generatedImageFallback).toBe(true);
         });
 
         it('should upsert a new recipe', async () => {

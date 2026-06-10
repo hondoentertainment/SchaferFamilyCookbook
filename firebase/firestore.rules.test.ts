@@ -73,6 +73,27 @@ describe('firestore.rules (emulator)', () => {
         );
     });
 
+    it('anonymous can write userPrefs with favorites, ratings, collections shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'userPrefs/scout'), {
+                favorites: ['r1'],
+                ratings: { r1: 5 },
+                collections: [
+                    {
+                        id: 'col1',
+                        name: 'Holiday',
+                        recipeIds: ['r1'],
+                        createdBy: 'scout',
+                        icon: '🎄',
+                        timestamp: '2026-01-01T00:00:00.000Z',
+                    },
+                ],
+                updatedAt: serverTimestamp(),
+            }),
+        );
+    });
+
     it('anonymous cannot add unexpected keys to userPrefs', async () => {
         const anon = env.unauthenticatedContext().firestore();
         await assertFails(

@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from '../constants/storage';
 import type { RecipeCollection } from '../types';
+import { notifyPrefsChanged } from '../services/userPrefsSync';
 
 const COLLECTION_ICONS = ['📚', '🍳', '🎄', '🌮', '🥘', '🍝', '🎂', '🥗', '🌶️', '🧁', '🍜', '🥧'];
 
@@ -15,6 +16,11 @@ export function getAllCollections(): RecipeCollection[] {
   } catch {
     return [];
   }
+}
+
+function persistCollections(all: RecipeCollection[]): void {
+  localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(all));
+  notifyPrefsChanged();
 }
 
 export function createCollection(
@@ -34,13 +40,13 @@ export function createCollection(
     timestamp: new Date().toISOString(),
   };
   all.push(collection);
-  localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(all));
+  persistCollections(all);
   return collection;
 }
 
 export function deleteCollection(id: string): RecipeCollection[] {
   const all = getAllCollections().filter((c) => c.id !== id);
-  localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(all));
+  persistCollections(all);
   return all;
 }
 
@@ -50,7 +56,7 @@ export function addToCollection(collectionId: string, recipeId: string): RecipeC
   if (col && !col.recipeIds.includes(recipeId)) {
     col.recipeIds.push(recipeId);
   }
-  localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(all));
+  persistCollections(all);
   return all;
 }
 
@@ -60,7 +66,7 @@ export function removeFromCollection(collectionId: string, recipeId: string): Re
   if (col) {
     col.recipeIds = col.recipeIds.filter((id) => id !== recipeId);
   }
-  localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(all));
+  persistCollections(all);
   return all;
 }
 

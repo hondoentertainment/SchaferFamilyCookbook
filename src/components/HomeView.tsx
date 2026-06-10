@@ -58,25 +58,34 @@ function findSeasonalRecipes(recipes: Recipe[], keywords: string[], limit = 6): 
     return matched.slice(0, limit);
 }
 
+const isCookbookCoverImage = (recipe: Recipe) => recipe.imageSource === 'local-generated';
+
 const SimpleCardImage: React.FC<{ recipe: Recipe; className?: string }> = ({ recipe, className }) => {
     const [broken, setBroken] = React.useState(false);
+    const [loaded, setLoaded] = React.useState(false);
     const valid = !!recipe.image && (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http'));
+    const isCover = isCookbookCoverImage(recipe);
     if (!valid || broken) {
         return (
-            <div className={`flex items-center justify-center bg-gradient-to-br from-[#2D4635]/85 to-[#A0522D]/70 text-white text-3xl font-serif italic ${className ?? ''}`}>
+            <div className={`flex items-center justify-center bg-gradient-to-br from-[#2D4635]/85 to-[#A0522D]/70 text-center font-serif text-3xl italic text-white ${className ?? ''}`}>
                 {recipe.category}
             </div>
         );
     }
     return (
-        <img
-            src={recipe.image}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            onError={() => setBroken(true)}
-            className={`object-cover w-full h-full ${className ?? ''}`}
-        />
+        <div className={`relative h-full w-full overflow-hidden ${isCover ? 'bg-[#203629]' : ''} ${className ?? ''}`}>
+            {isCover && <div className="absolute inset-2 rounded-[1.25rem] ring-1 ring-white/10" aria-hidden="true" />}
+            <img
+                src={recipe.image}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setLoaded(true)}
+                onError={() => setBroken(true)}
+                className={`h-full w-full transition-opacity duration-500 ${isCover ? 'object-contain p-2.5' : 'object-cover'} ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            />
+            {!loaded && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300" />}
+        </div>
     );
 };
 
@@ -94,10 +103,10 @@ const RecipeMiniCard: React.FC<{
                 type="button"
                 onClick={onClick}
                 aria-label={`Open recipe: ${recipe.title}`}
-                className="recipe-card-surface block w-full overflow-hidden rounded-3xl border text-left transition-all hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] dark:border-stone-800"
+                className="recipe-card-surface block w-full overflow-hidden rounded-3xl border text-left transition-all hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800"
             >
                 <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                    <SimpleCardImage recipe={recipe} className="transition-transform duration-500 group-hover:scale-[1.04]" />
+                    <SimpleCardImage recipe={recipe} className="transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
                 </div>
                 <div className="space-y-1.5 p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>

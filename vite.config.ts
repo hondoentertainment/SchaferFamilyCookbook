@@ -1,10 +1,65 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+
+/**
+ * Build-time injector for the FCM service worker.
+ *
+ * Vite copies `public/firebase-messaging-sw.js` (the template) into the build
+ * output during `writeBundle` (post-order, after vite-plugin-pwa). This plugin
+ * then rewrites the copied file with the substituted config from
+ * `VITE_FIREBASE_*` env vars (see scripts/sync-firebase-sw-config.mjs).
+ *
+ * Only runs for `vite build` — dev/preview keeps the placeholder so the SW
+ * still loads without crashing when FCM isn't configured.
+ *
+ * The plugin is always lenient: missing env vars only produce a build-log
+ * warning, never an error. The SW's runtime guard then disables FCM. Strict
+ * enforcement is opt-in by running scripts/sync-firebase-sw-config.mjs as a
+ * CI gate (it exits 1 when `NODE_ENV === 'production'` and env vars are
+ * missing).
+ */
+function injectFirebaseMessagingSwConfig(env: Record<string, string>): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'schafer:inject-firebase-messaging-sw-config',
+    apply: 'build',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    // Run after Vite copies public/ and vite-plugin-pwa finishes so our
+    // substitution is not overwritten (closeBundle runs in reverse plugin order).
+    writeBundle: {
+      order: 'post',
+      async handler() {
+        const mod = await import('./scripts/sync-firebase-sw-config.mjs');
+        // Merge Vite-loaded env (loadEnv) with process.env so CI-injected values
+        // win when both are set, but `.env*` files still work locally.
+        const merged: Record<string, string | undefined> = { ...env, ...process.env };
+        try {
+          await mod.syncFirebaseSwConfig({
+            outDir: path.resolve(outDir),
+            env: merged,
+            isProduction: false,
+          });
+        } catch (err) {
+          // The helper is invoked with isProduction:false above, so it never
+          // throws on missing env vars. This catch handles unexpected I/O
+          // failures (e.g. permission denied writing into dist/).
+          // eslint-disable-next-line no-console
+          console.warn(
+            '[schafer:inject-firebase-messaging-sw-config] ' +
+              (err instanceof Error ? err.message : String(err)),
+          );
+        }
+      },
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -109,6 +164,11 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}'],
+          // The FCM service worker is owned by Firebase and registered
+          // separately. Excluding it from precache also prevents a hash
+          // mismatch when our post writeBundle hook rewrites it after the PWA
+          // plugin has already produced its precache manifest.
+          globIgnores: ['firebase-messaging-sw.js', 'firebase-messaging-sw.js.map'],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -168,6 +228,7 @@ export default defineConfig(({ mode }) => {
             }),
           ]
         : []),
+      injectFirebaseMessagingSwConfig(env),
     ],
     build: {
       target: 'es2022',

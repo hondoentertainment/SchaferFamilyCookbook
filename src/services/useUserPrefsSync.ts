@@ -9,6 +9,7 @@ import {
 } from './userPrefsSync';
 import { getFavoriteIds } from '../utils/favorites';
 import { getAllRatings } from '../utils/ratings';
+import { getAllCollections } from '../utils/collections';
 import { STORAGE_KEYS } from '../constants/storage';
 import type { RecipeRating } from '../types';
 import { CloudArchive } from './db';
@@ -26,7 +27,8 @@ function readLocalPrefs(userName: string): UserPrefsPayload {
             ratings[r.recipeId] = r.rating;
         }
     }
-    return { favorites, ratings };
+    const collections = getAllCollections();
+    return { favorites, ratings, collections };
 }
 
 /**
@@ -57,6 +59,8 @@ function applyMergedPrefsToLocal(userName: string, merged: UserPrefsPayload): vo
         timestamp: nowIso,
     }));
     localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify([...others, ...mineMerged]));
+
+    localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(merged.collections));
 }
 
 export interface UseUserPrefsSyncOptions {
@@ -68,7 +72,7 @@ export interface UseUserPrefsSyncOptions {
 }
 
 /**
- * Wire up cloud sync for a user's favorites + ratings.
+ * Wire up cloud sync for a user's favorites, ratings, and collections.
  *
  *  - On first render (and whenever `userName` changes), hydrate: fetch remote,
  *    merge with local, persist merged back to local storage, and call
@@ -104,7 +108,11 @@ export function useUserPrefsSync(
             if (!remote) {
                 // No remote doc yet — push current local up so future devices see it.
                 const local = readLocalPrefs(userName);
-                if (local.favorites.length > 0 || Object.keys(local.ratings).length > 0) {
+                if (
+                    local.favorites.length > 0 ||
+                    Object.keys(local.ratings).length > 0 ||
+                    local.collections.length > 0
+                ) {
                     writerRef.current?.schedule(userId, local);
                 }
                 return;
@@ -119,7 +127,15 @@ export function useUserPrefsSync(
             const mergedAddedRatings = Object.keys(merged.ratings).some(
                 (k) => !(k in remote.ratings)
             );
-            if (mergedAddedFavs || mergedAddedRatings) {
+            const remoteColById = new Map(remote.collections.map((c) => [c.id, c]));
+            const mergedAddedCollections =
+                merged.collections.length > remote.collections.length ||
+                merged.collections.some((c) => {
+                    const remoteCol = remoteColById.get(c.id);
+                    if (!remoteCol) return true;
+                    return c.recipeIds.some((id) => !remoteCol.recipeIds.includes(id));
+                });
+            if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections) {
                 writerRef.current?.schedule(userId, merged);
             }
         })();

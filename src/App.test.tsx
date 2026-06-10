@@ -187,3 +187,58 @@ describe('App Navigation (Lazy loaded views)', () => {
         }
     });
 });
+
+describe('Featured recipes on Recipes tab', () => {
+    beforeEach(() => {
+        setupLocalStorage();
+        localStorage.clear();
+    });
+
+    it('does not render the Featured strip when no recipes are featured', async () => {
+        const recipes = [createMockRecipe({ id: 'plain', title: 'Plain Toast' })];
+        localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
+        renderWithProviders(<App />);
+        login('Alice');
+
+        await screen.findByText(/(good (morning|afternoon|evening))|(late night)/i, {}, { timeout: 3000 });
+        fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
+        await screen.findAllByText('Plain Toast', {}, { timeout: 3000 });
+
+        expect(screen.queryByTestId('featured-strip')).not.toBeInTheDocument();
+    });
+
+    it('renders the Featured strip on the Recipes tab when at least one recipe is featured', async () => {
+        const recipes = [
+            createMockRecipe({ id: 'feat-1', title: 'Highlighted Hero', featured: true }),
+            createMockRecipe({ id: 'plain', title: 'Plain Toast' }),
+        ];
+        localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
+        renderWithProviders(<App />);
+        login('Alice');
+
+        await screen.findByText(/(good (morning|afternoon|evening))|(late night)/i, {}, { timeout: 3000 });
+        fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
+
+        const strip = await screen.findByTestId('featured-strip', {}, { timeout: 3000 });
+        expect(strip).toBeInTheDocument();
+        expect(within(strip).getByRole('button', { name: /Open featured recipe: Highlighted Hero/i })).toBeInTheDocument();
+    });
+
+    it('opens the recipe modal when a Featured strip card is clicked', async () => {
+        const recipes = [
+            createMockRecipe({ id: 'feat-1', title: 'Highlighted Hero', featured: true }),
+        ];
+        localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
+        renderWithProviders(<App />);
+        login('Alice');
+
+        await screen.findByText(/(good (morning|afternoon|evening))|(late night)/i, {}, { timeout: 3000 });
+        fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
+
+        const strip = await screen.findByTestId('featured-strip', {}, { timeout: 3000 });
+        const card = within(strip).getByRole('button', { name: /Open featured recipe: Highlighted Hero/i });
+        fireEvent.click(card);
+
+        await screen.findByRole('dialog', {}, { timeout: 3000 });
+    });
+});
