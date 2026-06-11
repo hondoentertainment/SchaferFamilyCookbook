@@ -13,13 +13,13 @@ const MAIN_TABS = [
 ] as const;
 
 const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
-    const stroke = active ? '#2D4635' : 'currentColor';
-    const fill = active ? '#2D4635' : 'none';
+    const stroke = active ? 'var(--color-brand)' : 'currentColor';
+    const fill = active ? 'var(--color-brand)' : 'none';
     const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     if (id === 'Home') {
         return (
             <svg {...common} aria-hidden>
-                <path d="M3 11.5 12 4l9 7.5" fill={active ? '#2D4635' : 'none'} fillOpacity={active ? 0.08 : 0} />
+                <path d="M3 11.5 12 4l9 7.5" fill={active ? 'var(--color-brand)' : 'none'} fillOpacity={active ? 0.08 : 0} />
                 <path d="M5 10.5V20h14v-9.5" />
                 <path d="M10 20v-5h4v5" />
             </svg>
@@ -28,7 +28,7 @@ const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
     if (id === 'Recipes') {
         return (
             <svg {...common} aria-hidden>
-                <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" fill={active ? '#2D4635' : 'none'} fillOpacity={active ? 0.08 : 0} />
+                <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" fill={active ? 'var(--color-brand)' : 'none'} fillOpacity={active ? 0.08 : 0} />
                 <path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z" />
                 <path d="M9 8h6M9 12h6M9 16h4" />
             </svg>
@@ -46,8 +46,8 @@ const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
         return (
             <svg {...common} aria-hidden>
                 <path d="M3 5h2l2.5 11h11L21 8H7" fill={fill} fillOpacity={active ? 0.08 : 0} />
-                <circle cx="9" cy="20" r="1.5" fill={active ? '#2D4635' : 'none'} />
-                <circle cx="17" cy="20" r="1.5" fill={active ? '#2D4635' : 'none'} />
+                <circle cx="9" cy="20" r="1.5" fill={active ? 'var(--color-brand)' : 'none'} />
+                <circle cx="17" cy="20" r="1.5" fill={active ? 'var(--color-brand)' : 'none'} />
             </svg>
         );
     }
@@ -56,7 +56,7 @@ const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
             <svg {...common} aria-hidden>
                 <rect x="3" y="6" width="18" height="14" rx="2.5" fill={fill} fillOpacity={active ? 0.08 : 0} />
                 <path d="M3 16l5-5 4 4 3-3 6 6" />
-                <circle cx="9" cy="10" r="1.6" fill={active ? '#2D4635' : 'none'} />
+                <circle cx="9" cy="10" r="1.6" fill={active ? 'var(--color-brand)' : 'none'} />
             </svg>
         );
     }
@@ -100,11 +100,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                         >
                             <span
                                 className={`absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-b-full transition-all ${
-                                    isActive ? 'bg-[#2D4635] opacity-100' : 'bg-transparent opacity-0'
+                                    isActive ? 'bg-[var(--color-brand)] opacity-100' : 'bg-transparent opacity-0'
                                 }`}
                                 aria-hidden
                             />
-                            <span className={`mb-0.5 transition-transform ${isActive ? 'scale-105' : ''} ${isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-600 dark:text-stone-300'}`}>
+                            <span className={`mb-0.5 transition-transform ${isActive ? 'scale-105' : ''} ${isActive ? 'text-[var(--color-brand)] dark:text-emerald-300' : 'text-stone-600 dark:text-stone-300'}`}>
                                 {id === 'Profile' ? (
                                     <img
                                         src={currentUser.picture}
@@ -112,7 +112,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                                         aria-hidden
                                         decoding="async"
                                         onError={avatarOnError}
-                                        className={`w-7 h-7 rounded-full object-cover border-2 ${isActive ? 'border-[#2D4635]' : 'border-stone-200 dark:border-stone-700'}`}
+                                        className={`w-7 h-7 rounded-full object-cover border-2 ${isActive ? 'border-[var(--color-brand)]' : 'border-stone-200 dark:border-stone-700'}`}
                                     />
                                 ) : (
                                     <NavIcon id={id} active={isActive} />
@@ -120,7 +120,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                             </span>
                             <span
                                 className={`max-w-full truncate px-0.5 text-[10px] font-black tracking-wider ${
-                                    isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-700 dark:text-stone-300'
+                                    isActive ? 'text-[var(--color-brand)] dark:text-emerald-300' : 'text-stone-700 dark:text-stone-300'
                                 }`}
                             >
                                 {label}
