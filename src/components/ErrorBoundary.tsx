@@ -14,20 +14,20 @@ interface State {
  * Reports to Sentry when @sentry/react is initialized (see monitoring/sentry.ts).
  */
 export class ErrorBoundary extends Component<Props, State> {
-    state: State = { hasError: false };
+    override state: State = { hasError: false };
 
     static getDerivedStateFromError(): State {
         return { hasError: true };
     }
 
-    componentDidCatch(error: Error, info: ErrorInfo): void {
+    override componentDidCatch(error: Error, info: ErrorInfo): void {
         console.error('[ErrorBoundary]', error, info.componentStack);
         captureException(error, {
             extra: { componentStack: info.componentStack },
         });
     }
 
-    render(): ReactNode {
+    override render(): ReactNode {
         if (this.state.hasError) {
             return (
                 <div
