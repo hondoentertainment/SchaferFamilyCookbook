@@ -125,7 +125,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#A0522D]">Cook · Plan · Shop</p>
         <h2
           id="meal-plan-heading"
-          className="text-2xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
+          className="text-2xl md:text-4xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 leading-tight"
         >
           Meal plan
         </h2>
@@ -152,7 +152,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
               setPickerDate(null);
               setWeekStart(getWeekStart(new Date()));
             }}
-            className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline"
           >
             This week
           </button>
@@ -179,7 +179,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
           <button
             type="button"
             onClick={onBrowseRecipes}
-            className="min-h-11 px-5 py-2.5 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors"
+            className="min-h-11 px-5 py-2.5 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors"
           >
             Browse recipes
           </button>
@@ -197,7 +197,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
               key={dateKey}
               className={`rounded-2xl border overflow-hidden ${
                 isToday
-                  ? 'border-[#2D4635]/50 dark:border-emerald-500/50'
+                  ? 'border-[var(--color-brand)]/50 dark:border-emerald-500/50'
                   : 'border-stone-100 dark:border-[var(--border-color)]'
               } bg-white dark:bg-[var(--card-bg)]`}
             >
@@ -208,7 +208,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                   </span>
                   <span
                     className={`text-lg font-serif ${
-                      isToday ? 'text-[#2D4635] dark:text-emerald-300 font-bold' : 'text-stone-600 dark:text-stone-300'
+                      isToday ? 'text-[var(--color-brand)] dark:text-emerald-300 font-bold' : 'text-stone-600 dark:text-stone-300'
                     }`}
                   >
                     {date.getDate()}
@@ -227,7 +227,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => onViewRecipe(recipe)}
-                                className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[#2D4635] dark:hover:text-emerald-400 truncate"
+                                className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[var(--color-brand)] dark:hover:text-emerald-400 truncate"
                               >
                                 {recipe.title}
                               </button>
@@ -259,7 +259,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     setPickerDate(pickerOpen ? null : dateKey);
                   }}
                   aria-expanded={pickerOpen}
-                  className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
+                  className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline"
                 >
                   {pickerOpen ? 'Close' : '+ Add recipe'}
                 </button>
@@ -276,7 +276,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search recipes…"
-                    className="w-full px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
+                    className="w-full px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10"
                   />
                   <div className="max-h-56 overflow-y-auto space-y-0.5">
                     {pickerResults.length === 0 ? (
@@ -317,7 +317,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
           data-testid="meal-plan-generate-groceries"
           onClick={handleGenerateGroceries}
           disabled={weekRecipeCount === 0}
-          className="min-h-11 px-5 py-3 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="min-h-11 px-5 py-3 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Add this week to Grocery List
         </button>

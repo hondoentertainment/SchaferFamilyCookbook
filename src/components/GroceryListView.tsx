@@ -141,7 +141,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                 <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#A0522D]">Cook · Plan · Shop</p>
                 <h2
                     id="grocery-list-heading"
-                    className="text-2xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
+                    className="text-2xl md:text-4xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 leading-tight"
                 >
                     Grocery list
                 </h2>
@@ -156,7 +156,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             <button
                                 type="button"
                                 onClick={onBrowseRecipes}
-                                className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
+                                className="min-h-10 shrink-0 rounded-full bg-[var(--color-brand)] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
                             >
                                 ＋ Recipes
                             </button>
@@ -217,12 +217,12 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                     value={manualText}
                     onChange={(e) => setManualText(e.target.value)}
                     placeholder="Add an item (e.g. 2 lemons)"
-                    className="flex-1 min-h-11 px-5 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-serif italic placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-800 dark:text-stone-100 outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                    className="flex-1 min-h-11 px-5 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-serif italic placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-800 dark:text-stone-100 outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20"
                 />
                 <button
                     type="submit"
                     disabled={!manualText.trim()}
-                    className="min-h-11 px-6 py-3 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="min-h-11 px-6 py-3 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     Add
                 </button>
@@ -244,7 +244,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             <button
                                 type="button"
                                 onClick={onBrowseRecipes}
-                                className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
+                                className="min-h-11 rounded-full bg-[var(--color-brand)] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
                             >
                                 Browse recipes
                             </button>
@@ -286,7 +286,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                                 checked={item.checked}
                                                 onChange={() => handleToggle(item.id)}
                                                 aria-label={`Mark "${item.text}" as ${item.checked ? 'not bought' : 'bought'}`}
-                                                className="w-5 h-5 rounded accent-[#2D4635] shrink-0"
+                                                className="w-5 h-5 rounded accent-[var(--color-brand)] shrink-0"
                                             />
                                             <span
                                                 className={`text-sm md:text-base flex-1 min-w-0 break-words ${

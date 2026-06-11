@@ -15,10 +15,12 @@ module.exports = {
     },
     assert: {
       assertions: {
-        'categories:performance': ['warn', { minScore: 0.45 }],
-        'categories:accessibility': ['warn', { minScore: 0.85 }],
-        'categories:best-practices': ['warn', { minScore: 0.8 }],
-        'categories:seo': ['warn', { minScore: 0.85 }],
+        // Bars set as warnings — ratchet up over time toward 0.9+ once content
+        // sprint and image pipeline land.
+        'categories:performance': ['warn', { minScore: 0.8 }],
+        'categories:accessibility': ['warn', { minScore: 0.95 }],
+        'categories:best-practices': ['warn', { minScore: 0.9 }],
+        'categories:seo': ['warn', { minScore: 0.95 }],
       },
     },
   },

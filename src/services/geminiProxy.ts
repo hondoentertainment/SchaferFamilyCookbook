@@ -35,7 +35,8 @@ export async function generateImage(recipe: Partial<Recipe>): Promise<GeneratedR
     const result = await post<GeneratedRecipeImage>({ action: 'generateImage', recipe });
     const { imageBase64 } = result;
     if (!imageBase64) throw new Error('No image returned');
-    return { imageSource: 'nano-banana', ...result };
+    // Default imageSource to 'nano-banana' when the server didn't supply one.
+    return { ...result, imageSource: result.imageSource ?? 'nano-banana' };
 }
 
 export async function magicImport(rawText: string): Promise<Record<string, unknown>> {

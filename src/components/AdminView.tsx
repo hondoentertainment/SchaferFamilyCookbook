@@ -805,7 +805,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 onClick={() => setActiveSubtab(tab.id as typeof activeSubtab)}
                                 onKeyDown={(e) => {
                                     const tabs = ['records', 'gallery', 'trivia', 'directory', 'story', 'analytics', ...(isSuperAdmin ? ['permissions'] as const : [])] as const;
-                                    const i = tabs.indexOf(activeSubtab as typeof tabs[number]);
+                                    const i = tabs.indexOf(activeSubtab as never);
                                     if (e.key === 'ArrowRight' && i < tabs.length - 1) {
                                         e.preventDefault();
                                         setActiveSubtab(tabs[i + 1]);

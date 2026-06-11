@@ -56,7 +56,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
         <button
           type="button"
           onClick={() => setShowCreate((v) => !v)}
-          className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
+          className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline"
         >
           {showCreate ? 'Cancel' : '+ New Collection'}
         </button>
@@ -69,20 +69,20 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Collection name (e.g. Holiday Baking)"
-            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
+            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10"
           />
           <input
             type="text"
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Description (optional)"
-            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
+            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10"
           />
           <button
             type="button"
             onClick={handleCreate}
             disabled={!newName.trim()}
-            className="px-5 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40"
+            className="px-5 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40"
           >
             Create
           </button>
@@ -98,7 +98,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-5 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest"
+            className="px-5 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest"
           >
             Create Your First Collection
           </button>
@@ -147,7 +147,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onViewRecipe(r)}
-                            className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[#2D4635] dark:hover:text-emerald-400 truncate"
+                            className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[var(--color-brand)] dark:hover:text-emerald-400 truncate"
                           >
                             {r.title}
                           </button>

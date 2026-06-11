@@ -27,7 +27,8 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Festive Apple Dip, a dip/sauce family recipe from Megan. Show the finished dish as it would look after these ingredients and method: 8 oz cream cheese, ½ cup peanut butter, ⅓ cup brown sugar, 1 tsp vanilla extract, 1 Tbsp crushed peanuts (for topping). Combine cream cheese, peanut butter, brown sugar, and vanilla in a bowl. Mix with a hand mixer until smooth and well blended. Transfer to serving dish and sprinkle with crushed peanuts.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "featured": true
   },
   {
     "id": "67aea76c",
@@ -71,7 +72,8 @@
     "season": "Winter",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Feyereisen Chocolate Chip Cookies, a dessert family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 4 eggs, 2 cups brown sugar, 1 cup white sugar, 2 cups Crisco shortening, 2 tsp vanilla extract, 2 tsp salt, 2 tsp baking soda, 4½ cups all-purpose flour. Preheat oven to 375°F. Cream sugars and shortening together. Add eggs and vanilla, mixing well.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "8 min"
   },
   {
     "id": "cd6bc17d",
@@ -110,7 +112,9 @@
     "season": "Winter",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Mark’s Fudge, a dessert family recipe from Mark. Show the finished dish as it would look after these ingredients and method: ¼ cup butter, 2¼ cups sugar, ¾ cup evaporated milk, 25 marshmallows, 1 cup milk chocolate chips. Combine butter, sugar, evaporated milk, and marshmallows in saucepan. Cook over medium heat, stirring constantly, for 5 minutes. Remove from heat and stir in chocolate chips.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
+    "featured": true
   },
   {
     "id": "003e8cbb",
@@ -152,7 +156,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Quiche, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1 pre-made pie crust, 1 Tbsp olive oil, 1 cup chopped onion (optional), 1 cup diced ham, 1 tsp minced garlic, 2 cups broccoli florets, 6 large eggs, 1 cup heavy whipping cream. Preheat oven to 350°F and prepare pie pan. Sauté onion in olive oil until soft. Add ham and garlic; cook 2 minutes.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "40 min"
   },
   {
     "id": "79b22882",
@@ -222,7 +227,8 @@
     "season": "Summer",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Hot Chicken Salad, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 3 cups cooked chicken, chopped, 3 cups celery, sliced, 1 medium onion, diced, 1 cup grated American cheese, 1½ cups slivered almonds, 1½ cups mayonnaise, 1 can cream of chicken soup, 2 cups crushed potato chips. Preheat oven to 375°F. Combine chicken, celery, onion, cheese, almonds, mayonnaise, and soup. Spread 1 cup crushed chips in bottom of greased 9×13 pan.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "1 hr"
   },
   {
     "id": "c524062b",
@@ -256,7 +262,9 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Wild Rice Hot Dish (Robin’s), a main family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 1½ cups uncooked wild rice, 2 stalks celery, chopped, Onion, to taste, Chicken broth, as needed, Water, as needed, 1 lb ground hamburger, 1 can cream of chicken soup. Rinse wild rice thoroughly. Combine rice, celery, water, and broth; boil for 30 minutes until tender. Brown hamburger with onions in separate pan.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "30 min",
+    "featured": true
   },
   {
     "id": "d2e24578",
@@ -331,7 +339,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Mark’s Meatloaf, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1½ lbs ground hamburger, 1 tube Jimmy Dean hot sausage, ½ package saltine crackers, crushed, ¾ cup milk, 2 eggs, Salt and pepper, to taste, ¾ cup brown sugar, Ketchup. Preheat oven to 350°F. Brown hamburger and sausage. Combine meat with crackers, milk, eggs, salt, and pepper.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "1 hr"
   },
   {
     "id": "e753fce4",
@@ -400,7 +409,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Wren’s Cuban Toasties, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1½ oz boiled deli ham, finely chopped (about ⅓ cup), 3 oz shredded Swiss cheese (about ¾ cup), ⅓ cup mayonnaise, ½ small onion, finely chopped (optional), 1½ tsp chili sauce, 1 tsp yellow mustard, 1 baguette, sliced ⅓-inch thick, 2–3 dill pickles, thinly sliced. Preheat oven to 500°F. Mix ham, cheese, mayonnaise, onion, chili sauce, and mustard in a bowl. Arrange baguette slices on foil-lined baking sheet.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "8 min"
   },
   {
     "id": "acf08c58",
@@ -436,7 +446,8 @@
     "collections": [],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Wren’s Salsa, a dip/sauce family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 16 cups peeled tomatoes, mashed, 2 cups green peppers, finely chopped, 2 cups onions, finely chopped, 3–4 jalapeño peppers, finely chopped, 6–8 cloves garlic, minced, 3 Tbsp salt, 2 Tbsp black pepper, 3–5 Tbsp chili powder. Combine all ingredients except cornstarch and water in a large pot. Simmer for 3–4 minutes. Mix cornstarch with water to create a slurry.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "3 min"
   },
   {
     "id": "49cdd367",
@@ -512,7 +523,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Mark’s Monster Bars, a dessert family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1 cup packed brown sugar, 1 cup white sugar, ½ cup salted butter, softened, 1½ cups creamy peanut butter, 3 large eggs, 1 tsp vanilla extract, 1½ cups quick oats, 3 cups old-fashioned oats. Preheat oven to 350°F. Line a large baking sheet with parchment paper or grease lightly. Cream brown sugar, white sugar, butter, and peanut butter until fluffy.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "17 min"
   },
   {
     "id": "75275904",
@@ -546,7 +558,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Wren’s Fruit Pizza, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1 package sugar cookie dough, 1 (8 oz) package cream cheese, softened, ½ cup white sugar, 4 oz Cool Whip (or less, to taste), Assorted fresh fruit (berries, kiwi, mandarin oranges, etc.). Preheat oven to 350°F. Press cookie dough evenly onto a pizza pan or baking sheet. Bake for 10–12 minutes until lightly golden.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min"
   },
   {
     "id": "8fc1d89a",
@@ -583,7 +596,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Quick & Easy Fudgy Brownies, a dessert family recipe from Julie. Show the finished dish as it would look after these ingredients and method: 1 cup butter, 2 cups sugar, 4 eggs, 1 cup cocoa powder, 1 cup flour, 1 tsp vanilla extract. Preheat oven to 350°F. Melt butter and mix with sugar. Beat in eggs one at a time.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "25 min"
   },
   {
     "id": "7c5dae4d",
@@ -623,7 +637,9 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Raisin Cookies, a dessert family recipe from Harriet (Oehler) Schafer. Show the finished dish as it would look after these ingredients and method: ½ cup butter, softened, 1 cup brown sugar, 1 egg, 1 tsp vanilla extract, 1½ cups flour, ½ tsp baking soda, ½ tsp salt, 1 cup raisins. Preheat oven to 350°F. Cream butter and brown sugar. Beat in egg and vanilla.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
+    "featured": true
   },
   {
     "id": "5946145d",
@@ -663,7 +679,10 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Chicken Wild Rice Soup, a main family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 1 cup uncooked wild rice, 2 cups water, 2 cups chicken broth, 2 Tbsp butter, 1 medium onion, diced, 2 stalks celery, diced, 2 carrots, diced, ½ cup all-purpose flour. Rinse wild rice thoroughly. Combine rice, water, and broth; simmer 40–45 minutes until tender. In a separate pot, melt butter and sauté onion, celery, and carrots until soft.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "prepTime": "1 min",
+    "cookTime": "40 min",
+    "featured": true
   },
   {
     "id": "c2ed25ec",
@@ -729,7 +748,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Savory Chicken Squares, a main family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 2 cups cooked chicken, chopped, 1 package cream cheese, softened, ½ cup mayonnaise, 1 can cream of chicken soup, 2 packages crescent roll dough, 1 cup crushed stuffing mix or seasoned breadcrumbs. Preheat oven to 350°F. Mix chicken, cream cheese, mayonnaise, and soup until combined. Press one package of crescent dough into greased baking dish.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "30 min"
   },
   {
     "id": "8e99f38a",
@@ -764,7 +784,8 @@
     "season": "Winter",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Stuffed Pepper Soup, a main family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 1 lb ground beef, 1 medium onion, diced, 2 green peppers, diced, 2 cans diced tomatoes, 1 can tomato sauce, 1 cup cooked rice, Salt and pepper, to taste. Brown ground beef with onion. Add green peppers and cook until slightly softened. Stir in tomatoes and tomato sauce.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "20 min"
   },
   {
     "id": "60711174",
@@ -795,7 +816,8 @@
     "season": "Summer",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Spinach Dip, a dip/sauce family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 1 package frozen chopped spinach, thawed and drained, 1 cup sour cream, 1 cup mayonnaise, 1 packet vegetable soup mix, 1 can water chestnuts, chopped, 3 green onions, sliced. Thaw spinach completely and squeeze out excess moisture. Combine sour cream, mayonnaise, and vegetable soup mix. Stir in spinach, water chestnuts, and green onions.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "1 hr"
   },
   {
     "id": "2de0fca2",
@@ -900,7 +922,8 @@
     "season": "Summer",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Pretzel Salad, a side family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 2 cups crushed pretzels, ¾ cup butter, melted, 3 Tbsp sugar, 1 package cream cheese, softened, 1 cup sugar, 1 container whipped topping, 2 packages strawberry gelatin, 2 cups boiling water. Preheat oven to 350°F. Mix pretzels, melted butter, and sugar; press into baking dish. Bake crust for 10 minutes; cool completely.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min"
   },
   {
     "id": "c8e1b0cd",
@@ -933,7 +956,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Biscuits & Gravy, a main family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 1 lb breakfast sausage, ¼ cup all-purpose flour, 2½ cups milk, Salt and black pepper, to taste, Prepared biscuits (homemade or refrigerated). Cook sausage in a large skillet over medium heat until browned. Sprinkle flour over sausage and stir to coat. Cook 1–2 minutes to remove raw flour taste.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "1 min"
   },
   {
     "id": "1fbf34bf",
@@ -1032,7 +1056,8 @@
     "collections": [],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Sausage Egg & Cheese Breakfast Bake, a breakfast family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 1 lb breakfast sausage, 6 eggs, 2 cups milk, 2 cups shredded cheddar cheese, 6 slices bread, cubed, Salt and pepper, to taste. Preheat oven to 350°F. Brown sausage and drain excess grease. Spread bread cubes in greased baking dish.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "40 min"
   },
   {
     "id": "55b909fd",
@@ -1080,7 +1105,9 @@
     "season": "Winter",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Cinnamon Rolls, a main family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 2 packages active dry yeast, ½ cup warm water, 1 cup milk, warmed, ½ cup sugar, ½ cup butter, melted, 2 eggs, 1 tsp salt, 5–6 cups all-purpose flour. Dissolve yeast in warm water and let stand 5 minutes. Combine milk, sugar, melted butter, eggs, and salt. Add yeast mixture and flour gradually to form soft dough.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "25 min",
+    "featured": true
   },
   {
     "id": "bce43b32",
@@ -1117,7 +1144,8 @@
     "collections": [],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Poppy Seed Bread, a bread family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 3 cups all-purpose flour, 1½ cups sugar, 1½ tsp salt, 1½ tsp baking powder, 1½ tsp baking soda, 3 Tbsp poppy seeds, 3 eggs, 1½ cups vegetable oil. Preheat oven to 350°F. Mix dry ingredients together in a large bowl. Whisk eggs, oil, milk, and vanilla together.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "50 min"
   },
   {
     "id": "bf2d8657",
@@ -1153,7 +1181,8 @@
     "collections": [],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Banana Nut Bread, a bread family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 2 cups all-purpose flour, 1 tsp baking soda, ½ tsp salt, ½ cup butter, softened, ¾ cup sugar, 2 eggs, 2 cups mashed ripe bananas, ½ cup chopped nuts. Preheat oven to 350°F. Combine flour, baking soda, and salt. Cream butter and sugar.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "1 hr"
   },
   {
     "id": "b6588372",
@@ -1185,7 +1214,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Popovers, a main family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 cup all-purpose flour, 1 cup milk, 2 eggs, ½ tsp salt, Butter for pan. Preheat oven to 425°F. Whisk flour, milk, eggs, and salt until smooth. Grease popover pan generously.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "20 min"
   },
   {
     "id": "1b8c5209",
@@ -1226,7 +1256,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Chocolate Chip Cookies, a dessert family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 cup butter, softened, 1 cup white sugar, 1 cup brown sugar, 2 eggs, 2 tsp vanilla extract, 3 cups all-purpose flour, 1 tsp baking soda, ½ tsp salt. Preheat oven to 350°F. Cream butter and sugars until light and fluffy. Beat in eggs and vanilla.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min"
   },
   {
     "id": "c81a6cb6",
@@ -1266,7 +1297,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Congo Bars, a dessert family recipe from Jana. Show the finished dish as it would look after these ingredients and method: ½ cup butter, melted, 2 cups brown sugar, 2 eggs, 2 tsp vanilla extract, 2 cups all-purpose flour, ½ tsp baking powder, ½ tsp salt, 2 cups chocolate chips. Preheat oven to 350°F. Mix melted butter and brown sugar. Stir in eggs and vanilla.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "25 min"
   },
   {
     "id": "b4ded501",
@@ -1309,7 +1341,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Monster Cookies, a dessert family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 cup butter, softened, 1 cup white sugar, 1 cup brown sugar, 2 eggs, 1 tsp vanilla extract, 2 cups peanut butter, 4 cups oats, 2 tsp baking soda. Preheat oven to 350°F. Cream butter and sugars. Beat in eggs and vanilla.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min"
   },
   {
     "id": "7047ad41",
@@ -1343,7 +1376,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Peanut Butter Cookies, a dessert family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 cup peanut butter, 1 cup sugar, 1 egg, 1 tsp vanilla extract. Preheat oven to 350°F. Mix peanut butter, sugar, egg, and vanilla until smooth. Roll dough into balls and place on baking sheet.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "8 min"
   },
   {
     "id": "579b3ae1",
@@ -1388,7 +1422,8 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Cranberry Cake, a dessert family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 2 cups fresh or frozen cranberries, 1 cup sugar, ½ cup butter, softened, 1 egg, 1 tsp vanilla extract, 2 cups all-purpose flour, 1 tsp baking powder, ½ tsp salt. Preheat oven to 350°F. Grease a 9-inch baking dish. Spread cranberries evenly in the bottom of the dish.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "40 min"
   },
   {
     "id": "83480312",
@@ -1425,7 +1460,8 @@
     "season": "Spring",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Rhubarb Crunch, a dessert family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 4 cups chopped rhubarb, 1 cup sugar, 2 Tbsp all-purpose flour, 1 cup oats, 1 cup brown sugar, ½ cup butter, melted. Preheat oven to 350°F. Combine rhubarb, sugar, and flour; spread in baking dish. Mix oats, brown sugar, and melted butter.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "35 min"
   },
   {
     "id": "799ef902",
@@ -1466,7 +1502,8 @@
     "season": "Spring",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Sour Cream Rhubarb Dessert, a dessert family recipe from Julie. Show the finished dish as it would look after these ingredients and method: 4 cups chopped rhubarb, 1 cup sugar, 2 Tbsp all-purpose flour, 1 cup sour cream, 2 eggs, 1 tsp vanilla extract, 1 cup brown sugar, ½ cup butter. Preheat oven to 350°F. Combine rhubarb, sugar, and flour; place in baking dish. Whisk sour cream, eggs, and vanilla; pour over rhubarb.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "40 min"
   },
   {
     "id": "50adf1a6",
@@ -1506,7 +1543,8 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Pumpkin Pie, a dessert family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 unbaked pie crust, 1 can pumpkin purée, 1 cup sugar, 2 eggs, 1 tsp cinnamon, ½ tsp nutmeg, ½ tsp ginger, ½ tsp salt. Preheat oven to 425°F. Mix pumpkin, sugar, eggs, spices, salt, and milk. Pour filling into pie crust.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "40 min"
   },
   {
     "id": "a0da27e4",
@@ -1545,7 +1583,8 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Barb’s Wild Rice Hotdish, a dessert family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 1½ cups uncooked wild rice, 3 cups water, 1 lb ground beef, 1 medium onion, chopped, 1 can cream of mushroom soup, 1 can cream of chicken soup, Salt and black pepper, to taste. Rinse wild rice thoroughly. Cook rice in water until tender; drain excess liquid. Brown ground beef with onion; season lightly.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "30 min"
   },
   {
     "id": "705fa89d",
@@ -1611,7 +1650,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Hearty Beef ’N’ Potato Casserole, a main family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 1 lb ground beef, 1 medium onion, diced, 4 cups thinly sliced potatoes, 1 can cream of mushroom soup, 1 cup shredded cheddar cheese, Salt and pepper, to taste. Preheat oven to 350°F. Brown ground beef with onion; drain. Layer potatoes in greased casserole dish.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "45 min"
   },
   {
     "id": "d9b9c915",
@@ -1646,7 +1686,8 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Tator Tot Hotdish, a main family recipe from Family. Show the finished dish as it would look after these ingredients and method: 1 lb ground beef, 1 can cream of mushroom soup, 1 cup frozen corn or peas, Salt and pepper, to taste, 1 package frozen tater tots, 1 cup shredded cheddar cheese (optional). Preheat oven to 400°F. Brown ground beef; season with salt and pepper. Mix beef with soup and vegetables.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "30 min"
   },
   {
     "id": "5b53be95",
@@ -1679,7 +1720,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Chicken Spaghetti, a main family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 2 cups cooked chicken, chopped, 8 oz spaghetti, cooked and drained, 1 can cream of mushroom soup, 1 can cream of chicken soup, 1 cup shredded cheddar cheese, ½ cup diced onion, Salt and black pepper, to taste. Preheat oven to 350°F. Combine chicken, spaghetti, soups, cheese, and onion. Season with salt and pepper.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "30 min"
   },
   {
     "id": "2f377a3a",
@@ -1711,7 +1753,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Easy Stew, a main family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 lb stew meat, 4 cups beef broth, 2 cups potatoes, diced, 1 cup carrots, sliced, 1 cup celery, sliced, 1 medium onion, chopped, Salt and black pepper, to taste. Combine all ingredients in large pot. Bring to a boil, then reduce heat. Simmer 1½–2 hours until meat is tender.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "2 hr"
   },
   {
     "id": "c3e7edcc",
@@ -1743,7 +1786,8 @@
     "season": "Winter",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Mock Chili, a main family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 1 lb ground beef, 1 medium onion, chopped, 1 can tomato soup, 1 can kidney beans, drained, 1 Tbsp chili powder, Salt and pepper, to taste. Brown ground beef with onion; drain. Add tomato soup, beans, and chili powder. Simmer 20–30 minutes.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "20 min"
   },
   {
     "id": "4add64a6",
@@ -1775,7 +1819,8 @@
     "season": "Summer",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Jalapeño Popper Dip, a dip/sauce family recipe from Shelby. Show the finished dish as it would look after these ingredients and method: 2 packages cream cheese, softened, 1 cup mayonnaise, 1 cup shredded cheddar cheese, 1 cup shredded mozzarella cheese, ½ cup pickled jalapeños, chopped, ½ cup crushed crackers or breadcrumbs. Preheat oven to 375°F. Mix cream cheese and mayonnaise until smooth. Stir in cheddar, mozzarella, and jalapeños.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "20 min"
   },
   {
     "id": "0e296c48",
@@ -1806,7 +1851,8 @@
     "season": "Summer",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Pizza Dip, a dip/sauce family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 1 package cream cheese, softened, 1 cup shredded mozzarella cheese, ½ cup pizza sauce, ½ cup mini pepperoni slices, Italian seasoning, to taste. Preheat oven to 375°F. Spread cream cheese in bottom of baking dish. Layer pizza sauce over cream cheese.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "20 min"
   },
   {
     "id": "bdd101ff",
@@ -1928,7 +1974,8 @@
     "season": "Winter",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of The World’s Best Hot Fudge Sauce, a dessert family recipe from Julie. Show the finished dish as it would look after these ingredients and method: ½ cup butter, 1 cup cocoa powder, 4 cups sugar, 1 (12 oz) can evaporated milk, 2 tsp vanilla extract. Melt butter in a saucepan over medium heat. Stir in cocoa powder and sugar. Gradually add evaporated milk, stirring constantly.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min"
   },
   {
     "id": "c88f6bcd",
@@ -2017,7 +2064,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Zucchini Jam, a main family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 4 cups grated zucchini, 3 cups sugar, 1 (20 oz) can crushed pineapple, undrained, 1 (3 oz) package strawberry gelatin. Combine zucchini, sugar, and pineapple in large pot. Bring to a boil and cook 10 minutes. Remove from heat and stir in gelatin until dissolved.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min"
   },
   {
     "id": "01f79bac",
@@ -2047,7 +2095,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Glazed “Green Chunk” Pickles, a main family recipe from Family. Show the finished dish as it would look after these ingredients and method: 4 cups chunked cucumbers, 2 cups sugar, 1 cup white vinegar, 1 tsp cinnamon, ½ tsp cloves. Combine all ingredients in a saucepan. Bring to a boil, stirring frequently. Simmer 5–10 minutes until glazed.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min"
   },
   {
     "id": "bab4e0e5",
@@ -2078,7 +2127,8 @@
     "season": "Fall",
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Crockpot Apple Butter, a main family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 6 lbs apples, peeled and sliced, 1 cup sugar, 1 cup brown sugar, 2 tsp cinnamon, ¼ tsp cloves. Place apples and all ingredients in slow cooker. Cook on low 8–10 hours, stirring occasionally. Blend until smooth using immersion blender.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "8 hr"
   },
   {
     "id": "25b5124a",
@@ -2170,7 +2220,8 @@
     ],
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Soy Chicken Wings, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 2 lbs chicken wings, ½ cup soy sauce, ¼ cup brown sugar, 2 cloves garlic, minced, 1 tsp ground ginger. Preheat oven to 375°F. Mix soy sauce, brown sugar, garlic, and ginger. Toss wings in sauce.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
-    "imageApprovalStatus": "generated-fallback"
+    "imageApprovalStatus": "generated-fallback",
+    "cookTime": "45 min"
   },
   {
     "id": "c353e0f4",
