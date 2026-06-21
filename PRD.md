@@ -40,6 +40,13 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 - **Grouping:** Items grouped by recipe/category; unchecked above checked.
 - **Persistence:** localStorage; local-only.
 
+### 3.3.1 Meal Plan
+
+- **Weekly Planner:** Seven-day view with week navigation and today shortcut.
+- **Add Recipes:** Add from the Meal Plan picker or directly from RecipeModal.
+- **Grocery Generation:** Turn all planned recipes for the visible week into Grocery List items.
+- **Persistence:** localStorage with optional cloud sync via `userPrefs.mealPlan` when Firebase is configured.
+
 ### 3.4 Family Gallery
 
 - **Visual Memories:** Archived family photos and culinary snapshots.
@@ -51,7 +58,9 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 ### 3.5 Family Story (formerly History)
 
-- **Static Narrative:** Tab dedicated to the family food history story.
+- **Narrative:** Tab dedicated to the family food history story, with built-in static content as a fallback.
+- **CMS Override:** Admin-managed Firestore sections render publicly when saved.
+- **Print / TOC:** Table of contents, scroll spy, and print affordance work for built-in and CMS content.
 - **Renamed from "History"** to reduce confusion with Profile contribution log.
 
 ### 3.6 Interactive Trivia
@@ -90,7 +99,7 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 
 ### 4.2 Content Management
 
-- **Manual Entry:** Forms for recipes, gallery, trivia.
+- **Manual Entry:** Forms for recipes, gallery, trivia, and Family Story sections.
 - **Image Upload:** Heritage photos to Firebase Storage or local data URL.
 - **Edit/Delete:** Full CRUD for admins.
 - **Contributor Merge:** Combine recipes under a single contributor name.
@@ -119,7 +128,7 @@ The **Schafer Family Cookbook** is a premium digital archive that preserves and 
 - **Bundle Optimization:** `manualChunks` for Firebase and @google/genai.
 - **API Routes:** `/api/gemini` (Gemini/Imagen), `/api/webhook` (Twilio MMS → gallery), `/api/og` + `/api/share` (social cards), `/api/ping` (diagnostic), `/api/notify` (FCM broadcast).
 - **Recipe seed for serverless:** `scripts/sync-recipes-for-api.mjs` generates `api/recipes.seed.generated.ts` (slim fields for OG/share); runs on `postinstall` and before tests.
-- **User prefs sync:** `userPrefsSync` + `useUserPrefsSync` mirror favorites, ratings, and collections to Firestore when configured.
+- **User prefs sync:** `userPrefsSync` + `useUserPrefsSync` mirror favorites, ratings, collections, and meal plans to Firestore when configured.
 - **UIContext:** Global toast and confirm dialogs; haptic feedback on success/error.
 - **Offline Banner:** Fixed banner when navigator is offline; dismisses when back online.
 

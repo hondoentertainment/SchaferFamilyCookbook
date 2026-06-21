@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { Recipe } from '../types';
 import { useUI } from '../context/UIContext';
 import { hapticLight } from '../utils/haptics';
 import {
   addDays,
   addToMealPlan,
+  copyDay,
+  copyWeek,
   getEntriesForDate,
   getEntriesInRange,
   getMealPlan,
@@ -15,12 +17,14 @@ import {
   type MealPlanEntry,
 } from '../utils/mealPlan';
 import { addItems as addGroceryItems, getItems as getGroceryItems } from '../utils/groceryList';
+import { fuzzyMatchAny } from '../utils/fuzzySearch';
 
 interface MealPlanViewProps {
   recipes: Recipe[];
   onViewRecipe: (recipe: Recipe) => void;
   onBrowseRecipes: () => void;
   onOpenGroceryList: () => void;
+  syncVersion?: number;
 }
 
 export const MealPlanView: React.FC<MealPlanViewProps> = ({
@@ -28,6 +32,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
   onViewRecipe,
   onBrowseRecipes,
   onOpenGroceryList,
+  syncVersion = 0,
 }) => {
   const { toast } = useUI();
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
@@ -36,6 +41,10 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
   const [query, setQuery] = useState('');
 
   const refresh = () => setEntries(getMealPlan());
+
+  useEffect(() => {
+    setEntries(getMealPlan());
+  }, [syncVersion]);
 
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
   const weekKeys = useMemo(() => weekDates.map(toDateKey), [weekDates]);
@@ -99,20 +108,55 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
     const prevCount = getGroceryItems().length;
     const next = addGroceryItems(rows);
     const added = Math.max(0, next.length - prevCount);
+    const skipped = Math.max(0, rows.length - added);
     if (added === 0) {
       toast('Those ingredients are already on your Grocery List', 'info');
     } else {
-      toast(`Added ${added} item${added === 1 ? '' : 's'} to Grocery List`, 'success', {
+      const skippedNote = skipped > 0 ? ` · ${skipped} duplicate${skipped === 1 ? '' : 's'} skipped` : '';
+      toast(`Added ${added} item${added === 1 ? '' : 's'} to Grocery List${skippedNote}`, 'success', {
         action: { label: 'View list', onClick: onOpenGroceryList },
       });
     }
   };
 
+  const handleCopyWeek = () => {
+    if (weekRecipeCount === 0) {
+      toast('Add recipes to this week before copying it forward', 'info');
+      return;
+    }
+    hapticLight();
+    const nextWeekKeys = getWeekDates(addDays(weekStart, 7)).map(toDateKey);
+    const added = copyWeek(weekKeys, nextWeekKeys);
+    refresh();
+    if (added === 0) {
+      toast('Next week already has these recipes', 'info');
+    } else {
+      toast(`Copied ${added} recipe${added === 1 ? '' : 's'} to next week`, 'success', {
+        action: { label: 'Go to next week', onClick: () => shiftWeek(7) },
+      });
+    }
+  };
+
+  const handleCopyDayForward = (dateKey: string, i: number) => {
+    hapticLight();
+    const targetKey = i < 6 ? weekKeys[i + 1] : toDateKey(addDays(weekDates[6], 1));
+    const added = copyDay(dateKey, targetKey);
+    refresh();
+    if (added === 0) {
+      toast('The next day already has these recipes', 'info');
+    } else {
+      toast(`Copied ${added} recipe${added === 1 ? '' : 's'} to the next day`, 'success');
+    }
+  };
+
   const pickerResults = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const sorted = [...recipes].sort((a, b) => a.title.localeCompare(b.title));
     if (!q) return sorted.slice(0, 60);
-    return sorted.filter((r) => r.title.toLowerCase().includes(q)).slice(0, 60);
+    // Match across title, contributor, and ingredients with typo tolerance.
+    return sorted
+      .filter((r) => fuzzyMatchAny([r.title, r.contributor, r.ingredients.join(' ')], q))
+      .slice(0, 60);
   }, [recipes, query]);
 
   return (
@@ -250,32 +294,45 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     </ul>
                   )}
                 </div>
-                <button
-                  type="button"
-                  data-testid="meal-plan-add-recipe"
-                  onClick={() => {
-                    hapticLight();
-                    setQuery('');
-                    setPickerDate(pickerOpen ? null : dateKey);
-                  }}
-                  aria-expanded={pickerOpen}
-                  className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
-                >
-                  {pickerOpen ? 'Close' : '+ Add recipe'}
-                </button>
+                <div className="shrink-0 flex flex-col items-end gap-1.5">
+                  <button
+                    type="button"
+                    data-testid="meal-plan-add-recipe"
+                    onClick={() => {
+                      hapticLight();
+                      setQuery('');
+                      setPickerDate(pickerOpen ? null : dateKey);
+                    }}
+                    aria-expanded={pickerOpen}
+                    className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
+                  >
+                    {pickerOpen ? 'Close' : '+ Add recipe'}
+                  </button>
+                  {dayEntries.length > 0 && (
+                    <button
+                      type="button"
+                      data-testid="meal-plan-copy-day"
+                      onClick={() => handleCopyDayForward(dateKey, i)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-[#2D4635] dark:hover:text-emerald-400 hover:underline"
+                      aria-label={`Copy ${date.toLocaleDateString(undefined, { weekday: 'long' })}'s recipes to the next day`}
+                    >
+                      Copy → next day
+                    </button>
+                  )}
+                </div>
               </div>
 
               {pickerOpen && (
                 <div className="px-4 pb-4 border-t border-stone-100 dark:border-[var(--border-color)] pt-3 space-y-3 animate-fade-slide-in">
                   <label htmlFor="meal-plan-recipe-search" className="sr-only">
-                    Search recipes to add to the meal plan
+                    Search recipes by name, ingredient, or contributor to add to the meal plan
                   </label>
                   <input
                     id="meal-plan-recipe-search"
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search recipes…"
+                    placeholder="Search by name, ingredient, or cook…"
                     className="w-full px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
                   />
                   <div className="max-h-56 overflow-y-auto space-y-0.5">
@@ -320,6 +377,15 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
           className="min-h-11 px-5 py-3 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Add this week to Grocery List
+        </button>
+        <button
+          type="button"
+          data-testid="meal-plan-copy-week"
+          onClick={handleCopyWeek}
+          disabled={weekRecipeCount === 0}
+          className="min-h-11 px-5 py-3 rounded-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 text-[10px] font-black uppercase tracking-widest hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Copy week → next week
         </button>
         <span className="text-xs text-stone-400 dark:text-stone-500">
           {weekRecipeCount} recipe{weekRecipeCount === 1 ? '' : 's'} planned

@@ -3,6 +3,7 @@ import type { Firestore } from 'firebase/firestore';
 import { CloudArchive } from './db';
 import { Sentry } from '../monitoring/sentry';
 import type { RecipeCollection } from '../types';
+import type { MealPlanEntry } from '../utils/mealPlan';
 
 // --- Local-change notification bus ---------------------------------------
 // Components mutate local state through utils/favorites.ts and utils/ratings.ts.
@@ -31,10 +32,16 @@ export function notifyPrefsChanged(): void {
 }
 
 /**
- * Cloud-sync layer for user-specific preferences (favorites + ratings + collections).
+ * Cloud-sync layer for user-specific preferences (favorites + ratings + collections + meal plan).
  *
  * Stored per-user at `userPrefs/{userId}` as:
- *   { favorites: string[], ratings: Record<recipeId, rating>, collections: RecipeCollection[], updatedAt: Timestamp }
+ *   {
+ *     favorites: string[],
+ *     ratings: Record<recipeId, rating>,
+ *     collections: RecipeCollection[],
+ *     mealPlan: MealPlanEntry[],
+ *     updatedAt: Timestamp
+ *   }
  *
  * Local utilities in `src/utils/favorites.ts`, `src/utils/ratings.ts`, and
  * `src/utils/collections.ts` remain the source of truth for component state;
@@ -48,6 +55,32 @@ export interface UserPrefsPayload {
     favorites: string[];
     ratings: Record<string, number>;
     collections: RecipeCollection[];
+    mealPlan?: MealPlanEntry[];
+}
+
+function parseMealPlanEntry(raw: unknown): MealPlanEntry | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const o = raw as Record<string, unknown>;
+    if (typeof o.id !== 'string' || !o.id) return null;
+    if (typeof o.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) return null;
+    if (typeof o.recipeId !== 'string' || !o.recipeId) return null;
+    if (typeof o.addedAt !== 'number' || !Number.isFinite(o.addedAt)) return null;
+    return {
+        id: o.id,
+        date: o.date,
+        recipeId: o.recipeId,
+        addedAt: o.addedAt,
+    };
+}
+
+function parseMealPlan(raw: unknown): MealPlanEntry[] {
+    if (!Array.isArray(raw)) return [];
+    const out: MealPlanEntry[] = [];
+    for (const item of raw) {
+        const entry = parseMealPlanEntry(item);
+        if (entry) out.push(entry);
+    }
+    return out;
 }
 
 function parseCollectionEntry(raw: unknown): RecipeCollection | null {
@@ -122,6 +155,39 @@ export function mergeCollections(
 }
 
 /**
+ * Merge meal-plan entries by stable id, then de-dupe same recipe/day pairs.
+ * If two devices add the same recipe to the same day, keep the older entry so
+ * the plan order stays closest to the user's first action.
+ */
+export function mergeMealPlan(
+    local: MealPlanEntry[],
+    remote: MealPlanEntry[]
+): MealPlanEntry[] {
+    const byId = new Map<string, MealPlanEntry>();
+    for (const entry of [...local, ...remote]) {
+        const existing = byId.get(entry.id);
+        if (!existing || entry.addedAt < existing.addedAt) {
+            byId.set(entry.id, entry);
+        }
+    }
+
+    const byDayRecipe = new Map<string, MealPlanEntry>();
+    for (const entry of byId.values()) {
+        const key = `${entry.date}|${entry.recipeId}`;
+        const existing = byDayRecipe.get(key);
+        if (!existing || entry.addedAt < existing.addedAt) {
+            byDayRecipe.set(key, entry);
+        }
+    }
+
+    return [...byDayRecipe.values()].sort((a, b) => {
+        const byDate = a.date.localeCompare(b.date);
+        if (byDate !== 0) return byDate;
+        return a.addedAt - b.addedAt;
+    });
+}
+
+/**
  * Derive a stable, Firestore-safe document id from a user's display name.
  * Mirrors App.tsx's identity model: the name is the identity. We slugify
  * (lowercase, hyphenated, ASCII-only) so that "Grandma Joan" and
@@ -185,7 +251,8 @@ export async function fetchRemotePrefs(userId: string): Promise<UserPrefsPayload
             }
         }
         const collections = parseCollections(data?.collections);
-        return { favorites, ratings, collections };
+        const mealPlan = parseMealPlan(data?.mealPlan);
+        return { favorites, ratings, collections, mealPlan };
     } catch (err) {
         logSyncError('fetchRemotePrefs', err);
         return null;
@@ -210,6 +277,7 @@ export async function writeRemotePrefs(
                 favorites: [...new Set(payload.favorites)],
                 ratings: payload.ratings,
                 collections: payload.collections,
+                mealPlan: payload.mealPlan ?? [],
                 updatedAt: serverTimestamp(),
             },
             { merge: true }
@@ -230,6 +298,7 @@ export async function writeRemotePrefs(
  *     when present; otherwise keep local").
  *   - collections: union by id; matching ids union recipeIds; metadata from
  *     the side with the newer timestamp (see mergeCollections).
+ *   - mealPlan: union by entry id, de-duped by date + recipeId.
  */
 export function mergePrefs(
     local: UserPrefsPayload,
@@ -244,6 +313,7 @@ export function mergePrefs(
         favorites: [...favSet],
         ratings,
         collections: mergeCollections(local.collections, remote.collections),
+        mealPlan: mergeMealPlan(local.mealPlan ?? [], remote.mealPlan ?? []),
     };
 }
 

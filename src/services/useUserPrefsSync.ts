@@ -10,6 +10,7 @@ import {
 import { getFavoriteIds } from '../utils/favorites';
 import { getAllRatings } from '../utils/ratings';
 import { getAllCollections } from '../utils/collections';
+import { getMealPlan } from '../utils/mealPlan';
 import { STORAGE_KEYS } from '../constants/storage';
 import type { RecipeRating } from '../types';
 import { CloudArchive } from './db';
@@ -28,7 +29,8 @@ function readLocalPrefs(userName: string): UserPrefsPayload {
         }
     }
     const collections = getAllCollections();
-    return { favorites, ratings, collections };
+    const mealPlan = getMealPlan();
+    return { favorites, ratings, collections, mealPlan };
 }
 
 /**
@@ -61,6 +63,7 @@ function applyMergedPrefsToLocal(userName: string, merged: UserPrefsPayload): vo
     localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify([...others, ...mineMerged]));
 
     localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(merged.collections));
+    localStorage.setItem(STORAGE_KEYS.mealPlan, JSON.stringify(merged.mealPlan));
 }
 
 export interface UseUserPrefsSyncOptions {
@@ -72,12 +75,12 @@ export interface UseUserPrefsSyncOptions {
 }
 
 /**
- * Wire up cloud sync for a user's favorites, ratings, and collections.
+ * Wire up cloud sync for a user's favorites, ratings, collections, and meal plan.
  *
  *  - On first render (and whenever `userName` changes), hydrate: fetch remote,
  *    merge with local, persist merged back to local storage, and call
  *    `onHydrated` so the caller can rerun its local reads into React state.
- *  - On every local change to favorites/ratings, schedule a debounced write.
+     *  - On every local change to preferences, schedule a debounced write.
  *  - Guest / no-firebase / network failure: no-ops; local stays authoritative.
  */
 export function useUserPrefsSync(
@@ -111,7 +114,8 @@ export function useUserPrefsSync(
                 if (
                     local.favorites.length > 0 ||
                     Object.keys(local.ratings).length > 0 ||
-                    local.collections.length > 0
+                    local.collections.length > 0 ||
+                    (local.mealPlan?.length ?? 0) > 0
                 ) {
                     writerRef.current?.schedule(userId, local);
                 }
@@ -135,7 +139,13 @@ export function useUserPrefsSync(
                     if (!remoteCol) return true;
                     return c.recipeIds.some((id) => !remoteCol.recipeIds.includes(id));
                 });
-            if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections) {
+            const remoteMealPlan = remote.mealPlan ?? [];
+            const mergedMealPlan = merged.mealPlan ?? [];
+            const remoteMealIds = new Set(remoteMealPlan.map((entry) => entry.id));
+            const mergedAddedMealPlan =
+                mergedMealPlan.length > remoteMealPlan.length ||
+                mergedMealPlan.some((entry) => !remoteMealIds.has(entry.id));
+            if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan) {
                 writerRef.current?.schedule(userId, merged);
             }
         })();

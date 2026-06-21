@@ -268,6 +268,11 @@ test.describe('Admin (admin user)', () => {
             ingredients: ['1 cup flour'],
             instructions: ['Bake'],
             image: 'https://via.placeholder.com/600x400',
+            // Mark as an approved actual photo so the Manage Recipes row shows
+            // an "Edit" action (an unverified image would render "Replace Actual"
+            // via getRecipeImageStatus().needsCreatorActual).
+            imageSource: 'upload',
+            imageApprovalStatus: 'approved',
             created_at: '2025-02-01T00:00:00.000Z',
           },
         ])

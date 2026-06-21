@@ -94,6 +94,26 @@ describe('firestore.rules (emulator)', () => {
         );
     });
 
+    it('anonymous can write userPrefs with meal plan shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'userPrefs/scout'), {
+                favorites: [],
+                ratings: {},
+                collections: [],
+                mealPlan: [
+                    {
+                        id: 'mp1',
+                        date: '2026-06-21',
+                        recipeId: 'r1',
+                        addedAt: 1782000000000,
+                    },
+                ],
+                updatedAt: serverTimestamp(),
+            }),
+        );
+    });
+
     it('anonymous cannot add unexpected keys to userPrefs', async () => {
         const anon = env.unauthenticatedContext().firestore();
         await assertFails(

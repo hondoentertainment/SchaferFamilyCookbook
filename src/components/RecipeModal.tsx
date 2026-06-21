@@ -9,6 +9,8 @@ import { scaleIngredients } from '../utils/scaleIngredients';
 import { hapticLight } from '../utils/haptics';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
+import { isValidRecipeImageUrl } from '../utils/recipeImage';
+import { RecipeImage } from './RecipeImage';
 import { StarRating } from './StarRating';
 import { RecipeNotes } from './RecipeNotes';
 import { ShareRecipe } from './ShareRecipe';
@@ -266,10 +268,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(() => new Set());
     const scaleInitRef = useRef(true);
     const [detailMode, setDetailMode] = useState<'read' | 'cook' | 'share'>('read');
-    const hasValidImage =
-        !!recipe?.image &&
-        !imageBroken &&
-        (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http://') || recipe.image.startsWith('https://'));
+    const hasValidImage = !!recipe && isValidRecipeImageUrl(recipe.image) && !imageBroken;
     useFocusTrap(true, modalRef);
     useFocusTrap(lightboxOpen, lightboxRef);
 
@@ -971,14 +970,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                     }}
                                                     className="block w-full text-left rounded-2xl border border-stone-200/90 dark:border-[var(--border-color)] overflow-hidden bg-white dark:bg-[var(--card-bg)] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.98] motion-reduce:transition-none"
                                                 >
-                                                    <div className="aspect-[4/3] bg-stone-100 dark:bg-stone-800 relative">
-                                                        {r.image && (r.image.startsWith('/') || r.image.startsWith('http')) ? (
-                                                            <img src={r.image} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                                                        ) : (
-                                                            <div className="flex h-full items-center justify-center text-2xl text-[#2D4635]/40 dark:text-emerald-200/40" aria-hidden>
-                                                                {CATEGORY_META[r.category]?.icon || CATEGORY_META.Generic.icon}
-                                                            </div>
-                                                        )}
+                                                    <div className="aspect-[4/3] bg-stone-100 dark:bg-stone-800 relative overflow-hidden">
+                                                        <RecipeImage recipe={r} compact />
                                                     </div>
                                                     <div className="p-3 space-y-1">
                                                         <p className="text-[9px] font-bold uppercase tracking-widest text-[#A0522D]/90 line-clamp-1">{r.category}</p>

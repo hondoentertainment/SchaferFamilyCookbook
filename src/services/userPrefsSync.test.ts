@@ -3,11 +3,13 @@ import {
     deriveUserId,
     mergePrefs,
     mergeCollections,
+    mergeMealPlan,
     fetchRemotePrefs,
     writeRemotePrefs,
     createDebouncedWriter,
 } from './userPrefsSync';
 import type { RecipeCollection } from '../types';
+import type { MealPlanEntry } from '../utils/mealPlan';
 import { CloudArchive } from './db';
 import { setupLocalStorage } from '../test/utils';
 
@@ -101,6 +103,33 @@ describe('userPrefsSync', () => {
         });
     });
 
+    describe('mergeMealPlan', () => {
+        const entry = (overrides: Partial<MealPlanEntry> = {}): MealPlanEntry => ({
+            id: 'mp1',
+            date: '2026-06-21',
+            recipeId: 'r1',
+            addedAt: 100,
+            ...overrides,
+        });
+
+        it('includes entries from both sides ordered by date then added time', () => {
+            const merged = mergeMealPlan(
+                [entry({ id: 'local', date: '2026-06-22', addedAt: 200 })],
+                [entry({ id: 'remote', date: '2026-06-21', recipeId: 'r2', addedAt: 300 })]
+            );
+            expect(merged.map((e) => e.id)).toEqual(['remote', 'local']);
+        });
+
+        it('dedupes the same recipe on the same day', () => {
+            const merged = mergeMealPlan(
+                [entry({ id: 'local', addedAt: 200 })],
+                [entry({ id: 'remote', addedAt: 100 })]
+            );
+            expect(merged).toHaveLength(1);
+            expect(merged[0].id).toBe('remote');
+        });
+    });
+
     describe('mergePrefs', () => {
         it('unions favorites from both sides', () => {
             const merged = mergePrefs(
@@ -163,6 +192,24 @@ describe('userPrefsSync', () => {
             expect(c1.name).toBe('Remote');
         });
 
+        it('merges meal plan entries from both sides', () => {
+            const merged = mergePrefs(
+                {
+                    favorites: [],
+                    ratings: {},
+                    collections: [],
+                    mealPlan: [{ id: 'local', date: '2026-06-22', recipeId: 'r1', addedAt: 100 }],
+                },
+                {
+                    favorites: [],
+                    ratings: {},
+                    collections: [],
+                    mealPlan: [{ id: 'remote', date: '2026-06-23', recipeId: 'r2', addedAt: 200 }],
+                }
+            );
+            expect(merged.mealPlan?.map((entry) => entry.id)).toEqual(['local', 'remote']);
+        });
+
         it('returns empty prefs for two empty inputs', () => {
             const merged = mergePrefs(
                 { favorites: [], ratings: {}, collections: [] },
@@ -171,6 +218,7 @@ describe('userPrefsSync', () => {
             expect(merged.favorites).toEqual([]);
             expect(merged.ratings).toEqual({});
             expect(merged.collections).toEqual([]);
+            expect(merged.mealPlan).toEqual([]);
         });
     });
 
@@ -230,6 +278,7 @@ describe('userPrefsSync', () => {
                 data: () => ({
                     favorites: ['r1', 'r2'],
                     ratings: { r1: 5, r2: 3 },
+                    mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
                 }),
             } as unknown as Awaited<ReturnType<typeof import('firebase/firestore').getDoc>>);
             const result = await fetchRemotePrefs('grandma-joan');
@@ -237,6 +286,7 @@ describe('userPrefsSync', () => {
                 favorites: ['r1', 'r2'],
                 ratings: { r1: 5, r2: 3 },
                 collections: [],
+                mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
             });
         });
 
@@ -252,6 +302,7 @@ describe('userPrefsSync', () => {
             const result = await fetchRemotePrefs('grandma-joan');
             expect(result?.favorites).toEqual(['r1', 'r2']);
             expect(result?.ratings).toEqual({ r1: 5, r3: 1, r4: 3 });
+            expect(result?.mealPlan).toEqual([]);
         });
 
         it('returns null on read errors without throwing', async () => {
@@ -287,11 +338,29 @@ describe('userPrefsSync', () => {
                 favorites: string[];
                 ratings: Record<string, number>;
                 collections: RecipeCollection[];
+                mealPlan: MealPlanEntry[];
             };
             expect([...typed.favorites].sort()).toEqual(['r1', 'r2']);
             expect(typed.ratings).toEqual({ r1: 4 });
             expect(typed.collections).toHaveLength(1);
+            expect(typed.mealPlan).toEqual([]);
             expect(options).toEqual({ merge: true });
+        });
+
+        it('writes meal plan entries when present', async () => {
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockResolvedValueOnce(undefined as unknown as void);
+            await writeRemotePrefs('grandma-joan', {
+                favorites: [],
+                ratings: {},
+                collections: [],
+                mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
+            });
+            const [, payload] = setDocSpy.mock.calls[setDocSpy.mock.calls.length - 1];
+            expect((payload as { mealPlan: MealPlanEntry[] }).mealPlan).toEqual([
+                { id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 },
+            ]);
         });
 
         it('returns false on write errors', async () => {

@@ -1,45 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Recipe } from '../types';
-import { CATEGORY_META } from '../constants/taxonomy';
 import { getFeaturedRecipes } from '../utils/featured';
-
-const isValidImageUrl = (url: string | undefined): boolean =>
-    !!url && (url.startsWith('/recipe-images/') || url.startsWith('http://') || url.startsWith('https://'));
+import { RecipeImage } from './RecipeImage';
 
 interface FeaturedStripProps {
     recipes: readonly Recipe[];
     onSelect: (recipe: Recipe) => void;
 }
-
-const FeaturedCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
-    const [broken, setBroken] = useState(false);
-    const hasImage = isValidImageUrl(recipe.image) && !broken;
-
-    if (hasImage) {
-        return (
-            <img
-                src={recipe.image}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                onError={() => setBroken(true)}
-            />
-        );
-    }
-
-    const meta = CATEGORY_META[recipe.category] ?? CATEGORY_META.Generic;
-    return (
-        <div
-            aria-hidden="true"
-            className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#2D4635] via-[#2D4635]/90 to-[#A0522D]/80 text-white"
-        >
-            <span className="text-4xl drop-shadow">{meta?.icon ?? '🍽'}</span>
-            <span className="mt-2 font-serif text-xs italic text-white/80">{recipe.category}</span>
-        </div>
-    );
-};
 
 export const FeaturedStrip: React.FC<FeaturedStripProps> = ({ recipes, onSelect }) => {
     const featured = getFeaturedRecipes(recipes);
@@ -80,7 +47,7 @@ export const FeaturedStrip: React.FC<FeaturedStripProps> = ({ recipes, onSelect 
                             className="group relative flex w-[72vw] max-w-[280px] min-w-[220px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white text-left shadow-sm transition-all min-h-[44px] hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-900"
                         >
                             <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-stone-800">
-                                <FeaturedCardImage recipe={recipe} />
+                                <RecipeImage recipe={recipe} imgClassName="group-hover:scale-105" compact />
                                 <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-amber-500/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-md backdrop-blur-sm">
                                     <span aria-hidden="true">★</span>
                                     Featured

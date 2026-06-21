@@ -5,6 +5,7 @@ import { getActivityFeed, formatTimeAgo, getActivityIcon } from '../utils/activi
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
+import { RecipeImage } from './RecipeImage';
 
 interface HomeViewProps {
     currentUser: UserProfile;
@@ -58,37 +59,6 @@ function findSeasonalRecipes(recipes: Recipe[], keywords: string[], limit = 6): 
     return matched.slice(0, limit);
 }
 
-const isCookbookCoverImage = (recipe: Recipe) => recipe.imageSource === 'local-generated';
-
-const SimpleCardImage: React.FC<{ recipe: Recipe; className?: string }> = ({ recipe, className }) => {
-    const [broken, setBroken] = React.useState(false);
-    const [loaded, setLoaded] = React.useState(false);
-    const valid = !!recipe.image && (recipe.image.startsWith('/recipe-images/') || recipe.image.startsWith('http'));
-    const isCover = isCookbookCoverImage(recipe);
-    if (!valid || broken) {
-        return (
-            <div className={`flex items-center justify-center bg-gradient-to-br from-[#2D4635]/85 to-[#A0522D]/70 text-center font-serif text-3xl italic text-white ${className ?? ''}`}>
-                {recipe.category}
-            </div>
-        );
-    }
-    return (
-        <div className={`relative h-full w-full overflow-hidden ${isCover ? 'bg-[#203629]' : ''} ${className ?? ''}`}>
-            {isCover && <div className="absolute inset-2 rounded-[1.25rem] ring-1 ring-white/10" aria-hidden="true" />}
-            <img
-                src={recipe.image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                onLoad={() => setLoaded(true)}
-                onError={() => setBroken(true)}
-                className={`h-full w-full transition-opacity duration-500 ${isCover ? 'object-contain p-2.5' : 'object-cover'} ${loaded ? 'opacity-100' : 'opacity-0'}`}
-            />
-            {!loaded && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300" />}
-        </div>
-    );
-};
-
 const RecipeMiniCard: React.FC<{
     recipe: Recipe;
     onClick: () => void;
@@ -106,7 +76,7 @@ const RecipeMiniCard: React.FC<{
                 className="recipe-card-surface block w-full overflow-hidden rounded-3xl border text-left transition-all hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800"
             >
                 <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                    <SimpleCardImage recipe={recipe} className="transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+                    <RecipeImage recipe={recipe} imgClassName="group-hover:scale-[1.04] motion-reduce:group-hover:scale-100" />
                 </div>
                 <div className="space-y-1.5 p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
@@ -290,7 +260,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[18rem] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                                <SimpleCardImage recipe={recipeOfWeek} className="transition-transform duration-500 group-hover:scale-[1.03]" />
+                                <RecipeImage recipe={recipeOfWeek} imgClassName="group-hover:scale-[1.03]" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:hidden" aria-hidden />
                             </div>
                             <div className="p-6 md:p-10 flex flex-col justify-center space-y-3">

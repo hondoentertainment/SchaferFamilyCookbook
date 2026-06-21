@@ -1,6 +1,6 @@
 # Recommended Next Steps
 
-_Last updated: 2026-05-17_
+_Last updated: 2026-06-19_
 
 ## Status of the previous recommendation
 
@@ -41,13 +41,19 @@ A code review found these were already in place, so no change was needed:
 
 The `AUDIT-*.md` files predate this work and are stale on these points.
 
+## Status of the current recommendation
+
+The next three implementation recommendations are now covered on this branch:
+
+- **Meal Plan cloud sync** — `userPrefs` now includes optional `mealPlan` entries, with merge/fetch/write coverage and Firestore rules allowing the constrained shape.
+- **Featured recipes** — already shipped before this pass; Admin curation and `FeaturedStrip` are covered by component and E2E tests.
+- **Family Story CMS** — Admin can save custom story sections, and the public Family Story view now renders saved sections with the built-in narrative as fallback.
+
 ## What to do next
 
-1. **Meal Plan cloud sync** — the plan is local-only. Mirror the optional
-   `userPrefs` Firestore sync used by favorites so a plan follows a user across
-   devices. _Effort: M._
-2. **Featured recipes** — admin-curated highlights on the Recipes tab. _Effort: S._
-3. **Family Story CMS** — make the static narrative editable in Admin. _Effort: L._
+1. **Verification baseline** — run `npm run ci`, focused Playwright for Meal Plan/Profile/Admin, Firestore rules tests, and Lighthouse CI before release.
+2. **Meal Plan polish** — add copy-week/copy-day actions, ingredient/contributor search in the picker, and clearer grocery de-dupe summaries.
+3. **Family Story editor polish** — add preview, autosave draft, and optional section templates once custodians use the CMS.
 
 ## Explicitly deferred
 

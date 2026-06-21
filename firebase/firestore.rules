@@ -49,14 +49,14 @@ service cloud.firestore {
      * allowed for everyone to unblock future social features (e.g. aggregate
      * ratings). Custodians (admin) retain full control for moderation.
      *
-     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, collections: list, updatedAt: Timestamp }
+     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, collections: list, mealPlan: list, updatedAt: Timestamp }
      */
     match /userPrefs/{userId} {
       allow read: if true;
       allow create, update: if
         isAdmin() ||
         (
-          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'collections', 'updatedAt']) &&
+          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'collections', 'mealPlan', 'updatedAt']) &&
           (
             !('favorites' in request.resource.data) ||
             request.resource.data.favorites is list
@@ -68,6 +68,10 @@ service cloud.firestore {
           (
             !('collections' in request.resource.data) ||
             request.resource.data.collections is list
+          ) &&
+          (
+            !('mealPlan' in request.resource.data) ||
+            request.resource.data.mealPlan is list
           )
         );
       allow delete: if isAdmin();

@@ -21,6 +21,7 @@ export const STORAGE_KEYS = {
   highContrast: 'schafer_high_contrast',
   onboardingDone: 'schafer_onboarding_done',
   activityFeed: 'schafer_activity_feed',
+  storyDraft: 'schafer_story_draft',
 } as const;
 
 /** sessionStorage keys — cleared when the browser tab ends */

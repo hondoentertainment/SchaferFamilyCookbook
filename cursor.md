@@ -77,7 +77,7 @@ Co-located tests: `api/*.test.ts`. Seed sync: `scripts/sync-recipes-for-api.mjs`
 
 ## User prefs cloud sync
 
-`src/services/userPrefsSync.ts` mirrors **favorites**, **ratings**, and **collections** to Firestore `userPrefs/{userId}` when Firebase is configured. Local utils (`favorites.ts`, `ratings.ts`, `collections.ts`) call `notifyPrefsChanged()`; `useUserPrefsSync` debounces remote writes and merges on login. Firestore rules allow anonymous create/update with constrained shape (see `firebase/firestore.rules`).
+`src/services/userPrefsSync.ts` mirrors **favorites**, **ratings**, **collections**, and **meal plans** to Firestore `userPrefs/{userId}` when Firebase is configured. Local utils (`favorites.ts`, `ratings.ts`, `collections.ts`, `mealPlan.ts`) call `notifyPrefsChanged()`; `useUserPrefsSync` debounces remote writes and merges on login. Firestore rules allow anonymous create/update with constrained shape (see `firebase/firestore.rules`).
 
 ## Conventions for edits
 
@@ -95,7 +95,7 @@ Co-located tests: `api/*.test.ts`. Seed sync: `scripts/sync-recipes-for-api.mjs`
 See [TESTING.md](TESTING.md) for the full matrix. Useful focused commands:
 
 ```bash
-npx vitest run src/services/userPrefsSync.test.ts src/utils/collections.test.ts
+npx vitest run src/services/userPrefsSync.test.ts src/utils/collections.test.ts src/utils/mealPlan.test.ts
 npx vitest run api/loadRecipesSeed.test.ts api/share.test.ts api/ping.test.ts
 npx vitest run src/components/RecipeModal.test.tsx src/components/ProfileView.test.tsx
 npx playwright test e2e/profile.spec.ts e2e/admin.spec.ts --project=chromium

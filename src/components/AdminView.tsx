@@ -10,6 +10,15 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { useFocusTrap } from '../utils/focusTrap';
 import { getRecipeImageStatus, markRecipeImageAsApprovedActual, summarizeRecipeImageStatuses } from '../utils/imageProvenance';
+import { STORAGE_KEYS } from '../constants/storage';
+
+/** Pre-filled section scaffolding offered when the Family Story editor is empty. */
+const STORY_STARTER_TEMPLATE: ReadonlyArray<{ heading: string; body: string }> = [
+    { heading: 'Our Beginnings', body: 'Where the family story starts — the places, the people, and the kitchens that shaped us.' },
+    { heading: 'Traditions We Keep', body: 'The dishes and rituals that show up every holiday and gathering, and the stories behind them.' },
+    { heading: 'Recipes Through the Generations', body: 'How favorite recipes were passed down, tweaked, and made our own over the years.' },
+    { heading: 'Looking Forward', body: 'The new cooks in the family and the traditions we hope to carry on.' },
+];
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -88,6 +97,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
     const [storySections, setStorySections] = useState<StorySection[]>([]);
     const [isLoadingStory, setIsLoadingStory] = useState(false);
     const [isSavingStory, setIsSavingStory] = useState(false);
+    const [storyPreview, setStoryPreview] = useState(false);
+    const [storyDraftAvailable, setStoryDraftAvailable] = useState(false);
+    const [storyDraftSavedAt, setStoryDraftSavedAt] = useState<number | null>(null);
+    // Skips the autosave that fires from the initial load's setStorySections.
+    const skipStoryAutosaveRef = useRef(true);
 
     // Recipe version history state
     const [versionModalRecipe, setVersionModalRecipe] = useState<Recipe | null>(null);
@@ -190,11 +204,95 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (activeSubtab !== 'story') return;
         let cancelled = false;
         setIsLoadingStory(true);
+        setStoryPreview(false);
+        // Detect an unsaved local draft so we can offer to restore it.
+        try {
+            const raw = localStorage.getItem(STORAGE_KEYS.storyDraft);
+            const draft = raw ? JSON.parse(raw) : null;
+            setStoryDraftAvailable(Array.isArray(draft?.sections) && draft.sections.length > 0);
+            setStoryDraftSavedAt(typeof draft?.savedAt === 'number' ? draft.savedAt : null);
+        } catch {
+            setStoryDraftAvailable(false);
+            setStoryDraftSavedAt(null);
+        }
         CloudArchive.getStoryContent().then(sections => {
-            if (!cancelled) setStorySections([...sections].sort((a, b) => a.order - b.order));
+            if (!cancelled) {
+                skipStoryAutosaveRef.current = true;
+                setStorySections([...sections].sort((a, b) => a.order - b.order));
+            }
         }).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingStory(false); });
         return () => { cancelled = true; };
     }, [activeSubtab]);
+
+    // Autosave the working draft to localStorage so edits survive an accidental
+    // navigation or refresh before the admin commits to Firestore.
+    useEffect(() => {
+        if (activeSubtab !== 'story' || isLoadingStory) return;
+        if (skipStoryAutosaveRef.current) {
+            skipStoryAutosaveRef.current = false;
+            return;
+        }
+        const handle = setTimeout(() => {
+            try {
+                const savedAt = Date.now();
+                localStorage.setItem(
+                    STORAGE_KEYS.storyDraft,
+                    JSON.stringify({ savedAt, sections: storySections }),
+                );
+                setStoryDraftSavedAt(savedAt);
+                setStoryDraftAvailable(storySections.length > 0);
+            } catch {
+                // ignore quota / disabled storage
+            }
+        }, 600);
+        return () => clearTimeout(handle);
+    }, [storySections, activeSubtab, isLoadingStory]);
+
+    const handleRestoreStoryDraft = () => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEYS.storyDraft);
+            const draft = raw ? JSON.parse(raw) : null;
+            if (Array.isArray(draft?.sections)) {
+                skipStoryAutosaveRef.current = true;
+                setStorySections(
+                    draft.sections
+                        .filter((s: unknown): s is StorySection =>
+                            !!s && typeof s === 'object' && typeof (s as StorySection).heading === 'string')
+                        .map((s: StorySection, i: number) => ({
+                            id: s.id || 's_' + Date.now() + '_' + i,
+                            heading: s.heading || '',
+                            body: s.body || '',
+                            order: i,
+                        })),
+                );
+                setStoryDraftAvailable(false);
+                toast('Draft restored', 'success');
+            }
+        } catch {
+            toast("Couldn't restore the draft", 'error');
+        }
+    };
+
+    const handleDiscardStoryDraft = () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.storyDraft);
+        } catch { /* ignore */ }
+        setStoryDraftAvailable(false);
+        setStoryDraftSavedAt(null);
+    };
+
+    const handleInsertStoryStarter = () => {
+        skipStoryAutosaveRef.current = false;
+        setStorySections(prev => [
+            ...prev,
+            ...STORY_STARTER_TEMPLATE.map((t, i) => ({
+                id: 's_' + Date.now() + '_' + i,
+                heading: t.heading,
+                body: t.body,
+                order: prev.length + i,
+            })),
+        ]);
+    };
 
     // Fetch analytics when the analytics subtab becomes active
     useEffect(() => {
@@ -2030,17 +2128,94 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">📜</span>
                             Family Story CMS
                         </h2>
-                        <p className="text-sm text-stone-500 mb-8 leading-relaxed">
+                        <p className="text-sm text-stone-500 mb-6 leading-relaxed">
                             Edit the Family Story shown in the "Family Story" tab. Changes are saved to Firestore and appear for all visitors. When no sections are saved, the static built-in story is shown as a fallback.
                         </p>
 
+                        {storyDraftAvailable && (
+                            <div data-testid="story-draft-banner" className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-sm text-amber-800">
+                                    You have an unsaved draft{storyDraftSavedAt ? ` from ${new Date(storyDraftSavedAt).toLocaleString()}` : ''}.
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleRestoreStoryDraft}
+                                        className="px-4 py-2 bg-amber-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-700"
+                                    >
+                                        Restore draft
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleDiscardStoryDraft}
+                                        className="px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-100"
+                                    >
+                                        Discard
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isLoadingStory && (
+                            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                                <div className="inline-flex rounded-full border border-stone-200 p-1 bg-stone-50" role="group" aria-label="Editor mode">
+                                    <button
+                                        type="button"
+                                        data-testid="story-edit-toggle"
+                                        onClick={() => setStoryPreview(false)}
+                                        aria-pressed={!storyPreview}
+                                        className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${!storyPreview ? 'bg-[#2D4635] text-white' : 'text-stone-500 hover:text-stone-700'}`}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-testid="story-preview-toggle"
+                                        onClick={() => setStoryPreview(true)}
+                                        aria-pressed={storyPreview}
+                                        className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${storyPreview ? 'bg-[#2D4635] text-white' : 'text-stone-500 hover:text-stone-700'}`}
+                                    >
+                                        Preview
+                                    </button>
+                                </div>
+                                {storyDraftSavedAt && !storyDraftAvailable && (
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                                        Draft saved {new Date(storyDraftSavedAt).toLocaleTimeString()}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
                         {isLoadingStory ? (
                             <div className="text-center py-12 text-stone-400 text-sm">Loading story content…</div>
+                        ) : storyPreview ? (
+                            <div data-testid="story-preview" className="space-y-8 max-w-2xl">
+                                {storySections.length === 0 ? (
+                                    <p className="text-sm text-stone-400 italic">No custom sections — the built-in story will be shown to visitors.</p>
+                                ) : (
+                                    [...storySections].sort((a, b) => a.order - b.order).map((section) => (
+                                        <article key={section.id} className="space-y-3">
+                                            <h3 className="text-2xl font-serif italic text-[#2D4635]">{section.heading || 'Untitled section'}</h3>
+                                            {section.body.split(/\n{2,}/).filter(Boolean).map((para, i) => (
+                                                <p key={i} className="text-stone-600 leading-relaxed whitespace-pre-line">{para}</p>
+                                            ))}
+                                        </article>
+                                    ))
+                                )}
+                            </div>
                         ) : (
                             <div className="space-y-6">
                                 {storySections.length === 0 && (
-                                    <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800">
-                                        No custom sections saved yet. The static built-in story will display. Add sections below to override it.
+                                    <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800 space-y-4">
+                                        <p>No custom sections saved yet. The static built-in story will display. Add sections below to override it.</p>
+                                        <button
+                                            type="button"
+                                            data-testid="story-insert-starter"
+                                            onClick={handleInsertStoryStarter}
+                                            className="px-4 py-2 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23]"
+                                        >
+                                            Insert starter sections
+                                        </button>
                                     </div>
                                 )}
 
@@ -2138,6 +2313,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             setIsSavingStory(true);
                                             try {
                                                 await CloudArchive.saveStoryContent(storySections);
+                                                try { localStorage.removeItem(STORAGE_KEYS.storyDraft); } catch { /* ignore */ }
+                                                setStoryDraftAvailable(false);
+                                                setStoryDraftSavedAt(null);
                                                 toast('Family Story saved!', 'success');
                                             } catch (e: unknown) {
                                                 toast(`Save failed: ${e instanceof Error ? e.message : 'unknown error'}`, 'error');

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRe
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { useUI } from './context/UIContext';
 import { shouldToastImageError } from './utils/imageErrorToast';
+import { RecipeImage, RecipeImageFallback } from './components/RecipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage } from './utils/recipeImage';
 import { FirebaseError } from 'firebase/app';
 import { CloudArchive } from './services/db';
 import {
@@ -32,6 +34,7 @@ import { useOfflineUploadQueue } from './hooks/useOfflineUploadQueue';
 import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
+import { fuzzyMatch } from './utils/fuzzySearch';
 import {
     CATEGORY_META,
     RECIPE_CATEGORIES,
@@ -419,80 +422,25 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import defaultRecipes from './data/recipes.json';
 
-const isValidImageUrl = (url: string) =>
-    !!url && (url.startsWith('/recipe-images/') || url.startsWith('http://') || url.startsWith('https://'));
-
-const isCookbookCoverImage = (recipe: Recipe) => recipe.imageSource === 'local-generated';
-const RecipeImageFallback: React.FC<{ category: Recipe['category']; label?: string; compact?: boolean }> = ({ category, label = 'Image unavailable', compact = false }) => (
-    <div className="absolute inset-0 overflow-hidden bg-[#2D4635]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(244,164,96,0.35),transparent_32%),radial-gradient(circle_at_75%_80%,rgba(16,185,129,0.22),transparent_36%)]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/95 via-[#2D4635]/78 to-[#A0522D]/82" />
-        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(135deg,#fff_0_1px,transparent_1px_18px)]" aria-hidden="true" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-            <span className={`${compact ? 'text-3xl' : 'text-5xl md:text-6xl'} mb-3 drop-shadow-lg`} aria-hidden="true">
-                {CATEGORY_META[category]?.icon || CATEGORY_META.Generic.icon}
-            </span>
-            <span className="font-serif italic text-sm md:text-base text-white/85">{category}</span>
-            {!compact && (
-                <span className="mt-4 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white/80 backdrop-blur-sm">
-                    {label}
-                </span>
-            )}
-        </div>
-    </div>
-);
-
 const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
-    const [broken, setBroken] = useState(false);
-    const [loaded, setLoaded] = useState(false);
     const { toast } = useUI();
-    const hasValidImage = isValidImageUrl(recipe.image) && !broken;
-    const isCover = isCookbookCoverImage(recipe);
-    const imageClassName = isCover
-        ? `absolute inset-0 h-full w-full object-contain p-2.5 transition-opacity duration-500 sm:p-3 ${loaded ? 'opacity-100' : 'opacity-0'}`
-        : `absolute inset-0 h-full w-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? 'opacity-100' : 'opacity-0'}`;
-
-    const handleImageError = () => {
-        setBroken(true);
-        if (shouldToastImageError(recipe.id)) {
-            toast("Some recipe images couldn't load. Check your connection and refresh.", 'info');
-        }
-    };
-
-    if (hasValidImage) {
-        return (
-            <>
-                <div className={isCover ? 'absolute inset-0 bg-[#203629]' : 'absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300'} />
-                {!loaded && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 animate-pulse" />
-                )}
-                {isCover && (
-                    <div className="pointer-events-none absolute inset-2 rounded-[1.35rem] ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]" aria-hidden="true" />
-                )}
-                <img
-                    src={recipe.image}
-                    width={800}
-                    height={600}
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
-                    className={imageClassName}
-                    loading="lazy"
-                    decoding="async"
-                    alt={recipe.title}
-                    onLoad={() => setLoaded(true)}
-                    onError={handleImageError}
-                />
-            </>
-        );
-    }
-
     return (
-        <RecipeImageFallback category={recipe.category} label="Image unavailable" />
+        <RecipeImage
+            recipe={recipe}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
+            imgClassName={isCookbookCoverImage(recipe) ? '' : 'group-hover:scale-110'}
+            onError={() => {
+                if (shouldToastImageError(recipe.id)) {
+                    toast("Some recipe images couldn't load. Check your connection and refresh.", 'info');
+                }
+            }}
+        />
     );
 };
 
 const HeroRecipeImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const [broken, setBroken] = useState(false);
-    if (!isValidImageUrl(recipe.image) || broken) {
+    if (!isValidRecipeImageUrl(recipe.image) || broken) {
         return <RecipeImageFallback category={recipe.category} compact label="Hero image unavailable" />;
     }
 
@@ -777,13 +725,16 @@ const App: React.FC = () => {
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
+    const [prefsHydrationVersion, setPrefsHydrationVersion] = useState(0);
 
-    // Cloud-sync favorites + ratings under the user's identity slug. On login
-    // we merge remote into local (favorites union; remote-wins ratings) and
-    // refresh React state. Subsequent local changes debounce-write up to
-    // Firestore. Silently no-ops for guests or when cloud is unavailable.
+    // Cloud-sync preferences under the user's identity slug. On login we merge
+    // remote into local, refresh React state, and debounce-write later changes.
+    // Silently no-ops for guests or when cloud is unavailable.
     useUserPrefsSync(currentUser?.name, {
-        onHydrated: () => setFavoriteIds(getFavoriteIds()),
+        onHydrated: () => {
+            setFavoriteIds(getFavoriteIds());
+            setPrefsHydrationVersion((version) => version + 1);
+        },
     });
 
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
@@ -1054,14 +1005,20 @@ const App: React.FC = () => {
     const contributorOptions = useMemo(() => getContributorOptions(recipes), [recipes]);
 
     const filteredRecipes = useMemo(() => {
+        const q = search.trim();
         return recipes.filter(r => {
-            const q = search.toLowerCase();
-            const matchS = !q ||
-                r.title.toLowerCase().includes(q) ||
-                r.ingredients.some(ing => ing.toLowerCase().includes(q)) ||
-                r.instructions.some(step => step.toLowerCase().includes(q)) ||
-                (r.notes?.toLowerCase().includes(q) ?? false) ||
-                r.contributor.toLowerCase().includes(q);
+            // Fuzzy match (typo + word-order tolerant) across the recipe's
+            // searchable text: title, ingredients, instructions, notes, author.
+            const matchS = !q || fuzzyMatch(
+                [
+                    r.title,
+                    r.ingredients.join(' '),
+                    r.instructions.join(' '),
+                    r.notes ?? '',
+                    r.contributor,
+                ].join(' \n '),
+                q,
+            );
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || normalizeContributorName(r.contributor) === contributor;
             const matchT = !selectedTag || (r.tags?.includes(selectedTag) ?? false);
@@ -1239,7 +1196,7 @@ const App: React.FC = () => {
         const trustStrip = lc?.trustStrip ?? [];
         const loginShowcaseRecipe = (() => {
             const list = normalizeRecipes(defaultRecipes as Recipe[]);
-            return list.find((r) => r.image && isValidImageUrl(r.image)) ?? list[0] ?? null;
+            return list.find((r) => r.image && isValidRecipeImageUrl(r.image)) ?? list[0] ?? null;
         })();
         return (
             <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6 lg:p-10">
@@ -1281,7 +1238,7 @@ const App: React.FC = () => {
                                 <div className="mt-10 rounded-[2rem] border border-[#A0522D]/25 bg-white/55 p-5 dark:bg-stone-900/55" aria-label="Sample recipe from the archive">
                                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#7A3F22] dark:text-orange-200 mb-4">Peek inside</p>
                                     <div className="flex gap-4 items-center">
-                                        {loginShowcaseRecipe.image && isValidImageUrl(loginShowcaseRecipe.image) ? (
+                                        {loginShowcaseRecipe.image && isValidRecipeImageUrl(loginShowcaseRecipe.image) ? (
                                             <img
                                                 src={loginShowcaseRecipe.image}
                                                 alt=""
@@ -1812,7 +1769,7 @@ const App: React.FC = () => {
                     {/* Editorial masthead — compact on mobile, full editorial on desktop */}
                     <section className="relative overflow-hidden rounded-[2rem] bg-[#2D4635] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:rounded-[2.75rem]">
                         {(() => {
-                            const featured = sortedRecipes.find(r => r.image && isValidImageUrl(r.image));
+                            const featured = sortedRecipes.find(r => r.image && isValidRecipeImageUrl(r.image));
                             return featured ? (
                                 <div className="hidden md:block absolute inset-0 opacity-90">
                                     <HeroRecipeImage recipe={featured} />
@@ -2413,6 +2370,7 @@ const App: React.FC = () => {
                             onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
                             onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                             onOpenGroceryList={() => { handleSetTab('Grocery List'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            syncVersion={prefsHydrationVersion}
                         />
                     </section>
                 </Suspense>
