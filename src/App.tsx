@@ -704,9 +704,10 @@ const App: React.FC = () => {
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
 
-    const handleSetTab = (newTab: string) => {
+    const handleSetTab = useCallback((newTab: string) => {
         setTab(newTab);
-    };
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
 
     const handleCookModeClose = useCallback(() => {
         setCookModeRecipe(null);
@@ -830,22 +831,22 @@ const App: React.FC = () => {
             const parsed = parseRecipeHash(window.location.hash);
             if (!parsed) return;
             const recipe = recipes.find((r) => r.id === parsed.id);
-            if (recipe) {
-                recordRecipeView(recipe.id, recipe.title);
-                setTab('Recipes');
-                if (parsed.openCook) {
-                    setSelectedRecipe(null);
-                    setCookModeRecipe(recipe);
-                    trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'deep_link' });
-                } else {
-                    setSelectedRecipe(recipe);
-                }
+            if (!recipe) return;
+            recordRecipeView(recipe.id, recipe.title);
+            setTab('Recipes');
+            if (parsed.openCook) {
+                setSelectedRecipe(null);
+                setCookModeRecipe(recipe);
+                trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'deep_link' });
+            } else {
+                setSelectedRecipe(recipe);
             }
         };
+        if (recipes.length === 0) return;
         applyHash();
         window.addEventListener('hashchange', applyHash);
         return () => window.removeEventListener('hashchange', applyHash);
-    }, [recipes]);
+    }, [recipes, currentUser]);
 
     useEffect(() => {
         setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
@@ -863,7 +864,6 @@ const App: React.FC = () => {
             const detail = (e as CustomEvent<string>).detail;
             if (typeof detail === 'string' && detail.length > 0) {
                 handleSetTab(detail);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
         window.addEventListener('schafer:navigate', handler);
@@ -899,6 +899,8 @@ const App: React.FC = () => {
             };
             localStorage.setItem('schafer_user', JSON.stringify(u));
             setCurrentUser(u);
+            setTab('Home');
+            window.scrollTo({ top: 0, behavior: 'auto' });
             if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
                 let defer = false;
                 try {
@@ -992,6 +994,16 @@ const App: React.FC = () => {
     }, [contributorsForDisplay, loginName]);
     const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
     const isBrowsingFiltered = Boolean(search.trim()) || activeFilterCount > 0;
+    const wasBrowsingFilteredRef = useRef(false);
+
+    useEffect(() => {
+        if (tab === 'Recipes' && isBrowsingFiltered && !wasBrowsingFilteredRef.current) {
+            requestAnimationFrame(() => {
+                document.getElementById('recipe-card-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+        wasBrowsingFilteredRef.current = isBrowsingFiltered;
+    }, [tab, isBrowsingFiltered]);
 
     const sortedRecipes = useMemo(() => {
         const list = [...filteredRecipes];
@@ -1718,8 +1730,8 @@ const App: React.FC = () => {
                         recentlyViewedRecipes={recentlyViewedRecipes}
                         contributors={contributorsForDisplay}
                         onSelectRecipe={(r) => handleSelectRecipe(r)}
-                        onSetTab={(t) => { handleSetTab(t); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        onSelectCategory={(c) => { setCategory(c); }}
+                        onSetTab={handleSetTab}
+                        onSelectCategory={(c) => { setCategory(c); handleSetTab('Recipes'); }}
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         triviaQuestionCount={trivia.length}
@@ -2029,7 +2041,7 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6" data-testid="recipe-card-grid">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
@@ -2277,9 +2289,9 @@ const App: React.FC = () => {
                 <Suspense fallback={<TabFallback />}>
                     <section id="main-content-grocery" aria-label="Grocery list" tabIndex={-1}>
                         <GroceryListView
-                            onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            onOpenCollections={() => { handleSetTab('Collections'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            onOpenMealPlan={() => { handleSetTab('Meal Plan'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onBrowseRecipes={() => handleSetTab('Recipes')}
+                            onOpenCollections={() => handleSetTab('Collections')}
+                            onOpenMealPlan={() => handleSetTab('Meal Plan')}
                             highlightRecipeTitle={groceryHighlightTitle}
                             onHighlightConsumed={clearGroceryHighlight}
                         />
@@ -2306,8 +2318,8 @@ const App: React.FC = () => {
                         <MealPlanView
                             recipes={recipes}
                             onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
-                            onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            onOpenGroceryList={() => { handleSetTab('Grocery List'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onBrowseRecipes={() => handleSetTab('Recipes')}
+                            onOpenGroceryList={() => handleSetTab('Grocery List')}
                             syncVersion={prefsHydrationVersion}
                         />
                     </section>

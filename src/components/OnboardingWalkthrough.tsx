@@ -4,10 +4,16 @@ import { hapticLight } from '../utils/haptics';
 
 const STEPS = [
   {
+    icon: '🏠',
+    title: 'Your home dashboard',
+    description:
+      'Home picks up where you left off — favorites, recently viewed, and seasonal ideas. Use Recipes when you want to search the full archive.',
+  },
+  {
     icon: '📖',
     title: 'Find recipes',
     description:
-      'Search and filter the family collection from the Recipes tab. Tap any card for ingredients, notes, and step-by-step cooking when you are ready.',
+      'Search and filter from Recipes, or jump to A–Z. Tap any card for ingredients, notes, and step-by-step cooking when you are ready.',
   },
   {
     icon: '🍳',
@@ -16,16 +22,16 @@ const STEPS = [
       'Open a recipe and tap “Start cooking” for a focused, step-by-step flow. Your screen can stay awake so you never lose your place.',
   },
   {
-    icon: '🛒',
-    title: 'Grocery list',
+    icon: '📅',
+    title: 'Plan & shop',
     description:
-      'Add all ingredients from a recipe to your list in one tap, then check them off at the store under Groceries.',
+      'Meal Plan under Groceries lines up your week. Add ingredients to your grocery list in one tap from any recipe, then check them off at the store.',
   },
   {
     icon: '👨‍👩‍👧',
     title: 'Family hub',
     description:
-      'Gallery, trivia, and family stories live under Family on the bottom bar — shortcuts to memories beyond the kitchen.',
+      'Gallery, trivia, family story, and contributors live under Family — shortcuts to memories beyond the kitchen.',
   },
 ];
 

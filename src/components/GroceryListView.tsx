@@ -148,53 +148,22 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                     {hasItems
                         ? `${items.length} item${items.length === 1 ? '' : 's'} · ${checkedCount} checked`
-                        : 'Pull ingredients straight from a recipe, or jot anything down below.'}
+                        : 'Add ingredients from a recipe, plan your week, or jot anything down below.'}
                 </p>
-                {(onBrowseRecipes || onOpenCollections || onOpenMealPlan) && (
-                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-                        {onBrowseRecipes && (
-                            <button
-                                type="button"
-                                onClick={onBrowseRecipes}
-                                className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-sm active:scale-[0.98]"
-                            >
-                                ＋ Recipes
-                            </button>
-                        )}
-                        {onOpenMealPlan && (
-                            <button
-                                type="button"
-                                onClick={onOpenMealPlan}
-                                className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                            >
-                                Meal Plan
-                            </button>
-                        )}
-                        {onOpenCollections && (
-                            <button
-                                type="button"
-                                onClick={onOpenCollections}
-                                className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                            >
-                                Collections
-                            </button>
-                        )}
-                    </div>
-                )}
                 {hasItems && (
                     <div className="flex flex-wrap gap-3 pt-1">
                         <button
                             type="button"
                             onClick={handleClearChecked}
                             disabled={checkedCount === 0}
-                            className="min-h-11 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             Clear checked{checkedCount > 0 ? ` (${checkedCount})` : ''}
                         </button>
                         <button
                             type="button"
                             onClick={handleClearAll}
-                            className="min-h-11 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                         >
                             Clear all
                         </button>
@@ -244,13 +213,22 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             <button
                                 type="button"
                                 onClick={onBrowseRecipes}
-                                className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
+                                className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
                             >
                                 Browse recipes
                             </button>
                         )}
+                        {onOpenMealPlan && (
+                            <button
+                                type="button"
+                                onClick={onOpenMealPlan}
+                                className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                            >
+                                Plan your week
+                            </button>
+                        )}
                         <p className="w-full text-xs text-stone-400 dark:text-stone-500">
-                            Open any recipe, then use “Add to grocery list” from the ingredients section.
+                            Open any recipe and use “Add to grocery list” from the ingredients section, or build a list from Meal Plan.
                         </p>
                     </div>
                 </div>
