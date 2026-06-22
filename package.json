@@ -49,7 +49,7 @@
     "twilio": "^5.12.0"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.2",
+    "@eslint/compat": "^2.1.0",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@firebase/rules-unit-testing": "^5.0.0",
