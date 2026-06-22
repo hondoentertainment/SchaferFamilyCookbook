@@ -21,6 +21,7 @@ import { addActivity } from '../utils/activityFeed';
 import { addItems as addGroceryItems, getItems as getGroceryItems } from '../utils/groceryList';
 import { trackEvent } from '../services/analytics';
 import { CATEGORY_META, getTagLabel } from '../constants/taxonomy';
+import { getRememberedServings, setRememberedServings } from '../utils/recipeServingsMemory';
 
 interface RecipeModalProps {
     recipe: Recipe;
@@ -335,7 +336,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     useEffect(() => {
         if (!recipe) return;
         const base = typeof recipe.servings === 'number' ? recipe.servings : 4;
-        setScaleTo(base);
+        setScaleTo(getRememberedServings(recipe.id, base));
         setImageBroken(false);
         setImageLoading(true);
         setLightboxImageBroken(false);
@@ -344,6 +345,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         setDetailMode('read');
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
+
+    useEffect(() => {
+        if (!recipe?.id || scaleTo <= 0) return;
+        setRememberedServings(recipe.id, scaleTo);
+    }, [recipe?.id, scaleTo]);
 
     useEffect(() => {
         if (lightboxOpen) setLightboxImageBroken(false);

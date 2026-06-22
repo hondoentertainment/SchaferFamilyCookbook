@@ -5,6 +5,7 @@ import {
     addItems,
     clearAll,
     clearChecked,
+    formatGroceryListExport,
     getItems,
     removeItem,
     subscribeGroceryList,
@@ -132,6 +133,33 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
         toast('Grocery list cleared', 'success');
     };
 
+    const handleCopyList = async () => {
+        const text = formatGroceryListExport(items);
+        if (!text) return;
+        hapticLight();
+        try {
+            await navigator.clipboard.writeText(text);
+            toast('List copied to clipboard', 'success');
+        } catch {
+            toast('Could not copy list', 'error');
+        }
+    };
+
+    const handleShareList = async () => {
+        const text = formatGroceryListExport(items);
+        if (!text) return;
+        hapticLight();
+        if (typeof navigator.share === 'function') {
+            try {
+                await navigator.share({ title: 'Grocery list', text });
+                return;
+            } catch {
+                // user cancelled or share unavailable
+            }
+        }
+        await handleCopyList();
+    };
+
     return (
         <section
             className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-12 space-y-6 md:space-y-8"
@@ -152,6 +180,20 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                 </p>
                 {hasItems && (
                     <div className="flex flex-wrap gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={handleCopyList}
+                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                        >
+                            Copy list
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleShareList}
+                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                        >
+                            Share
+                        </button>
                         <button
                             type="button"
                             onClick={handleClearChecked}

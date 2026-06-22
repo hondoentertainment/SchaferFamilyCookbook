@@ -9,6 +9,11 @@ export const HelpView: React.FC = () => {
         window.dispatchEvent(new CustomEvent('schafer:navigate', { detail: 'Privacy' }));
     };
 
+    const replayTour = () => {
+        hapticLight();
+        window.dispatchEvent(new CustomEvent('schafer:replay-onboarding'));
+    };
+
     return (
         <main
             id="main-content-help"
@@ -47,13 +52,32 @@ export const HelpView: React.FC = () => {
                 </h2>
                 <ul className="list-disc pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
                     <li>
+                        <strong className="font-bold">Home</strong> picks up favorites, tonight&apos;s meal plan, and seasonal ideas. Use <strong className="font-bold">Recipes</strong> to search the full archive.
+                    </li>
+                    <li>
+                        The pill bar under the header switches sub-sections — e.g. Groceries → Meal Plan or Collections without losing your place.
+                    </li>
+                    <li>
                         Use the <strong className="font-bold">Read / Cook / Share</strong> modes at the top of a recipe to focus on story, cooking, or sending a link.
                     </li>
                     <li>
-                        <strong className="font-bold">Groceries</strong> is your list and meal planning tab — separate from the recipe library.
+                        <strong className="font-bold">Cook mode</strong> keeps your screen awake and works offline for steps and ingredients. Save the recipe image before you lose signal if you want the photo too.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Collections</strong> under Groceries let you group recipes — start from a template or build your own shelf.
+                    </li>
+                    <li>
+                        Copy or share your grocery list from the list header when you head to the store.
                     </li>
                     <li>Offline? Your edits may queue until you reconnect; check the banner at the top when something is pending.</li>
                 </ul>
+                <button
+                    type="button"
+                    onClick={replayTour}
+                    className="inline-flex min-h-11 items-center rounded-full border border-[#E8DCCB] bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 transition-colors"
+                >
+                    Replay the welcome tour
+                </button>
             </section>
 
             <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm dark:border-[var(--border-color)] dark:bg-[var(--card-bg)]">

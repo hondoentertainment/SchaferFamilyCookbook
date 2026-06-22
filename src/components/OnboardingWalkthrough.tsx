@@ -41,6 +41,11 @@ interface OnboardingWalkthroughProps {
 
 export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ onComplete }) => {
   const [step, setStep] = useState(0);
+  const isLastStep = step === STEPS.length - 1;
+  const isStandalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true);
 
   const handleNext = () => {
     hapticLight();
@@ -95,6 +100,12 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
           <p className="text-stone-600 dark:text-stone-400 font-serif italic leading-relaxed">
             {current.description}
           </p>
+          {isLastStep && !isStandalone && (
+            <p className="rounded-2xl border border-[#E8DCCB] bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-400">
+              <span aria-hidden>📲 </span>
+              Tip: Add this cookbook to your home screen for quick access — use your browser&apos;s <strong className="font-bold">Share → Add to Home Screen</strong> (or install prompt).
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:items-center">

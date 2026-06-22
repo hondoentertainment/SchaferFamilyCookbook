@@ -8,6 +8,12 @@ import {
 import { hapticLight } from '../utils/haptics';
 import type { Recipe, RecipeCollection } from '../types';
 
+const STARTER_TEMPLATES = [
+  { name: 'Weeknight rotation', description: 'Fast dinners for busy evenings', icon: '🍳' },
+  { name: 'Holiday table', description: 'Seasonal favorites for gatherings', icon: '🎄' },
+  { name: "Kids' favorites", description: 'Crowd-pleasers the young ones love', icon: '🧁' },
+] as const;
+
 interface CollectionsViewProps {
   recipes: Recipe[];
   currentUserName: string;
@@ -44,6 +50,12 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
   const handleRemoveRecipe = (collectionId: string, recipeId: string) => {
     hapticLight();
     removeFromCollection(collectionId, recipeId);
+    setCollections(getAllCollections());
+  };
+
+  const handleCreateFromTemplate = (name: string, description: string, icon: string) => {
+    hapticLight();
+    createCollection(name, currentUserName, description, icon);
     setCollections(getAllCollections());
   };
 
@@ -90,17 +102,31 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
       )}
 
       {collections.length === 0 && !showCreate ? (
-        <div className="text-center py-8 space-y-3">
+        <div className="text-center py-8 space-y-5">
           <span className="text-4xl">📚</span>
-          <p className="text-sm text-stone-500 font-serif italic">
-            Organize recipes into custom collections like "Holiday Baking" or "Weeknight Dinners"
+          <p className="text-sm text-stone-500 font-serif italic max-w-md mx-auto">
+            Organize recipes into custom collections — start from a template or name your own shelf.
           </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
+            {STARTER_TEMPLATES.map((template) => (
+              <button
+                key={template.name}
+                type="button"
+                onClick={() => handleCreateFromTemplate(template.name, template.description, template.icon)}
+                className="rounded-2xl border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--card-bg)] p-4 text-left hover:border-[#2D4635]/30 hover:shadow-sm transition-all"
+              >
+                <span className="text-2xl" aria-hidden>{template.icon}</span>
+                <p className="mt-2 text-sm font-bold text-[#2D4635] dark:text-emerald-100">{template.name}</p>
+                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{template.description}</p>
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             onClick={() => setShowCreate(true)}
             className="px-5 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest"
           >
-            Create Your First Collection
+            Create your own
           </button>
         </div>
       ) : (

@@ -178,3 +178,33 @@ export function subscribeGroceryList(listener: Listener): () => void {
         window.removeEventListener('storage', storageHandler);
     };
 }
+
+/** Plain-text export grouped by recipe for copy/share at the store. */
+export function formatGroceryListExport(items: GroceryItem[]): string {
+    if (items.length === 0) return '';
+
+    const order: string[] = [];
+    const map = new Map<string, GroceryItem[]>();
+    for (const item of items) {
+        const key = item.recipeTitle?.trim() ? item.recipeTitle.trim() : 'Other';
+        if (!map.has(key)) {
+            map.set(key, []);
+            order.push(key);
+        }
+        map.get(key)!.push(item);
+    }
+    const ordered = order.filter((k) => k !== 'Other');
+    if (map.has('Other')) ordered.push('Other');
+
+    const lines: string[] = ['Schafer Family Cookbook — Grocery List', ''];
+    for (const title of ordered) {
+        const group = map.get(title) ?? [];
+        lines.push(title);
+        for (const item of group) {
+            const mark = item.checked ? '☑' : '☐';
+            lines.push(`  ${mark} ${item.text}`);
+        }
+        lines.push('');
+    }
+    return lines.join('\n').trimEnd();
+}

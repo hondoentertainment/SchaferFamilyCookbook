@@ -870,6 +870,12 @@ const App: React.FC = () => {
         return () => window.removeEventListener('schafer:navigate', handler);
     }, []);
 
+    useEffect(() => {
+        const handler = () => setShowOnboarding(true);
+        window.addEventListener('schafer:replay-onboarding', handler);
+        return () => window.removeEventListener('schafer:replay-onboarding', handler);
+    }, []);
+
     // Listen for foreground FCM messages and show a toast when a new recipe
     // notification arrives.  The listener is set up once on mount and cleaned
     // up automatically when the component unmounts.
@@ -919,11 +925,16 @@ const App: React.FC = () => {
         const trimmed = loginName.trim();
         if (!trimmed || isLoggingIn) return;
 
-        const ok = await confirm(`You'll use the cookbook as "${trimmed}". Sound right?`, {
-            confirmLabel: 'Yes, open the cookbook',
-            cancelLabel: 'Edit name',
-        });
-        if (!ok) return;
+        const isKnownContributor = contributors.some(
+            (c) => c.name.trim().toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (!isKnownContributor) {
+            const ok = await confirm(`You'll use the cookbook as "${trimmed}". Sound right?`, {
+                confirmLabel: 'Yes, open the cookbook',
+                cancelLabel: 'Edit name',
+            });
+            if (!ok) return;
+        }
 
         setIsLoggingIn(true);
         finalizeLogin(trimmed);
@@ -1115,6 +1126,21 @@ const App: React.FC = () => {
         setSelectedRecipe(recipe);
         trackEvent('recipe_viewed', { recipeId: recipe.id, title: recipe.title });
         window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
+    };
+
+    const handleStartCookFromHome = (recipe: Recipe) => {
+        recordRecipeView(recipe.id, recipe.title);
+        setSelectedRecipe(null);
+        setCookModeRecipe(recipe);
+        trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'home' });
+    };
+
+    const handleSelectContributorFromHome = (name: string) => {
+        setContributor(normalizeContributorName(name));
+        setCategory('All');
+        setSearch('');
+        setSelectedTag('');
+        handleSetTab('Recipes');
     };
 
     const handleRecipeClose = () => {
@@ -1730,11 +1756,15 @@ const App: React.FC = () => {
                         recentlyViewedRecipes={recentlyViewedRecipes}
                         contributors={contributorsForDisplay}
                         onSelectRecipe={(r) => handleSelectRecipe(r)}
+                        onStartCook={handleStartCookFromHome}
                         onSetTab={handleSetTab}
                         onSelectCategory={(c) => { setCategory(c); handleSetTab('Recipes'); }}
+                        onSelectContributor={handleSelectContributorFromHome}
+                        onOpenMealPlan={() => handleSetTab('Meal Plan')}
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         triviaQuestionCount={trivia.length}
+                        mealPlanSyncVersion={prefsHydrationVersion}
                     />
                 </Suspense>
             )}
@@ -1950,6 +1980,56 @@ const App: React.FC = () => {
                                 <button type="button" onClick={clearRecipeFilters} className="shrink-0 text-[#A0522D] hover:underline font-semibold">Reset filters</button>
                             )}
                         </div>
+
+                        {isBrowsingFiltered && (
+                            <div className="flex flex-wrap gap-2 px-1 md:hidden" aria-label="Active filters">
+                                {search.trim() && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearch('')}
+                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        “{search.trim()}” <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {category !== 'All' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setCategory('All')}
+                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {category} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {contributor !== 'All' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setContributor('All')}
+                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {contributor} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {selectedTag && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedTag('')}
+                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {getTagLabel(selectedTag)} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {sortBy !== 'title-asc' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSortBy('title-asc')}
+                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {sortBy === 'title-desc' ? 'Z–A' : sortBy === 'category' ? 'Category' : sortBy === 'contributor' ? 'Contributor' : 'Recent'} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         <div
                             id="mobile-recipe-filters"

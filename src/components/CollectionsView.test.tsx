@@ -66,12 +66,13 @@ describe('CollectionsView', () => {
     // -----------------------------------------------------------------------
     // Empty state
     // -----------------------------------------------------------------------
-    it('renders empty state with "Create Your First Collection" button when no collections exist', () => {
+    it('renders empty state with starter templates and create-your-own button when no collections exist', () => {
         renderWithProviders(<CollectionsView {...defaultProps} />);
 
         expect(
-            screen.getByRole('button', { name: /create your first collection/i }),
+            screen.getByRole('button', { name: /create your own/i }),
         ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /weeknight rotation/i })).toBeInTheDocument();
         expect(screen.getByText(/organize recipes into custom collections/i)).toBeInTheDocument();
     });
 

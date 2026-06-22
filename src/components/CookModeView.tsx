@@ -9,6 +9,7 @@ import { addActivity } from '../utils/activityFeed';
 import { trackEvent } from '../services/analytics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
 import { STORAGE_KEYS } from '../constants/storage';
+import { getRememberedServings, setRememberedServings } from '../utils/recipeServingsMemory';
 
 const SWIPE_HINT_KEY = 'cookMode.swipeHintSeen';
 const NOTIFY_NUDGE_DISMISSED_KEY = 'cook-notify-nudge-dismissed-v1';
@@ -76,9 +77,10 @@ async function cacheRecipeImage(imageUrl: string): Promise<'saved' | 'already' |
 export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) => {
     const { toast } = useUI();
     const [stepIndex, setStepIndex] = useState(0);
-    const [scaleTo, setScaleTo] = useState(typeof recipe.servings === 'number' ? recipe.servings : 4);
+    const baseServingsInit = typeof recipe.servings === 'number' ? recipe.servings : 4;
+    const [scaleTo, setScaleTo] = useState(() => getRememberedServings(recipe.id, baseServingsInit));
     const [imageCached, setImageCached] = useState<boolean | null>(null); // null = unknown
-    const [isOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
+    const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
     const [isComplete, setIsComplete] = useState(false);
     const [showIngredientsDrawer, setShowIngredientsDrawer] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
@@ -149,6 +151,28 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
     });
 
     useFocusTrap(true, containerRef);
+
+    useEffect(() => {
+        const onOnline = () => setIsOffline(false);
+        const onOffline = () => setIsOffline(true);
+        window.addEventListener('online', onOnline);
+        window.addEventListener('offline', onOffline);
+        return () => {
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
+        };
+    }, []);
+
+    useEffect(() => {
+        const base = typeof recipe.servings === 'number' ? recipe.servings : 4;
+        setScaleTo(getRememberedServings(recipe.id, base));
+        setStepIndex(0);
+    }, [recipe.id, recipe.servings]);
+
+    useEffect(() => {
+        if (!recipe.id || scaleTo <= 0) return;
+        setRememberedServings(recipe.id, scaleTo);
+    }, [recipe.id, scaleTo]);
 
     useEffect(() => {
         if (containerRef.current) containerRef.current.focus();
@@ -586,6 +610,16 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
                     >
                         Got it
                     </button>
+                </div>
+            )}
+
+            {isOffline && (
+                <div
+                    role="status"
+                    className="shrink-0 mx-4 mt-2 flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-400/25 px-4 py-2.5 text-sm text-emerald-100"
+                >
+                    <span aria-hidden>✓</span>
+                    <span>You&apos;re offline — steps and ingredients still work. Save the recipe image if you want the photo too.</span>
                 </div>
             )}
 
