@@ -1,34 +1,16 @@
 import React, { useState } from 'react';
 import { UserProfile, DBStats } from '../types';
 import { siteConfig } from '../config/site';
+import { PRIMARY_NAV_TABS, isNavGroupActive } from '../config/navConfig';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
 import { getStoredTheme, setStoredTheme } from '../utils/theme';
 import type { ThemeMode } from '../types';
+import { ThemeIcon } from './ThemeIcon';
 
 const FALLBACK_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
 )}`;
-
-type NavTab = { id: string; title: string; label?: string };
-
-const PRIMARY_NAV_TABS: Array<{ id: string; title: string; label: string }> = [
-    { id: 'Home', title: 'Your personalized cookbook home', label: 'Home' },
-    { id: 'Recipes', title: 'Search recipes and browse collections', label: 'Recipes' },
-    { id: 'Index', title: 'Alphabetical recipe index (A–Z)', label: 'A–Z' },
-    { id: 'Gallery', title: 'Family photos, story, contributors, and trivia', label: 'Family' },
-    { id: 'Grocery List', title: 'Grocery list and meal planning from saved recipes', label: 'Groceries' },
-    { id: 'Profile', title: 'Profile, preferences, admin tools, privacy, and help', label: 'Me' },
-];
-
-const NAV_GROUPS: Record<string, string[]> = {
-    Home: ['Home'],
-    Recipes: ['Recipes', 'Collections'],
-    Index: ['Index'],
-    'Grocery List': ['Grocery List', 'Meal Plan'],
-    Gallery: ['Gallery', 'Trivia', 'Family Story', 'Contributors'],
-    Profile: ['Profile', 'Privacy', 'Help'],
-};
 
 interface HeaderProps {
     activeTab: string;
@@ -39,14 +21,13 @@ interface HeaderProps {
 }
 
 const THEME_CYCLE: ThemeMode[] = ['system', 'light', 'dark'];
-const THEME_ICONS: Record<ThemeMode, string> = { system: '💻', light: '☀️', dark: '🌙' };
 const THEME_LABELS: Record<ThemeMode, string> = { system: 'System theme', light: 'Light theme', dark: 'Dark theme' };
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
     const [logoFailed, setLogoFailed] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
 
-    const brandLogoSrc = logoFailed ? FALLBACK_LOGO_SVG : FALLBACK_LOGO_SVG;
+    const brandLogoSrc = logoFailed ? FALLBACK_LOGO_SVG : siteConfig.logoUrl;
     const brandLabel = siteConfig.siteName.replace(/\s*Family Cookbook\s*$/i, ' Cookbook');
 
     const handleThemeToggle = () => {
@@ -55,9 +36,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
         setStoredTheme(next);
         setThemeMode(next);
     };
-
-    const navTabs = PRIMARY_NAV_TABS;
-    const isTabActive = (id: string) => NAV_GROUPS[id]?.includes(activeTab) ?? activeTab === id;
 
     return (
         <header className="sticky top-0 z-50 border-b border-[#E8DCCB]/80 bg-[#FFF8EC]/90 pt-[env(safe-area-inset-top)] shadow-[0_8px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl dark:border-stone-800 dark:bg-[var(--header-bg)]">
@@ -84,41 +62,36 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         </span>
                     </button>
 
-                    {/* Desktop: full horizontal nav */}
                     <nav className="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }} aria-label="Main navigation">
-                        {navTabs.map((tab) => {
-                            const id = tab.id;
-                            const title = tab.title;
-                            return (
-                                <button
-                                    key={id}
-                                    type="button"
-                                    id={`tab-${id}`}
-                                    onClick={() => {
+                        {PRIMARY_NAV_TABS.map((tab) => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                id={`tab-${tab.id}`}
+                                onClick={() => {
+                                    hapticLight();
+                                    setTab(tab.id);
+                                    document.getElementById(`tab-${tab.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
                                         hapticLight();
-                                        setTab(id);
-                                        document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            hapticLight();
-                                            setTab(id);
-                                        }
-                                    }}
-                                    title={title}
-                                    data-testid={id === 'Profile' ? 'nav-profile' : undefined}
-                                    aria-current={isTabActive(id) ? 'page' : undefined}
-                                    className={`min-h-[2.75rem] whitespace-nowrap rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all motion-reduce:transition-none ${
-                                        isTabActive(id)
-                                            ? 'bg-[#2D4635] text-white shadow-[0_10px_24px_rgba(45,70,53,0.22)]'
-                                            : 'text-stone-700 hover:bg-white/75 hover:text-[#2D4635] dark:text-stone-300 dark:hover:bg-stone-800'
-                                    }`}
-                                >
-                                    {(tab as NavTab).label || id}
-                                </button>
-                            );
-                        })}
+                                        setTab(tab.id);
+                                    }
+                                }}
+                                title={tab.title}
+                                data-testid={tab.id === 'Profile' ? 'nav-profile' : undefined}
+                                aria-current={isNavGroupActive(activeTab, tab.id) ? 'page' : undefined}
+                                className={`min-h-[2.75rem] whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all motion-reduce:transition-none ${
+                                    isNavGroupActive(activeTab, tab.id)
+                                        ? 'bg-[#2D4635] text-white shadow-[0_10px_24px_rgba(45,70,53,0.22)]'
+                                        : 'text-stone-700 hover:bg-white/75 hover:text-[#2D4635] dark:text-stone-300 dark:hover:bg-stone-800'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
                     </nav>
                 </div>
 
@@ -130,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                         title={THEME_LABELS[themeMode]}
                         aria-label={`Toggle theme (currently ${THEME_LABELS[themeMode]})`}
                     >
-                        <span className="text-lg leading-none">{THEME_ICONS[themeMode]}</span>
+                        <ThemeIcon mode={themeMode} />
                     </button>
                     {currentUser && (
                         <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
@@ -139,14 +112,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 aria-label={`${currentUser.name}, signed in`}
                             >
                                 <img src={currentUser.picture} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-stone-700 object-cover shadow-sm shrink-0" alt="" onError={avatarOnError} />
-                                <span className="hidden lg:inline text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                                <span className="hidden lg:inline text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                                     {currentUser.name}
                                 </span>
                             </div>
                             <button
                                 type="button"
                                 onClick={onLogout}
-                                className="flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-3 text-[10px] font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white/75 hover:text-[#2D4635] sm:px-4 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 motion-reduce:transition-none"
+                                className="flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-3 text-xs font-bold uppercase tracking-wider text-stone-700 transition-colors hover:bg-white/75 hover:text-[#2D4635] sm:px-4 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 motion-reduce:transition-none"
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >

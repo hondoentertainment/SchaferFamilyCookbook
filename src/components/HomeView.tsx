@@ -162,8 +162,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <section className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7 md:rounded-[2.75rem] md:p-10">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div className="max-w-3xl space-y-3">
-                        <p className="text-xs font-black uppercase tracking-[0.28em] text-[#7A3F22] dark:text-orange-200">
-                            {season.emoji} {season.label}
+                        <p className="text-xs font-semibold uppercase tracking-wider text-[#7A3F22] dark:text-orange-200">
+                            <span aria-hidden>{season.emoji}</span> {season.label}
                         </p>
                         <h1 className="font-serif text-4xl italic leading-[1.02] text-[#2D4635] dark:text-emerald-100 sm:text-5xl md:text-6xl">
                             {greeting}, <span className="text-[#A0522D]">{currentUser.name.split(' ')[0]}</span>.
@@ -175,15 +175,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
                             <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{recipes.length}</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Recipes</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Recipes</p>
                         </div>
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
                             <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{favoriteRecipes.length}</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Saved</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Saved</p>
                         </div>
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
                             <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{contributors.length}</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Cooks</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Cooks</p>
                         </div>
                     </div>
                 </div>
@@ -191,21 +191,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Recipes'); }}
-                        className="min-h-12 rounded-full bg-[#2D4635] px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[0_12px_26px_rgba(45,70,53,0.24)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] active:scale-[0.98]"
+                        className="min-h-12 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_26px_rgba(45,70,53,0.24)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] active:scale-[0.98]"
                     >
                         Browse all recipes
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Grocery List'); }}
-                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-xs font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                     >
                         Plan & shop
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Gallery'); }}
-                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-xs font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                     >
                         Family hub
                     </button>
@@ -218,7 +218,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                 >
                     <div className="space-y-1">
-                        <h2 id="home-trivia-teaser-heading" className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
+                        <h2 id="home-trivia-teaser-heading" className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                             Family Heritage Quiz
                         </h2>
                         <p className="font-serif text-lg italic text-[#2D4635] dark:text-emerald-100">
@@ -229,7 +229,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         type="button"
                         data-testid="home-open-trivia"
                         onClick={() => { hapticLight(); onSetTab('Trivia'); }}
-                        className="min-h-12 shrink-0 rounded-full bg-[#A0522D] px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#8B4513] active:scale-[0.98] transition-all"
+                        className="min-h-12 shrink-0 rounded-full bg-[#A0522D] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#8B4513] active:scale-[0.98] transition-all"
                     >
                         Play trivia
                     </button>
@@ -240,8 +240,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {recipeOfWeek && (
                 <section aria-labelledby="recipe-of-week-heading" className="space-y-4">
                     <div className="flex items-baseline justify-between">
-                        <h2 id="recipe-of-week-heading" className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
-                            ✦ Recipe of the Week
+                        <h2 id="recipe-of-week-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                            <span aria-hidden>✦ </span>Recipe of the Week
                         </h2>
                         <button
                             type="button"
@@ -304,8 +304,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {recentlyViewedRecipes.length > 0 && (
                 <section aria-labelledby="recent-heading" className="space-y-3">
                     <div className="flex items-baseline justify-between">
-                        <h2 id="recent-heading" className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
-                            👁 Recently viewed
+                        <h2 id="recent-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                            <span aria-hidden>👁 </span>Recently viewed
                         </h2>
                         <button
                             type="button"
@@ -333,8 +333,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {favoriteRecipes.length > 0 && (
                 <section aria-labelledby="favorites-heading" className="space-y-3">
                     <div className="flex items-baseline justify-between">
-                        <h2 id="favorites-heading" className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
-                            ❤ Your favorites
+                        <h2 id="favorites-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                            <span aria-hidden>❤ </span>Your favorites
                         </h2>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{favoriteRecipes.length} saved</span>
                     </div>
@@ -356,8 +356,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {seasonalRecipes.length > 0 && (
                 <section aria-labelledby="season-heading" className="space-y-3">
                     <div className="flex items-baseline justify-between flex-wrap gap-2">
-                        <h2 id="season-heading" className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
-                            {season.emoji} In season this month
+                        <h2 id="season-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                            <span aria-hidden>{season.emoji} </span>In season this month
                         </h2>
                         <button
                             type="button"
@@ -384,8 +384,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Family activity feed + active contributors */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 <div className="md:col-span-2 space-y-3">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
-                        🏡 Family kitchen, recently
+                    <h2 className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                        <span aria-hidden>🏡 </span>Family kitchen, recently
                     </h2>
                     {activityEvents.length > 0 ? (
                         <ul className="rounded-2xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 divide-y divide-stone-100 dark:divide-stone-800">
@@ -409,8 +409,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     )}
                 </div>
                 <div className="space-y-3">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500 dark:text-stone-400">
-                        👥 Most prolific cooks
+                    <h2 className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                        <span aria-hidden>👥 </span>Most prolific cooks
                     </h2>
                     <ul className="rounded-2xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 divide-y divide-stone-100 dark:divide-stone-800">
                         {activeContributors.map((c) => (
