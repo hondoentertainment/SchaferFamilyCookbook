@@ -40,11 +40,18 @@ A strategic roadmap for the next phases of development, informed by the current 
 ## Immediate Next Steps (1–2 weeks)
 
 ### 1. Product (next sprint)
-- [ ] **Deploy Firestore rules** — grocery sync requires updated `userPrefs` rules in production
+- [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` for production error monitoring
+- [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
 - [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
-- [ ] **Production monitoring** — Sentry DSN on Vercel; smoke prod after grocery sync rollout
 
-### 2. Done (recent — June 2026 batch 2)
+### 2. Done (recent — June 2026 batch 3)
+- [x] **CI critical audit** — `npm audit fix` (vitest/vite/ws); pipeline unblocked
+- [x] **Firebase client bootstrap** — `VITE_FIREBASE_*` in production builds seeds cloud sync automatically
+- [x] **Grocery sync E2E** — `e2e/grocery-sync.spec.ts` against Firestore emulator
+- [x] **Lighthouse artifacts** — filesystem upload to `.lighthouseci`
+- [x] **Vercel env audit script** — `npm run verify:vercel-env`
+
+### 3. Done (June 2026 batch 2)
 - [x] **Grocery cloud sync** — `userPrefs.groceryList`, merge/de-dupe, Firestore rules + tests
 - [x] **Collections → grocery** — add entire collection ingredients in one action
 - [x] **Lighthouse schedule** — monthly workflow trigger on production URL

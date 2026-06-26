@@ -25,6 +25,34 @@ export async function waitForHomeMainHeading(page: import('@playwright/test').Pa
   });
 }
 
+/** Seed Firebase emulator config so cloud sync E2E can run against Firestore emulator. */
+export async function seedFirebaseEmulatorConfig(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(() => {
+    localStorage.setItem('schafer_active_provider', 'firebase');
+    localStorage.setItem(
+      'schafer_firebase_config',
+      JSON.stringify({ apiKey: 'demo-key', projectId: 'demo-schafer' }),
+    );
+  });
+}
+
+/** Login with Firebase emulator + onboarding skipped (for cloud-sync specs). */
+export async function loginAsWithFirebaseEmulator(
+  page: import('@playwright/test').Page,
+  name: string,
+): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await seedFirebaseEmulatorConfig(page);
+  await page.evaluate(() => localStorage.setItem('schafer_onboarding_done', 'true'));
+  await page.reload();
+
+  await page.getByPlaceholder(/your name/i).fill(name);
+  await page.getByRole('button', { name: /^continue$/i }).click();
+  await confirmCookbookLogin(page);
+  await waitForHomeMainHeading(page);
+}
+
 /**
  * Helper to log in and land on the main app (Recipes tab).
  * Clears storage first to ensure a clean state, then marks the

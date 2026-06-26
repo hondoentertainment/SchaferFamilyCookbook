@@ -21,5 +21,9 @@ module.exports = {
         'categories:seo': ['warn', { minScore: 0.85 }],
       },
     },
+    upload: {
+      target: 'filesystem',
+      outputDir: './.lighthouseci',
+    },
   },
 };

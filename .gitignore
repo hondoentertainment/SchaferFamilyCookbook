@@ -34,6 +34,7 @@ output/playwright/
 playwright-report/
 test-results/
 e2e-output.txt
+.lighthouseci/
 
 # Local recipe backups (scripts/backup-recipes-json.mjs)
 backups/

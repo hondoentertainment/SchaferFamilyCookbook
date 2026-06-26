@@ -1,40 +1,36 @@
 # Recommended Next Steps
 
-_Last updated: 2026-06-26 (batch 2 — executed)_
+_Last updated: 2026-06-26 (batch 3)_
 
-## Recently shipped (June 2026 — batch 2)
+## Recently shipped (June 2026 — batch 3)
 
-### Grocery cloud sync — ✅ shipped
+### Production cloud bootstrap — ✅ shipped
 
-- `userPrefs.groceryList` mirrors the local grocery list across devices (same opt-in model as favorites, collections, and meal plan)
-- Merge strategy unions by item id, de-dupes recipeId + text, and preserves checked state
-- Firestore rules updated; unit + rules tests added
+- Production builds with `VITE_FIREBASE_*` in `.env.production` auto-seed `schafer_firebase_config` + `schafer_active_provider=firebase` on first visit
+- Family grocery / favorites / collections / meal-plan sync works without manual Admin wiring
 
-### Collections → Grocery — ✅ shipped
+### CI & quality — ✅ shipped
 
-- Expanded collections can **Add to grocery list** for all recipes in the shelf at once
-- Reuses meal-plan de-dupe toasts and optional “View list” action
+- `npm audit fix` clears critical vulnerabilities (vitest/vite/ws)
+- Lighthouse CI writes `.lighthouseci` artifacts for monthly review
+- `e2e/grocery-sync.spec.ts` validates Firestore emulator hydration (CI e2e job)
+- `npm run verify:vercel-env` audits required Vercel env var names
 
-### Ops & quality — ✅ shipped
+## Completed earlier (batch 2)
 
-- Lighthouse CI workflow runs on a monthly schedule (1st of month) plus manual dispatch
-- Home E2E, profile save announcements, and Home breadcrumb (batch 1)
-
-## Completed this session
-
-1. **Firestore rules deployed** — `firebase deploy --only firestore:rules --project schafer-cookbook` (grocery sync allowed in production)
-2. **Verification** — `npm run test:run` (771 tests), onboarding E2E (3/3 Chromium), `npm run images:verify` (67/67), `npm run smoke:prod` (all green)
-3. **Lighthouse workflow** — scheduled runs now fall back to the production URL when `inputs.url` is unset
+- Grocery cloud sync, collections → grocery bulk-add, Firestore rules deployed
+- Deployed to GitHub + Vercel production (`c4620ce`)
 
 ## What to do next
 
-1. **Production monitoring** — `VITE_SENTRY_DSN` is **not** set on Vercel yet. Add it under Project → Settings → Environment Variables (Production), then redeploy. Skim Sentry after grocery sync is live.
-2. **Lighthouse baseline** — trigger the **Lighthouse CI** workflow in GitHub Actions (or wait for the 1st-of-month schedule) and tune `lighthouserc.cjs` thresholds if scores drift
-3. **Content ops (optional)** — all 67 recipes have generated fallback images; run `npm run images:batch` only if you want to refresh Imagen assets
+1. **Sentry** — create a Sentry project, add `VITE_SENTRY_DSN` on Vercel (Production), redeploy. Optional: `VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE=0.1`
+2. **Firebase push (optional)** — add `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_FCM_VAPID_KEY` on Vercel if you want background notifications
+3. **Remove misnamed Vercel var** — delete the env entry named `AIzaSyD67h…` (raw key as name); use `VITE_FIREBASE_API_KEY` instead
+4. **Lighthouse review** — download artifact from the next **Lighthouse CI** run; tune `lighthouserc.cjs` if scores drift
 
 ## Explicitly deferred
 
-- **Real auth (OAuth/email)** — only if cross-device identity for non-custodian users becomes a real need
-- **Full offline recipe text cache** — Cook Mode image cache + PWA runtime caching cover the common case
-- **Gamification** (trivia streaks, contribution badges) — backlog
-- **Multi-tenant / site forks** — strategic, not near-term
+- Real OAuth/email auth for guests
+- Full offline recipe text cache
+- Gamification (trivia streaks, badges)
+- Multi-tenant / site forks
