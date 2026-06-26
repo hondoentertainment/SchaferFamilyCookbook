@@ -24,8 +24,7 @@ export const SectionSubNav: React.FC<SectionSubNavProps> = ({
             className="relative -mx-1 px-1"
         >
             <div
-                className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
-                style={{ WebkitOverflowScrolling: 'touch' }}
+                className="flex gap-2 overflow-x-auto pb-2 scroll-strip -mx-1 px-1"
             >
             {items.map((item) => {
                 const active = activeTab === item.id;

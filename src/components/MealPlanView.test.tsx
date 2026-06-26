@@ -82,7 +82,7 @@ describe('MealPlanView', () => {
 
     fireEvent.click(screen.getAllByTestId('meal-plan-copy-day')[0]);
     await waitFor(() =>
-      expect(screen.getAllByTestId('meal-plan-entry').length).toBe(2),
+      expect(screen.getAllByText('Apple Pie').length).toBe(2),
     );
   });
 

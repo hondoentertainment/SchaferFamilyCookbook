@@ -21,6 +21,12 @@ const RECOMMENDED = [
   'VITE_SENTRY_DSN',
 ];
 
+const OPTIONAL_PUSH = [
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID',
+  'VITE_FCM_VAPID_KEY',
+];
+
 function listVercelEnv() {
   const r = spawnSync('npx', ['vercel', 'env', 'ls'], { encoding: 'utf8', shell: true });
   if (r.status !== 0) {
@@ -40,6 +46,7 @@ const names = new Set(
 
 const missingRequired = REQUIRED_PRODUCTION.filter((k) => !names.has(k));
 const missingRecommended = RECOMMENDED.filter((k) => !names.has(k));
+const missingPush = OPTIONAL_PUSH.filter((k) => !names.has(k));
 
 console.log('Vercel env audit (names only)\n');
 console.log(`Found ${names.size} named variables.`);
@@ -56,11 +63,17 @@ if (missingRecommended.length > 0) {
   for (const k of missingRecommended) console.log(`   - ${k}`);
 }
 
-// Flag misnamed vars (raw API key used as name)
-const misnamed = [...names].filter((n) => n.startsWith('AIza'));
-if (misnamed.length > 0) {
-  console.log('\n⚠️  Misnamed env vars (rename to VITE_FIREBASE_API_KEY):');
-  for (const k of misnamed) console.log(`   - ${k}`);
+if (missingPush.length > 0) {
+  console.log('\nℹ️  Push notifications (optional — see docs/FIREBASE_PUSH_NOTIFICATIONS.md):');
+  for (const k of missingPush) console.log(`   - ${k}`);
 }
 
-process.exit(missingRequired.length > 0 ? 1 : 0);
+const misnamed = [...names].filter((n) => n.startsWith('AIza'));
+if (misnamed.length > 0) {
+  console.log('\n❌ Misnamed env vars (delete and use VITE_FIREBASE_API_KEY):');
+  for (const k of misnamed) console.log(`   - ${k}`);
+  console.log('   Run: npx vercel env rm <name> production preview development');
+}
+
+const exitCode = missingRequired.length > 0 || misnamed.length > 0 ? 1 : 0;
+process.exit(exitCode);

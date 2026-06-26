@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useUI } from '../context/UIContext';
 import { hapticLight } from '../utils/haptics';
+import { PageHeader } from './PageHeader';
+import { CollapsiblePanel } from './CollapsiblePanel';
 import {
     addItems,
     clearAll,
@@ -67,7 +69,15 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
     }, []);
 
     const groups = useMemo(() => groupByRecipe(items), [items]);
-    const checkedCount = useMemo(() => items.filter((i) => i.checked).length, [items]);
+    const uncheckedGroups = useMemo(
+        () =>
+            groups
+                .map((g) => ({ ...g, items: g.items.filter((i) => !i.checked) }))
+                .filter((g) => g.items.length > 0),
+        [groups],
+    );
+    const checkedItems = useMemo(() => items.filter((i) => i.checked), [items]);
+    const checkedCount = checkedItems.length;
     const hasItems = items.length > 0;
 
     useEffect(() => {
@@ -161,25 +171,20 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
     };
 
     return (
-        <section
-            className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-12 space-y-6 md:space-y-8"
-            aria-labelledby="grocery-list-heading"
-        >
-            <header className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#A0522D]">Cook · Plan · Shop</p>
-                <h2
-                    id="grocery-list-heading"
-                    className="text-2xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
-                >
-                    Grocery list
-                </h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400">
-                    {hasItems
+        <section className="view-shell view-stack" aria-labelledby="grocery-list-heading">
+            <PageHeader
+                id="grocery-list-heading"
+                eyebrow="Cook · Plan · Shop"
+                title="Grocery list"
+                description={
+                    hasItems
                         ? `${items.length} item${items.length === 1 ? '' : 's'} · ${checkedCount} checked`
-                        : 'Add ingredients from a recipe, plan your week, or jot anything down below.'}
-                </p>
-                {hasItems && (
-                    <div className="grid grid-cols-2 gap-2 pt-1 sm:flex sm:flex-wrap sm:gap-3">
+                        : 'Add ingredients from a recipe, plan your week, or jot anything down below.'
+                }
+            />
+
+            {hasItems && (
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
                         <button
                             type="button"
                             onClick={handleCopyList}
@@ -209,9 +214,8 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                         >
                             Clear all
                         </button>
-                    </div>
-                )}
-            </header>
+                </div>
+            )}
 
             <form
                 onSubmit={handleAddManual}
@@ -242,7 +246,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
             {!hasItems ? (
                 <div
                     role="status"
-                    className="py-16 text-center space-y-4 bg-white/60 dark:bg-stone-900/40 rounded-[2rem] border border-dashed border-stone-200 dark:border-stone-700"
+                    className="py-10 text-center space-y-4 bg-white/60 dark:bg-stone-900/40 rounded-[2rem] border border-dashed border-stone-200 dark:border-stone-700"
                 >
                     <span className="text-5xl" aria-hidden="true">
                         🛒
@@ -284,8 +288,8 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                     </div>
                 </div>
             ) : (
-                <div className="space-y-8">
-                    {groups.map((group, gi) => (
+                <div className="space-y-4">
+                    {uncheckedGroups.map((group, gi) => (
                         <section
                             key={group.title}
                             ref={(el) => {
@@ -298,17 +302,17 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                     : 'border-stone-100 dark:border-stone-800'
                             }`}
                         >
-                            <header className="px-5 py-3 bg-stone-50 dark:bg-stone-800/60 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between gap-3">
+                            <header className="px-5 py-2.5 bg-stone-50 dark:bg-stone-800/60 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between gap-3">
                                 <h3 className="text-[11px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 truncate">
                                     {group.title}
                                 </h3>
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500 tabular-nums">
-                                    {group.items.filter((i) => !i.checked).length}/{group.items.length}
+                                    {group.items.length} left
                                 </span>
                             </header>
                             <ul className="divide-y divide-stone-100 dark:divide-stone-800">
                                 {group.items.map((item) => (
-                                    <li key={item.id} className="flex items-center gap-3 px-4 py-3">
+                                    <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
                                         <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none">
                                             <input
                                                 type="checkbox"
@@ -317,13 +321,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                                 aria-label={`Mark "${item.text}" as ${item.checked ? 'not bought' : 'bought'}`}
                                                 className="w-5 h-5 rounded accent-[#2D4635] shrink-0"
                                             />
-                                            <span
-                                                className={`text-sm md:text-base flex-1 min-w-0 break-words ${
-                                                    item.checked
-                                                        ? 'line-through text-stone-400 dark:text-stone-500'
-                                                        : 'text-stone-800 dark:text-stone-100'
-                                                }`}
-                                            >
+                                            <span className="text-sm md:text-base flex-1 min-w-0 break-words text-stone-800 dark:text-stone-100">
                                                 {item.text}
                                             </span>
                                         </label>
@@ -341,6 +339,52 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             </ul>
                         </section>
                     ))}
+
+                    {uncheckedGroups.length === 0 && checkedCount > 0 && (
+                        <p className="text-center text-sm font-serif italic text-stone-500 dark:text-stone-400 py-4">
+                            Everything is checked off — nice work!
+                        </p>
+                    )}
+
+                    {checkedCount > 0 && (
+                        <CollapsiblePanel
+                            id="grocery-checked-items"
+                            title={`Checked off (${checkedCount})`}
+                            defaultOpen={false}
+                        >
+                            <ul className="space-y-2">
+                                {checkedItems.map((item) => (
+                                    <li key={item.id} className="flex items-center gap-3 py-1">
+                                        <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked
+                                                onChange={() => handleToggle(item.id)}
+                                                aria-label={`Mark "${item.text}" as not bought`}
+                                                className="w-5 h-5 rounded accent-[#2D4635] shrink-0"
+                                            />
+                                            <span className="text-sm line-through text-stone-400 dark:text-stone-500 flex-1 min-w-0 break-words">
+                                                {item.text}
+                                                {item.recipeTitle && (
+                                                    <span className="block text-[10px] not-italic uppercase tracking-widest mt-0.5">
+                                                        {item.recipeTitle}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemove(item.id, item.text)}
+                                            aria-label={`Remove ${item.text}`}
+                                            className="w-9 h-9 rounded-full text-stone-300 hover:text-red-500 flex items-center justify-center"
+                                        >
+                                            ×
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CollapsiblePanel>
+                    )}
                 </div>
             )}
         </section>

@@ -9,6 +9,7 @@ import { addRecipeIngredientsToGrocery } from '../utils/groceryList';
 import { hapticLight } from '../utils/haptics';
 import { useUI } from '../context/UIContext';
 import type { Recipe, RecipeCollection } from '../types';
+import { PageHeader } from './PageHeader';
 
 const STARTER_TEMPLATES = [
   { name: 'Weeknight rotation', description: 'Fast dinners for busy evenings', icon: '🍳' },
@@ -82,7 +83,13 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
   };
 
   return (
-    <section className="space-y-6" aria-label="Recipe collections">
+    <section className="view-stack" aria-label="Recipe collections">
+      <PageHeader
+        eyebrow="Cook · Plan · Shop"
+        title="Collections"
+        description="Group recipes into shelves — add to grocery lists or meal plans in one tap."
+      />
+
       <div className="flex items-center justify-between">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
           Collections ({collections.length})

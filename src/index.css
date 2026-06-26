@@ -364,3 +364,86 @@ textarea:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Shared view layout ===== */
+.view-shell {
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.25rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .view-shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .view-shell {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+.view-shell-wide {
+  max-width: 87.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.25rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .view-shell-wide {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .view-shell-wide {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+.view-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .view-stack {
+    gap: 1.5rem;
+  }
+}
+
+.scroll-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-strip > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

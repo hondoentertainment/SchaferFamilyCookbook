@@ -8,6 +8,7 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { PreferencesPanel } from './PreferencesPanel';
 import { CollectionsView } from './CollectionsView';
 import { ActivityFeed } from './ActivityFeed';
+import { CollapsiblePanel } from './CollapsiblePanel';
 import { hapticLight } from '../utils/haptics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
 import { CloudArchive } from '../services/db';
@@ -18,8 +19,17 @@ import { isSuperAdmin } from '../config/site';
 
 const PUSH_ENABLED_KEY = 'schafer_push_enabled';
 const SECTION_HEADING_CLASS =
-    'text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[var(--color-warmth)] mb-4';
+    'text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[var(--color-warmth)] mb-3';
 const SECTION_DIVIDER_CLASS = 'border-t border-stone-100 dark:border-[var(--border-color)]';
+
+type ActivityShelfTab = 'favorites' | 'recent' | 'shared' | 'log';
+
+const ACTIVITY_TABS: { id: ActivityShelfTab; label: string; icon: string }[] = [
+    { id: 'favorites', label: 'Favorites', icon: '❤️' },
+    { id: 'recent', label: 'Recent', icon: '👁' },
+    { id: 'shared', label: 'My recipes', icon: '📖' },
+    { id: 'log', label: 'Log', icon: '⏲️' },
+];
 const AdminView = lazy(() => import('./AdminView').then(m => ({ default: m.AdminView })));
 
 const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
@@ -293,6 +303,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveAnnouncement, setSaveAnnouncement] = useState('');
     const [showPicker, setShowPicker] = useState(false);
+    const [activityTab, setActivityTab] = useState<ActivityShelfTab>('favorites');
     const nameInputRef = useRef<HTMLInputElement>(null);
     const activityFeedSectionRef = useRef<HTMLDivElement>(null);
 
@@ -420,15 +431,11 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
     const archiveProvider = useMemo(() => CloudArchive.getProvider(), []);
 
-    const scrollToActivityFeed = () => {
-        activityFeedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
     const isAdmin = currentUser.role === 'admin';
     const isSuperAdminUser =
         isSuperAdmin(currentUser.email) || isSuperAdmin(currentUser.name);
-    // Preserve existing behavior: admin role sees admin section. Super-admin gate is OR'd in.
     const showAdminSection = (isAdmin || isSuperAdminUser) && !!adminSectionProps;
+
     const scrollToAdminSection = () => {
         document.getElementById('admin-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
@@ -454,7 +461,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     );
 
     return (
-        <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 motion-reduce:animate-none">
+        <div className="view-shell-wide view-stack max-w-6xl animate-in fade-in slide-in-from-bottom-8 duration-700 motion-reduce:animate-none">
             <div aria-live="polite" aria-atomic="true" className="sr-only" data-testid="profile-save-announcement">
                 {saveAnnouncement}
             </div>
@@ -590,10 +597,10 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             </section>
 
             {/* ── Activity ─────────────────────────────────────────────── */}
-            <section aria-labelledby="profile-activity-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+            <section aria-labelledby="profile-activity-heading" className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-activity-heading">Activity</SectionHeading>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                     <StatCard
                         value={stats.cookedThisMonth}
                         label="Recipes Cooked This Month"
@@ -612,34 +619,51 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     )}
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={scrollToActivityFeed}
-                        className="inline-flex items-center min-h-11 px-5 py-3 bg-stone-50 dark:bg-[var(--bg-tertiary)] hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-100 dark:border-[var(--border-color)] rounded-full text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-200 transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
-                    >
-                        View Activity Feed →
-                    </button>
-                    {stats.lastActiveLabel && stats.streakDays > 0 && (
-                        <span className="text-xs text-stone-400 dark:text-stone-500 font-serif italic">
-                            {stats.lastActiveLabel}
-                        </span>
-                    )}
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="scroll-strip -mx-1 px-1 flex-1 min-w-0" role="tablist" aria-label="Your recipe shelves">
+                        {ACTIVITY_TABS.map((tab) => {
+                            const active = activityTab === tab.id;
+                            const count =
+                                tab.id === 'favorites'
+                                    ? favoriteRecipes.length
+                                    : tab.id === 'recent'
+                                      ? recentRecipes.length
+                                      : tab.id === 'shared'
+                                        ? userRecipes.length
+                                        : userHistory.length;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={active}
+                                    onClick={() => {
+                                        hapticLight();
+                                        setActivityTab(tab.id);
+                                    }}
+                                    className={`min-h-11 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
+                                        active
+                                            ? 'bg-[#2D4635] text-white shadow-sm'
+                                            : 'bg-white dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-[var(--border-color)]'
+                                    }`}
+                                >
+                                    <span aria-hidden>{tab.icon} </span>
+                                    {tab.label}
+                                    {count > 0 && <span className="ml-1 opacity-80">({count})</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-8 mt-10">
-                    {/* My Favorites */}
-                    <div className="space-y-4" aria-label="My favorites">
-                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
-                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center not-italic text-lg md:text-xl">❤️</span>
-                            My Favorites
-                        </h4>
-                        <div className="space-y-3">
+                <div className="mt-4 space-y-3" role="tabpanel">
+                    {activityTab === 'favorites' && (
+                        <div className="space-y-3" aria-label="My favorites">
                             {favoriteRecipes.map((recipe) => (
                                 <RecipeRow key={recipe.id} recipe={recipe} onView={onViewRecipe} />
                             ))}
                             {favoriteRecipes.length === 0 && (
-                                <div className="py-10 md:py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem] space-y-2">
+                                <div className="py-8 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem] space-y-2">
                                     <span className="text-4xl block">🤍</span>
                                     <p className="text-stone-400 font-serif italic text-base">No favorites yet</p>
                                     <p className="text-xs text-stone-400 max-w-xs mx-auto">
@@ -648,45 +672,36 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
 
-                    {/* Recently Viewed */}
-                    <div className="space-y-4" aria-label="Recently viewed">
-                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
-                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center not-italic text-lg md:text-xl">👁</span>
-                            Recently Viewed
-                        </h4>
-                        <div className="space-y-3">
+                    {activityTab === 'recent' && (
+                        <div className="space-y-3" aria-label="Recently viewed">
                             {recentRecipes.map((recipe) => (
                                 <RecipeRow key={recipe.id} recipe={recipe} onView={onViewRecipe} />
                             ))}
                             {recentRecipes.length === 0 && (
-                                <div className="py-10 md:py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
+                                <div className="py-8 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
                                     <p className="text-stone-400 font-serif italic text-base">
                                         The recipes you open most recently will gather here.
                                     </p>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
 
-                    {/* My Shared Recipes */}
-                    <div className="space-y-4" aria-label="My shared recipes">
-                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
-                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center not-italic text-lg md:text-xl">📖</span>
-                            My Shared Recipes
-                        </h4>
-                        <div className="space-y-3">
+                    {activityTab === 'shared' && (
+                        <div className="space-y-3" aria-label="My shared recipes">
                             {userRecipes.map((recipe) => (
                                 <RecipeRow
                                     key={recipe.id}
                                     recipe={recipe}
+                                    onView={onViewRecipe}
                                     rightSlot={
                                         currentUser.role === 'admin' ? (
                                             <button
                                                 type="button"
                                                 onClick={() => onEditRecipe(recipe)}
-                                                className="p-3 md:p-4 min-w-11 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                                className="p-3 min-w-11 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                                 title="Edit recipe"
                                                 aria-label="Edit recipe"
                                             >
@@ -694,7 +709,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                             </button>
                                         ) : (
                                             <span
-                                                className="p-3 md:p-4 text-stone-300 text-xs italic shrink-0"
+                                                className="p-3 text-stone-300 text-xs italic shrink-0"
                                                 title="Contact an administrator to request edits"
                                             >
                                                 View only
@@ -704,22 +719,17 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                 />
                             ))}
                             {userRecipes.length === 0 && (
-                                <div className="py-10 md:py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
+                                <div className="py-8 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
                                     <p className="text-stone-400 font-serif italic text-base">
                                         When you contribute a recipe, it will be added to your family shelf here.
                                     </p>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
 
-                    {/* My Contribution Log */}
-                    <div className="space-y-4" aria-label="My contribution log">
-                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
-                            <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center not-italic text-lg md:text-xl">⏲️</span>
-                            My Contribution Log
-                        </h4>
-                        <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+                    {activityTab === 'log' && (
+                        <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar" aria-label="My contribution log">
                             {userHistory.map((entry) => (
                                 <div
                                     key={entry.id}
@@ -743,28 +753,29 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                 </div>
                             ))}
                             {userHistory.length === 0 && (
-                                <div className="py-12 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
+                                <div className="py-8 text-center border-2 border-dashed border-stone-100 dark:border-[var(--border-color)] rounded-[2rem]">
                                     <p className="text-stone-400 font-serif italic text-base">
                                         Your contributions and updates will appear here as the archive grows.
                                     </p>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Family Activity Feed */}
-                <div ref={activityFeedSectionRef} className="mt-10 space-y-4" aria-label="Family activity feed">
-                    <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
-                        <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center not-italic text-lg md:text-xl">📢</span>
-                        Family Activity
-                    </h4>
-                    <ActivityFeed maxItems={10} />
+                <div ref={activityFeedSectionRef} className="mt-6">
+                    <CollapsiblePanel
+                        id="profile-family-activity"
+                        title="Family activity feed"
+                        defaultOpen={false}
+                    >
+                        <ActivityFeed maxItems={8} />
+                    </CollapsiblePanel>
                 </div>
             </section>
 
             {/* ── Preferences ──────────────────────────────────────────── */}
-            <section aria-labelledby="profile-preferences-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+            <section aria-labelledby="profile-preferences-heading" className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-preferences-heading">Preferences</SectionHeading>
                 <div className="grid lg:grid-cols-2 gap-8">
                     <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm">
@@ -785,13 +796,13 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             </section>
 
             {/* ── Notifications ────────────────────────────────────────── */}
-            <section aria-labelledby="profile-notifications-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+            <section aria-labelledby="profile-notifications-heading" className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-notifications-heading">Notifications</SectionHeading>
                 <NotificationsSection userName={currentUser.name} />
             </section>
 
             {/* ── Help ───────────────────────────────────────────────── */}
-            <section aria-labelledby="profile-help-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+            <section aria-labelledby="profile-help-heading" className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-help-heading">Help</SectionHeading>
                 <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm space-y-4">
                     <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic leading-relaxed">
@@ -810,7 +821,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             </section>
 
             {/* ── Privacy & Data ───────────────────────────────────────── */}
-            <section aria-labelledby="profile-privacy-heading" className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}>
+            <section aria-labelledby="profile-privacy-heading" className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-privacy-heading">Privacy &amp; Data</SectionHeading>
                 <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm space-y-4">
                     <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic">
@@ -833,7 +844,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             {showAdminSection && adminSectionProps && (
                 <section
                     aria-labelledby="profile-admin-heading"
-                    className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}
+                    className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}
                 >
                     <SectionHeading id="profile-admin-heading">Admin</SectionHeading>
                     <div
@@ -895,7 +906,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             {!isAdmin && contributors.filter((c) => c.role === 'admin').length > 0 && (
                 <section
                     aria-labelledby="profile-administrators-heading"
-                    className={`pt-10 md:pt-12 ${SECTION_DIVIDER_CLASS}`}
+                    className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}
                 >
                     <SectionHeading id="profile-administrators-heading">Meet your Administrators</SectionHeading>
                     <p className="text-stone-500 dark:text-stone-400 font-serif italic max-w-lg mb-6">

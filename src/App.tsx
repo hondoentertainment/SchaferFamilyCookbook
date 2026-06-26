@@ -2283,8 +2283,7 @@ const App: React.FC = () => {
 
             {tab === 'Collections' && currentUser && (
                 <Suspense fallback={<TabFallback />}>
-                    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-12" aria-label="Recipe collections" tabIndex={-1}>
-                        <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8">Collections</h2>
+                    <section className="view-shell" aria-label="Recipe collections" tabIndex={-1}>
                         <CollectionsView
                             recipes={recipes}
                             currentUserName={currentUser.name}

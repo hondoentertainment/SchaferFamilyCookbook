@@ -120,6 +120,7 @@ describe('ProfileView', () => {
             createMockRecipe({ title: 'My Recipe', contributor: 'Test User' }),
         ];
         renderWithProviders(<ProfileView {...defaultProps} userRecipes={recipes} />);
+        fireEvent.click(screen.getByRole('tab', { name: /my recipes/i }));
         expect(screen.getByText('My Recipe')).toBeInTheDocument();
     });
 
@@ -127,6 +128,7 @@ describe('ProfileView', () => {
         const recipe = createMockRecipe({ title: 'Editable', contributor: 'Test User' });
         const adminProps = { ...defaultProps, currentUser: { ...defaultProps.currentUser, role: 'admin' as const } };
         renderWithProviders(<ProfileView {...adminProps} userRecipes={[recipe]} />);
+        fireEvent.click(screen.getByRole('tab', { name: /my recipes/i }));
         fireEvent.click(screen.getByRole('button', { name: /edit recipe/i }));
         expect(mockOnEditRecipe).toHaveBeenCalledWith(recipe);
     });
@@ -134,12 +136,14 @@ describe('ProfileView', () => {
     it('should show View only for non-admin recipes (no edit button)', () => {
         const recipe = createMockRecipe({ title: 'Editable', contributor: 'Test User' });
         renderWithProviders(<ProfileView {...defaultProps} userRecipes={[recipe]} />);
+        fireEvent.click(screen.getByRole('tab', { name: /my recipes/i }));
         expect(screen.getByText('View only')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /edit recipe/i })).not.toBeInTheDocument();
     });
 
     it('should show empty state for no recipes', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
+        fireEvent.click(screen.getByRole('tab', { name: /my recipes/i }));
         expect(screen.getByText('When you contribute a recipe, it will be added to your family shelf here.')).toBeInTheDocument();
     });
 
@@ -148,6 +152,7 @@ describe('ProfileView', () => {
             createMockHistoryEntry({ itemName: 'Added Recipe', action: 'added', type: 'recipe' }),
         ];
         renderWithProviders(<ProfileView {...defaultProps} userHistory={history} />);
+        fireEvent.click(screen.getByRole('tab', { name: /^log/i }));
         expect(screen.getByText(/Added recipe/i)).toBeInTheDocument();
         expect(screen.getByText(/"Added Recipe"/)).toBeInTheDocument();
     });
@@ -187,7 +192,7 @@ describe('ProfileView', () => {
     it('should render activity stats row with favorites count', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
         expect(screen.getByText('Recipes Cooked This Month')).toBeInTheDocument();
-        expect(screen.getByText('Favorites')).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: /favorites/i })).toBeInTheDocument();
     });
 
     it('should render section headings (Identity, Activity, Preferences, Notifications, Privacy)', () => {

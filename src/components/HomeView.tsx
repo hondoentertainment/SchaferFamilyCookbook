@@ -190,10 +190,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             tabIndex={-1}
             role="main"
             aria-label="Home"
-            className="relative z-10 mx-auto max-w-[1400px] space-y-8 px-4 py-5 sm:px-6 md:space-y-12 md:px-8 md:py-10"
+            className="relative z-10 mx-auto max-w-[1400px] view-stack px-4 py-4 sm:px-6 md:px-8 md:py-6"
         >
             {/* Greeting + quick actions */}
-            <section className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7 md:rounded-[2.75rem] md:p-10">
+            <section className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-4 dark:border-stone-800 sm:p-6 md:rounded-[2.75rem] md:p-8">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div className="max-w-3xl space-y-3">
                         <p className="text-xs font-semibold uppercase tracking-wider text-[#7A3F22] dark:text-orange-200">
@@ -419,7 +419,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             All recipes →
                         </button>
                     </div>
-                    <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="scroll-strip gap-3 -mx-1 px-1">
                         {recentlyViewedRecipes.slice(0, 10).map((r) => (
                             <RecipeMiniCard
                                 key={r.id}
@@ -443,7 +443,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         </h2>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{favoriteRecipes.length} saved</span>
                     </div>
-                    <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="scroll-strip gap-3 -mx-1 px-1">
                         {favoriteRecipes.slice(0, 10).map((r) => (
                             <RecipeMiniCard
                                 key={r.id}
@@ -473,7 +473,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             See all →
                         </button>
                     </div>
-                    <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="scroll-strip gap-3 -mx-1 px-1">
                         {seasonalRecipes.map((r) => (
                             <RecipeMiniCard
                                 key={r.id}

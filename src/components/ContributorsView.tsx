@@ -3,6 +3,7 @@ import { Recipe, GalleryItem, Trivia, ContributorProfile } from '../types';
 import { PLACEHOLDER_AVATAR } from '../constants';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
+import { PageHeader } from './PageHeader';
 
 interface ContributorsViewProps {
     recipes: Recipe[];
@@ -16,7 +17,7 @@ interface ContributorsViewProps {
 }
 
 const ContributorsSkeleton: React.FC = () => (
-    <section className="max-w-7xl mx-auto py-12 px-6">
+    <section className="view-shell-wide">
         <div className="animate-pulse space-y-10">
             <div className="space-y-4">
                 <div className="h-10 bg-stone-200 rounded w-1/3" />
@@ -122,19 +123,21 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
     return (
         <section
-            className="max-w-7xl mx-auto py-12 px-6"
+            className="view-shell-wide view-stack"
             aria-labelledby="contributors-heading"
             aria-describedby="contributors-description"
         >
-            <h2 id="contributors-heading" className="text-4xl md:text-5xl font-serif italic text-[#2D4635] mb-4">
-                The Contributors
-            </h2>
-            <p id="contributors-description" className="text-stone-500 font-serif italic text-lg mb-10 max-w-2xl">
-                The family members who have shared recipes, memories, and stories in this archive.
+            <PageHeader
+                id="contributors-heading"
+                title="The Contributors"
+                description="The family members who have shared recipes, memories, and stories in this archive."
+            />
+            <p id="contributors-description" className="sr-only">
+                Browse contributors and open their recipes from the archive.
             </p>
 
             {hasContributors && (
-                <div className="mb-10">
+                <div>
                     <label htmlFor="contributor-search" className="sr-only">
                         Search contributors by name
                     </label>
@@ -157,7 +160,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
             {!hasContributors ? (
                 <div
-                    className="py-20 text-center border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[3rem] bg-white/50 dark:bg-[var(--card-bg)]/50"
+                    className="py-12 text-center border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[2rem] bg-white/50 dark:bg-[var(--card-bg)]/50"
                     role="status"
                     aria-live="polite"
                 >
@@ -187,7 +190,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     </button>
                 </div>
             ) : (
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10 list-none p-0 m-0">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6 list-none p-0 m-0">
                     {filteredStats.map((stat) => {
                         const avatarUrl = avatarErrors.has(stat.name)
                             ? PLACEHOLDER_AVATAR
@@ -196,11 +199,11 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
                         return (
                             <li key={stat.name}>
-                                <article className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-10 border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-2xl transition-all duration-300 group relative overflow-hidden text-center h-full flex flex-col">
-                                    <div className="relative inline-block mb-6">
+                                <article className="bg-white dark:bg-[var(--card-bg)] rounded-[2rem] p-6 md:p-8 border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-xl transition-all duration-300 group relative overflow-hidden text-center h-full flex flex-col">
+                                    <div className="relative inline-block mb-4">
                                         <img
                                             src={avatarUrl}
-                                            className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 dark:bg-stone-800 border-8 border-white dark:border-stone-700 shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
+                                            className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-stone-50 dark:bg-stone-800 border-4 border-white dark:border-stone-700 shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
                                             alt={`${stat.name}'s avatar`}
                                             onError={(e) => { handleAvatarError(stat.name); avatarOnError(e); }}
                                             loading="lazy"

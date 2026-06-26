@@ -1,5 +1,7 @@
 import React from 'react';
 import { siteConfig } from '../config/site';
+import { PageHeader } from './PageHeader';
+import { CollapsiblePanel } from './CollapsiblePanel';
 
 /**
  * Short privacy notice for family-facing production use.
@@ -7,19 +9,14 @@ import { siteConfig } from '../config/site';
 export const PrivacyView: React.FC = () => {
     return (
         <main
-            className="max-w-3xl mx-auto py-12 md:py-16 px-6 text-stone-700"
+            className="view-shell view-stack text-stone-700"
             role="main"
             aria-labelledby="privacy-heading"
         >
-            <h1 id="privacy-heading" className="text-4xl font-serif italic text-[#2D4635] mb-8">
-                Privacy &amp; data
-            </h1>
-            <div className="space-y-6 text-base leading-relaxed">
-                <section aria-labelledby="privacy-what">
-                    <h2 id="privacy-what" className="text-lg font-bold text-[#2D4635] mb-2">
-                        What this site stores
-                    </h2>
-                    <ul className="list-disc pl-6 space-y-2">
+            <PageHeader id="privacy-heading" title="Privacy & data" titleLevel={1} />
+
+            <CollapsiblePanel id="privacy-what" title="What this site stores" defaultOpen>
+                <ul className="list-disc pl-6 space-y-2 text-base leading-relaxed">
                         <li>
                             <strong>On your device:</strong> Your display name, avatar URL, favorites, recently viewed
                             recipes, star ratings, personal recipe notes, custom collections, grocery list, trivia scores,
@@ -48,12 +45,10 @@ export const PrivacyView: React.FC = () => {
                             Twilio and stored per your family&apos;s configuration.
                         </li>
                     </ul>
-                </section>
-                <section aria-labelledby="privacy-who">
-                    <h2 id="privacy-who" className="text-lg font-bold text-[#2D4635] mb-2">
-                        Who can see it
-                    </h2>
-                    <p>
+            </CollapsiblePanel>
+
+            <CollapsiblePanel id="privacy-who" title="Who can see it" defaultOpen>
+                    <p className="text-base leading-relaxed">
                         {siteConfig.siteName} is intended for family use. When the family cloud is connected, the
                         cookbook is typically <strong>publicly readable</strong> (anyone with the link can browse
                         recipes and gallery). Only designated custodians—after signing in with Google and a server-side
@@ -61,18 +56,16 @@ export const PrivacyView: React.FC = () => {
                         by itself authorize cloud writes. This is not a substitute for medical, legal, or financial
                         privacy requirements.
                     </p>
-                </section>
-                <section aria-labelledby="privacy-contact">
-                    <h2 id="privacy-contact" className="text-lg font-bold text-[#2D4635] mb-2">
-                        Questions
-                    </h2>
-                    <p>
+            </CollapsiblePanel>
+
+            <CollapsiblePanel id="privacy-contact" title="Questions">
+                    <p className="text-base leading-relaxed">
                         Contact your family archive administrators if you need something removed or have concerns
                         about how data is handled.
                     </p>
-                </section>
-                <p className="text-sm text-stone-500 pt-4">Last updated for production deployment checklist.</p>
-            </div>
+            </CollapsiblePanel>
+
+            <p className="text-sm text-stone-500">Last updated for production deployment checklist.</p>
         </main>
     );
 };
