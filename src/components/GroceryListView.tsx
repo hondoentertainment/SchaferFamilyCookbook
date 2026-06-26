@@ -179,18 +179,18 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                         : 'Add ingredients from a recipe, plan your week, or jot anything down below.'}
                 </p>
                 {hasItems && (
-                    <div className="flex flex-wrap gap-3 pt-1">
+                    <div className="grid grid-cols-2 gap-2 pt-1 sm:flex sm:flex-wrap sm:gap-3">
                         <button
                             type="button"
                             onClick={handleCopyList}
-                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                            className="min-h-11 px-4 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                         >
                             Copy list
                         </button>
                         <button
                             type="button"
                             onClick={handleShareList}
-                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                            className="min-h-11 px-4 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                         >
                             Share
                         </button>
@@ -198,7 +198,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             type="button"
                             onClick={handleClearChecked}
                             disabled={checkedCount === 0}
-                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="min-h-11 px-4 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             Clear checked{checkedCount > 0 ? ` (${checkedCount})` : ''}
                         </button>

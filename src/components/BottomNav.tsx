@@ -111,7 +111,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                                 )}
                             </span>
                             <span
-                                className={`max-w-full truncate px-0.5 text-xs font-bold tracking-wide ${
+                                className={`max-w-full truncate px-0.5 text-[10px] font-bold tracking-wide sm:text-xs ${
                                     isActive ? 'text-[#2D4635] dark:text-emerald-300' : 'text-stone-700 dark:text-stone-300'
                                 }`}
                             >

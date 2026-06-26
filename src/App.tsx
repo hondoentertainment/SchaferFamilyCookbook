@@ -587,8 +587,8 @@ const RecipeShelfCard: React.FC<{
                         <span className="truncate font-serif italic">By {recipe.contributor}</span>
                         {rating > 0 && <span className="shrink-0 font-semibold text-amber-600">★ {rating.toFixed(1)}</span>}
                     </div>
-                    <span className="inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#2D4635] px-4 py-2 text-sm font-bold text-white transition-colors group-hover:bg-[#24392B]">
-                        View recipe
+                    <span className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#2D4635]/10 px-4 py-2 text-sm font-bold text-[#2D4635] transition-colors group-hover:bg-[#2D4635]/15 dark:text-emerald-100">
+                        View recipe →
                     </span>
                 </div>
             </button>
@@ -1859,7 +1859,7 @@ const App: React.FC = () => {
                                             key={name}
                                             type="button"
                                             onClick={() => { resetBrowse(); setCategory(name); }}
-                                            className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                                            className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                                                 category === name
                                                     ? 'bg-[#2D4635] text-white border-[#2D4635] shadow-sm'
                                                     : 'border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
@@ -1880,17 +1880,17 @@ const App: React.FC = () => {
                     )}
 
                     <div className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 -mx-1 space-y-2 rounded-[1.5rem] border border-[#E8DCCB]/75 bg-[#FFF8EC]/88 px-2 py-1.5 shadow-[0_10px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl md:top-20 md:space-y-3 md:rounded-[2rem] md:px-3 md:py-2 dark:border-stone-800 dark:bg-stone-950/80">
-                        <div className="flex items-center gap-2 md:gap-3">
-                            <div className="relative flex-1">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:gap-3">
+                            <div className="relative flex-1 min-w-0">
                                 <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 dark:text-stone-300 text-sm" aria-hidden="true">Search</span>
+                                <span className="absolute left-4 top-1/2 hidden -translate-y-1/2 text-sm text-stone-600 dark:text-stone-300 md:block" aria-hidden="true">Search</span>
                                 <input
                                     id="recipe-search"
                                     type="text"
                                     inputMode="search"
-                                    placeholder="Search recipes, ingredients, contributors…"
+                                    placeholder="Search recipes, ingredients…"
                                     aria-label="Search recipes, ingredients, or instructions"
-                                    className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-16 pr-10 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] md:py-3.5 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
+                                    className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-4 pr-11 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] md:pl-16 md:pr-10 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                 />
@@ -1899,13 +1899,13 @@ const App: React.FC = () => {
                                         type="button"
                                         onClick={() => setSearch('')}
                                         aria-label="Clear search"
-                                        className="absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-stone-100 text-xs text-stone-700 hover:bg-stone-200"
+                                        className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-700 hover:bg-stone-200"
                                     >
                                         ✕
                                     </button>
                                 )}
                             </div>
-                            <div className="flex md:hidden gap-2">
+                            <div className="flex shrink-0 gap-2 md:hidden">
                                 <button
                                     type="button"
                                     onClick={() => setShowMobileFilters(v => !v)}
@@ -1969,12 +1969,12 @@ const App: React.FC = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 px-2 text-xs text-stone-500 dark:text-stone-400">
-                            <span>
+                        <div className="flex flex-col gap-1 px-2 text-xs text-stone-500 dark:text-stone-400 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                            <span className="min-w-0">
                                 {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}
                                 {activeFilterCount > 0
                                     ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active`
-                                    : !isBrowsingFiltered ? ' · tap a card to view, or start cooking from the card' : ''}
+                                    : !isBrowsingFiltered ? <span className="hidden sm:inline"> · tap a card to view, or start cooking from the card</span> : ''}
                             </span>
                             {activeFilterCount > 0 && (
                                 <button type="button" onClick={clearRecipeFilters} className="shrink-0 text-[#A0522D] hover:underline font-semibold">Reset filters</button>
@@ -1987,7 +1987,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSearch('')}
-                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                     >
                                         “{search.trim()}” <span aria-hidden>×</span>
                                     </button>
@@ -1996,7 +1996,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setCategory('All')}
-                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                     >
                                         {category} <span aria-hidden>×</span>
                                     </button>
@@ -2005,7 +2005,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setContributor('All')}
-                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                     >
                                         {contributor} <span aria-hidden>×</span>
                                     </button>
@@ -2014,7 +2014,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedTag('')}
-                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                     >
                                         {getTagLabel(selectedTag)} <span aria-hidden>×</span>
                                     </button>
@@ -2023,7 +2023,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSortBy('title-asc')}
-                                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-1.5 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                     >
                                         {sortBy === 'title-desc' ? 'Z–A' : sortBy === 'category' ? 'Category' : sortBy === 'contributor' ? 'Contributor' : 'Recent'} <span aria-hidden>×</span>
                                     </button>
@@ -2121,7 +2121,7 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
+                        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
@@ -2158,8 +2158,8 @@ const App: React.FC = () => {
                                             </div>
                                         </button>
 
-                                        <div className="flex flex-1 flex-col p-3 sm:p-4 space-y-2.5">
-                                            <div className="flex items-center justify-between gap-2">
+                                        <div className="flex flex-1 flex-col p-3 sm:p-4 space-y-2">
+                                            <div className="flex min-w-0 items-center justify-between gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -2189,7 +2189,7 @@ const App: React.FC = () => {
                                                 <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
                                                     {recipe.title}
                                                 </h3>
-                                                <p className="mt-1 line-clamp-2 min-h-0 text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:min-h-[2rem]">
+                                                <p className="mt-1 hidden line-clamp-2 min-h-0 text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:block sm:min-h-[2rem]">
                                                     {microcopy}
                                                 </p>
                                             </button>
@@ -2224,14 +2224,15 @@ const App: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
+                                            <div className="grid grid-cols-2 gap-2 pt-1">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleSelectRecipe(recipe)}
-                                                    className="min-h-11 rounded-full bg-[#2D4635] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#24392B] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950"
+                                                    className="min-h-11 rounded-full bg-[#2D4635] px-2 py-2 text-xs sm:px-4 sm:text-sm font-bold text-white transition-colors hover:bg-[#24392B] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950"
                                                     aria-label={`View recipe details for ${recipe.title}`}
                                                 >
-                                                    View Recipe
+                                                    <span className="sm:hidden">View</span>
+                                                    <span className="hidden sm:inline">View Recipe</span>
                                                 </button>
                                                 <button
                                                     type="button"
@@ -2241,10 +2242,11 @@ const App: React.FC = () => {
                                                         hapticLight();
                                                         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'recipe_card' });
                                                     }}
-                                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white px-4 py-2 text-sm font-semibold text-[#2D4635] transition-colors hover:bg-[#FDF6EC] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100 dark:hover:bg-stone-800"
+                                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white px-2 py-2 text-xs sm:px-4 sm:text-sm font-semibold text-[#2D4635] transition-colors hover:bg-[#FDF6EC] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100 dark:hover:bg-stone-800"
                                                     aria-label={`Start cooking ${recipe.title}`}
                                                 >
-                                                    Start Cooking
+                                                    <span className="sm:hidden">Cook</span>
+                                                    <span className="hidden sm:inline">Start Cooking</span>
                                                 </button>
                                             </div>
                                         </div>

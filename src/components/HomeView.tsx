@@ -75,35 +75,39 @@ const RecipeMiniCard: React.FC<{
     const rating = getAverageRating(recipe.id);
     const ratingCount = getRatingCount(recipe.id);
     return (
-        <article className="group relative w-48 shrink-0 sm:w-52">
-            <button
-                type="button"
-                onClick={onClick}
-                aria-label={`Open recipe: ${recipe.title}`}
-                className="recipe-card-surface block w-full overflow-hidden rounded-3xl border text-left transition-all hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800"
-            >
-                <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                    <RecipeImage recipe={recipe} imgClassName="group-hover:scale-[1.04] motion-reduce:group-hover:scale-100" />
-                </div>
-                <div className="space-y-1.5 p-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
-                    <h3 className="text-sm font-serif italic text-[#2D4635] dark:text-emerald-100 line-clamp-2 leading-snug">{recipe.title}</h3>
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                        By {recipe.contributor}
-                        {rating > 0 && <span className="text-amber-600 ml-1">· ★ {rating.toFixed(1)}{ratingCount > 0 ? ` (${ratingCount})` : ''}</span>}
-                    </p>
-                </div>
-            </button>
-            {onStartCook && (
+        <article className="group relative w-44 shrink-0 sm:w-52">
+            <div className="recipe-card-surface flex w-full flex-col overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl dark:border-stone-800">
                 <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); hapticLight(); onStartCook(); }}
-                    className="absolute bottom-3 left-3 z-10 min-h-9 rounded-full bg-[#2D4635]/90 px-3 py-1.5 text-xs font-bold text-white shadow-sm backdrop-blur hover:bg-[#2D4635]"
-                    aria-label={`Start cooking ${recipe.title}`}
+                    onClick={onClick}
+                    aria-label={`Open recipe: ${recipe.title}`}
+                    className="relative block w-full text-left"
                 >
-                    Cook now
+                    <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
+                        <RecipeImage recipe={recipe} imgClassName="group-hover:scale-[1.04] motion-reduce:group-hover:scale-100" />
+                    </div>
+                    <div className="space-y-1.5 p-4 pb-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
+                        <h3 className="text-sm font-serif italic text-[#2D4635] dark:text-emerald-100 line-clamp-2 leading-snug">{recipe.title}</h3>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                            By {recipe.contributor}
+                            {rating > 0 && <span className="text-amber-600 ml-1">· ★ {rating.toFixed(1)}{ratingCount > 0 ? ` (${ratingCount})` : ''}</span>}
+                        </p>
+                    </div>
                 </button>
-            )}
+                {onStartCook && (
+                    <div className="border-t border-[#E8DCCB]/80 px-3 py-2.5 dark:border-stone-700">
+                        <button
+                            type="button"
+                            onClick={() => { hapticLight(); onStartCook(); }}
+                            className="min-h-11 w-full rounded-full bg-[#2D4635] px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#1B2C22]"
+                            aria-label={`Start cooking ${recipe.title}`}
+                        >
+                            Cook now
+                        </button>
+                    </div>
+                )}
+            </div>
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
@@ -256,7 +260,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                             type="button"
                             onClick={() => { hapticLight(); onOpenMealPlan(); }}
-                            className="text-sm font-semibold text-[#A0522D] hover:underline"
+                            className="min-h-11 rounded-full px-3 py-2 text-sm font-semibold text-[#A0522D] hover:bg-[#A0522D]/10"
                         >
                             Full week →
                         </button>
@@ -279,14 +283,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     <button
                                         type="button"
                                         onClick={() => { hapticLight(); onSelectRecipe(recipe); }}
-                                        className="min-h-10 rounded-full border border-[#E8DCCB] px-4 py-2 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-300"
+                                        className="min-h-11 rounded-full border border-[#E8DCCB] px-4 py-2 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-300"
                                     >
                                         View
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => { hapticLight(); onStartCook(recipe); }}
-                                        className="min-h-10 rounded-full bg-[#2D4635] px-4 py-2 text-sm font-bold text-white"
+                                        className="min-h-11 rounded-full bg-[#2D4635] px-4 py-2 text-sm font-bold text-white"
                                     >
                                         Cook now
                                     </button>
@@ -331,7 +335,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                             type="button"
                             onClick={() => onSelectRecipe(recipeOfWeek)}
-                            className="text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:underline"
+                            className="min-h-11 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:bg-[#A0522D]/10"
                             aria-label={`Open ${recipeOfWeek.title}`}
                         >
                             Open →
@@ -360,16 +364,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-100 leading-tight">
                                     {recipeOfWeek.title}
                                 </h3>
-                                <div className="flex items-center gap-2.5 text-sm text-stone-500 dark:text-stone-400">
+                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-stone-500 dark:text-stone-400">
                                     <img
                                         src={contributorAvatarUrlForName(recipeOfWeek.contributor)}
                                         alt=""
                                         onError={avatarOnError}
-                                        className="w-7 h-7 rounded-full object-cover border border-stone-200 dark:border-stone-700"
+                                        className="w-7 h-7 rounded-full object-cover border border-stone-200 dark:border-stone-700 shrink-0"
                                     />
-                                    <span className="font-serif italic">By {recipeOfWeek.contributor}</span>
+                                    <span className="font-serif italic min-w-0 truncate">By {recipeOfWeek.contributor}</span>
                                     {recipeOfWeekRating > 0 && (
-                                        <span className="text-amber-600 font-semibold">· ★ {recipeOfWeekRating.toFixed(1)} ({recipeOfWeekRatingCount})</span>
+                                        <span className="text-amber-600 font-semibold shrink-0">· ★ {recipeOfWeekRating.toFixed(1)} ({recipeOfWeekRatingCount})</span>
                                     )}
                                 </div>
                                 {recipeOfWeek.cookTime && (
@@ -410,7 +414,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                             type="button"
                             onClick={() => { onSetTab('Recipes'); }}
-                            className="text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:underline"
+                            className="min-h-11 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:bg-[#A0522D]/10"
                         >
                             All recipes →
                         </button>

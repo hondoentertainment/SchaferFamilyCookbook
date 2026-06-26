@@ -608,7 +608,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     {/* Mobile-only "back to context" pill (top-left) */}
                     <button
                         onClick={onClose}
-                        className="absolute top-2 left-2 z-20 md:hidden px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 print:hidden"
+                        className="absolute top-2 left-2 z-20 md:hidden max-w-[42vw] truncate px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 print:hidden"
                         aria-label={`Back to ${breadcrumbContext}`}
                     >
                         ← {breadcrumbContext}
@@ -682,7 +682,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 </button>
                             )}
 
-                            <div className="flex min-h-0 flex-col justify-center p-6 md:p-8 lg:p-10">
+                            <div className="flex min-h-0 flex-col justify-center px-6 pt-14 pb-6 md:p-8 lg:p-10">
                                 <nav aria-label="Breadcrumb" className="text-[10px] text-stone-500 dark:text-stone-400 tracking-widest mb-4 print:hidden">
                                     <span>{breadcrumbContext}</span>
                                     <span aria-hidden className="mx-1.5">›</span>
@@ -701,7 +701,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         </span>
                                     )}
                                 </div>
-                                <h2 id="recipe-modal-title" className="text-4xl md:text-5xl font-serif italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h2>
+                                <h2 id="recipe-modal-title" className="text-3xl sm:text-4xl md:text-5xl font-serif italic leading-tight text-[#2D4635] dark:text-emerald-100 break-words">{recipe.title}</h2>
                                 {detailSummary && (
                                     <p className="mt-3 text-base text-stone-600 dark:text-stone-300">{detailSummary}</p>
                                 )}
