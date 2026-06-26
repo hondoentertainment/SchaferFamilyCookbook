@@ -3,7 +3,11 @@
  *
  * Stored in localStorage under `groceryList:v1` as a JSON array of `GroceryItem`.
  * Components can subscribe via `subscribeGroceryList` to re-render when the list changes.
+ * When Firebase is configured, changes also sync via `userPrefs.groceryList`.
  */
+
+import { notifyPrefsChanged } from '../services/userPrefsSync';
+import type { Recipe } from '../types';
 
 export interface GroceryItem {
     id: string;
@@ -49,13 +53,21 @@ function loadItems(): GroceryItem[] {
     }
 }
 
-function saveItems(items: GroceryItem[]): void {
+function saveItems(items: GroceryItem[], options?: { skipSync?: boolean }): void {
     try {
         localStorage.setItem(GROCERY_LIST_STORAGE_KEY, JSON.stringify(items));
     } catch {
         // ignore quota / disabled storage
     }
     emitChange();
+    if (!options?.skipSync) {
+        notifyPrefsChanged();
+    }
+}
+
+/** Replace the full list during cloud hydration without scheduling a remote write. */
+export function applyGroceryItemsFromSync(items: GroceryItem[]): void {
+    saveItems(items, { skipSync: true });
 }
 
 /** Return the current grocery list (most-recently-added first). */
@@ -207,4 +219,23 @@ export function formatGroceryListExport(items: GroceryItem[]): string {
         lines.push('');
     }
     return lines.join('\n').trimEnd();
+}
+
+/** Build grocery rows from one or more recipes (ingredients only). */
+export function buildGroceryRowsFromRecipes(recipes: Recipe[]): Array<Omit<GroceryItem, 'id' | 'checked' | 'addedAt'>> {
+    return recipes.flatMap((recipe) =>
+        recipe.ingredients
+            .filter((ing) => ing.trim().length > 0)
+            .map((ing) => ({ text: ing, recipeId: recipe.id, recipeTitle: recipe.title })),
+    );
+}
+
+/** Add ingredients from recipes; returns how many rows were added vs skipped as duplicates. */
+export function addRecipeIngredientsToGrocery(recipes: Recipe[]): { added: number; skipped: number } {
+    const rows = buildGroceryRowsFromRecipes(recipes);
+    if (rows.length === 0) return { added: 0, skipped: 0 };
+    const prevCount = loadItems().length;
+    const next = addItems(rows);
+    const added = Math.max(0, next.length - prevCount);
+    return { added, skipped: Math.max(0, rows.length - added) };
 }

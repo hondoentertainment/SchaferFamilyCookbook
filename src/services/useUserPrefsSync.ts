@@ -11,6 +11,7 @@ import { getFavoriteIds } from '../utils/favorites';
 import { getAllRatings } from '../utils/ratings';
 import { getAllCollections } from '../utils/collections';
 import { getMealPlan } from '../utils/mealPlan';
+import { applyGroceryItemsFromSync, getItems as getGroceryItems } from '../utils/groceryList';
 import { STORAGE_KEYS } from '../constants/storage';
 import type { RecipeRating } from '../types';
 import { CloudArchive } from './db';
@@ -30,7 +31,8 @@ function readLocalPrefs(userName: string): UserPrefsPayload {
     }
     const collections = getAllCollections();
     const mealPlan = getMealPlan();
-    return { favorites, ratings, collections, mealPlan };
+    const groceryList = getGroceryItems();
+    return { favorites, ratings, collections, mealPlan, groceryList };
 }
 
 /**
@@ -64,6 +66,7 @@ function applyMergedPrefsToLocal(userName: string, merged: UserPrefsPayload): vo
 
     localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(merged.collections));
     localStorage.setItem(STORAGE_KEYS.mealPlan, JSON.stringify(merged.mealPlan));
+    applyGroceryItemsFromSync(merged.groceryList ?? []);
 }
 
 export interface UseUserPrefsSyncOptions {
@@ -75,7 +78,7 @@ export interface UseUserPrefsSyncOptions {
 }
 
 /**
- * Wire up cloud sync for a user's favorites, ratings, collections, and meal plan.
+ * Wire up cloud sync for a user's favorites, ratings, collections, meal plan, and grocery list.
  *
  *  - On first render (and whenever `userName` changes), hydrate: fetch remote,
  *    merge with local, persist merged back to local storage, and call
@@ -115,7 +118,8 @@ export function useUserPrefsSync(
                     local.favorites.length > 0 ||
                     Object.keys(local.ratings).length > 0 ||
                     local.collections.length > 0 ||
-                    (local.mealPlan?.length ?? 0) > 0
+                    (local.mealPlan?.length ?? 0) > 0 ||
+                    (local.groceryList?.length ?? 0) > 0
                 ) {
                     writerRef.current?.schedule(userId, local);
                 }
@@ -145,7 +149,17 @@ export function useUserPrefsSync(
             const mergedAddedMealPlan =
                 mergedMealPlan.length > remoteMealPlan.length ||
                 mergedMealPlan.some((entry) => !remoteMealIds.has(entry.id));
-            if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan) {
+            const remoteGrocery = remote.groceryList ?? [];
+            const mergedGrocery = merged.groceryList ?? [];
+            const remoteGroceryIds = new Set(remoteGrocery.map((item) => item.id));
+            const mergedAddedGrocery =
+                mergedGrocery.length > remoteGrocery.length ||
+                mergedGrocery.some((item) => !remoteGroceryIds.has(item.id)) ||
+                mergedGrocery.some((item) => {
+                    const remoteItem = remoteGrocery.find((r) => r.id === item.id);
+                    return remoteItem && item.checked && !remoteItem.checked;
+                });
+            if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery) {
                 writerRef.current?.schedule(userId, merged);
             }
         })();

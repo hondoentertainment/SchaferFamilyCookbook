@@ -83,7 +83,7 @@
 **Rationale**: Edit name/avatar with `htmlFor`/`id`, `aria-busy` during save. My Recipes, contribution history. AvatarPicker has focus trap, Escape. Admin can edit recipes from profile. Error and success feedback.
 
 **Recommendations**:
-1. **STILL OPEN (low priority)** — `ProfileView.tsx` sets `aria-busy` on the input and Save button during the save call (lines 510, 80) but there is no dedicated `aria-live="polite"` region announcing "Name saved" / "Save failed" after the operation resolves. Add a hidden `role="status" aria-live="polite"` node alongside the form that updates on success/error.
+1. **STILL OPEN (low priority)** — ~~Add a hidden `role="status" aria-live="polite"` node alongside the form that updates on success/error.~~ **DONE (June 2026)** — `profile-save-announcement` region announces save results.
 
 ---
 

@@ -70,16 +70,10 @@ const defaultConfig: SiteConfig = {
   categories: RECIPE_CATEGORIES,
   loginCopy: {
     title: "Who's cooking?",
-    subtitle:
-      'Choose your name to personalize favorites, notes, and the recipes you return to in the family archive.',
-    placeholder: 'Your name or nickname',
+    subtitle: 'Pick your name to save favorites and notes.',
+    placeholder: 'Your name',
     cta: 'Continue',
-    helpText: 'Need access? Contact a cookbook custodian.',
-    trustStrip: [
-      'No password — pick the name your family knows you by.',
-      'Favorites and notes stay on this device; cloud sync depends on family setup.',
-      'Custodians manage the shared recipe directory.',
-    ],
+    helpText: 'Need access?',
   },
   galleryCopy: {
     title: 'Family Gallery',

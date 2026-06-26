@@ -1,6 +1,8 @@
 name: Lighthouse CI
 
 on:
+  schedule:
+    - cron: '0 12 1 * *'
   workflow_dispatch:
     inputs:
       url:
@@ -22,9 +24,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Lighthouse (manual quality check)
+      - name: Run Lighthouse
         env:
-          LHCI_URL: ${{ inputs.url }}
+          LHCI_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.url || 'https://schafer-family-cookbook.vercel.app/' }}
         run: npx --yes @lhci/cli@0.14.0 autorun
 
       - uses: actions/upload-artifact@v4

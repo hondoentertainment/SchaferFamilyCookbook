@@ -1,46 +1,40 @@
 # Recommended Next Steps
 
-_Last updated: 2026-06-26_
+_Last updated: 2026-06-26 (batch 2 — executed)_
 
-## Recently shipped (June 2026)
+## Recently shipped (June 2026 — batch 2)
 
-### Navigation & Home IA — ✅ shipped
+### Grocery cloud sync — ✅ shipped
 
-- Six-tab bottom nav: **Home**, **Recipes**, **A–Z**, **Family**, **Groceries**, **Me**
-- `HomeView` dashboard: greeting, stats, tonight's meal plan, recipe of the week, seasonal picks, favorites/recent shelves, trivia teaser
-- `SectionSubNav` for Recipes/Collections, Family hub sub-tabs, Groceries/Meal Plan, Profile/Privacy/Help
-- Playwright coverage: `e2e/navigation.spec.ts`, `e2e/home.spec.ts`
+- `userPrefs.groceryList` mirrors the local grocery list across devices (same opt-in model as favorites, collections, and meal plan)
+- Merge strategy unions by item id, de-dupes recipeId + text, and preserves checked state
+- Firestore rules updated; unit + rules tests added
 
-### Meal Plan polish — ✅ shipped
+### Collections → Grocery — ✅ shipped
 
-- Copy week / copy day actions with duplicate skipping
-- Fuzzy picker search by title, ingredient, or contributor
-- Grocery de-dupe toasts (`Added N items · M duplicates skipped`)
+- Expanded collections can **Add to grocery list** for all recipes in the shelf at once
+- Reuses meal-plan de-dupe toasts and optional “View list” action
 
-### Family Story CMS polish — ✅ shipped
+### Ops & quality — ✅ shipped
 
-- Live preview toggle in Admin
-- Autosave draft to localStorage with restore/discard banner
-- Optional section templates when the editor is empty
+- Lighthouse CI workflow runs on a monthly schedule (1st of month) plus manual dispatch
+- Home E2E, profile save announcements, and Home breadcrumb (batch 1)
 
-### Accessibility & polish — ✅ shipped
+## Completed this session
 
-- A–Z sticky section headers (`AlphabeticalIndex`)
-- Gallery video fullscreen lightbox (`GalleryLightbox`)
-- Profile `aria-live` announcements on save
-- Recipe modal **Back to Home** breadcrumb when opened from Home tab
-- Cook Mode read-aloud + offline recipe image cache
-- Grocery list share/copy; fuzzy recipe search
+1. **Firestore rules deployed** — `firebase deploy --only firestore:rules --project schafer-cookbook` (grocery sync allowed in production)
+2. **Verification** — `npm run test:run` (771 tests), onboarding E2E (3/3 Chromium), `npm run images:verify` (67/67), `npm run smoke:prod` (all green)
+3. **Lighthouse workflow** — scheduled runs now fall back to the production URL when `inputs.url` is unset
 
 ## What to do next
 
-1. **Release verification** — run `npm run ci`, `npm run test:rules`, `npm run test:e2e:desktop`, and `npm run smoke:prod` before family rollout. Trigger **Lighthouse CI** workflow (or `npm run lighthouse:ci`) and archive scores.
-2. **Monitor production** — confirm `VITE_SENTRY_DSN` on Vercel; skim errors after nav rollout.
-3. **Content ops** — `npm run images:verify` for any missing recipe images; `firebase deploy --only firestore:indexes` when trivia indexes change.
+1. **Production monitoring** — `VITE_SENTRY_DSN` is **not** set on Vercel yet. Add it under Project → Settings → Environment Variables (Production), then redeploy. Skim Sentry after grocery sync is live.
+2. **Lighthouse baseline** — trigger the **Lighthouse CI** workflow in GitHub Actions (or wait for the 1st-of-month schedule) and tune `lighthouserc.cjs` thresholds if scores drift
+3. **Content ops (optional)** — all 67 recipes have generated fallback images; run `npm run images:batch` only if you want to refresh Imagen assets
 
 ## Explicitly deferred
 
-- **Real auth (OAuth/email)** — only if cross-device identity for non-custodian users becomes a real need.
-- **Full offline recipe text cache** — Cook Mode image cache + PWA runtime caching cover the common case.
-- **Gamification** (trivia streaks, contribution badges) — backlog.
-- **Multi-tenant / site forks** — strategic, not near-term.
+- **Real auth (OAuth/email)** — only if cross-device identity for non-custodian users becomes a real need
+- **Full offline recipe text cache** — Cook Mode image cache + PWA runtime caching cover the common case
+- **Gamification** (trivia streaks, contribution badges) — backlog
+- **Multi-tenant / site forks** — strategic, not near-term

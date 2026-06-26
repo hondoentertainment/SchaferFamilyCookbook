@@ -4,12 +4,14 @@ import {
     mergePrefs,
     mergeCollections,
     mergeMealPlan,
+    mergeGroceryList,
     fetchRemotePrefs,
     writeRemotePrefs,
     createDebouncedWriter,
 } from './userPrefsSync';
 import type { RecipeCollection } from '../types';
 import type { MealPlanEntry } from '../utils/mealPlan';
+import type { GroceryItem } from '../utils/groceryList';
 import { CloudArchive } from './db';
 import { setupLocalStorage } from '../test/utils';
 
@@ -127,6 +129,35 @@ describe('userPrefsSync', () => {
             );
             expect(merged).toHaveLength(1);
             expect(merged[0].id).toBe('remote');
+        });
+    });
+
+    describe('mergeGroceryList', () => {
+        const item = (overrides: Partial<GroceryItem> = {}): GroceryItem => ({
+            id: 'g1',
+            text: '2 cups flour',
+            recipeId: 'r1',
+            recipeTitle: 'Bread',
+            checked: false,
+            addedAt: 100,
+            ...overrides,
+        });
+
+        it('unions items from both sides by id', () => {
+            const merged = mergeGroceryList(
+                [item({ id: 'local' })],
+                [item({ id: 'remote', text: '1 cup sugar' })],
+            );
+            expect(merged.map((g) => g.id).sort()).toEqual(['local', 'remote']);
+        });
+
+        it('dedupes recipeId + text pairs and keeps checked state', () => {
+            const merged = mergeGroceryList(
+                [item({ id: 'local', checked: true, addedAt: 200 })],
+                [item({ id: 'remote', checked: false, addedAt: 100 })],
+            );
+            expect(merged).toHaveLength(1);
+            expect(merged[0].checked).toBe(true);
         });
     });
 
@@ -287,6 +318,7 @@ describe('userPrefsSync', () => {
                 ratings: { r1: 5, r2: 3 },
                 collections: [],
                 mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
+                groceryList: [],
             });
         });
 
@@ -339,11 +371,13 @@ describe('userPrefsSync', () => {
                 ratings: Record<string, number>;
                 collections: RecipeCollection[];
                 mealPlan: MealPlanEntry[];
+                groceryList: GroceryItem[];
             };
             expect([...typed.favorites].sort()).toEqual(['r1', 'r2']);
             expect(typed.ratings).toEqual({ r1: 4 });
             expect(typed.collections).toHaveLength(1);
             expect(typed.mealPlan).toEqual([]);
+            expect(typed.groceryList).toEqual([]);
             expect(options).toEqual({ merge: true });
         });
 

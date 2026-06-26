@@ -16,7 +16,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Favorites** | Heart recipes (local + cloud sync via `userPrefs` when Firebase configured) | Solid |
 | **Collections** | User-created lists (`CollectionsView`, modal picker + Profile sections; cloud sync via `userPrefs`) | Solid |
 | **Recently Viewed** | Track viewed recipes; **Profile** sections for favorites and recent | Solid |
-| **Grocery List** | Add from recipe modal, list view, local persistence | Solid |
+| **Grocery List** | Add from recipe modal, list view, local persistence, **cloud sync via `userPrefs`** | Solid |
 | **Meal Plan** | Weekly planner, add-from-modal/day picker, generate grocery list, optional `userPrefs` cloud sync | Solid |
 | **Gallery** | Photos/videos, lightbox, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
 | **Trivia** | 25-question quiz, local scoreboard + **Firestore family leaderboard** (`triviaScores`) | Solid |
@@ -40,11 +40,14 @@ A strategic roadmap for the next phases of development, informed by the current 
 ## Immediate Next Steps (1–2 weeks)
 
 ### 1. Product (next sprint)
-- [ ] **Lighthouse baseline** — run `npm run lighthouse:ci` on production; track scores in CI artifacts
-- [ ] **Production monitoring** — Sentry DSN on Vercel; smoke prod after nav rollout
-- [ ] **Content ops** — `npm run images:verify`; deploy Firestore indexes when needed
+- [ ] **Deploy Firestore rules** — grocery sync requires updated `userPrefs` rules in production
+- [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
+- [ ] **Production monitoring** — Sentry DSN on Vercel; smoke prod after grocery sync rollout
 
-### 2. Done (recent — June 2026)
+### 2. Done (recent — June 2026 batch 2)
+- [x] **Grocery cloud sync** — `userPrefs.groceryList`, merge/de-dupe, Firestore rules + tests
+- [x] **Collections → grocery** — add entire collection ingredients in one action
+- [x] **Lighthouse schedule** — monthly workflow trigger on production URL
 - [x] **Home dashboard & six-tab nav** — `HomeView`, `SectionSubNav`, bottom nav groups, E2E in `e2e/home.spec.ts` and `e2e/navigation.spec.ts`
 - [x] **Meal Plan polish** — copy week/day, fuzzy picker search, grocery de-dupe toasts
 - [x] **Family Story CMS polish** — preview, autosave draft, section templates
@@ -81,7 +84,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 |---------|-------------|--------|-------|
 | **Collections** | User-created lists; add/remove recipes | M | **Shipped** |
 | **Meal Plan** | Simple week view with optional cloud sync | L | **Shipped** (June 2026) |
-| **Grocery (enhanced)** | Merge from multiple recipes; optional stronger cloud sync | M |
+| **Grocery (enhanced)** | Merge from multiple recipes; optional stronger cloud sync | M | **Cloud sync shipped**; collection bulk-add shipped |
 
 ### Content & Discovery
 | Feature | Description | Effort | Notes |

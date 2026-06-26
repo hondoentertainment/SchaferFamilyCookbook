@@ -5,7 +5,9 @@ import {
   deleteCollection,
   removeFromCollection,
 } from '../utils/collections';
+import { addRecipeIngredientsToGrocery } from '../utils/groceryList';
 import { hapticLight } from '../utils/haptics';
+import { useUI } from '../context/UIContext';
 import type { Recipe, RecipeCollection } from '../types';
 
 const STARTER_TEMPLATES = [
@@ -18,13 +20,16 @@ interface CollectionsViewProps {
   recipes: Recipe[];
   currentUserName: string;
   onViewRecipe: (recipe: Recipe) => void;
+  onOpenGroceryList?: () => void;
 }
 
 export const CollectionsView: React.FC<CollectionsViewProps> = ({
   recipes,
   currentUserName,
   onViewRecipe,
+  onOpenGroceryList,
 }) => {
+  const { toast } = useUI();
   const [collections, setCollections] = useState<RecipeCollection[]>(() => getAllCollections());
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -57,6 +62,23 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
     hapticLight();
     createCollection(name, currentUserName, description, icon);
     setCollections(getAllCollections());
+  };
+
+  const handleAddCollectionToGrocery = (colRecipes: Recipe[], collectionName: string) => {
+    if (colRecipes.length === 0) {
+      toast('Add recipes to this collection first', 'info');
+      return;
+    }
+    hapticLight();
+    const { added, skipped } = addRecipeIngredientsToGrocery(colRecipes);
+    if (added === 0) {
+      toast('Those ingredients are already on your Grocery List', 'info');
+      return;
+    }
+    const skippedNote = skipped > 0 ? ` · ${skipped} duplicate${skipped === 1 ? '' : 's'} skipped` : '';
+    toast(`Added ${added} item${added === 1 ? '' : 's'} from ${collectionName}${skippedNote}`, 'success', {
+      action: onOpenGroceryList ? { label: 'View list', onClick: onOpenGroceryList } : undefined,
+    });
   };
 
   return (
@@ -188,11 +210,21 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                         </div>
                       ))
                     )}
-                    <div className="pt-2 flex justify-end">
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+                      {colRecipes.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddCollectionToGrocery(colRecipes, col.name)}
+                          className="text-[10px] font-bold uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline min-h-11 px-1"
+                          data-testid={`collection-add-grocery-${col.id}`}
+                        >
+                          Add to grocery list
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleDelete(col.id)}
-                        className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600"
+                        className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600 ml-auto min-h-11 px-1"
                       >
                         Delete Collection
                       </button>

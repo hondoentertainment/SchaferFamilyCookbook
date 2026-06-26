@@ -4,6 +4,7 @@ import { CloudArchive } from './db';
 import { Sentry } from '../monitoring/sentry';
 import type { RecipeCollection } from '../types';
 import type { MealPlanEntry } from '../utils/mealPlan';
+import type { GroceryItem } from '../utils/groceryList';
 
 // --- Local-change notification bus ---------------------------------------
 // Components mutate local state through utils/favorites.ts and utils/ratings.ts.
@@ -32,7 +33,7 @@ export function notifyPrefsChanged(): void {
 }
 
 /**
- * Cloud-sync layer for user-specific preferences (favorites + ratings + collections + meal plan).
+ * Cloud-sync layer for user-specific preferences (favorites + ratings + collections + meal plan + grocery list).
  *
  * Stored per-user at `userPrefs/{userId}` as:
  *   {
@@ -40,6 +41,7 @@ export function notifyPrefsChanged(): void {
  *     ratings: Record<recipeId, rating>,
  *     collections: RecipeCollection[],
  *     mealPlan: MealPlanEntry[],
+ *     groceryList: GroceryItem[],
  *     updatedAt: Timestamp
  *   }
  *
@@ -56,6 +58,7 @@ export interface UserPrefsPayload {
     ratings: Record<string, number>;
     collections: RecipeCollection[];
     mealPlan?: MealPlanEntry[];
+    groceryList?: GroceryItem[];
 }
 
 function parseMealPlanEntry(raw: unknown): MealPlanEntry | null {
@@ -114,6 +117,80 @@ function parseCollections(raw: unknown): RecipeCollection[] {
         if (c) out.push(c);
     }
     return out;
+}
+
+function groceryDedupKey(recipeId: string | undefined, text: string): string {
+    return `${recipeId ?? ''}::${text.trim().toLowerCase()}`;
+}
+
+function parseGroceryItem(raw: unknown): GroceryItem | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const o = raw as Record<string, unknown>;
+    if (typeof o.id !== 'string' || !o.id) return null;
+    if (typeof o.text !== 'string' || !o.text.trim()) return null;
+    if (typeof o.checked !== 'boolean') return null;
+    if (typeof o.addedAt !== 'number' || !Number.isFinite(o.addedAt)) return null;
+    return {
+        id: o.id,
+        text: o.text.trim(),
+        recipeId: typeof o.recipeId === 'string' ? o.recipeId : undefined,
+        recipeTitle: typeof o.recipeTitle === 'string' ? o.recipeTitle : undefined,
+        checked: o.checked,
+        addedAt: o.addedAt,
+    };
+}
+
+function parseGroceryList(raw: unknown): GroceryItem[] {
+    if (!Array.isArray(raw)) return [];
+    const out: GroceryItem[] = [];
+    for (const item of raw) {
+        const parsed = parseGroceryItem(item);
+        if (parsed) out.push(parsed);
+    }
+    return out;
+}
+
+/**
+ * Merge grocery items by stable id, then de-dupe recipeId + text pairs.
+ * Checked state wins if either device marked an item done.
+ */
+export function mergeGroceryList(local: GroceryItem[], remote: GroceryItem[]): GroceryItem[] {
+    const byId = new Map<string, GroceryItem>();
+    for (const item of [...local, ...remote]) {
+        const existing = byId.get(item.id);
+        if (!existing) {
+            byId.set(item.id, item);
+            continue;
+        }
+        const newer = item.addedAt >= existing.addedAt ? item : existing;
+        const older = item.addedAt >= existing.addedAt ? existing : item;
+        byId.set(item.id, {
+            ...newer,
+            checked: existing.checked || item.checked,
+            recipeTitle: newer.recipeTitle ?? older.recipeTitle,
+        });
+    }
+
+    const byKey = new Map<string, GroceryItem>();
+    for (const item of byId.values()) {
+        const key = groceryDedupKey(item.recipeId, item.text);
+        const existing = byKey.get(key);
+        if (!existing) {
+            byKey.set(key, item);
+            continue;
+        }
+        const checked = existing.checked || item.checked;
+        const picked = existing.checked && !item.checked
+            ? existing
+            : item.checked && !existing.checked
+              ? item
+              : item.addedAt >= existing.addedAt
+                ? item
+                : existing;
+        byKey.set(key, { ...picked, checked });
+    }
+
+    return [...byKey.values()].sort((a, b) => b.addedAt - a.addedAt);
 }
 
 /**
@@ -252,7 +329,8 @@ export async function fetchRemotePrefs(userId: string): Promise<UserPrefsPayload
         }
         const collections = parseCollections(data?.collections);
         const mealPlan = parseMealPlan(data?.mealPlan);
-        return { favorites, ratings, collections, mealPlan };
+        const groceryList = parseGroceryList(data?.groceryList);
+        return { favorites, ratings, collections, mealPlan, groceryList };
     } catch (err) {
         logSyncError('fetchRemotePrefs', err);
         return null;
@@ -278,6 +356,7 @@ export async function writeRemotePrefs(
                 ratings: payload.ratings,
                 collections: payload.collections,
                 mealPlan: payload.mealPlan ?? [],
+                groceryList: payload.groceryList ?? [],
                 updatedAt: serverTimestamp(),
             },
             { merge: true }
@@ -299,6 +378,7 @@ export async function writeRemotePrefs(
  *   - collections: union by id; matching ids union recipeIds; metadata from
  *     the side with the newer timestamp (see mergeCollections).
  *   - mealPlan: union by entry id, de-duped by date + recipeId.
+ *   - groceryList: union by item id, de-duped by recipeId + text; checked wins.
  */
 export function mergePrefs(
     local: UserPrefsPayload,
@@ -314,6 +394,7 @@ export function mergePrefs(
         ratings,
         collections: mergeCollections(local.collections, remote.collections),
         mealPlan: mergeMealPlan(local.mealPlan ?? [], remote.mealPlan ?? []),
+        groceryList: mergeGroceryList(local.groceryList ?? [], remote.groceryList ?? []),
     };
 }
 

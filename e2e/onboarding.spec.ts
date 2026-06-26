@@ -14,8 +14,8 @@ test.describe('Onboarding walkthrough', () => {
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
 
-    await expect(page.getByText(/Chapter 1 of 4/i)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('heading', { name: /Find recipes/i })).toBeVisible();
+    await expect(page.getByText(/Chapter 1 of \d+/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /Your home dashboard/i })).toBeVisible();
   });
 
   test('Resume later hides tour for the rest of the browser session', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('Onboarding walkthrough', () => {
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
 
-    await expect(page.getByText(/Chapter 1 of 4/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Chapter 1 of \d+/i)).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: /Resume later/i }).click();
     await waitForHomeMainHeading(page);
 
@@ -41,7 +41,7 @@ test.describe('Onboarding walkthrough', () => {
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
 
-    await expect(page.getByText(/Chapter 1 of 4/i)).toHaveCount(0);
+    await expect(page.getByText(/Chapter 1 of \d+/i)).toHaveCount(0);
     await waitForHomeMainHeading(page);
   });
 
@@ -68,7 +68,7 @@ test.describe('Onboarding walkthrough', () => {
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
 
-    await expect(page.getByText(/Chapter 1 of 4/i)).toHaveCount(0);
+    await expect(page.getByText(/Chapter 1 of \d+/i)).toHaveCount(0);
     await waitForHomeMainHeading(page);
   });
 });

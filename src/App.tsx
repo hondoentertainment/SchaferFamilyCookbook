@@ -625,7 +625,7 @@ function parseRecipeHash(hash: string): { id: string; openCook: boolean } | null
 const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
 const App: React.FC = () => {
-    const { toast, confirm } = useUI();
+    const { toast } = useUI();
     const [tab, setTab] = useState('Home');
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -673,7 +673,6 @@ const App: React.FC = () => {
     const [custodianAuth, setCustodianAuth] = useState<CustodianAuthState>({ user: null, isAdmin: false });
 
     const [loginName, setLoginName] = useState('');
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
     // Filters
@@ -920,25 +919,11 @@ const App: React.FC = () => {
         [contributors]
     );
 
-    const handleLoginSubmit = async (e: React.FormEvent) => {
+    const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmed = loginName.trim();
-        if (!trimmed || isLoggingIn) return;
-
-        const isKnownContributor = contributors.some(
-            (c) => c.name.trim().toLowerCase() === trimmed.toLowerCase(),
-        );
-        if (!isKnownContributor) {
-            const ok = await confirm(`You'll use the cookbook as "${trimmed}". Sound right?`, {
-                confirmLabel: 'Yes, open the cookbook',
-                cancelLabel: 'Edit name',
-            });
-            if (!ok) return;
-        }
-
-        setIsLoggingIn(true);
+        if (!trimmed) return;
         finalizeLogin(trimmed);
-        setIsLoggingIn(false);
     };
 
     useEffect(() => {
@@ -1187,173 +1172,88 @@ const App: React.FC = () => {
         const quickFamily = contributorsForDisplay.slice(0, 6);
         const lc = siteConfig.loginCopy;
         const loginTitle = lc?.title ?? "Who's cooking?";
-        const loginSubtitle =
-            lc?.subtitle ??
-            'Choose your name to personalize favorites, notes, and the recipes you return to.';
+        const loginSubtitle = lc?.subtitle ?? 'Pick your name to save favorites and notes.';
         const loginPlaceholder = lc?.placeholder ?? 'Your name';
         const loginCta = lc?.cta ?? 'Continue';
-        const loginHelp = lc?.helpText ?? 'Need access? Contact an administrator.';
-        const trustStrip = lc?.trustStrip ?? [];
-        const loginShowcaseRecipe = (() => {
-            const list = normalizeRecipes(defaultRecipes as Recipe[]);
-            return list.find((r) => r.image && isValidRecipeImageUrl(r.image)) ?? list[0] ?? null;
-        })();
+        const loginHelp = lc?.helpText ?? 'Need access?';
         return (
-            <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6 lg:p-10">
+            <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6">
                 <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
                     Skip to main content
                 </a>
-                <main id="main-content-login" role="main" aria-label="Sign in" tabIndex={-1} className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center py-[max(1rem,env(safe-area-inset-top,0px))]">
-                    <div className="grid w-full items-stretch gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:gap-8">
-                        <section className="heirloom-card hidden overflow-hidden rounded-[2rem] border border-white/70 p-8 text-[#1B2C22] dark:border-stone-800 dark:text-stone-100 lg:flex lg:flex-col lg:justify-between">
-                            <div className="space-y-8">
-                                <div className="inline-flex items-center gap-3 rounded-full border border-[#A0522D]/20 bg-white/60 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-[#7A3F22] dark:bg-stone-900/60 dark:text-orange-200">
-                                    <span aria-hidden="true">✦</span>
-                                    Family archive
-                                </div>
-                                <div className="space-y-5">
-                                    <p className="font-serif text-5xl italic leading-[0.95] tracking-tight text-[#2D4635] dark:text-emerald-100 xl:text-6xl">
-                                        Schafer Family Cookbook
-                                    </p>
-                                    <p className="max-w-xl font-serif text-xl italic leading-relaxed text-stone-700 dark:text-stone-300">
-                                        Recipes, memories, and kitchen notes gathered into one warm place for the people who know the stories behind the food.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="mt-12 grid grid-cols-3 gap-3">
-                                <div className="rounded-3xl border border-[#A0522D]/15 bg-white/60 p-4 dark:bg-stone-900/60">
-                                    <p className="font-serif text-3xl italic text-[#2D4635] dark:text-emerald-100">{dbStats.recipeCount || recipes.length}</p>
-                                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Recipes</p>
-                                </div>
-                                <div className="rounded-3xl border border-[#A0522D]/15 bg-white/60 p-4 dark:bg-stone-900/60">
-                                    <p className="font-serif text-3xl italic text-[#2D4635] dark:text-emerald-100">{contributorsForDisplay.length}</p>
-                                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Cooks</p>
-                                </div>
-                                <div className="rounded-3xl border border-[#A0522D]/15 bg-white/60 p-4 dark:bg-stone-900/60">
-                                    <p className="font-serif text-3xl italic text-[#2D4635] dark:text-emerald-100">{gallery.length}</p>
-                                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Memories</p>
-                                </div>
-                            </div>
-                            {loginShowcaseRecipe && (
-                                <div className="mt-10 rounded-[2rem] border border-[#A0522D]/25 bg-white/55 p-5 dark:bg-stone-900/55" aria-label="Sample recipe from the archive">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#7A3F22] dark:text-orange-200 mb-4">Peek inside</p>
-                                    <div className="flex gap-4 items-center">
-                                        {loginShowcaseRecipe.image && isValidRecipeImageUrl(loginShowcaseRecipe.image) ? (
+                <main id="main-content-login" role="main" aria-label="Sign in" tabIndex={-1} className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-md items-center justify-center py-[max(1rem,env(safe-area-inset-top,0px))]">
+                    <section className="heirloom-card w-full rounded-[2rem] border border-white/80 p-6 shadow-2xl dark:border-stone-800 sm:p-8">
+                        <div className="mb-8 text-center">
+                            <p className="text-xs font-black uppercase tracking-[0.3em] text-[#7A3F22] dark:text-orange-200">The Schafer Cookbook</p>
+                            <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100">{loginTitle}</h1>
+                            <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-stone-700 dark:text-stone-300">
+                                {loginSubtitle}
+                            </p>
+                        </div>
+
+                        {quickFamily.length > 0 && (
+                            <div className="mb-6">
+                                <p className="mb-3 text-center text-sm font-black uppercase tracking-[0.2em] text-stone-700 dark:text-stone-200">Tap your name</p>
+                                <div className="grid grid-cols-3 gap-2.5">
+                                    {quickFamily.map((c) => (
+                                        <button
+                                            key={c.id}
+                                            type="button"
+                                            onClick={() => finalizeLogin(c.name.trim())}
+                                            className="group flex min-h-[5.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl border border-stone-200/80 bg-white/80 p-2.5 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A0522D]/35 hover:bg-[#FFF8EC] hover:shadow-md active:scale-[0.98] dark:border-stone-700 dark:bg-stone-900/70 dark:hover:bg-stone-800"
+                                            aria-label={`Sign in as ${c.name}`}
+                                        >
                                             <img
-                                                src={loginShowcaseRecipe.image}
-                                                alt=""
-                                                className="w-24 h-24 shrink-0 rounded-2xl object-cover border border-white/80 shadow-md"
-                                            />
-                                        ) : null}
-                                        <div className="min-w-0 space-y-2">
-                                            <p className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100 leading-snug line-clamp-2">{loginShowcaseRecipe.title}</p>
-                                            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                                                Sign in to browse every recipe, build your grocery list, and use cook mode step by step.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-
-                        <section className="heirloom-card w-full rounded-[2rem] border border-white/80 p-5 shadow-2xl dark:border-stone-800 sm:p-7 md:rounded-[2.5rem] md:p-9 lg:p-10">
-                            <div className="mx-auto max-w-xl">
-                                <div className="family-script-rule mb-7 text-center md:mb-9">
-                                    <p className="text-xs font-black uppercase tracking-[0.3em] text-[#7A3F22] dark:text-orange-200">The Schafer Cookbook</p>
-                                    <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100 md:text-5xl">{loginTitle}</h1>
-                                    <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-stone-700 dark:text-stone-300">
-                                        {loginSubtitle}
-                                    </p>
-                                </div>
-
-                                {quickFamily.length > 0 && (
-                                    <div className="mb-7">
-                                        <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-stone-700 dark:text-stone-200">Tap your name</p>
-                                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                            {quickFamily.map((c) => (
-                                                <button
-                                                    key={c.id}
-                                                    type="button"
-                                                    onClick={() => finalizeLogin(c.name.trim())}
-                                                    className="group flex min-h-[6.25rem] flex-col items-center justify-center gap-2 rounded-3xl border border-stone-200/80 bg-white/80 p-3 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A0522D]/35 hover:bg-[#FFF8EC] hover:shadow-md active:scale-[0.98] dark:border-stone-700 dark:bg-stone-900/70 dark:hover:bg-stone-800"
-                                                    aria-label={`Sign in as ${c.name}`}
-                                                >
-                                                    <img
-                                                        src={c.avatar || contributorAvatarUrlForName(c.name)}
-                                                        alt=""
-                                                        onError={avatarOnError}
-                                                        className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md transition-transform group-hover:scale-105 dark:border-stone-700 sm:h-16 sm:w-16"
-                                                    />
-                                                    <span className="max-w-full truncate text-sm font-bold text-stone-800 dark:text-stone-100">{c.name.split(' ')[0]}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="relative my-6 flex items-center" aria-hidden>
-                                    <span className="h-px flex-1 bg-stone-300 dark:bg-stone-700" />
-                                    <span className="px-4 text-xs font-black uppercase tracking-widest text-stone-600 dark:text-stone-300">Or type a name</span>
-                                    <span className="h-px flex-1 bg-stone-300 dark:bg-stone-700" />
-                                </div>
-
-                                <form onSubmit={handleLoginSubmit} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label htmlFor="login-name" className="block text-sm font-black uppercase tracking-[0.18em] text-stone-700 dark:text-stone-200">Your name</label>
-                                        <div className="relative">
-                                            <input
-                                                id="login-name"
-                                                type="text"
-                                                placeholder={loginPlaceholder}
-                                                autoComplete="name"
-                                                disabled={isLoggingIn}
-                                                aria-busy={isLoggingIn}
-                                                className="min-h-14 w-full rounded-2xl border border-stone-300 bg-white/90 py-4 pl-16 pr-4 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-70 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-400 dark:focus:bg-stone-900"
-                                                value={loginName}
-                                                onChange={e => setLoginName(e.target.value)}
-                                            />
-                                            <img
-                                                src={loginPreviewAvatar}
+                                                src={c.avatar || contributorAvatarUrlForName(c.name)}
                                                 alt=""
                                                 onError={avatarOnError}
-                                                className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-stone-200 object-cover dark:border-stone-700"
-                                                aria-hidden
+                                                className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-md transition-transform group-hover:scale-105 dark:border-stone-700"
                                             />
-                                        </div>
-                                    </div>
-                                    {loginName.trim() && matchedContributor && (
-                                        <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center font-serif text-sm italic text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" role="status">
-                                            Welcome back, {matchedContributor.name.split(' ')[0]}.
-                                        </p>
-                                    )}
-                                    <button
-                                        type="submit"
-                                        disabled={isLoggingIn || !loginName.trim()}
-                                        aria-busy={isLoggingIn}
-                                        className="w-full min-h-14 rounded-2xl bg-[#2D4635] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
-                                    >
-                                        {isLoggingIn ? 'Opening…' : loginCta}
-                                    </button>
-                                    <p className="pt-1 text-center text-sm text-stone-700 dark:text-stone-300">
-                                        {loginHelp}{' '}
-                                        <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[#2D4635] dark:text-orange-200 dark:hover:text-emerald-100">Email an admin for access.</a>
-                                    </p>
-                                    {trustStrip.length > 0 && (
-                                        <ul className="mt-6 space-y-2 rounded-2xl border border-stone-200/80 bg-white/50 p-4 text-left dark:border-stone-700 dark:bg-stone-900/40">
-                                            {trustStrip.map((line) => (
-                                                <li key={line} className="flex gap-2 text-xs text-stone-600 dark:text-stone-400 leading-snug">
-                                                    <span className="mt-1 shrink-0 text-[#A0522D]" aria-hidden>
-                                                        ✓
-                                                    </span>
-                                                    <span>{line}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </form>
+                                            <span className="max-w-full truncate text-xs font-bold text-stone-800 dark:text-stone-100">{c.name.split(' ')[0]}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </section>
-                    </div>
+                        )}
+
+                        <form onSubmit={handleLoginSubmit} className="space-y-4">
+                            <div className="relative">
+                                <label htmlFor="login-name" className="sr-only">Your name</label>
+                                <input
+                                    id="login-name"
+                                    type="text"
+                                    placeholder={loginPlaceholder}
+                                    autoComplete="name"
+                                    className="min-h-14 w-full rounded-2xl border border-stone-300 bg-white/90 py-4 pl-16 pr-4 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] focus:bg-white dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-400 dark:focus:bg-stone-900"
+                                    value={loginName}
+                                    onChange={e => setLoginName(e.target.value)}
+                                />
+                                <img
+                                    src={loginPreviewAvatar}
+                                    alt=""
+                                    onError={avatarOnError}
+                                    className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-stone-200 object-cover dark:border-stone-700"
+                                    aria-hidden
+                                />
+                            </div>
+                            {loginName.trim() && matchedContributor && (
+                                <p className="rounded-2xl bg-emerald-50 px-4 py-2.5 text-center font-serif text-sm italic text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" role="status">
+                                    Welcome back, {matchedContributor.name.split(' ')[0]}.
+                                </p>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={!loginName.trim()}
+                                className="w-full min-h-14 rounded-2xl bg-[#2D4635] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
+                            >
+                                {loginCta}
+                            </button>
+                            <p className="pt-1 text-center text-sm text-stone-700 dark:text-stone-300">
+                                {loginHelp}{' '}
+                                <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[#2D4635] dark:text-orange-200 dark:hover:text-emerald-100">Email an admin.</a>
+                            </p>
+                        </form>
+                    </section>
                 </main>
             </div>
         );
@@ -2389,6 +2289,7 @@ const App: React.FC = () => {
                             recipes={recipes}
                             currentUserName={currentUser.name}
                             onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
+                            onOpenGroceryList={() => handleSetTab('Grocery List')}
                         />
                     </section>
                 </Suspense>

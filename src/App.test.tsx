@@ -6,7 +6,6 @@ import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithP
 function login(name = 'Alice') {
     fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: name } });
     fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /yes, open the cookbook/i }));
 }
 
 async function loginAndNavigateToGallery(_initialTab = 'Recipes') {

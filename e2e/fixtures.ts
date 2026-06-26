@@ -4,13 +4,9 @@ import { test as base } from '@playwright/test';
 const HOME_H1_TEXT_RE = /Good (morning|afternoon|evening)|Late night/i;
 
 /**
- * After submitting the typed-name login form, confirm the in-app name dialog.
- * Waits for either the Home masthead (returning users) or the first onboarding chapter (first visit).
+ * After submitting the login form, wait for Home or the first onboarding chapter.
  */
 export async function confirmCookbookLogin(page: import('@playwright/test').Page): Promise<void> {
-  const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });
-  await openCookbook.waitFor({ state: 'visible', timeout: 15000 });
-  await openCookbook.click();
   await Promise.race([
     page
       .locator('#main-content-home')

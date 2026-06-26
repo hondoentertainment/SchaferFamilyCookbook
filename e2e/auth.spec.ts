@@ -33,6 +33,6 @@ test.describe('Login', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
 
-    await expect(page.getByRole('link', { name: /Email an admin for access/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Email an admin/i })).toBeVisible();
   });
 });
