@@ -112,17 +112,38 @@ export const HistoryView: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] py-12 md:py-20 px-4 md:px-6 animate-in fade-in duration-1000" role="main" aria-label="Family food history">
+        <div className="min-h-screen bg-[#FDFBF7] view-shell-wide view-stack animate-in fade-in duration-1000" role="main" aria-label="Family food history">
             {/* Skip link */}
             <a href="#history-article" className="sr-only">
                 Skip to main content
             </a>
 
-            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-12 lg:gap-16">
+            <nav
+                aria-label="Story sections"
+                className="lg:hidden scroll-strip -mx-1 px-1 print:hidden"
+            >
+                {tocSections.map(({ id, label }) => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => scrollToSection(id)}
+                        aria-current={activeSection === id ? 'true' : undefined}
+                        className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-serif transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] ${
+                            activeSection === id
+                                ? 'bg-[#2D4635] text-white italic'
+                                : 'border border-stone-200 bg-white/90 text-stone-600 hover:bg-stone-50'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </nav>
+
+            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-16">
                 {/* Sticky Table of Contents */}
                 <nav
                     aria-label="Table of contents"
-                    className="print-history-toc lg:sticky lg:top-28 lg:self-start lg:w-56 shrink-0 order-2 lg:order-1"
+                    className="print-history-toc hidden lg:block lg:sticky lg:top-28 lg:self-start lg:w-56 shrink-0 order-2 lg:order-1"
                 >
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 mb-4 print:mb-2">
                         In this story
@@ -160,7 +181,7 @@ export const HistoryView: React.FC = () => {
                 <article
                     id="history-article"
                     ref={containerRef}
-                    className="print-history-content flex-1 min-w-0 space-y-24 max-w-3xl lg:max-w-none"
+                    className="print-history-content flex-1 min-w-0 space-y-12 md:space-y-16 max-w-3xl lg:max-w-none"
                 >
                     {/* Hero / Introduction */}
                     <header id="intro" className="scroll-mt-28 text-center space-y-8">
@@ -179,7 +200,7 @@ export const HistoryView: React.FC = () => {
                     </header>
 
                     {/* Main Content Sections */}
-                    <div className="space-y-20 font-serif text-stone-800 leading-relaxed text-lg pb-32">
+                    <div className="space-y-12 md:space-y-16 font-serif text-stone-800 leading-relaxed text-lg pb-24">
                         {dynamicSections.length > 0 ? (
                             dynamicSections.map((section, index) => {
                                 const sectionId = slugifySectionId(section.heading, `story-section-${index + 1}`);
@@ -187,7 +208,7 @@ export const HistoryView: React.FC = () => {
                                     <section
                                         key={section.id || sectionId}
                                         id={sectionId}
-                                        className={`scroll-mt-28 space-y-8 p-8 md:p-20 border border-stone-100 shadow-sm relative overflow-hidden ${
+                                        className={`scroll-mt-28 space-y-6 p-6 md:p-12 border border-stone-100 shadow-sm relative overflow-hidden ${
                                             index % 2 === 0
                                                 ? 'bg-white/50 backdrop-blur-sm rounded-[3rem] md:rounded-[4rem]'
                                                 : 'bg-[#2D4635] text-emerald-50 rounded-[3rem] md:rounded-[4rem] shadow-2xl'

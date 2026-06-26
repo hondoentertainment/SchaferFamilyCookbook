@@ -88,6 +88,8 @@ describe('ProfileView', () => {
             />
         );
 
+        expect(screen.getByRole('button', { name: /Admin — archive control room/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /Admin — archive control room/i }));
         expect(screen.getByText('Archive control room')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /open admin tools/i })).toBeInTheDocument();
     });

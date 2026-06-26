@@ -31,27 +31,36 @@ A strategic roadmap for the next phases of development, informed by the current 
 ### Gaps & Opportunities
 - Favorites / recent / ratings / meal-plan sync is **opt-in** via `userPrefs` in Firestore; not full “restore everywhere” for every guest
 - Trivia has **both** a local run history and a **cloud** leaderboard; local scores remain for offline / comparison
-- **Collections cloud sync** — shipped via `userPrefs` (`userPrefsSync`, Firestore rules); same opt-in model as favorites/ratings when Firebase is configured
-- No **explicit offline recipe cache** for Cook Mode (PWA network caching only)
-- **Family Story CMS** is shipped; next polish is preview/draft UX for custodians
+- **Offline recipe text cache** — IndexedDB snapshot on browse/cook + deep-link fallback (batch 5); not a full offline-first sync layer
+- **Family Story CMS** — next polish is live preview/draft publish workflow for custodians
 
 ---
 
 ## Immediate Next Steps (1–2 weeks)
 
 ### 1. Product (next sprint)
-- [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` for production error monitoring
+- [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` (+ optional source-map upload vars)
 - [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
 - [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
 
-### 2. Done (recent — June 2026 batch 3)
+### 2. Done (recent — June 2026 batch 5)
+- [x] **UX consistency pass (continued)** — Gallery/Trivia/History/Recipes shells; Home shelf tabs; meal-plan sticky footer; recipe modal mobile collapse
+- [x] **Discovery** — contributor filter hero; Home → Recipes search focus; desktop filter chips
+- [x] **Offline cook cache** — IndexedDB recipe snapshot for deep links
+- [x] **E2E** — collapsible UX smoke tests (`e2e/ux-collapsible.spec.ts`)
+
+### 3. Done (June 2026 batch 4)
+- [x] **Shared layout utilities** — `PageHeader`, `CollapsiblePanel`, `view-shell`
+- [x] **Meal Plan / Grocery / Profile / Help / Privacy** — accordion & collapsible panels
+
+### 4. Done (June 2026 batch 3)
 - [x] **CI critical audit** — `npm audit fix` (vitest/vite/ws); pipeline unblocked
 - [x] **Firebase client bootstrap** — `VITE_FIREBASE_*` in production builds seeds cloud sync automatically
 - [x] **Grocery sync E2E** — `e2e/grocery-sync.spec.ts` against Firestore emulator
 - [x] **Lighthouse artifacts** — filesystem upload to `.lighthouseci`
 - [x] **Vercel env audit script** — `npm run verify:vercel-env`
 
-### 3. Done (June 2026 batch 2)
+### 5. Done (June 2026 batch 2)
 - [x] **Grocery cloud sync** — `userPrefs.groceryList`, merge/de-dupe, Firestore rules + tests
 - [x] **Collections → grocery** — add entire collection ingredients in one action
 - [x] **Lighthouse schedule** — monthly workflow trigger on production URL

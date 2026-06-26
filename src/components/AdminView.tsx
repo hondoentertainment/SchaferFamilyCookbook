@@ -879,7 +879,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 <div
                     role="tablist"
                     aria-label="Admin subtabs"
-                    className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-[2rem] px-2 border border-stone-100"
+                    className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-20 flex items-center gap-1 scroll-strip py-2 mb-6 bg-stone-50/95 dark:bg-stone-900/95 backdrop-blur-md rounded-[2rem] px-2 border border-stone-100 dark:border-stone-800 md:top-20"
                 >
                     {[
                         { id: 'records', label: '📖 Recipes' },

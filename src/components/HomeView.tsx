@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Recipe, ContributorProfile, UserProfile } from '../types';
 import { getAverageRating, getRatingCount, isFamilyApproved } from '../utils/ratings';
 import { getActivityFeed, formatTimeAgo, getActivityIcon } from '../utils/activityFeed';
@@ -7,6 +7,7 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
 import { getEntriesForDate, toDateKey } from '../utils/mealPlan';
 import { RecipeImage } from './RecipeImage';
+import { CollapsiblePanel } from './CollapsiblePanel';
 
 interface HomeViewProps {
     currentUser: UserProfile;
@@ -17,6 +18,8 @@ interface HomeViewProps {
     onSelectRecipe: (recipe: Recipe) => void;
     onStartCook: (recipe: Recipe) => void;
     onSetTab: (tab: string) => void;
+    /** Opens Recipes and focuses the search field */
+    onBrowseAllRecipes?: () => void;
     onSelectCategory: (category: string) => void;
     onSelectContributor: (contributor: string) => void;
     onOpenMealPlan: () => void;
@@ -132,6 +135,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     onSelectRecipe,
     onStartCook,
     onSetTab,
+    onBrowseAllRecipes,
     onSelectCategory,
     onSelectContributor,
     onOpenMealPlan,
@@ -168,6 +172,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
     const recipeOfWeekRatingCount = recipeOfWeek ? getRatingCount(recipeOfWeek.id) : 0;
     const recipeOfWeekApproved = recipeOfWeek ? isFamilyApproved(recipeOfWeek.id) : false;
 
+    const hasRecent = recentlyViewedRecipes.length > 0;
+    const hasFavorites = favoriteRecipes.length > 0;
+    const showRecipeShelf = hasRecent || hasFavorites;
+    const [shelfTab, setShelfTab] = useState<'recent' | 'favorites'>(() =>
+        hasRecent ? 'recent' : 'favorites',
+    );
+    const shelfRecipes =
+        shelfTab === 'recent'
+            ? recentlyViewedRecipes.slice(0, 10)
+            : favoriteRecipes.slice(0, 10);
+
     const activeContributors = useMemo(() => {
         const counts = new Map<string, number>();
         recipes.forEach((r) => counts.set(r.contributor, (counts.get(r.contributor) ?? 0) + 1));
@@ -183,6 +198,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 };
             });
     }, [recipes, contributors]);
+
+    const openRecipes = onBrowseAllRecipes ?? (() => onSetTab('Recipes'));
 
     return (
         <main
@@ -224,7 +241,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <div className="flex flex-wrap gap-3 pt-6">
                     <button
                         type="button"
-                        onClick={() => { hapticLight(); onSetTab('Recipes'); }}
+                        onClick={() => { hapticLight(); openRecipes(); }}
                         className="min-h-12 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_26px_rgba(45,70,53,0.24)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] active:scale-[0.98]"
                     >
                         Browse all recipes
@@ -351,7 +368,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 aria-label={`Open recipe: ${recipeOfWeek.title}`}
                                 className="relative aspect-[4/3] md:aspect-auto md:min-h-[18rem] overflow-hidden bg-stone-100 dark:bg-stone-800 text-left"
                             >
-                                <RecipeImage recipe={recipeOfWeek} imgClassName="group-hover:scale-[1.03]" />
+                                <RecipeImage recipe={recipeOfWeek} imgClassName="group-hover:scale-[1.03]" eager />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:hidden" aria-hidden />
                             </button>
                             <div className="p-6 md:p-10 flex flex-col justify-center space-y-3">
@@ -404,53 +421,73 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </section>
             )}
 
-            {/* Recently viewed */}
-            {recentlyViewedRecipes.length > 0 && (
-                <section aria-labelledby="recent-heading" className="space-y-3">
-                    <div className="flex items-baseline justify-between">
-                        <h2 id="recent-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
-                            <span aria-hidden>👁 </span>Recently viewed
-                        </h2>
+            {/* Recently viewed / favorites shelf */}
+            {showRecipeShelf && (
+                <section aria-labelledby="recipe-shelf-heading" className="space-y-3">
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                        {hasRecent && hasFavorites ? (
+                            <div
+                                role="tablist"
+                                aria-label="Your recipes"
+                                className="flex gap-1 rounded-full border border-stone-200 bg-white/80 p-1 dark:border-stone-700 dark:bg-stone-900/80"
+                            >
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={shelfTab === 'recent'}
+                                    id="recipe-shelf-heading"
+                                    onClick={() => { hapticLight(); setShelfTab('recent'); }}
+                                    className={`min-h-11 rounded-full px-4 py-2 text-sm font-serif italic transition-colors ${
+                                        shelfTab === 'recent'
+                                            ? 'bg-[#2D4635] text-white'
+                                            : 'text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+                                    }`}
+                                >
+                                    Recently viewed
+                                </button>
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={shelfTab === 'favorites'}
+                                    onClick={() => { hapticLight(); setShelfTab('favorites'); }}
+                                    className={`min-h-11 rounded-full px-4 py-2 text-sm font-serif italic transition-colors ${
+                                        shelfTab === 'favorites'
+                                            ? 'bg-[#2D4635] text-white'
+                                            : 'text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+                                    }`}
+                                >
+                                    Favorites ({favoriteRecipes.length})
+                                </button>
+                            </div>
+                        ) : (
+                            <h2 id="recipe-shelf-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                                {hasRecent ? (
+                                    <><span aria-hidden>👁 </span>Recently viewed</>
+                                ) : (
+                                    <><span aria-hidden>❤ </span>Your favorites</>
+                                )}
+                            </h2>
+                        )}
                         <button
                             type="button"
-                            onClick={() => { onSetTab('Recipes'); }}
+                            onClick={() => { openRecipes(); }}
                             className="min-h-11 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:bg-[#A0522D]/10"
                         >
                             All recipes →
                         </button>
                     </div>
-                    <div className="scroll-strip gap-3 -mx-1 px-1">
-                        {recentlyViewedRecipes.slice(0, 10).map((r) => (
+                    <div
+                        role="tabpanel"
+                        aria-labelledby="recipe-shelf-heading"
+                        className="scroll-strip gap-3 -mx-1 px-1"
+                    >
+                        {shelfRecipes.map((r) => (
                             <RecipeMiniCard
                                 key={r.id}
                                 recipe={r}
                                 onClick={() => onSelectRecipe(r)}
                                 onStartCook={() => onStartCook(r)}
                                 isFavorite={isFavorite(r.id)}
-                                onToggleFavorite={() => onToggleFavorite(r.id)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {/* Favorites */}
-            {favoriteRecipes.length > 0 && (
-                <section aria-labelledby="favorites-heading" className="space-y-3">
-                    <div className="flex items-baseline justify-between">
-                        <h2 id="favorites-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
-                            <span aria-hidden>❤ </span>Your favorites
-                        </h2>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{favoriteRecipes.length} saved</span>
-                    </div>
-                    <div className="scroll-strip gap-3 -mx-1 px-1">
-                        {favoriteRecipes.slice(0, 10).map((r) => (
-                            <RecipeMiniCard
-                                key={r.id}
-                                recipe={r}
-                                onClick={() => onSelectRecipe(r)}
-                                onStartCook={() => onStartCook(r)}
-                                isFavorite={true}
                                 onToggleFavorite={() => onToggleFavorite(r.id)}
                             />
                         ))}
@@ -489,6 +526,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
             )}
 
             {/* Family activity feed + active contributors */}
+            <CollapsiblePanel
+                id="home-community-panel"
+                title="Family kitchen & prolific cooks"
+                defaultOpen={false}
+                className="rounded-[2rem]"
+                panelClassName="pt-2"
+            >
             <section className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 <div className="md:col-span-2 space-y-3">
                     <h2 className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
@@ -510,8 +554,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             ))}
                         </ul>
                     ) : (
-                        <div className="rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-stone-900/60 px-5 py-8 text-center text-stone-500 dark:text-stone-400 font-serif italic">
-                            Nothing yet — favorite a recipe or rate one to get the family feed going.
+                        <div className="rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-stone-900/60 px-5 py-8 text-center space-y-4">
+                            <p className="text-stone-500 dark:text-stone-400 font-serif italic">
+                                Nothing yet — favorite a recipe or rate one to get the family feed going.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => { hapticLight(); openRecipes(); }}
+                                className="min-h-11 rounded-full bg-[#2D4635] px-5 py-2 text-sm font-bold text-white"
+                            >
+                                Browse recipes
+                            </button>
                         </div>
                     )}
                 </div>
@@ -544,6 +597,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     </ul>
                 </div>
             </section>
+            </CollapsiblePanel>
         </main>
     );
 };

@@ -93,6 +93,22 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
         return () => window.clearTimeout(t);
     }, [highlightRecipeTitle, groups, onHighlightConsumed]);
 
+    useEffect(() => {
+        const vv = window.visualViewport;
+        if (!vv) return;
+        const scrollInputIntoView = () => {
+            if (document.activeElement === inputRef.current) {
+                inputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        };
+        vv.addEventListener('resize', scrollInputIntoView);
+        vv.addEventListener('scroll', scrollInputIntoView);
+        return () => {
+            vv.removeEventListener('resize', scrollInputIntoView);
+            vv.removeEventListener('scroll', scrollInputIntoView);
+        };
+    }, []);
+
     const handleAddManual = (e: React.FormEvent) => {
         e.preventDefault();
         const text = manualText.trim();

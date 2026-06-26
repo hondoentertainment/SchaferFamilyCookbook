@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { hapticLight } from '../utils/haptics';
 
 interface CollapsiblePanelProps {
     id: string;
@@ -27,7 +28,10 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
         >
             <button
                 type="button"
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => {
+                    hapticLight();
+                    setOpen((v) => !v);
+                }}
                 aria-expanded={open}
                 aria-controls={panelId}
                 className="w-full flex items-center justify-between gap-4 px-5 py-3.5 text-left hover:bg-stone-50/80 dark:hover:bg-stone-800/60 transition-colors min-h-11"

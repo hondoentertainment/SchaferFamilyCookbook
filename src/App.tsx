@@ -13,6 +13,7 @@ import {
     type CustodianAuthState,
 } from './services/firebaseCustodianAuth';
 import { Header } from './components/Header';
+import { PageHeader } from './components/PageHeader';
 import { OfflineBanner } from './components/OfflineBanner';
 import { PLACEHOLDER_AVATAR } from './constants';
 import { getAverageRating, getRatingCount, isFamilyApproved } from './utils/ratings';
@@ -35,6 +36,7 @@ import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 import { fuzzyMatch } from './utils/fuzzySearch';
+import { cacheRecipeOffline, cacheRecipesOffline, getOfflineRecipe } from './utils/recipeOfflineCache';
 import {
     CATEGORY_META,
     RECIPE_CATEGORIES,
@@ -702,11 +704,21 @@ const App: React.FC = () => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
+    const recipeSearchRef = useRef<HTMLInputElement>(null);
 
     const handleSetTab = useCallback((newTab: string) => {
         setTab(newTab);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
+
+    const handleBrowseAllRecipes = useCallback(() => {
+        try {
+            sessionStorage.setItem(SESSION_KEYS.focusRecipeSearch, '1');
+        } catch {
+            /* sessionStorage unavailable */
+        }
+        handleSetTab('Recipes');
+    }, [handleSetTab]);
 
     const handleCookModeClose = useCallback(() => {
         setCookModeRecipe(null);
@@ -826,11 +838,15 @@ const App: React.FC = () => {
 
     // Deep-link handling: open recipe from #recipe/{id} or #recipe/{id}/cook
     useEffect(() => {
-        const applyHash = () => {
+        const applyHash = async () => {
             const parsed = parseRecipeHash(window.location.hash);
             if (!parsed) return;
-            const recipe = recipes.find((r) => r.id === parsed.id);
+            let recipe = recipes.find((r) => r.id === parsed.id) ?? null;
+            if (!recipe) {
+                recipe = await getOfflineRecipe(parsed.id);
+            }
             if (!recipe) return;
+            void cacheRecipeOffline(recipe);
             recordRecipeView(recipe.id, recipe.title);
             setTab('Recipes');
             if (parsed.openCook) {
@@ -842,10 +858,30 @@ const App: React.FC = () => {
             }
         };
         if (recipes.length === 0) return;
-        applyHash();
-        window.addEventListener('hashchange', applyHash);
-        return () => window.removeEventListener('hashchange', applyHash);
+        void applyHash();
+        const onHashChange = () => { void applyHash(); };
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
     }, [recipes, currentUser]);
+
+    useEffect(() => {
+        if (recipes.length === 0) return;
+        void cacheRecipesOffline(recipes);
+    }, [recipes]);
+
+    useEffect(() => {
+        if (tab !== 'Recipes') return;
+        try {
+            if (!sessionStorage.getItem(SESSION_KEYS.focusRecipeSearch)) return;
+            sessionStorage.removeItem(SESSION_KEYS.focusRecipeSearch);
+        } catch {
+            return;
+        }
+        requestAnimationFrame(() => {
+            recipeSearchRef.current?.focus();
+            recipeSearchRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+    }, [tab]);
 
     useEffect(() => {
         setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
@@ -1108,6 +1144,7 @@ const App: React.FC = () => {
 
     const handleSelectRecipe = (recipe: Recipe) => {
         recordRecipeView(recipe.id, recipe.title);
+        void cacheRecipeOffline(recipe);
         setSelectedRecipe(recipe);
         trackEvent('recipe_viewed', { recipeId: recipe.id, title: recipe.title });
         window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
@@ -1115,6 +1152,7 @@ const App: React.FC = () => {
 
     const handleStartCookFromHome = (recipe: Recipe) => {
         recordRecipeView(recipe.id, recipe.title);
+        void cacheRecipeOffline(recipe);
         setSelectedRecipe(null);
         setCookModeRecipe(recipe);
         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'home' });
@@ -1269,18 +1307,19 @@ const App: React.FC = () => {
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
                 {secondarySubNav}
-                <main id="main-content" className="max-w-7xl mx-auto py-6 md:py-10 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:pl-[max(1.5rem,env(safe-area-inset-left,0px))] md:pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
-                    <section className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-6">
-                        <div>
-                            <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
-                            <p className="text-stone-500 font-serif italic mt-2">Captured moments across the generations.</p>
-                            {pendingUploadCount > 0 && (
-                                <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold" role="status" aria-live="polite">
-                                    <span aria-hidden="true">📤</span>
-                                    {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
-                                </p>
-                            )}
-                        </div>
+                <main id="main-content" className="view-shell-wide view-stack max-w-7xl mx-auto" role="main" aria-label="Family Gallery" tabIndex={-1}>
+                    <PageHeader
+                        id="gallery-heading"
+                        title="Family Gallery"
+                        description="Captured moments across the generations."
+                    />
+                    {pendingUploadCount > 0 && (
+                        <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold -mt-2" role="status" aria-live="polite">
+                            <span aria-hidden="true">📤</span>
+                            {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
+                        </p>
+                    )}
+                    <div className="flex flex-col md:flex-row md:justify-end items-start md:items-center gap-6">
                         {archivePhone ? (
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
                                 <span className="text-3xl" aria-hidden="true">📱</span>
@@ -1323,7 +1362,7 @@ const App: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                    </section>
+                    </div>
 
                     {isDataLoading ? (
                         <GallerySkeleton />
@@ -1658,6 +1697,7 @@ const App: React.FC = () => {
                         onSelectRecipe={(r) => handleSelectRecipe(r)}
                         onStartCook={handleStartCookFromHome}
                         onSetTab={handleSetTab}
+                        onBrowseAllRecipes={handleBrowseAllRecipes}
                         onSelectCategory={(c) => { setCategory(c); handleSetTab('Recipes'); }}
                         onSelectContributor={handleSelectContributorFromHome}
                         onOpenMealPlan={() => handleSetTab('Meal Plan')}
@@ -1670,7 +1710,44 @@ const App: React.FC = () => {
             )}
 
             {tab === 'Recipes' && (
-                <main aria-label="Recipes" className="relative z-10 mx-auto max-w-[1400px] space-y-5 py-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:space-y-7 md:py-6 md:pl-[max(1.5rem,env(safe-area-inset-left,0px))] md:pr-[max(1.5rem,env(safe-area-inset-right,0px))]">
+                <main aria-label="Recipes" className="relative z-10 mx-auto max-w-[1400px] view-stack view-shell-wide">
+                    {contributor !== 'All' && (
+                        <section
+                            aria-label={`Recipes by ${contributor}`}
+                            className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-[2rem] border border-[#E8DCCB] bg-white/90 dark:bg-stone-900/80 px-5 py-4 shadow-sm"
+                        >
+                            <img
+                                src={getAvatar(contributor)}
+                                alt=""
+                                onError={avatarOnError}
+                                className="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-stone-700 shadow shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                                <h2 className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100 truncate">
+                                    From {contributor}&apos;s kitchen
+                                </h2>
+                                <p className="text-sm text-stone-500 dark:text-stone-400">
+                                    {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'} in the archive
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetTab('Contributors')}
+                                    className="min-h-11 rounded-full border border-[#E8DCCB] px-4 py-2 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-300"
+                                >
+                                    Meet contributors
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setContributor('All')}
+                                    className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-[#A0522D] hover:bg-[#A0522D]/10"
+                                >
+                                    Clear filter
+                                </button>
+                            </div>
+                        </section>
+                    )}
                     {isBrowsingFiltered ? (
                         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
                             <p className="text-sm text-stone-600 dark:text-stone-400">
@@ -1708,7 +1785,7 @@ const App: React.FC = () => {
                                         </div>
                                     ) : null;
                                 })()}
-                                <div className="relative z-10 p-10 lg:p-12">
+                                <div className="relative z-10 p-8 lg:p-10">
                                     <div className="max-w-3xl space-y-5">
                                         <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-emerald-100/80">
                                             <span className="inline-block h-px w-8 bg-emerald-100/40" aria-hidden />
@@ -1785,6 +1862,7 @@ const App: React.FC = () => {
                                 <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
                                 <span className="absolute left-4 top-1/2 hidden -translate-y-1/2 text-sm text-stone-600 dark:text-stone-300 md:block" aria-hidden="true">Search</span>
                                 <input
+                                    ref={recipeSearchRef}
                                     id="recipe-search"
                                     type="text"
                                     inputMode="search"
@@ -1882,7 +1960,7 @@ const App: React.FC = () => {
                         </div>
 
                         {isBrowsingFiltered && (
-                            <div className="flex flex-wrap gap-2 px-1 md:hidden" aria-label="Active filters">
+                            <div className="flex flex-wrap gap-2 px-1 scroll-strip" aria-label="Active filters">
                                 {search.trim() && (
                                     <button
                                         type="button"

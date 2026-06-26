@@ -400,7 +400,8 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2">
+      <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-4 z-10 -mx-1 px-3 py-3 mt-2 rounded-2xl border border-stone-200/80 bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(45,70,53,0.08)]">
+        <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           data-testid="meal-plan-generate-groceries"
@@ -419,9 +420,10 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         >
           Copy week → next week
         </button>
-        <span className="text-xs text-stone-400 dark:text-stone-500">
+        <span className="text-xs text-stone-400 dark:text-stone-500 ml-auto hidden sm:inline">
           {weekRecipeCount} recipe{weekRecipeCount === 1 ? '' : 's'} planned
         </span>
+        </div>
       </div>
     </section>
   );

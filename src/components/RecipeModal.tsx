@@ -22,6 +22,7 @@ import { addItems as addGroceryItems, getItems as getGroceryItems } from '../uti
 import { trackEvent } from '../services/analytics';
 import { CATEGORY_META, getTagLabel } from '../constants/taxonomy';
 import { getRememberedServings, setRememberedServings } from '../utils/recipeServingsMemory';
+import { CollapsiblePanel } from './CollapsiblePanel';
 
 interface RecipeModalProps {
     recipe: Recipe;
@@ -540,6 +541,95 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         });
     };
 
+    const ingredientsPanelClass = `print-simplify lg:sticky lg:top-6 space-y-4 bg-white/85 dark:bg-[var(--card-bg)]/85 p-5 md:p-6 rounded-3xl border border-stone-200/80 dark:border-[var(--border-color)] shadow-sm transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`;
+
+    const ingredientsPanel = (
+        <>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-2xl font-serif italic text-[#2D4635] dark:text-emerald-300 flex items-center gap-2">
+                        <span>Ingredients</span>
+                    </h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                        Check items off as you cook.
+                    </p>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 whitespace-nowrap">
+                    {checkedIngredients.size}/{displayedIngredients.length}
+                </span>
+            </div>
+            {baseServings > 0 && (
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-stone-50 dark:bg-[var(--bg-tertiary)] p-2">
+                    <span className="text-xs font-bold uppercase tracking-widest text-stone-500 pl-2">Serves</span>
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setScaleTo((n) => Math.max(1, n - 1))}
+                            className="print:hidden w-9 h-9 rounded-full bg-white dark:bg-[var(--card-bg)] border border-stone-200 dark:border-[var(--border-color)] text-stone-700 dark:text-stone-200 font-bold"
+                            aria-label="Decrease servings"
+                        >
+                            -
+                        </button>
+                        <select
+                            value={scaleTo}
+                            onChange={(e) => setScaleTo(parseInt(e.target.value, 10))}
+                            className="px-3 py-2 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--input-bg)] text-stone-700 dark:text-stone-200 font-medium focus:ring-2 focus:ring-[#2D4635]/20"
+                            aria-label="Scale ingredients by serving size"
+                        >
+                            {scaledServingOptions.map((n) => (
+                                <option key={n} value={n}>
+                                    {n}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => setScaleTo((n) => n + 1)}
+                            className="print:hidden w-9 h-9 rounded-full bg-white dark:bg-[var(--card-bg)] border border-stone-200 dark:border-[var(--border-color)] text-stone-700 dark:text-stone-200 font-bold"
+                            aria-label="Increase servings"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+            )}
+            <ul className="space-y-2">
+                {displayedIngredients.map((ing, i) => {
+                    const checked = checkedIngredients.has(i);
+                    return (
+                        <li key={`${ing}-${i}`}>
+                            <label className={`flex items-start gap-3 rounded-2xl p-3 min-h-11 cursor-pointer transition-colors ${checked ? 'bg-emerald-50 dark:bg-emerald-900/30 text-stone-400 line-through' : 'hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] text-stone-700 dark:text-stone-200'}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleIngredient(i)}
+                                    className="mt-1 w-5 h-5 rounded border-stone-300 text-[#2D4635] focus:ring-[#2D4635]"
+                                />
+                                <span className="flex-1 text-sm md:text-base leading-relaxed">{ing}</span>
+                            </label>
+                        </li>
+                    );
+                })}
+            </ul>
+            <button
+                type="button"
+                onClick={async () => {
+                    const text = displayedIngredients.join('\n');
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        toast('Ingredients copied to clipboard', 'success');
+                    } catch {
+                        toast("Couldn't copy ingredients. Check clipboard permissions and try again.", 'error');
+                    }
+                }}
+                className="print:hidden w-full px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#2D4635] dark:text-emerald-300 hover:text-[#A0522D] hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] rounded-full border border-stone-200 dark:border-[var(--border-color)] transition-colors"
+                aria-label="Copy ingredients to clipboard"
+            >
+                Copy ingredients
+            </button>
+        </>
+    );
+
     const overflowItemClass =
         'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] transition-colors min-h-11';
 
@@ -799,92 +889,24 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                             {(detailMode === 'read' || detailMode === 'cook') && (
                             <section className="grid lg:grid-cols-[minmax(17rem,21rem)_1fr] gap-6 lg:gap-8 items-start">
-                                <aside className={`print-simplify lg:sticky lg:top-6 space-y-4 bg-white/85 dark:bg-[var(--card-bg)]/85 p-5 md:p-6 rounded-3xl border border-stone-200/80 dark:border-[var(--border-color)] shadow-sm transition-all duration-300${scaleFlash ? ' ring-2 ring-[#A0522D]/30' : ''}`}>
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <h3 className="text-2xl font-serif italic text-[#2D4635] dark:text-emerald-300 flex items-center gap-2">
-                                                <span>Ingredients</span>
-                                            </h3>
-                                            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                                                Check items off as you cook.
-                                            </p>
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 whitespace-nowrap">
-                                            {checkedIngredients.size}/{displayedIngredients.length}
-                                        </span>
+                                {detailMode === 'read' && (
+                                    <div className="lg:hidden order-2">
+                                        <CollapsiblePanel
+                                            id="recipe-ingredients-mobile"
+                                            title={`Ingredients (${displayedIngredients.length})`}
+                                            defaultOpen={false}
+                                            className="rounded-3xl border-stone-200/80 dark:border-[var(--border-color)]"
+                                            panelClassName="pt-1"
+                                        >
+                                            <div className="space-y-4">{ingredientsPanel}</div>
+                                        </CollapsiblePanel>
                                     </div>
-                                    {baseServings > 0 && (
-                                        <div className="flex items-center justify-between gap-3 rounded-2xl bg-stone-50 dark:bg-[var(--bg-tertiary)] p-2">
-                                            <span className="text-xs font-bold uppercase tracking-widest text-stone-500 pl-2">Serves</span>
-                                            <div className="flex items-center gap-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setScaleTo((n) => Math.max(1, n - 1))}
-                                                    className="print:hidden w-9 h-9 rounded-full bg-white dark:bg-[var(--card-bg)] border border-stone-200 dark:border-[var(--border-color)] text-stone-700 dark:text-stone-200 font-bold"
-                                                    aria-label="Decrease servings"
-                                                >
-                                                    -
-                                                </button>
-                                                <select
-                                                    value={scaleTo}
-                                                    onChange={(e) => setScaleTo(parseInt(e.target.value, 10))}
-                                                    className="px-3 py-2 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--input-bg)] text-stone-700 dark:text-stone-200 font-medium focus:ring-2 focus:ring-[#2D4635]/20"
-                                                    aria-label="Scale ingredients by serving size"
-                                                >
-                                                    {scaledServingOptions.map((n) => (
-                                                        <option key={n} value={n}>
-                                                            {n}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setScaleTo((n) => n + 1)}
-                                                    className="print:hidden w-9 h-9 rounded-full bg-white dark:bg-[var(--card-bg)] border border-stone-200 dark:border-[var(--border-color)] text-stone-700 dark:text-stone-200 font-bold"
-                                                    aria-label="Increase servings"
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <ul className="space-y-2">
-                                        {displayedIngredients.map((ing, i) => {
-                                            const checked = checkedIngredients.has(i);
-                                            return (
-                                                <li key={`${ing}-${i}`}>
-                                                    <label className={`flex items-start gap-3 rounded-2xl p-3 min-h-11 cursor-pointer transition-colors ${checked ? 'bg-emerald-50 dark:bg-emerald-900/30 text-stone-400 line-through' : 'hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] text-stone-700 dark:text-stone-200'}`}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={checked}
-                                                            onChange={() => toggleIngredient(i)}
-                                                            className="mt-1 w-5 h-5 rounded border-stone-300 text-[#2D4635] focus:ring-[#2D4635]"
-                                                        />
-                                                        <span className="flex-1 text-sm md:text-base leading-relaxed">{ing}</span>
-                                                    </label>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                    <button
-                                        type="button"
-                                        onClick={async () => {
-                                            const text = displayedIngredients.join('\n');
-                                            try {
-                                                await navigator.clipboard.writeText(text);
-                                                toast('Ingredients copied to clipboard', 'success');
-                                            } catch {
-                                                toast("Couldn't copy ingredients. Check clipboard permissions and try again.", 'error');
-                                            }
-                                        }}
-                                        className="print:hidden w-full px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#2D4635] dark:text-emerald-300 hover:text-[#A0522D] hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] rounded-full border border-stone-200 dark:border-[var(--border-color)] transition-colors"
-                                        aria-label="Copy ingredients to clipboard"
-                                    >
-                                        Copy ingredients
-                                    </button>
+                                )}
+                                <aside className={`${detailMode === 'read' ? 'hidden lg:block ' : ''}${ingredientsPanelClass} order-2 lg:order-none`}>
+                                    {ingredientsPanel}
                                 </aside>
 
-                                <div className="space-y-5" id="recipe-instructions">
+                                <div className="space-y-5 order-1 lg:order-none" id="recipe-instructions">
                                     <div className="sticky top-0 z-10 -mx-1 px-1 py-2 bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-md print:static print:bg-transparent">
                                         <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-stone-200 dark:border-[var(--border-color)]">
                                             <div>
@@ -957,13 +979,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             )}
 
                             {detailMode === 'read' && suggestedRecipes.length > 0 && onNavigate && (
-                                <section
-                                    className="print:hidden rounded-3xl border border-stone-200 dark:border-[var(--border-color)] bg-white/70 dark:bg-[var(--card-bg)] p-5 md:p-6"
-                                    aria-label="You might also like"
+                                <CollapsiblePanel
+                                    id="recipe-suggestions"
+                                    title="You might also like"
+                                    defaultOpen={false}
+                                    className="print:hidden rounded-3xl border-stone-200 dark:border-[var(--border-color)]"
+                                    panelClassName="pt-1"
                                 >
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
-                                        You might also like
-                                    </h3>
                                     <ul className="flex gap-3 overflow-x-auto pb-1 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                                         {suggestedRecipes.map((r) => (
                                             <li key={r.id} className="shrink-0 w-40 sm:w-44">
@@ -987,7 +1009,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             </li>
                                         ))}
                                     </ul>
-                                </section>
+                                </CollapsiblePanel>
                             )}
 
                             {detailMode === 'read' && hasValidImage && (

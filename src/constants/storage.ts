@@ -28,4 +28,6 @@ export const STORAGE_KEYS = {
 export const SESSION_KEYS = {
   /** User chose "Resume later" on the onboarding tour; skip tour until next tab session */
   onboardingDefer: 'schafer_onboarding_defer_session',
+  /** Home → Recipes: focus the browse search field once Recipes mounts */
+  focusRecipeSearch: 'schafer_focus_recipe_search',
 } as const;

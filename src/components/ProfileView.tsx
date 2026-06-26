@@ -846,10 +846,16 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     aria-labelledby="profile-admin-heading"
                     className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}
                 >
-                    <SectionHeading id="profile-admin-heading">Admin</SectionHeading>
+                    <CollapsiblePanel
+                        id="profile-admin-panel"
+                        title="Admin — archive control room"
+                        defaultOpen={!!adminSectionProps.editingRecipe}
+                        className="rounded-[2rem] md:rounded-[2.5rem] border-orange-100 dark:border-orange-700/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-950/30 dark:via-[var(--card-bg)] dark:to-amber-950/20 shadow-xl"
+                        panelClassName="pt-2"
+                    >
                     <div
                         id="admin-tools-section"
-                        className="space-y-6 rounded-[2rem] md:rounded-[2.5rem] border border-orange-100 dark:border-orange-700/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-950/30 dark:via-[var(--card-bg)] dark:to-amber-950/20 p-4 md:p-8 shadow-xl scroll-mt-24"
+                        className="space-y-6 scroll-mt-24"
                         aria-label="Admin tools"
                     >
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -857,7 +863,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">
                                     Admin tools
                                 </p>
-                                <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200">
+                                <h3 id="profile-admin-heading" className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200">
                                     Archive control room
                                 </h3>
                                 <p className="max-w-2xl text-sm text-stone-600 dark:text-stone-400 font-serif italic">
@@ -899,6 +905,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             </Suspense>
                         </div>
                     </div>
+                    </CollapsiblePanel>
                 </section>
             )}
 

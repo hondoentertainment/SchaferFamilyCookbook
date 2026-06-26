@@ -191,7 +191,8 @@ describe('RecipeModal', () => {
         renderWithProviders(
             <RecipeModal {...defaultProps} recipe={r1} recipeList={[r1, r2]} onNavigate={mockNavigate} />
         );
-        expect(screen.getByLabelText(/You might also like/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /You might also like/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /You might also like/i }));
         fireEvent.click(screen.getByRole('button', { name: /Beta Dish/i }));
         expect(mockNavigate).toHaveBeenCalledWith(r2);
     });
