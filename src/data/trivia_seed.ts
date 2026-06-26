@@ -198,5 +198,21 @@ export const TRIVIA_SEED = [
         answer: "Egg Kaka",
         explanation: "Julie's Egg Kaka has a note describing it as a simple family breakfast staple.",
         contributor: "Archive Keeper"
+    },
+    {
+        id: "t26",
+        question: "What did Harriet remember receiving as a very special Christmas treat as a child?",
+        options: ["An orange", "A silver dollar", "A tin of cookies", "A peppermint stick"],
+        answer: "An orange",
+        explanation: "Family Story notes that an orange, apple, and peanuts were treasured Christmas gifts in Harriet's childhood.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t27",
+        question: "The Oehler family name is tied to which trade in the family history?",
+        options: ["Milling grain", "Producing or dealing in oil", "Baking bread", "Shepherding"],
+        answer: "Producing or dealing in oil",
+        explanation: "Oehler means to produce or deal in oil — a detail from the Family Story introduction.",
+        contributor: "Archive Keeper"
     }
 ];

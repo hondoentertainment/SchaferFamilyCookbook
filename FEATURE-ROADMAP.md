@@ -43,24 +43,32 @@ A strategic roadmap for the next phases of development, informed by the current 
 - [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
 - [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
 
-### 2. Done (recent — June 2026 batch 5)
+### 2. Done (recent — June 2026 batch 6)
+- [x] **Sentry test event** — Help → Troubleshooting (when DSN configured)
+- [x] **Guest cloud sync notice** — Profile when Firebase not connected
+- [x] **Offline cook banner** — Cook Mode saved-copy indicator
+- [x] **Help** — Listen/TTS tips; troubleshooting section
+- [x] **Lighthouse** — mobile + desktop CI presets
+- [x] **Trivia** — two Family Story–linked questions
+
+### 3. Done (June 2026 batch 5)
 - [x] **UX consistency pass (continued)** — Gallery/Trivia/History/Recipes shells; Home shelf tabs; meal-plan sticky footer; recipe modal mobile collapse
 - [x] **Discovery** — contributor filter hero; Home → Recipes search focus; desktop filter chips
 - [x] **Offline cook cache** — IndexedDB recipe snapshot for deep links
 - [x] **E2E** — collapsible UX smoke tests (`e2e/ux-collapsible.spec.ts`)
 
-### 3. Done (June 2026 batch 4)
+### 4. Done (June 2026 batch 4)
 - [x] **Shared layout utilities** — `PageHeader`, `CollapsiblePanel`, `view-shell`
 - [x] **Meal Plan / Grocery / Profile / Help / Privacy** — accordion & collapsible panels
 
-### 4. Done (June 2026 batch 3)
+### 5. Done (June 2026 batch 3)
 - [x] **CI critical audit** — `npm audit fix` (vitest/vite/ws); pipeline unblocked
 - [x] **Firebase client bootstrap** — `VITE_FIREBASE_*` in production builds seeds cloud sync automatically
 - [x] **Grocery sync E2E** — `e2e/grocery-sync.spec.ts` against Firestore emulator
 - [x] **Lighthouse artifacts** — filesystem upload to `.lighthouseci`
 - [x] **Vercel env audit script** — `npm run verify:vercel-env`
 
-### 5. Done (June 2026 batch 2)
+### 6. Done (June 2026 batch 2)
 - [x] **Grocery cloud sync** — `userPrefs.groceryList`, merge/de-dupe, Firestore rules + tests
 - [x] **Collections → grocery** — add entire collection ingredients in one action
 - [x] **Lighthouse schedule** — monthly workflow trigger on production URL

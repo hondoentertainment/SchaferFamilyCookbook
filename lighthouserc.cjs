@@ -9,9 +9,10 @@ module.exports = {
     collect: {
       url: [url],
       numberOfRuns: 1,
-      settings: {
-        preset: 'desktop',
-      },
+      settings: [
+        { preset: 'desktop' },
+        { preset: 'mobile' },
+      ],
     },
     assert: {
       assertions: {

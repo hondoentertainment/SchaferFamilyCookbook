@@ -4,8 +4,11 @@ import { siteConfig } from '../config/site';
 import { hapticLight } from '../utils/haptics';
 import { PageHeader } from './PageHeader';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { useUI } from '../context/UIContext';
+import { isSentryConfigured, sendSentryTestEvent } from '../monitoring/sentry';
 
 export const HelpView: React.FC = () => {
+    const { toast } = useUI();
     const openPrivacy = () => {
         hapticLight();
         window.dispatchEvent(new CustomEvent('schafer:navigate', { detail: 'Privacy' }));
@@ -57,7 +60,7 @@ export const HelpView: React.FC = () => {
                         Use the <strong className="font-bold">Read / Cook / Share</strong> modes at the top of a recipe to focus on story, cooking, or sending a link.
                     </li>
                     <li>
-                        <strong className="font-bold">Cook mode</strong> keeps your screen awake and works offline for steps and ingredients.
+                        <strong className="font-bold">Cook mode</strong> keeps your screen awake. Steps and ingredients work offline once you&apos;ve opened the recipe while online. Tap the <strong className="font-bold">🔊 Listen</strong> button to read the current step aloud (Safari on iOS may require tapping Listen each step; speech does not auto-advance).
                     </li>
                     <li>
                         <strong className="font-bold">Collections</strong> under Groceries let you group recipes — start from a template or build your own shelf.
@@ -71,6 +74,29 @@ export const HelpView: React.FC = () => {
                     className="mt-4 inline-flex min-h-11 items-center rounded-full border border-[#E8DCCB] bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 transition-colors"
                 >
                     Replay the welcome tour
+                </button>
+            </CollapsiblePanel>
+
+            <CollapsiblePanel id="help-troubleshooting" title="Troubleshooting">
+                <ul className="list-disc pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300 mb-4">
+                    <li>Favorites, ratings, and grocery lists sync across devices when the family cloud (Firebase) is configured. Without it, those prefs stay on this device only — see Profile for details.</li>
+                    <li>If Cook mode shows a yellow &quot;saved copy&quot; banner, you&apos;re viewing a recipe cached for offline use. Reconnect to refresh from the archive.</li>
+                </ul>
+                <button
+                    type="button"
+                    onClick={() => {
+                        hapticLight();
+                        if (sendSentryTestEvent()) {
+                            toast('Sent a test event to Sentry — check your project dashboard.', 'success');
+                        } else if (isSentryConfigured()) {
+                            toast('Could not send test event — try again.', 'error');
+                        } else {
+                            toast('Error monitoring is not configured on this deployment yet.', 'info');
+                        }
+                    }}
+                    className="inline-flex min-h-11 items-center rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 transition-colors"
+                >
+                    Send Sentry test event
                 </button>
             </CollapsiblePanel>
 

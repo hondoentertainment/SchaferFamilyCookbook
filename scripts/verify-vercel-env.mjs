@@ -21,6 +21,12 @@ const RECOMMENDED = [
   'VITE_SENTRY_DSN',
 ];
 
+const SENTRY_BUILD = [
+  'SENTRY_AUTH_TOKEN',
+  'SENTRY_ORG',
+  'SENTRY_PROJECT',
+];
+
 const OPTIONAL_PUSH = [
   'VITE_FIREBASE_MESSAGING_SENDER_ID',
   'VITE_FIREBASE_APP_ID',
@@ -61,6 +67,12 @@ if (missingRequired.length === 0) {
 if (missingRecommended.length > 0) {
   console.log('\n⚠️  Recommended (optional):');
   for (const k of missingRecommended) console.log(`   - ${k}`);
+}
+
+const missingSentryBuild = SENTRY_BUILD.filter((k) => !names.has(k));
+if (missingSentryBuild.length > 0 && names.has('VITE_SENTRY_DSN')) {
+  console.log('\nℹ️  Sentry source maps (optional — readable stack traces in production):');
+  for (const k of missingSentryBuild) console.log(`   - ${k}`);
 }
 
 if (missingPush.length > 0) {

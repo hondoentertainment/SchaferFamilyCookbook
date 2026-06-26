@@ -3,6 +3,7 @@ import { UserProfile, Recipe, HistoryEntry, GalleryItem, Trivia, DBStats, Contri
 import { CATEGORY_IMAGES } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import type { FirebaseCustodianProps } from './AdminView';
+import { CloudArchive } from '../services/db';
 import { useUI } from '../context/UIContext';
 import { avatarOnError } from '../utils/avatarFallback';
 import { PreferencesPanel } from './PreferencesPanel';
@@ -11,7 +12,6 @@ import { ActivityFeed } from './ActivityFeed';
 import { CollapsiblePanel } from './CollapsiblePanel';
 import { hapticLight } from '../utils/haptics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
-import { CloudArchive } from '../services/db';
 import { addActivity, getActivityFeed, formatTimeAgo } from '../utils/activityFeed';
 import { getFavoriteIds } from '../utils/favorites';
 import { getRecentlyViewedEntries } from '../utils/recentlyViewed';
@@ -777,6 +777,14 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             {/* ── Preferences ──────────────────────────────────────────── */}
             <section aria-labelledby="profile-preferences-heading" className={`pt-6 md:pt-8 ${SECTION_DIVIDER_CLASS}`}>
                 <SectionHeading id="profile-preferences-heading">Preferences</SectionHeading>
+                {CloudArchive.getProvider() === 'local' && (
+                    <p
+                        role="status"
+                        className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                    >
+                        Favorites, ratings, grocery lists, and meal plans on this device are stored locally until the family cloud is connected. They won&apos;t follow you to other phones or browsers yet.
+                    </p>
+                )}
                 <div className="grid lg:grid-cols-2 gap-8">
                     <div className="bg-white dark:bg-[var(--card-bg)] rounded-3xl p-6 border border-stone-100 dark:border-[var(--border-color)] shadow-sm">
                         <PreferencesPanel />

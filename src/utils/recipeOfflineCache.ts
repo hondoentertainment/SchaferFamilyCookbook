@@ -74,6 +74,11 @@ export async function cacheRecipesOffline(recipes: Recipe[]): Promise<void> {
     }
 }
 
+export async function hasOfflineRecipe(id: string): Promise<boolean> {
+    const recipe = await getOfflineRecipe(id);
+    return recipe !== null;
+}
+
 export async function getOfflineRecipe(id: string): Promise<Recipe | null> {
     if (!isIdbAvailable()) return null;
     try {

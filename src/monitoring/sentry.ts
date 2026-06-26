@@ -52,4 +52,16 @@ export function initSentry(): void {
     });
 }
 
+/** True when production build has a DSN configured (monitoring may still init at runtime). */
+export function isSentryConfigured(): boolean {
+    return import.meta.env.PROD && !!import.meta.env.VITE_SENTRY_DSN;
+}
+
+/** Fire a one-off test event; returns false when Sentry is not active. */
+export function sendSentryTestEvent(): boolean {
+    if (!isSentryConfigured()) return false;
+    Sentry.captureMessage('Schafer Cookbook Sentry connectivity test', 'info');
+    return true;
+}
+
 export { Sentry };

@@ -699,6 +699,7 @@ const App: React.FC = () => {
     });
 
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
+    const [cookModeFromOfflineCache, setCookModeFromOfflineCache] = useState(false);
     const [groceryHighlightTitle, setGroceryHighlightTitle] = useState<string | null>(null);
 
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
@@ -722,6 +723,7 @@ const App: React.FC = () => {
 
     const handleCookModeClose = useCallback(() => {
         setCookModeRecipe(null);
+        setCookModeFromOfflineCache(false);
         const { hash } = window.location;
         if (!hash.startsWith('#recipe/')) return;
         if (selectedRecipe) {
@@ -842,13 +844,16 @@ const App: React.FC = () => {
             const parsed = parseRecipeHash(window.location.hash);
             if (!parsed) return;
             let recipe = recipes.find((r) => r.id === parsed.id) ?? null;
+            let fromOfflineCache = false;
             if (!recipe) {
                 recipe = await getOfflineRecipe(parsed.id);
+                fromOfflineCache = !!recipe;
             }
             if (!recipe) return;
             void cacheRecipeOffline(recipe);
             recordRecipeView(recipe.id, recipe.title);
             setTab('Recipes');
+            setCookModeFromOfflineCache(fromOfflineCache);
             if (parsed.openCook) {
                 setSelectedRecipe(null);
                 setCookModeRecipe(recipe);
@@ -1153,6 +1158,7 @@ const App: React.FC = () => {
     const handleStartCookFromHome = (recipe: Recipe) => {
         recordRecipeView(recipe.id, recipe.title);
         void cacheRecipeOffline(recipe);
+        setCookModeFromOfflineCache(false);
         setSelectedRecipe(null);
         setCookModeRecipe(recipe);
         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'home' });
@@ -1513,6 +1519,7 @@ const App: React.FC = () => {
                             isFavorite={(id) => favoriteIds.has(id)}
                             onToggleFavorite={handleToggleFavorite}
                             onStartCook={() => {
+                                setCookModeFromOfflineCache(false);
                                 setCookModeRecipe(selectedRecipe);
                                 trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
                                 window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
@@ -1527,6 +1534,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
+                            servedFromOfflineCache={cookModeFromOfflineCache}
                             onClose={handleCookModeClose}
                         />
                     </Suspense>
@@ -1583,6 +1591,7 @@ const App: React.FC = () => {
                             isFavorite={(id) => favoriteIds.has(id)}
                             onToggleFavorite={handleToggleFavorite}
                             onStartCook={() => {
+                                setCookModeFromOfflineCache(false);
                                 setCookModeRecipe(selectedRecipe);
                                 trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
                                 window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
@@ -1597,6 +1606,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
+                            servedFromOfflineCache={cookModeFromOfflineCache}
                             onClose={handleCookModeClose}
                         />
                     </Suspense>
@@ -1666,6 +1676,7 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => {
+                            setCookModeFromOfflineCache(false);
                             setCookModeRecipe(selectedRecipe);
                             trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
                             window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
@@ -1681,6 +1692,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                     <CookModeView
                         recipe={cookModeRecipe}
+                        servedFromOfflineCache={cookModeFromOfflineCache}
                         onClose={handleCookModeClose}
                     />
                 </Suspense>
@@ -2216,6 +2228,7 @@ const App: React.FC = () => {
                                                     type="button"
                                                     onClick={() => {
                                                         recordRecipeView(recipe.id, recipe.title);
+                                                        setCookModeFromOfflineCache(false);
                                                         setCookModeRecipe(recipe);
                                                         hapticLight();
                                                         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'recipe_card' });

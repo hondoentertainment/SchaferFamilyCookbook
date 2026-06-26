@@ -16,6 +16,8 @@ const NOTIFY_NUDGE_DISMISSED_KEY = 'cook-notify-nudge-dismissed-v1';
 
 interface CookModeViewProps {
     recipe: Recipe;
+    /** Recipe was loaded from the offline IndexedDB cache (not live archive). */
+    servedFromOfflineCache?: boolean;
     onClose: () => void;
 }
 
@@ -74,7 +76,7 @@ async function cacheRecipeImage(imageUrl: string): Promise<'saved' | 'already' |
     return 'already';
 }
 
-export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) => {
+export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOfflineCache = false, onClose }) => {
     const { toast } = useUI();
     const [stepIndex, setStepIndex] = useState(0);
     const baseServingsInit = typeof recipe.servings === 'number' ? recipe.servings : 4;
@@ -541,6 +543,16 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, onClose }) =
             className="fixed inset-0 z-[150] bg-[#2D4635] text-white flex flex-col items-stretch overflow-hidden focus:outline-none pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
             aria-label={`Cook mode: ${recipe.title}. Swipe left for next, right for previous.`}
         >
+            {(isOffline || servedFromOfflineCache) && (
+                <div
+                    role="status"
+                    className="shrink-0 px-4 py-2 text-center text-xs font-semibold bg-amber-500/90 text-amber-950"
+                >
+                    {servedFromOfflineCache
+                        ? 'Using a saved copy of this recipe — reconnect to sync ratings and notes.'
+                        : "You're offline — steps and ingredients still work from this saved session."}
+                </div>
+            )}
             {/* Header */}
             <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-white/10 shrink-0">
                 <button
