@@ -23,7 +23,8 @@ const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ d
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
-import { useUserPrefsSync } from './services/useUserPrefsSync';
+import { useUserPrefsSync, type UserPrefsSyncStatus } from './services/useUserPrefsSync';
+import { useOfflineRecipeIds } from './hooks/useOfflineRecipeIds';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
@@ -398,6 +399,16 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import defaultRecipes from './data/recipes.json';
 
+const OfflineRecipeBadge: React.FC = () => (
+    <span
+        className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[#2D4635]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
+        title="Saved for offline cook mode"
+    >
+        <span aria-hidden>📥</span>
+        <span>Offline</span>
+    </span>
+);
+
 const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
     const { toast } = useUI();
     return (
@@ -541,6 +552,7 @@ const getRecipeCardAriaLabel = (
     effortLabel: string,
     isFavorite: boolean,
     wasViewed: boolean,
+    isOffline = false,
 ) => {
     const parts = [`Open recipe: ${recipe.title}`, `from ${recipe.contributor}`, recipe.category, effortLabel];
     const time = getRecipeTimeLabel(recipe);
@@ -548,6 +560,7 @@ const getRecipeCardAriaLabel = (
     if (rating > 0) parts.push(`rated ${rating.toFixed(1)} out of 5 from ${ratingCount} ratings`);
     if (isFavorite) parts.push('saved to favorites');
     if (wasViewed) parts.push('recently viewed');
+    if (isOffline) parts.push('available offline');
     return parts.join(', ');
 };
 
@@ -557,7 +570,8 @@ const RecipeShelfCard: React.FC<{
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
     wasViewed?: boolean;
-}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false }) => {
+    isOffline?: boolean;
+}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false, isOffline = false }) => {
     const rating = getAverageRating(recipe.id);
     const ratingCount = getRatingCount(recipe.id);
     const effortLabel = getRecipeEffortLabel(recipe);
@@ -569,10 +583,11 @@ const RecipeShelfCard: React.FC<{
                 data-testid="recipe-card-open"
                 data-recipe-id={recipe.id}
                 className="block w-full text-left"
-                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed)}
+                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed, isOffline)}
             >
                 <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
                     <RecipeCardImage recipe={recipe} />
+                    {isOffline && <OfflineRecipeBadge />}
                 </div>
                 <div className="space-y-2 p-3">
                     <div className="flex items-center justify-between gap-2">
@@ -628,6 +643,7 @@ const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
 const App: React.FC = () => {
     const { toast } = useUI();
+    const offlineRecipeIds = useOfflineRecipeIds();
     const [tab, setTab] = useState('Home');
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -687,15 +703,16 @@ const App: React.FC = () => {
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [prefsHydrationVersion, setPrefsHydrationVersion] = useState(0);
+    const [prefsSyncStatus, setPrefsSyncStatus] = useState<UserPrefsSyncStatus>(() =>
+        CloudArchive.getProvider() === 'firebase' ? 'syncing' : 'local',
+    );
 
-    // Cloud-sync preferences under the user's identity slug. On login we merge
-    // remote into local, refresh React state, and debounce-write later changes.
-    // Silently no-ops for guests or when cloud is unavailable.
     useUserPrefsSync(currentUser?.name, {
         onHydrated: () => {
             setFavoriteIds(getFavoriteIds());
             setPrefsHydrationVersion((version) => version + 1);
         },
+        onSyncStatus: setPrefsSyncStatus,
     });
 
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
@@ -807,10 +824,11 @@ const App: React.FC = () => {
             if (provider === 'local') {
                 CloudArchive.getTrivia()
                     .then(current => {
-                        if (current.length === 0) {
-                            return Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as Trivia)))
-                                .then(refreshLocalState);
-                        }
+                        const existingIds = new Set(current.map((t) => t.id));
+                        const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
+                        if (missing.length === 0) return;
+                        return Promise.all(missing.map(t => CloudArchive.upsertTrivia(t as Trivia)))
+                            .then(refreshLocalState);
                     })
                     .catch(() => toast(CLOUD_ERROR_MSG, 'error'));
             }
@@ -827,6 +845,16 @@ const App: React.FC = () => {
         const unsubC = CloudArchive.subscribeContributors(setContributors);
         const unsubH = CloudArchive.subscribeHistory(setHistory);
         const unsubPhone = CloudArchive.subscribeArchivePhone(setArchivePhone);
+
+        void CloudArchive.getTrivia()
+            .then((current) => {
+                const existingIds = new Set(current.map((t) => t.id));
+                const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
+                if (missing.length === 0) return;
+                return Promise.all(missing.map((t) => CloudArchive.upsertTrivia(t as Trivia)));
+            })
+            .catch(() => { /* non-fatal — live subscription still applies */ });
+
         return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); unsubPhone(); };
     }, []);
 
@@ -2100,6 +2128,7 @@ const App: React.FC = () => {
                                                 isFavorite={favoriteIds.has(recipe.id)}
                                                 onToggleFavorite={handleToggleFavorite}
                                                 wasViewed={recentIds.includes(recipe.id)}
+                                                isOffline={offlineRecipeIds.has(recipe.id)}
                                             />
                                         ))}
                                     </div>
@@ -2119,6 +2148,7 @@ const App: React.FC = () => {
                                 const contribAvatar = getAvatar(recipe.contributor);
                                 const effortLabel = getRecipeEffortLabel(recipe);
                                 const wasViewed = recentIds.includes(recipe.id);
+                                const isOffline = offlineRecipeIds.has(recipe.id);
                                 const microcopy = getRecipeCardMicrocopy(recipe, ratingCount, isFav, wasViewed);
                                 const timeLabel = getRecipeTimeLabel(recipe);
                                 const normalizedContributor = normalizeContributorName(recipe.contributor);
@@ -2130,7 +2160,7 @@ const App: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleSelectRecipe(recipe)}
-                                            aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
+                                            aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed, isOffline)}
                                             data-testid="recipe-card-open"
                                             data-recipe-id={recipe.id}
                                             className="block w-full text-left"
@@ -2139,6 +2169,7 @@ const App: React.FC = () => {
                                                 <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]">
                                                     <RecipeCardImage recipe={recipe} />
                                                 </div>
+                                                {isOffline && <OfflineRecipeBadge />}
                                                 {timeLabel && (
                                                     <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-white">
                                                         <span aria-hidden>⏱</span>
@@ -2173,7 +2204,7 @@ const App: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => handleSelectRecipe(recipe)}
-                                                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
+                                                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed, isOffline)}
                                                 className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
                                             >
                                                 <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
@@ -2403,6 +2434,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<ProfileSkeleton />}>
                     <ProfileView
                         currentUser={currentUser}
+                        prefsSyncStatus={prefsSyncStatus}
                         userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
                         userHistory={history.filter(h => h.contributor === currentUser.name)}
                         favoriteRecipes={recipes.filter(r => favoriteIds.has(r.id))}

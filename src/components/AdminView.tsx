@@ -3,6 +3,7 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
 import * as geminiProxy from '../services/geminiProxy';
 import { CloudArchive } from '../services/db';
+import { storySectionsDiffer } from '../utils/storySections';
 import { CATEGORY_IMAGES, RECIPE_CATEGORIES, normalizeRecipe } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
@@ -95,6 +96,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
     // Story CMS state
     const [storySections, setStorySections] = useState<StorySection[]>([]);
+    const [storyPublishedSections, setStoryPublishedSections] = useState<StorySection[]>([]);
     const [isLoadingStory, setIsLoadingStory] = useState(false);
     const [isSavingStory, setIsSavingStory] = useState(false);
     const [storyPreview, setStoryPreview] = useState(false);
@@ -218,7 +220,9 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         CloudArchive.getStoryContent().then(sections => {
             if (!cancelled) {
                 skipStoryAutosaveRef.current = true;
-                setStorySections([...sections].sort((a, b) => a.order - b.order));
+                const sorted = [...sections].sort((a, b) => a.order - b.order);
+                setStorySections(sorted);
+                setStoryPublishedSections(sorted);
             }
         }).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingStory(false); });
         return () => { cancelled = true; };
@@ -280,6 +284,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         setStoryDraftAvailable(false);
         setStoryDraftSavedAt(null);
     };
+
+    const handleRevertStoryToPublished = () => {
+        skipStoryAutosaveRef.current = true;
+        setStorySections([...storyPublishedSections]);
+        toast('Reverted to the published story', 'info');
+    };
+
+    const storyHasUnpublishedChanges = storySectionsDiffer(storySections, storyPublishedSections);
 
     const handleInsertStoryStarter = () => {
         skipStoryAutosaveRef.current = false;
@@ -2129,8 +2141,26 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             Family Story CMS
                         </h2>
                         <p className="text-sm text-stone-500 mb-6 leading-relaxed">
-                            Edit the Family Story shown in the "Family Story" tab. Changes are saved to Firestore and appear for all visitors. When no sections are saved, the static built-in story is shown as a fallback.
+                            Edit the Family Story shown in the &quot;Family Story&quot; tab. Autosave keeps a local draft; use <strong>Publish to family</strong> when ready for everyone to see changes. When no sections are published, the static built-in story is shown as a fallback.
                         </p>
+
+                        {storyHasUnpublishedChanges && !storyPreview && (
+                            <div
+                                data-testid="story-unpublished-banner"
+                                className="mb-6 p-4 bg-sky-50 border border-sky-200 rounded-2xl flex flex-wrap items-center justify-between gap-3"
+                            >
+                                <p className="text-sm text-sky-900">
+                                    Unpublished edits — visitors still see the last published version until you publish.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={handleRevertStoryToPublished}
+                                    className="px-4 py-2 bg-white border border-sky-200 text-sky-800 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-sky-100"
+                                >
+                                    Revert to published
+                                </button>
+                            </div>
+                        )}
 
                         {storyDraftAvailable && (
                             <div data-testid="story-draft-banner" className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-wrap items-center justify-between gap-3">
@@ -2316,7 +2346,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 try { localStorage.removeItem(STORAGE_KEYS.storyDraft); } catch { /* ignore */ }
                                                 setStoryDraftAvailable(false);
                                                 setStoryDraftSavedAt(null);
-                                                toast('Family Story saved!', 'success');
+                                                setStoryPublishedSections([...storySections]);
+                                                toast('Family Story published!', 'success');
                                             } catch (e: unknown) {
                                                 toast(`Save failed: ${e instanceof Error ? e.message : 'unknown error'}`, 'error');
                                             } finally {
@@ -2325,7 +2356,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         }}
                                         className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
-                                        {isSavingStory ? 'Saving…' : 'Save Story Content'}
+                                        {isSavingStory ? 'Publishing…' : 'Publish to family'}
                                     </button>
                                 </div>
                             </div>

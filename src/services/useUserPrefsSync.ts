@@ -75,7 +75,11 @@ export interface UseUserPrefsSyncOptions {
     onHydrated?: () => void;
     /** Debounce window for remote writes, in ms. Default 750. */
     debounceMs?: number;
+    /** Called when cloud sync state changes for this identity. */
+    onSyncStatus?: (status: UserPrefsSyncStatus) => void;
 }
+
+export type UserPrefsSyncStatus = 'local' | 'syncing' | 'synced' | 'error';
 
 /**
  * Wire up cloud sync for a user's favorites, ratings, collections, meal plan, and grocery list.
@@ -90,10 +94,12 @@ export function useUserPrefsSync(
     userName: string | null | undefined,
     options: UseUserPrefsSyncOptions = {}
 ): void {
-    const { onHydrated, debounceMs = 750 } = options;
+    const { onHydrated, debounceMs = 750, onSyncStatus } = options;
     const writerRef = useRef<ReturnType<typeof createDebouncedWriter> | null>(null);
     const onHydratedRef = useRef(onHydrated);
     onHydratedRef.current = onHydrated;
+    const onSyncStatusRef = useRef(onSyncStatus);
+    onSyncStatusRef.current = onSyncStatus;
 
     if (!writerRef.current) {
         writerRef.current = createDebouncedWriter(debounceMs);
@@ -104,63 +110,74 @@ export function useUserPrefsSync(
     // Hydrate on identity change.
     useEffect(() => {
         let cancelled = false;
-        if (!userId || !userName) return;
-        // If cloud isn't active, nothing to hydrate from.
-        if (CloudArchive.getProvider() !== 'firebase') return;
+        if (!userId || !userName) {
+            onSyncStatusRef.current?.('local');
+            return;
+        }
+        if (CloudArchive.getProvider() !== 'firebase') {
+            onSyncStatusRef.current?.('local');
+            return;
+        }
+
+        onSyncStatusRef.current?.('syncing');
 
         (async () => {
-            const remote = await fetchRemotePrefs(userId);
-            if (cancelled) return;
-            if (!remote) {
-                // No remote doc yet — push current local up so future devices see it.
-                const local = readLocalPrefs(userName);
-                if (
-                    local.favorites.length > 0 ||
-                    Object.keys(local.ratings).length > 0 ||
-                    local.collections.length > 0 ||
-                    (local.mealPlan?.length ?? 0) > 0 ||
-                    (local.groceryList?.length ?? 0) > 0
-                ) {
-                    writerRef.current?.schedule(userId, local);
+            try {
+                const remote = await fetchRemotePrefs(userId);
+                if (cancelled) return;
+                if (!remote) {
+                    const local = readLocalPrefs(userName);
+                    if (
+                        local.favorites.length > 0 ||
+                        Object.keys(local.ratings).length > 0 ||
+                        local.collections.length > 0 ||
+                        (local.mealPlan?.length ?? 0) > 0 ||
+                        (local.groceryList?.length ?? 0) > 0
+                    ) {
+                        writerRef.current?.schedule(userId, local);
+                    }
+                    onSyncStatusRef.current?.('synced');
+                    return;
                 }
-                return;
-            }
-            const local = readLocalPrefs(userName);
-            const merged = mergePrefs(local, remote);
-            applyMergedPrefsToLocal(userName, merged);
-            onHydratedRef.current?.();
-            // If merging changed anything vs. remote, push the union back up.
-            const remoteFavSet = new Set(remote.favorites);
-            const mergedAddedFavs = merged.favorites.some((f) => !remoteFavSet.has(f));
-            const mergedAddedRatings = Object.keys(merged.ratings).some(
-                (k) => !(k in remote.ratings)
-            );
-            const remoteColById = new Map(remote.collections.map((c) => [c.id, c]));
-            const mergedAddedCollections =
-                merged.collections.length > remote.collections.length ||
-                merged.collections.some((c) => {
-                    const remoteCol = remoteColById.get(c.id);
-                    if (!remoteCol) return true;
-                    return c.recipeIds.some((id) => !remoteCol.recipeIds.includes(id));
-                });
-            const remoteMealPlan = remote.mealPlan ?? [];
-            const mergedMealPlan = merged.mealPlan ?? [];
-            const remoteMealIds = new Set(remoteMealPlan.map((entry) => entry.id));
-            const mergedAddedMealPlan =
-                mergedMealPlan.length > remoteMealPlan.length ||
-                mergedMealPlan.some((entry) => !remoteMealIds.has(entry.id));
-            const remoteGrocery = remote.groceryList ?? [];
-            const mergedGrocery = merged.groceryList ?? [];
-            const remoteGroceryIds = new Set(remoteGrocery.map((item) => item.id));
-            const mergedAddedGrocery =
-                mergedGrocery.length > remoteGrocery.length ||
-                mergedGrocery.some((item) => !remoteGroceryIds.has(item.id)) ||
-                mergedGrocery.some((item) => {
-                    const remoteItem = remoteGrocery.find((r) => r.id === item.id);
-                    return remoteItem && item.checked && !remoteItem.checked;
-                });
-            if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery) {
-                writerRef.current?.schedule(userId, merged);
+                const local = readLocalPrefs(userName);
+                const merged = mergePrefs(local, remote);
+                applyMergedPrefsToLocal(userName, merged);
+                onHydratedRef.current?.();
+                onSyncStatusRef.current?.('synced');
+                const remoteFavSet = new Set(remote.favorites);
+                const mergedAddedFavs = merged.favorites.some((f) => !remoteFavSet.has(f));
+                const mergedAddedRatings = Object.keys(merged.ratings).some(
+                    (k) => !(k in remote.ratings)
+                );
+                const remoteColById = new Map(remote.collections.map((c) => [c.id, c]));
+                const mergedAddedCollections =
+                    merged.collections.length > remote.collections.length ||
+                    merged.collections.some((c) => {
+                        const remoteCol = remoteColById.get(c.id);
+                        if (!remoteCol) return true;
+                        return c.recipeIds.some((id) => !remoteCol.recipeIds.includes(id));
+                    });
+                const remoteMealPlan = remote.mealPlan ?? [];
+                const mergedMealPlan = merged.mealPlan ?? [];
+                const remoteMealIds = new Set(remoteMealPlan.map((entry) => entry.id));
+                const mergedAddedMealPlan =
+                    mergedMealPlan.length > remoteMealPlan.length ||
+                    mergedMealPlan.some((entry) => !remoteMealIds.has(entry.id));
+                const remoteGrocery = remote.groceryList ?? [];
+                const mergedGrocery = merged.groceryList ?? [];
+                const remoteGroceryIds = new Set(remoteGrocery.map((item) => item.id));
+                const mergedAddedGrocery =
+                    mergedGrocery.length > remoteGrocery.length ||
+                    mergedGrocery.some((item) => !remoteGroceryIds.has(item.id)) ||
+                    mergedGrocery.some((item) => {
+                        const remoteItem = remoteGrocery.find((r) => r.id === item.id);
+                        return remoteItem && item.checked && !remoteItem.checked;
+                    });
+                if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery) {
+                    writerRef.current?.schedule(userId, merged);
+                }
+            } catch {
+                if (!cancelled) onSyncStatusRef.current?.('error');
             }
         })();
 

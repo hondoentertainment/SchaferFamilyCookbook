@@ -5,6 +5,13 @@ const STORE_NAME = 'recipes';
 const DB_VERSION = 1;
 const MAX_ENTRIES = 150;
 
+export const OFFLINE_CACHE_UPDATED_EVENT = 'schafer:offline-cache-updated';
+
+function notifyOfflineCacheUpdated(): void {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(OFFLINE_CACHE_UPDATED_EVENT));
+}
+
 function openDb(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -47,6 +54,7 @@ export async function cacheRecipeOffline(recipe: Recipe): Promise<void> {
     if (!isIdbAvailable()) return;
     try {
         await putRecipe(recipe);
+        notifyOfflineCacheUpdated();
     } catch (err) {
         console.warn('[recipeOfflineCache] cacheRecipeOffline failed:', err);
     }
@@ -69,8 +77,29 @@ export async function cacheRecipesOffline(recipes: Recipe[]): Promise<void> {
             };
             tx.onerror = () => reject(tx.error);
         });
+        notifyOfflineCacheUpdated();
     } catch (err) {
         console.warn('[recipeOfflineCache] cacheRecipesOffline failed:', err);
+    }
+}
+
+/** All recipe ids currently stored for offline cook mode. */
+export async function listOfflineRecipeIds(): Promise<string[]> {
+    if (!isIdbAvailable()) return [];
+    try {
+        const db = await openDb();
+        return await new Promise<string[]>((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const req = tx.objectStore(STORE_NAME).getAllKeys();
+            req.onsuccess = () => {
+                resolve((req.result as IDBValidKey[]).map(String));
+            };
+            req.onerror = () => reject(req.error);
+            tx.oncomplete = () => db.close();
+        });
+    } catch (err) {
+        console.warn('[recipeOfflineCache] listOfflineRecipeIds failed:', err);
+        return [];
     }
 }
 

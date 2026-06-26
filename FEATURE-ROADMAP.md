@@ -19,7 +19,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Grocery List** | Add from recipe modal, list view, local persistence, **cloud sync via `userPrefs`** | Solid |
 | **Meal Plan** | Weekly planner, add-from-modal/day picker, generate grocery list, optional `userPrefs` cloud sync | Solid |
 | **Gallery** | Photos/videos, lightbox, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
-| **Trivia** | 25-question quiz, local scoreboard + **Firestore family leaderboard** (`triviaScores`) | Solid |
+| **Trivia** | 32-question quiz (+ Family Story links), local scoreboard + **Firestore family leaderboard** (`triviaScores`) | Solid |
 | **Family Story** | Built-in narrative with TOC/print plus Firestore-backed Admin CMS override | Solid |
 | **Contributors** | Directory, filter recipes by contributor | Solid |
 | **Profile** | Display name, avatar, my recipes, contribution log, favorites & recently viewed | Solid |
@@ -31,8 +31,8 @@ A strategic roadmap for the next phases of development, informed by the current 
 ### Gaps & Opportunities
 - Favorites / recent / ratings / meal-plan sync is **opt-in** via `userPrefs` in Firestore; not full “restore everywhere” for every guest
 - Trivia has **both** a local run history and a **cloud** leaderboard; local scores remain for offline / comparison
-- **Offline recipe text cache** — IndexedDB snapshot on browse/cook + deep-link fallback (batch 5); not a full offline-first sync layer
-- **Family Story CMS** — next polish is live preview/draft publish workflow for custodians
+- **Offline recipe text cache** — IndexedDB snapshot + **Offline badge** on cards (batch 7); not a full offline-first sync layer
+- **Family Story CMS** — **publish vs draft** workflow for custodians (batch 7); preview + autosave draft already existed
 
 ---
 
@@ -43,7 +43,14 @@ A strategic roadmap for the next phases of development, informed by the current 
 - [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
 - [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
 
-### 2. Done (recent — June 2026 batch 6)
+### 2. Done (recent — June 2026 batch 7)
+- [x] **Offline badge on recipe cards** — after IndexedDB cache
+- [x] **Prefs sync status banners** — Profile when Firebase connected
+- [x] **Story CMS publish workflow** — publish / revert to published
+- [x] **Trivia expansion** — five Family Story questions; Firebase seed merge
+- [x] **Help custodian checklist** — Sentry, env, Lighthouse, images, push
+
+### 3. Done (June 2026 batch 6)
 - [x] **Sentry test event** — Help → Troubleshooting (when DSN configured)
 - [x] **Guest cloud sync notice** — Profile when Firebase not connected
 - [x] **Offline cook banner** — Cook Mode saved-copy indicator

@@ -60,7 +60,7 @@ export const HelpView: React.FC = () => {
                         Use the <strong className="font-bold">Read / Cook / Share</strong> modes at the top of a recipe to focus on story, cooking, or sending a link.
                     </li>
                     <li>
-                        <strong className="font-bold">Cook mode</strong> keeps your screen awake. Steps and ingredients work offline once you&apos;ve opened the recipe while online. Tap the <strong className="font-bold">🔊 Listen</strong> button to read the current step aloud (Safari on iOS may require tapping Listen each step; speech does not auto-advance).
+                        <strong className="font-bold">Cook mode</strong> keeps your screen awake. Steps and ingredients work offline once you&apos;ve opened the recipe while online. Recipe cards show an <strong className="font-bold">Offline</strong> badge after they&apos;re saved locally. Tap the <strong className="font-bold">🔊 Listen</strong> button to read the current step aloud (Safari on iOS may require tapping Listen each step; speech does not auto-advance).
                     </li>
                     <li>
                         <strong className="font-bold">Collections</strong> under Groceries let you group recipes — start from a template or build your own shelf.
@@ -98,6 +98,29 @@ export const HelpView: React.FC = () => {
                 >
                     Send Sentry test event
                 </button>
+            </CollapsiblePanel>
+
+            <CollapsiblePanel id="help-custodian-ops" title="Custodian ops checklist">
+                <p className="text-sm text-stone-600 dark:text-stone-400 mb-3 font-serif italic">
+                    These steps need Vercel or Firebase console access — they cannot be done from the app alone.
+                </p>
+                <ol className="list-decimal pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
+                    <li>
+                        <strong className="font-bold">Sentry</strong> — set <code className="text-xs">VITE_SENTRY_DSN</code> on Vercel Production, then use the test button above. Optional build vars: <code className="text-xs">SENTRY_AUTH_TOKEN</code>, <code className="text-xs">SENTRY_ORG</code>, <code className="text-xs">SENTRY_PROJECT</code>.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Env audit</strong> — run <code className="text-xs">npm run verify:vercel-env</code> locally after changing Vercel variables.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Lighthouse</strong> — download the mobile + desktop artifact from the monthly GitHub Actions Lighthouse job.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Recipe images</strong> — run <code className="text-xs">npm run images:batch</code> (requires <code className="text-xs">GEMINI_API_KEY</code>) for fallback card covers.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Push (optional)</strong> — see <code className="text-xs">docs/FIREBASE_PUSH_NOTIFICATIONS.md</code> for FCM env vars.
+                    </li>
+                </ol>
             </CollapsiblePanel>
 
             <CollapsiblePanel id="help-privacy" title="Privacy & data">

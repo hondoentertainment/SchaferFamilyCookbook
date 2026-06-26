@@ -12,6 +12,7 @@ import { ActivityFeed } from './ActivityFeed';
 import { CollapsiblePanel } from './CollapsiblePanel';
 import { hapticLight } from '../utils/haptics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
+import type { UserPrefsSyncStatus } from '../services/useUserPrefsSync';
 import { addActivity, getActivityFeed, formatTimeAgo } from '../utils/activityFeed';
 import { getFavoriteIds } from '../utils/favorites';
 import { getRecentlyViewedEntries } from '../utils/recentlyViewed';
@@ -120,6 +121,7 @@ export interface AdminSectionProps {
 
 interface ProfileViewProps {
     currentUser: UserProfile;
+    prefsSyncStatus?: UserPrefsSyncStatus;
     userRecipes: Recipe[];
     userHistory: HistoryEntry[];
     favoriteRecipes: Recipe[];
@@ -283,6 +285,7 @@ const RecipeRow: React.FC<{ recipe: Recipe; onView?: (r: Recipe) => void; rightS
 export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const {
         currentUser,
+        prefsSyncStatus = 'local',
         userRecipes,
         userHistory,
         favoriteRecipes,
@@ -783,6 +786,30 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
                     >
                         Favorites, ratings, grocery lists, and meal plans on this device are stored locally until the family cloud is connected. They won&apos;t follow you to other phones or browsers yet.
+                    </p>
+                )}
+                {CloudArchive.getProvider() === 'firebase' && prefsSyncStatus === 'synced' && (
+                    <p
+                        role="status"
+                        className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100"
+                    >
+                        Your favorites, grocery lists, meal plans, and collections sync to the family cloud for <strong>{currentUser.name}</strong> on this device.
+                    </p>
+                )}
+                {CloudArchive.getProvider() === 'firebase' && prefsSyncStatus === 'syncing' && (
+                    <p
+                        role="status"
+                        className="mb-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-300"
+                    >
+                        Syncing your preferences with the family cloud…
+                    </p>
+                )}
+                {CloudArchive.getProvider() === 'firebase' && prefsSyncStatus === 'error' && (
+                    <p
+                        role="status"
+                        className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                    >
+                        Couldn&apos;t reach the family cloud to sync prefs right now. Your changes stay on this device until you reconnect.
                     </p>
                 )}
                 <div className="grid lg:grid-cols-2 gap-8">
