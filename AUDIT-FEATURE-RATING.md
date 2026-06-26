@@ -7,7 +7,7 @@
 - **Overall score**: 7.5 / 10
 - **Highest**: Recipe Modal, Trivia, Family Story, Header (8/10)
 - **Needs work**: Alphabetical Index scroll spy (7/10), Admin form labels (7/10)
-- **Status snapshot (May 2026):** Most accessibility / form-label items below are now implemented; remaining open items are a `aria-live` polite region on Profile save (low priority) and an optional breadcrumb for deep-linked recipes opened outside the Recipes tab.
+- **Status snapshot (June 2026):** Sticky A–Z headers, gallery video lightbox, Profile save announcements, and Home breadcrumb in the recipe modal are implemented. Remaining optional polish: WebP/AVIF in recipe lightbox, fullscreen video controls polish.
 
 ---
 
@@ -31,7 +31,7 @@
 
 **Recommendations**:
 1. ~~Add scroll spy: set `aria-current="true"` on the letter section currently in view (like Family Story TOC).~~ **DONE (May 2026)** — `src/components/AlphabeticalIndex.tsx` uses `IntersectionObserver` (lines ~65–106) and sets `aria-current="true"` on the active letter button in both the mobile strip (line 136) and the desktop sticky nav (line 155). The active letter also receives a visual `bg-[#2D4635] text-white scale-110` treatment.
-2. Consider sticky section headers during scroll for long lists.
+2. ~~Consider sticky section headers during scroll for long lists.~~ **DONE (June 2026)** — letter section `<h3>` headers use `sticky top-[120px]` with backdrop blur.
 
 ---
 
@@ -41,7 +41,7 @@
 **Rationale**: Masonry layout, photo/video support, text-to-archive phone hint, broken-image fallback, admin delete. Videos have controls, playsInline, onFocus/onBlur for keyboard. Images use GalleryLightbox (dialog, Escape, focus), lazy loading. Empty state and loading skeleton.
 
 **Recommendations**:
-1. Consider fullscreen viewer for videos (currently only images open in lightbox).
+1. ~~Consider fullscreen viewer for videos (currently only images open in lightbox).~~ **DONE (June 2026)** — `GalleryLightbox` opens videos in a fullscreen dialog with controls and `aria-label="Fullscreen gallery video"`.
 2. Add `loading="lazy"` to GalleryLightbox image if loading large files.
 
 ---

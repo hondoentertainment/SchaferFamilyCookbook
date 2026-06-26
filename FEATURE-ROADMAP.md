@@ -41,11 +41,16 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ### 1. Product (next sprint)
 - [ ] **Lighthouse baseline** — run `npm run lighthouse:ci` on production; track scores in CI artifacts
-- [ ] **Meal Plan polish** — copy week/day actions, richer picker search, clearer grocery de-dupe summaries
-- [ ] **Family Story CMS polish** — preview, autosave draft, optional section templates
+- [ ] **Production monitoring** — Sentry DSN on Vercel; smoke prod after nav rollout
+- [ ] **Content ops** — `npm run images:verify`; deploy Firestore indexes when needed
 
-### 2. Done (recent)
-- [x] **Mobile vibration / haptics**, **E2E stabilization**, **Profile favorites & recent**, **collections in Profile**, **recipe modal collection picker**, **a11y batch**
+### 2. Done (recent — June 2026)
+- [x] **Home dashboard & six-tab nav** — `HomeView`, `SectionSubNav`, bottom nav groups, E2E in `e2e/home.spec.ts` and `e2e/navigation.spec.ts`
+- [x] **Meal Plan polish** — copy week/day, fuzzy picker search, grocery de-dupe toasts
+- [x] **Family Story CMS polish** — preview, autosave draft, section templates
+- [x] **A11y polish** — A–Z sticky headers, gallery video lightbox, Profile save announcements, Home breadcrumb in recipe modal
+- [x] **Grocery share** — copy/share list from Grocery List view
+- [x] **Fuzzy search** — browse search with typo tolerance (`fuzzyMatch`)
 - [x] **Collections cloud sync** — `userPrefs` payload, Firestore rules, debounced sync via `useUserPrefsSync` (late May 2026)
 - [x] **Featured recipes** — admin curation + hero strip (late May 2026)
 - [x] **Meal Plan MVP + cloud sync** — week view, grocery-list generation, modal day picker, optional `userPrefs.mealPlan` sync (June 2026)
@@ -119,8 +124,8 @@ A strategic roadmap for the next phases of development, informed by the current 
 1. **Done (baseline)** — Mobile polish (haptics, vibration, Cook swipe), Grocery, Profile sections, family trivia leaderboard + rules, Vercel OG/share, admin export + gallery edit, E2E port isolation, **Vercel API recipe seed bundling** (late May 2026 — see `RUNBOOK.md`)
 2. **Just shipped (multi-agent run, late May 2026)** — **Featured recipes**, **FCM SW build config**, **Profile favorites/recent**, **collections UI** (Profile + modal picker), **collections cloud sync**, **a11y batch**, **E2E fixes**, **mobile vibration**. See `ENHANCEMENTS.md` and `FEATURE-PLAN-NEXT-2-WEEKS.md`.
 3. **Just shipped (June 2026)** — **Meal Plan cloud sync**, **Family Story CMS rendering**, stale roadmap cleanup.
-4. **Next (2 weeks)** — **Lighthouse baseline**, Meal Plan polish, Family Story editor preview/draft UX.
-5. **Next quarter** — offline recipe cache for Cook Mode, optional stronger identity if cross-device personalization needs grow.
+4. **Next (2 weeks)** — **Lighthouse baseline**, production monitoring, content/image verification.
+5. **Next quarter** — optional stronger identity if cross-device personalization needs grow; gamification backlog.
 
 ---
 
@@ -133,4 +138,4 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ---
 
-*Last updated: 19 June 2026*
+*Last updated: 26 June 2026*

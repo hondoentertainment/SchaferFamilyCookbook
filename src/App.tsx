@@ -1732,7 +1732,7 @@ const App: React.FC = () => {
                             window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
                         }}
                         onOpenGroceryList={openGroceryFromRecipe}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Home: 'Home', Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
                     />
                 </Suspense>

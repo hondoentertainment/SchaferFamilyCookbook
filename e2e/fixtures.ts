@@ -67,6 +67,32 @@ export async function loginAs(
   }
 }
 
+/**
+ * Log in and remain on the Home tab (does not navigate to Recipes).
+ */
+export async function loginAsHome(
+  page: import('@playwright/test').Page,
+  name: string
+): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.setItem('schafer_onboarding_done', 'true');
+  });
+  await page.reload();
+
+  await page.getByPlaceholder(/your name/i).fill(name);
+  await page.keyboard.press('Enter');
+
+  await confirmCookbookLogin(page);
+  await waitForHomeMainHeading(page);
+
+  const skipBtn = page.getByRole('button', { name: /Skip Tour/i });
+  if (await skipBtn.isVisible().catch(() => false)) {
+    await skipBtn.click();
+  }
+}
+
 /** Main Recipes grid recipe openers — excludes horizontal shelf cards. */
 export function recipeCardOpenInMainGrid(page: import('@playwright/test').Page) {
   return page.getByTestId('recipe-card-grid').getByTestId('recipe-card-open');

@@ -269,6 +269,15 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                 Plan your week
                             </button>
                         )}
+                        {onOpenCollections && (
+                            <button
+                                type="button"
+                                onClick={onOpenCollections}
+                                className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                            >
+                                From a collection
+                            </button>
+                        )}
                         <p className="w-full text-xs text-stone-400 dark:text-stone-500">
                             Open any recipe and use “Add to grocery list” from the ingredients section, or build a list from Meal Plan.
                         </p>

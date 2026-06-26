@@ -291,6 +291,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [draftName, setDraftName] = useState(currentUser.name);
     const [isSaving, setIsSaving] = useState(false);
+    const [saveAnnouncement, setSaveAnnouncement] = useState('');
     const [showPicker, setShowPicker] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
     const activityFeedSectionRef = useRef<HTMLDivElement>(null);
@@ -368,6 +369,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                 // ignore
             }
             toast('Display name updated', 'success');
+            setSaveAnnouncement('Display name updated');
             setIsEditingName(false);
         }
         setIsSaving(false);
@@ -393,6 +395,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
             setAvatar(previous);
         } else {
             toast('Avatar updated', 'success');
+            setSaveAnnouncement('Avatar updated');
         }
         setIsSaving(false);
     };
@@ -452,6 +455,9 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
     return (
         <div className="max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6 space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 motion-reduce:animate-none">
+            <div aria-live="polite" aria-atomic="true" className="sr-only" data-testid="profile-save-announcement">
+                {saveAnnouncement}
+            </div>
             {/* ── Identity ─────────────────────────────────────────────── */}
             <section aria-labelledby="profile-identity-heading">
                 <SectionHeading id="profile-identity-heading">Identity</SectionHeading>
