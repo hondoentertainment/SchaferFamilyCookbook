@@ -605,7 +605,7 @@ const RecipeShelfCard: React.FC<{
                         <span className="truncate font-serif italic">By {recipe.contributor}</span>
                         {rating > 0 && <span className="shrink-0 font-semibold text-amber-600">★ {rating.toFixed(1)}</span>}
                     </div>
-                    <span className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#2D4635]/10 px-4 py-2 text-sm font-bold text-[#2D4635] transition-colors group-hover:bg-[#2D4635]/15 dark:text-emerald-100">
+                    <span className="btn btn-secondary btn-body w-full pointer-events-none">
                         View recipe →
                     </span>
                 </div>
@@ -2250,7 +2250,7 @@ const App: React.FC = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleSelectRecipe(recipe)}
-                                                    className="min-h-11 rounded-full bg-[#2D4635] px-2 py-2 text-xs sm:px-4 sm:text-sm font-bold text-white transition-colors hover:bg-[#24392B] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950"
+                                                    className="btn btn-primary btn-body w-full"
                                                     aria-label={`View recipe details for ${recipe.title}`}
                                                 >
                                                     <span className="sm:hidden">View</span>
@@ -2265,7 +2265,7 @@ const App: React.FC = () => {
                                                         hapticLight();
                                                         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'recipe_card' });
                                                     }}
-                                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white px-2 py-2 text-xs sm:px-4 sm:text-sm font-semibold text-[#2D4635] transition-colors hover:bg-[#FDF6EC] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100 dark:hover:bg-stone-800"
+                                                    className="btn btn-secondary btn-body w-full"
                                                     aria-label={`Start cooking ${recipe.title}`}
                                                 >
                                                     <span className="sm:hidden">Cook</span>

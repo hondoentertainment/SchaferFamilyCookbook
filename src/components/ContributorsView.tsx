@@ -169,13 +169,15 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     <p className="text-stone-500 text-sm mt-2">Add recipes, photos, or trivia to see contributors appear here.</p>
                     <p className="text-stone-500 text-xs mt-4">Every contribution counts—recipes, gallery memories, and trivia questions.</p>
                     {onGoToRecipes && (
+                        <div className="empty-state-actions mt-6">
                         <button
                             type="button"
                             onClick={onGoToRecipes}
-                            className="mt-6 px-6 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                            className="btn btn-primary btn-body"
                         >
                             Browse recipes
                         </button>
+                        </div>
                     )}
                 </div>
             ) : filteredStats.length === 0 ? (
@@ -184,7 +186,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     <button
                         type="button"
                         onClick={() => setSearch('')}
-                        className="mt-4 text-[#2D4635] font-bold underline hover:no-underline focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 rounded px-4 py-2"
+                        className="btn btn-link btn-body mt-4"
                     >
                         Clear search
                     </button>
@@ -238,7 +240,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                     <button
                                         type="button"
                                         onClick={() => onSelectContributor(stat.name)}
-                                        className="mt-auto w-full py-4 bg-stone-50 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] dark:hover:bg-[#2D4635] hover:text-white transition-all min-h-[2.75rem] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                        className="btn btn-secondary btn-invert-on-hover mt-auto w-full"
                                         aria-label={`Explore ${stat.name}'s collection: ${contributionSummary(stat)}`}
                                     >
                                         Explore Collection ({totalContributions(stat)})

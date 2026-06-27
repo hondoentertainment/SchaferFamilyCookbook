@@ -197,41 +197,30 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                         ? `${items.length} item${items.length === 1 ? '' : 's'} · ${checkedCount} checked`
                         : 'Add ingredients from a recipe, plan your week, or jot anything down below.'
                 }
+                actions={
+                    hasItems ? (
+                        <div className="view-toolbar">
+                            <button type="button" onClick={handleCopyList} className="btn btn-secondary btn-body">
+                                Copy list
+                            </button>
+                            <button type="button" onClick={handleShareList} className="btn btn-secondary btn-body">
+                                Share
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleClearChecked}
+                                disabled={checkedCount === 0}
+                                className="btn btn-secondary btn-body"
+                            >
+                                Clear checked{checkedCount > 0 ? ` (${checkedCount})` : ''}
+                            </button>
+                            <button type="button" onClick={handleClearAll} className="btn btn-danger btn-body">
+                                Clear all
+                            </button>
+                        </div>
+                    ) : undefined
+                }
             />
-
-            {hasItems && (
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-                        <button
-                            type="button"
-                            onClick={handleCopyList}
-                            className="min-h-11 px-4 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                        >
-                            Copy list
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleShareList}
-                            className="min-h-11 px-4 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                        >
-                            Share
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleClearChecked}
-                            disabled={checkedCount === 0}
-                            className="min-h-11 px-4 py-2.5 rounded-full text-sm font-semibold border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            Clear checked{checkedCount > 0 ? ` (${checkedCount})` : ''}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleClearAll}
-                            className="min-h-11 px-5 py-2.5 rounded-full text-sm font-semibold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-                        >
-                            Clear all
-                        </button>
-                </div>
-            )}
 
             <form
                 onSubmit={handleAddManual}
@@ -253,7 +242,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                 <button
                     type="submit"
                     disabled={!manualText.trim()}
-                    className="min-h-11 px-6 py-3 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="btn btn-primary shrink-0"
                 >
                     Add
                 </button>
@@ -270,12 +259,12 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                     <p className="font-serif italic text-stone-600 dark:text-stone-300 text-lg">
                         Your grocery list is empty. Add ingredients from a recipe.
                     </p>
-                    <div className="flex flex-wrap justify-center gap-3 px-4">
+                    <div className="empty-state-actions">
                         {onBrowseRecipes && (
                             <button
                                 type="button"
                                 onClick={onBrowseRecipes}
-                                className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
+                                className="btn btn-primary btn-body"
                             >
                                 Browse recipes
                             </button>
@@ -284,7 +273,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             <button
                                 type="button"
                                 onClick={onOpenMealPlan}
-                                className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                                className="btn btn-secondary btn-body"
                             >
                                 Plan your week
                             </button>
@@ -293,12 +282,12 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             <button
                                 type="button"
                                 onClick={onOpenCollections}
-                                className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                                className="btn btn-secondary btn-body"
                             >
                                 From a collection
                             </button>
                         )}
-                        <p className="w-full text-xs text-stone-400 dark:text-stone-500">
+                        <p className="w-full text-xs text-stone-400 dark:text-stone-500 text-center">
                             Open any recipe and use “Add to grocery list” from the ingredients section, or build a list from Meal Plan.
                         </p>
                     </div>
@@ -345,7 +334,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                             type="button"
                                             onClick={() => handleRemove(item.id, item.text)}
                                             aria-label={`Remove ${item.text}`}
-                                            className="w-10 h-10 min-w-[2.5rem] min-h-[2.5rem] rounded-full text-stone-300 hover:text-red-500 dark:text-stone-600 dark:hover:text-red-400 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center justify-center transition-colors"
+                                            className="btn btn-icon btn-secondary text-stone-400 hover:text-red-500 dark:hover:text-red-400"
                                             title="Remove"
                                         >
                                             <span className="text-lg leading-none">×</span>
@@ -392,7 +381,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                             type="button"
                                             onClick={() => handleRemove(item.id, item.text)}
                                             aria-label={`Remove ${item.text}`}
-                                            className="w-9 h-9 rounded-full text-stone-300 hover:text-red-500 flex items-center justify-center"
+                                            className="btn btn-icon btn-secondary text-stone-300 hover:text-red-500"
                                         >
                                             ×
                                         </button>

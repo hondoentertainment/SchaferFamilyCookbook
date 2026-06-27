@@ -103,7 +103,7 @@ const RecipeMiniCard: React.FC<{
                         <button
                             type="button"
                             onClick={() => { hapticLight(); onStartCook(); }}
-                            className="min-h-11 w-full rounded-full bg-[#2D4635] px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#1B2C22]"
+                            className="btn btn-primary btn-body w-full"
                             aria-label={`Start cooking ${recipe.title}`}
                         >
                             Cook now
@@ -238,25 +238,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-3 pt-6">
+                <div className="hero-actions">
                     <button
                         type="button"
                         onClick={() => { hapticLight(); openRecipes(); }}
-                        className="min-h-12 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_26px_rgba(45,70,53,0.24)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] active:scale-[0.98]"
+                        className="btn btn-primary btn-body"
                     >
                         Browse all recipes
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Grocery List'); }}
-                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                        className="btn btn-secondary btn-body"
                     >
                         Plan & shop
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Gallery'); }}
-                        className="min-h-12 rounded-full border border-[#E8DCCB] bg-white/75 px-6 py-3 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                        className="btn btn-secondary btn-body"
                     >
                         Family hub
                     </button>
@@ -277,7 +277,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                             type="button"
                             onClick={() => { hapticLight(); onOpenMealPlan(); }}
-                            className="min-h-11 rounded-full px-3 py-2 text-sm font-semibold text-[#A0522D] hover:bg-[#A0522D]/10"
+                            className="btn btn-link btn-body"
                         >
                             Full week →
                         </button>
@@ -296,18 +296,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     <p className="font-serif italic text-[#2D4635] dark:text-emerald-100 truncate">{recipe.title}</p>
                                     <p className="text-xs text-stone-500 dark:text-stone-400">{recipe.category} · By {recipe.contributor}</p>
                                 </button>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2 shrink-0">
                                     <button
                                         type="button"
                                         onClick={() => { hapticLight(); onSelectRecipe(recipe); }}
-                                        className="min-h-11 rounded-full border border-[#E8DCCB] px-4 py-2 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-300"
+                                        className="btn btn-secondary btn-body"
                                     >
                                         View
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => { hapticLight(); onStartCook(recipe); }}
-                                        className="min-h-11 rounded-full bg-[#2D4635] px-4 py-2 text-sm font-bold text-white"
+                                        className="btn btn-primary btn-body"
                                     >
                                         Cook now
                                     </button>
@@ -335,7 +335,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         type="button"
                         data-testid="home-open-trivia"
                         onClick={() => { hapticLight(); onSetTab('Trivia'); }}
-                        className="min-h-12 shrink-0 rounded-full bg-[#A0522D] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#8B4513] active:scale-[0.98] transition-all"
+                        className="btn btn-accent btn-body shrink-0"
                     >
                         Play trivia
                     </button>
@@ -352,7 +352,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                             type="button"
                             onClick={() => onSelectRecipe(recipeOfWeek)}
-                            className="min-h-11 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:bg-[#A0522D]/10"
+                            className="btn btn-link"
                             aria-label={`Open ${recipeOfWeek.title}`}
                         >
                             Open →

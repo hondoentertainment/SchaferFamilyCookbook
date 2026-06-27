@@ -71,7 +71,7 @@ function FamilyLeaderboard({
                             <button
                                 type="button"
                                 onClick={() => { onRefresh(); }}
-                                className="min-h-10 rounded-full border border-stone-200 dark:border-stone-600 bg-white dark:bg-stone-800 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-200 hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors"
+                                className="btn btn-secondary"
                             >
                                 Check again
                             </button>
@@ -413,7 +413,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <div className="w-20 h-20 bg-orange-50 rounded-full mx-auto flex items-center justify-center text-3xl shadow-inner border border-stone-100 mb-4">🎓</div>
                     <button
                         onClick={startQuiz}
-                        className="px-10 py-4 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                        className="btn btn-primary"
                     >
                         Begin The Challenge
                     </button>

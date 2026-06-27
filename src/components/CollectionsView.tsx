@@ -90,14 +90,14 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
         description="Group recipes into shelves — add to grocery lists or meal plans in one tap."
       />
 
-      <div className="flex items-center justify-between">
+      <div className="section-heading-row">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
           Collections ({collections.length})
         </h3>
         <button
           type="button"
           onClick={() => setShowCreate((v) => !v)}
-          className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
+          className="btn btn-link"
         >
           {showCreate ? 'Cancel' : '+ New Collection'}
         </button>
@@ -123,7 +123,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
             type="button"
             onClick={handleCreate}
             disabled={!newName.trim()}
-            className="px-5 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40"
+            className="btn btn-primary"
           >
             Create
           </button>
@@ -150,13 +150,15 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
               </button>
             ))}
           </div>
+          <div className="empty-state-actions">
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-5 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest"
+            className="btn btn-primary"
           >
             Create your own
           </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

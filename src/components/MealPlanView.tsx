@@ -3,6 +3,7 @@ import type { Recipe } from '../types';
 import { useUI } from '../context/UIContext';
 import { hapticLight } from '../utils/haptics';
 import { PageHeader } from './PageHeader';
+import { ViewActionBar } from './ViewActionBar';
 import {
   addDays,
   addToMealPlan,
@@ -181,7 +182,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         <button
           type="button"
           onClick={() => shiftWeek(-7)}
-          className="min-h-11 min-w-11 rounded-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+          className="btn btn-icon btn-secondary"
           aria-label="Previous week"
         >
           ‹
@@ -196,7 +197,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
               setWeekStart(getWeekStart(new Date()));
               setExpandedDay(todayKey);
             }}
-            className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline"
+            className="btn btn-link"
           >
             This week
           </button>
@@ -204,7 +205,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         <button
           type="button"
           onClick={() => shiftWeek(7)}
-          className="min-h-11 min-w-11 rounded-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+          className="btn btn-icon btn-secondary"
           aria-label="Next week"
         >
           ›
@@ -220,13 +221,15 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
             No recipes planned for this week yet. Use “+ Add recipe” on any day, or open a recipe and choose
             “Add to meal plan”.
           </p>
+          <div className="empty-state-actions">
           <button
             type="button"
             onClick={onBrowseRecipes}
-            className="min-h-11 px-5 py-2.5 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors"
+            className="btn btn-primary btn-body"
           >
             Browse recipes
           </button>
+          </div>
         </div>
       )}
 
@@ -400,14 +403,19 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
         })}
       </div>
 
-      <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-4 z-10 -mx-1 px-3 py-3 mt-2 rounded-2xl border border-stone-200/80 bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(45,70,53,0.08)]">
-        <div className="flex flex-wrap items-center gap-3">
+      <ViewActionBar
+        meta={
+          <span>
+            {weekRecipeCount} recipe{weekRecipeCount === 1 ? '' : 's'} planned
+          </span>
+        }
+      >
         <button
           type="button"
           data-testid="meal-plan-generate-groceries"
           onClick={handleGenerateGroceries}
           disabled={weekRecipeCount === 0}
-          className="min-h-11 px-5 py-3 rounded-full bg-[#2D4635] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="btn btn-primary"
         >
           Add this week to Grocery List
         </button>
@@ -416,15 +424,11 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
           data-testid="meal-plan-copy-week"
           onClick={handleCopyWeek}
           disabled={weekRecipeCount === 0}
-          className="min-h-11 px-5 py-3 rounded-full border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 text-[10px] font-black uppercase tracking-widest hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="btn btn-secondary"
         >
           Copy week → next week
         </button>
-        <span className="text-xs text-stone-400 dark:text-stone-500 ml-auto hidden sm:inline">
-          {weekRecipeCount} recipe{weekRecipeCount === 1 ? '' : 's'} planned
-        </span>
-        </div>
-      </div>
+      </ViewActionBar>
     </section>
   );
 };

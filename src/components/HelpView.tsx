@@ -71,7 +71,7 @@ export const HelpView: React.FC = () => {
                 <button
                     type="button"
                     onClick={replayTour}
-                    className="mt-4 inline-flex min-h-11 items-center rounded-full border border-[#E8DCCB] bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 transition-colors"
+                    className="mt-4 btn btn-secondary btn-body"
                 >
                     Replay the welcome tour
                 </button>
@@ -94,7 +94,7 @@ export const HelpView: React.FC = () => {
                             toast('Error monitoring is not configured on this deployment yet.', 'info');
                         }
                     }}
-                    className="inline-flex min-h-11 items-center rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 transition-colors"
+                    className="btn btn-secondary btn-body"
                 >
                     Send Sentry test event
                 </button>
@@ -130,13 +130,15 @@ export const HelpView: React.FC = () => {
                 <p className="text-sm text-stone-600 dark:text-stone-400 mb-4 font-serif italic leading-relaxed">
                     See what stays on your device versus the family cloud in Privacy &amp; Data.
                 </p>
+                <div className="empty-state-actions">
                 <button
                     type="button"
                     onClick={openPrivacy}
-                    className="inline-flex min-h-11 items-center rounded-full bg-[#2D4635] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                    className="btn btn-primary"
                 >
                     Open Privacy &amp; Data →
                 </button>
+                </div>
             </CollapsiblePanel>
         </main>
     );
