@@ -46,11 +46,17 @@ describe('Gallery', () => {
         localStorage.clear();
     });
 
+    it('should show upload panel on gallery tab', async () => {
+        await loginAndNavigateToGallery();
+        expect(screen.getByRole('heading', { name: /share a memory/i })).toBeInTheDocument();
+        expect(screen.getByTestId('gallery-upload-submit')).toBeInTheDocument();
+    });
+
     it('should show empty state when gallery has no items', async () => {
         await loginAndNavigateToGallery();
         expect(screen.getByRole('main', { name: /family gallery/i })).toBeInTheDocument();
         expect(screen.getByText('The gallery awaits your memories')).toBeInTheDocument();
-        expect(screen.getByText(/be the first to add a photo or video/i)).toBeInTheDocument();
+        expect(screen.getByText(/upload a photo above/i)).toBeInTheDocument();
     });
 
     it('should show gallery items when data exists', async () => {
@@ -128,10 +134,10 @@ describe('Gallery', () => {
         expect(deleteButton).toBeInTheDocument();
     });
 
-    it('should show "Want to add photos?" when no archive phone is set', async () => {
+    it('should show texting hint when no archive phone is set', async () => {
         await loginAndNavigateToGallery();
-        expect(screen.getByText('Want to add photos?')).toBeInTheDocument();
-        expect(screen.getByLabelText(/how to add photos/i)).toBeInTheDocument();
+        expect(screen.getByText('Prefer texting?')).toBeInTheDocument();
+        expect(screen.getByLabelText(/alternative ways to add photos/i)).toBeInTheDocument();
     });
 
     it('should show text-to-archive instructions when archive phone is set', async () => {

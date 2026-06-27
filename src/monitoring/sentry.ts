@@ -64,4 +64,14 @@ export function sendSentryTestEvent(): boolean {
     return true;
 }
 
+/** Optional breadcrumb for observability (no-op when Sentry is not initialized). */
+export function addSentryBreadcrumb(
+    message: string,
+    data?: Record<string, unknown>,
+    category = 'app'
+): void {
+    if (!import.meta.env.PROD || !import.meta.env.VITE_SENTRY_DSN) return;
+    Sentry.addBreadcrumb({ message, category, data, level: 'info' });
+}
+
 export { Sentry };

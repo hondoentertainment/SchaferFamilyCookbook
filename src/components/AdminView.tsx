@@ -1583,10 +1583,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
 
                                         <div className="flex gap-4">
-                                            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
+                                            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="btn btn-primary flex-1">
                                                 {isSubmitting ? 'Saving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
                                             </button>
-                                            {editingRecipe && <button type="button" onClick={clearEditing} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
+                                            {editingRecipe && <button type="button" onClick={clearEditing} disabled={isSubmitting} className="btn btn-secondary flex-1">Cancel</button>}
                                         </div>
                                     </form>
                                     )}
@@ -1634,7 +1634,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 }}
                                                 disabled={isSavingArchivePhone}
                                                 aria-busy={isSavingArchivePhone}
-                                                className="px-6 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                                                className="btn btn-primary whitespace-nowrap shrink-0"
                                             >
                                                 {isSavingArchivePhone ? 'Saving...' : 'Save'}
                                             </button>
@@ -1654,7 +1654,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <label htmlFor="admin-gallery-caption" className="sr-only">Gallery Caption</label>
                                             <input id="admin-gallery-caption" placeholder="Caption (e.g. Summer BBQ 1985)" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
                                         </div>
-                                        <button type="submit" disabled={!galleryFile || isSubmitting} aria-busy={isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+                                        <button type="submit" disabled={!galleryFile || isSubmitting} aria-busy={isSubmitting} className="btn btn-accent w-full">
                                             {isSubmitting ? 'Saving...' : 'Upload Memory'}
                                         </button>
                                     </form>
@@ -1945,10 +1945,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <input id="admin-trivia-answer" placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-base font-bold bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20 outline-none" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
                                         </div>
                                         <div className="flex gap-4">
-                                            <button type="submit" disabled={isTriviaSubmitting} aria-busy={isTriviaSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-70 disabled:cursor-not-allowed">
+                                            <button type="submit" disabled={isTriviaSubmitting} aria-busy={isTriviaSubmitting} className="btn btn-primary flex-1">
                                                 {isTriviaSubmitting ? 'Saving...' : editingTrivia ? 'Update Question' : 'Add Question'}
                                             </button>
-                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} disabled={isTriviaSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
+                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} disabled={isTriviaSubmitting} className="btn btn-secondary flex-1">Cancel</button>}
                                         </div>
                                     </form>
                                     <div className="pt-8 border-t border-stone-200 max-h-96 overflow-y-auto custom-scrollbar rounded-[2rem] p-4 bg-stone-50/50 border border-stone-100">

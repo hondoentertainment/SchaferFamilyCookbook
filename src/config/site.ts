@@ -80,7 +80,7 @@ const defaultConfig: SiteConfig = {
     subtitle: 'Captured moments across the generations.',
     textPromptTitle: 'Text your memories',
     textPromptHint: 'Photo/Video to:',
-    noPhoneHint: 'Admins can enable text-to-archive in Profile → Admin Tools → Gallery. Or ask an administrator to add your memories.',
+    noPhoneHint: 'You can upload directly on this page. Admins can also enable text-to-archive in Profile → Admin Tools → Gallery.',
   },
 };
 

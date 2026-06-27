@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { loginAs, seedLocalOnlyMode } from './fixtures';
 
 test.describe('Gallery', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,6 +7,9 @@ test.describe('Gallery', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await loginAs(page, 'Alice');
+    await seedLocalOnlyMode(page);
+    await page.reload();
+    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   });
 
   test('shows empty state when no items', async ({ page }) => {
@@ -14,24 +17,38 @@ test.describe('Gallery', () => {
 
     await expect(page.getByRole('main', { name: /Family Gallery/i })).toBeVisible();
     await expect(page.getByText('The gallery awaits your memories')).toBeVisible();
-    await expect(page.getByText(/Be the first to add a photo or video/i)).toBeVisible();
+    await expect(page.getByText(/upload a photo above/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Share a memory/i })).toBeVisible();
   });
 
-  test('shows text-to-archive instructions when no archive phone', async ({ page }) => {
+  test('shows texting hint when no archive phone', async ({ page }) => {
     await page.getByRole('button', { name: 'Family', exact: true }).click();
 
-    await expect(page.getByText(/Want to add photos\?/i)).toBeVisible();
-    await expect(page.getByText(/Admins can enable text-to-archive/i)).toBeVisible();
+    await expect(page.getByText(/Prefer texting\?/i)).toBeVisible();
+    await expect(page.getByText(/upload directly on this page/i)).toBeVisible();
+  });
+
+  test('uploads a photo in local mode', async ({ page }) => {
+    await page.getByRole('button', { name: 'Family', exact: true }).click();
+    await expect(page.getByTestId('gallery-upload-submit')).toBeDisabled();
+
+    const pngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    await page.getByTestId('gallery-upload-file').setInputFiles({
+      name: 'family-moment.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(pngBase64, 'base64'),
+    });
+    await page.getByTestId('gallery-upload-caption').fill('E2E picnic');
+    await page.getByTestId('gallery-upload-submit').click();
+
+    await expect(page.getByText('E2E picnic')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Added by Alice/i)).toBeVisible();
   });
 
   test('shows archive phone when configured', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await loginAs(page, 'Alice');
     await page.evaluate(() => localStorage.setItem('schafer_archive_phone', '+15551234567'));
     await page.reload();
-    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Family', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Text your memories' })).toBeVisible();
@@ -58,7 +75,6 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Family', exact: true }).click();
 
     await expect(page.getByText('Summer picnic 2024')).toBeVisible();
@@ -66,7 +82,6 @@ test.describe('Gallery', () => {
   });
 
   test('opens lightbox when clicking image', async ({ page }) => {
-    await loginAs(page, 'Alice');
     await page.evaluate(() => {
       localStorage.setItem(
         'schafer_db_gallery',
@@ -86,7 +101,6 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Family', exact: true }).click();
     await expect(page.getByText('Beach day')).toBeVisible({ timeout: 5000 });
 
@@ -116,7 +130,6 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Family', exact: true }).click();
     await expect(page.getByText('Escape test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape test/i }).click();
@@ -146,7 +159,6 @@ test.describe('Gallery', () => {
       );
     });
     await page.reload();
-    await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     await page.getByRole('button', { name: 'Family', exact: true }).click();
     await expect(page.getByText('Escape key test')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: /View full size: Escape key test/i }).click();
@@ -161,13 +173,8 @@ test.describe('Gallery', () => {
 
     test('copy archive phone copies to clipboard', async ({ page, context }) => {
       await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-      await page.goto('/');
-      await page.evaluate(() => localStorage.clear());
-      await page.reload();
-      await loginAs(page, 'Alice');
       await page.evaluate(() => localStorage.setItem('schafer_archive_phone', '+15559876543'));
       await page.reload();
-      await page.getByRole('button', { name: 'Family', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
       await page.getByRole('button', { name: 'Family', exact: true }).click();
       await page.getByTestId('gallery-copy-archive-phone').click();
       await expect(page.getByText(/Number copied/i)).toBeVisible({ timeout: 3000 });

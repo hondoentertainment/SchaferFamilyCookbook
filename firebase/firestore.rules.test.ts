@@ -218,4 +218,57 @@ describe('firestore.rules (emulator)', () => {
             }),
         );
     });
+
+    it('anonymous cannot create gallery items with invalid shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'gallery/g1'), {
+                id: 'g1',
+                type: 'image',
+                url: 'http://insecure.example/photo.jpg',
+                caption: 'Hi',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+            }),
+        );
+    });
+
+    it('anonymous can create valid gallery item', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'gallery/g2'), {
+                id: 'g2',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Summer BBQ',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+            }),
+        );
+    });
+
+    it('anonymous cannot update or delete gallery items', async () => {
+        const db = adminFirestore();
+        await assertSucceeds(
+            setDoc(doc(db, 'gallery/g3'), {
+                id: 'g3',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Original',
+                contributor: 'Kyle',
+                created_at: '2026-06-26T00:00:00.000Z',
+            }),
+        );
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'gallery/g3'), {
+                id: 'g3',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Hacked',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+            }),
+        );
+    });
 });

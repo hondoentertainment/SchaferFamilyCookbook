@@ -14,6 +14,7 @@ import { RecipeImage } from './RecipeImage';
 import { StarRating } from './StarRating';
 import { RecipeNotes } from './RecipeNotes';
 import { ShareRecipe } from './ShareRecipe';
+import { ViewActionBar } from './ViewActionBar';
 import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
 import { getAllCollections, addToCollection } from '../utils/collections';
 import { addToMealPlan, getMealPlan, toDateKey, addDays } from '../utils/mealPlan';
@@ -1095,19 +1096,16 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     )}
 
                     {/* Sticky bottom action bar */}
-                    <div
-                        className="relative shrink-0 border-t border-stone-200 dark:border-[var(--border-color)] bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-md px-4 py-3 print:hidden flex items-center gap-2"
-                        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
-                    >
+                    <ViewActionBar sticky={false} className="rounded-none border-x-0 border-b-0">
                             {onStartCook ? (
                                 <button
                                     type="button"
                                     onClick={() => { hapticLight(); onStartCook(); }}
                                     data-testid="recipe-modal-start-cook"
                                     aria-label="Start cooking"
-                                    className="flex-1 basis-1/2 min-h-12 px-4 py-3 bg-[#2D4635] hover:bg-[#2D4635]/90 text-white rounded-full font-medium text-sm md:text-base flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02] motion-reduce:hover:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                    className="btn btn-primary flex-1"
                                 >
-                                    <span>Start cooking</span>
+                                    Start cooking
                                 </button>
                             ) : null}
                             <button
@@ -1115,10 +1113,10 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 onClick={handleAddToGroceryList}
                                 data-testid="recipe-modal-add-to-grocery"
                                 aria-label="Add ingredients to grocery list"
-                                className={`${onStartCook ? 'shrink-0' : 'flex-1'} min-h-12 px-4 py-3 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-full font-medium text-sm flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2`}
+                                className={`btn btn-secondary ${onStartCook ? 'shrink-0' : 'flex-1'}`}
                                 title="Add to Grocery List"
                             >
-                                <span className="whitespace-nowrap">+ Grocery</span>
+                                + Grocery
                             </button>
                             <div className="relative shrink-0">
                                 <button
@@ -1128,7 +1126,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     aria-haspopup="menu"
                                     aria-expanded={overflowOpen}
                                     aria-label="More actions"
-                                    className="w-11 h-11 min-w-11 min-h-11 flex items-center justify-center bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                    className="btn btn-icon"
                                     title="More actions"
                                 >
                                     <span className="text-xl leading-none">⋯</span>
@@ -1180,7 +1178,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     </div>
                                 )}
                             </div>
-                        </div>
+                    </ViewActionBar>
                 </div>
             </div>
         </>

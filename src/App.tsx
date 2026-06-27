@@ -14,6 +14,7 @@ import {
 } from './services/firebaseCustodianAuth';
 import { Header } from './components/Header';
 import { PageHeader } from './components/PageHeader';
+import { GalleryUploadPanel } from './components/GalleryUploadPanel';
 import { OfflineBanner } from './components/OfflineBanner';
 import { PLACEHOLDER_AVATAR } from './constants';
 import { getAverageRating, getRatingCount, isFamilyApproved } from './utils/ratings';
@@ -38,6 +39,12 @@ import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 import { fuzzyMatch } from './utils/fuzzySearch';
 import { mergeWithDefaultRecipes } from './utils/mergeDefaultRecipes';
+import { validateGalleryFile } from './utils/galleryUpload';
+import {
+    checkGalleryUploadRateLimit,
+    recordGalleryUpload,
+} from './utils/galleryUploadRateLimit';
+import { addSentryBreadcrumb } from './monitoring/sentry';
 import { cacheRecipeOffline, cacheRecipesOffline, getOfflineRecipe } from './utils/recipeOfflineCache';
 import {
     CATEGORY_META,
@@ -657,6 +664,8 @@ const App: React.FC = () => {
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
     const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
     const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState<GalleryItem | null>(null);
+    const [highlightGalleryId, setHighlightGalleryId] = useState<string | null>(null);
+    const galleryItemRefs = useRef<Map<string, HTMLElement>>(new Map());
     const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
         const s = localStorage.getItem('schafer_user');
         if (!s) return null;
@@ -955,10 +964,73 @@ const App: React.FC = () => {
         return unsubscribe;
     }, []);
 
+    const highlightGalleryItem = useCallback((id: string) => {
+        setHighlightGalleryId(id);
+        window.setTimeout(() => setHighlightGalleryId(null), 4000);
+    }, []);
+
+    useEffect(() => {
+        if (!highlightGalleryId || tab !== 'Gallery') return;
+        const el = galleryItemRefs.current.get(highlightGalleryId);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [highlightGalleryId, tab, gallery.length]);
+
+    const handleGalleryUploadsProcessed = useCallback(
+        async (uploadedIds: string[]) => {
+            await refreshLocalState();
+            const lastId = uploadedIds[uploadedIds.length - 1];
+            if (lastId) highlightGalleryItem(lastId);
+        },
+        [refreshLocalState, highlightGalleryItem]
+    );
+
     const { pendingUploadCount, refreshPendingCount } = useOfflineUploadQueue(tab, gallery.length, {
-        onUploadsProcessed: refreshLocalState,
+        onUploadsProcessed: handleGalleryUploadsProcessed,
         onToast: toast,
     });
+
+    const uploadGalleryMemory = useCallback(
+        async (g: GalleryItem, f?: File): Promise<'uploaded' | 'queued'> => {
+            if (!f) return 'uploaded';
+            const validation = validateGalleryFile(f);
+            if (!validation.ok) {
+                toast(validation.message, 'error');
+                throw new Error(validation.message);
+            }
+            const rate = checkGalleryUploadRateLimit(g.contributor);
+            if (!rate.allowed) {
+                const msg = `Upload limit reached. Try again in about ${rate.retryAfterMinutes} minute(s).`;
+                toast(msg, 'error');
+                throw new Error(msg);
+            }
+            if (!navigator.onLine) {
+                await queueUpload(f, g.caption, g.contributor);
+                await refreshPendingCount();
+                toast("You're offline. Photo saved to upload queue.", 'info');
+                addSentryBreadcrumb('gallery_upload_queued', { contributor: g.contributor });
+                return 'queued';
+            }
+            try {
+                const url = await CloudArchive.uploadFile(f, 'gallery');
+                await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
+                recordGalleryUpload(g.contributor);
+                trackEvent('gallery_upload', {
+                    contributor: g.contributor,
+                    type: g.type,
+                    offline: false,
+                });
+                addSentryBreadcrumb('gallery_upload_success', { id: g.id, type: g.type });
+                await refreshLocalState();
+                highlightGalleryItem(g.id);
+                return 'uploaded';
+            } catch {
+                addSentryBreadcrumb('gallery_upload_failed', { id: g.id });
+                toast(CLOUD_ERROR_MSG, 'error');
+                throw new Error(CLOUD_ERROR_MSG);
+            }
+        },
+        [refreshLocalState, refreshPendingCount, toast, highlightGalleryItem]
+    );
 
     const finalizeLogin = useCallback(
         (trimmed: string) => {
@@ -1354,7 +1426,16 @@ const App: React.FC = () => {
                             {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
                         </p>
                     )}
-                    <div className="flex flex-col md:flex-row md:justify-end items-start md:items-center gap-6">
+                    <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+                        <GalleryUploadPanel
+                            contributorName={currentUser.name}
+                            onUpload={async (item, file) => {
+                                const result = await uploadGalleryMemory(item, file);
+                                if (result === 'uploaded') {
+                                    toast('Memory added to the gallery', 'success');
+                                }
+                            }}
+                        />
                         {archivePhone ? (
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
                                 <span className="text-3xl" aria-hidden="true">📱</span>
@@ -1389,11 +1470,11 @@ const App: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6 max-w-md" role="region" aria-label="How to add photos">
-                                <span className="text-2xl" aria-hidden="true">📷</span>
+                            <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6" role="region" aria-label="Alternative ways to add photos">
+                                <span className="text-2xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Want to add photos?</h4>
-                                    <p className="text-sm text-stone-500 font-serif italic">Admins can enable text-to-archive in Profile → Admin Tools → Gallery. Or ask an administrator to add your memories.</p>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Prefer texting?</h4>
+                                    <p className="text-sm text-stone-500 font-serif italic">{siteConfig.galleryCopy.noPhoneHint}</p>
                                 </div>
                             </div>
                         )}
@@ -1406,7 +1487,7 @@ const App: React.FC = () => {
                             <div className="w-32 h-32 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-5xl border-2 border-dashed border-stone-200">🖼️</div>
                             <div className="space-y-3">
                                 <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
-                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.</p>
+                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">Upload a photo above, text the archive number if enabled, or ask a family custodian for help.</p>
                             </div>
                             <div className="flex flex-wrap justify-center gap-3">
                                 <button
@@ -1429,7 +1510,20 @@ const App: React.FC = () => {
                         <>
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
                                 {gallery.map(item => (
-                                    <article key={item.id} className="break-inside-avoid bg-white dark:bg-[var(--card-bg)] p-4 rounded-[2rem] border border-stone-100 dark:border-stone-800 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl" role="listitem">
+                                    <article
+                                        key={item.id}
+                                        ref={(el) => {
+                                            if (el) galleryItemRefs.current.set(item.id, el);
+                                            else galleryItemRefs.current.delete(item.id);
+                                        }}
+                                        data-testid={`gallery-item-${item.id}`}
+                                        className={`break-inside-avoid bg-white dark:bg-[var(--card-bg)] p-4 rounded-[2rem] border border-stone-100 dark:border-stone-800 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl ${
+                                            highlightGalleryId === item.id
+                                                ? 'ring-2 ring-[#A0522D] ring-offset-2 ring-offset-[#FDFBF7] dark:ring-offset-[var(--bg-primary)]'
+                                                : ''
+                                        }`}
+                                        role="listitem"
+                                    >
                                         {item.type === 'video' ? (
                                             <button
                                                 type="button"
@@ -2519,22 +2613,7 @@ const App: React.FC = () => {
                                     toast(CLOUD_ERROR_MSG, 'error');
                                 }
                             },
-                            onAddGallery: async (g, f) => {
-                                // If offline and there's a file, queue it for later upload.
-                                if (!navigator.onLine && f) {
-                                    await queueUpload(f, g.caption, g.contributor);
-                                    await refreshPendingCount();
-                                    toast("You're offline. Photo saved to upload queue.", 'info');
-                                    return;
-                                }
-                                try {
-                                    const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
-                                    await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
-                                    await refreshLocalState();
-                                } catch {
-                                    toast(CLOUD_ERROR_MSG, 'error');
-                                }
-                            },
+                            onAddGallery: uploadGalleryMemory,
                             onAddTrivia: async (t) => {
                                 try {
                                     await CloudArchive.upsertTrivia(t);

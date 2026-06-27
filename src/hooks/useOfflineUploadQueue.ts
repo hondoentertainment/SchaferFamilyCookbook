@@ -4,10 +4,11 @@ import {
     getPendingUploads,
     processPendingUploads,
 } from '../services/offlineUploadQueue';
+import { buildGalleryItem } from '../utils/galleryUpload';
 
 interface UseOfflineUploadQueueOptions {
     /** Called after a successful batch upload so the caller can refresh gallery state. */
-    onUploadsProcessed?: () => Promise<void>;
+    onUploadsProcessed?: (uploadedIds: string[]) => Promise<void>;
     /** Called with toast-style messages during online processing. */
     onToast?: (message: string, type: 'info' | 'success' | 'error') => void;
 }
@@ -48,20 +49,17 @@ export function useOfflineUploadQueue(
 
             onToast?.(`Back online — uploading ${pending.length} queued photo(s)…`, 'info');
 
-            const { processed, failed } = await processPendingUploads(async (file, caption, contributor) => {
-                const isVideo = file.type.startsWith('video/');
+            const { processed, failed, uploadedIds } = await processPendingUploads(async (file, caption, contributor) => {
+                const item = buildGalleryItem(file, caption, contributor);
                 const url = await CloudArchive.uploadFile(file, 'gallery');
-                await CloudArchive.upsertGalleryItem({
-                    id: 'g' + Date.now(),
-                    type: isVideo ? 'video' : 'image',
-                    url: url || '',
-                    caption,
-                    contributor,
-                });
+                await CloudArchive.upsertGalleryItem({ ...item, url: url || '' });
+                return item.id;
             });
 
             await refreshPendingCount();
-            await onUploadsProcessed?.();
+            if (uploadedIds.length > 0) {
+                await onUploadsProcessed?.(uploadedIds);
+            }
 
             if (processed > 0) {
                 onToast?.(`${processed} photo(s) uploaded successfully.`, 'success');

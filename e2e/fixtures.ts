@@ -25,6 +25,14 @@ export async function waitForHomeMainHeading(page: import('@playwright/test').Pa
   });
 }
 
+/** Force local-only data layer so gallery/recipe E2E use localStorage (preview builds may bootstrap Firebase from env). */
+export async function seedLocalOnlyMode(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(() => {
+    localStorage.setItem('schafer_active_provider', 'local');
+    localStorage.setItem('schafer_firebase_config', '{"e2e":"local-only"}');
+  });
+}
+
 /** Seed Firebase emulator config so cloud sync E2E can run against Firestore emulator. */
 export async function seedFirebaseEmulatorConfig(page: import('@playwright/test').Page): Promise<void> {
   await page.evaluate(() => {
