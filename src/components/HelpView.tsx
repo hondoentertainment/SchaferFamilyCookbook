@@ -106,10 +106,13 @@ export const HelpView: React.FC = () => {
                 </p>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
                     <li>
-                        <strong className="font-bold">Gallery community uploads</strong> — deploy{' '}
-                        <code className="text-xs">firebase deploy --only firestore:rules,storage:rules</code> after
-                        merging gallery upload changes. Then sign in as a non-custodian family member, upload a test
-                        photo on the Gallery tab, and confirm it appears.
+                        <strong className="font-bold">Gallery community uploads</strong> — run{' '}
+                        <code className="text-xs">npm run deploy:firebase-rules</code> after merging gallery
+                        changes (Firestore + Storage rules).{' '}
+                        <strong className="font-bold">Enable Firebase Storage</strong> in the console first if deploy
+                        reports Storage is not set up — uploads need both Firestore metadata and Storage files. Then
+                        sign in as a non-custodian family member, upload a test photo on the Gallery tab, and confirm
+                        it appears.
                     </li>
                     <li>
                         <strong className="font-bold">Recipe catalog</strong> — run <code className="text-xs">npm run seed:recipes</code> (with <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code>) to upsert all bundled recipes into Firestore. The app also merges missing defaults from <code className="text-xs">recipes.json</code> for visitors automatically.

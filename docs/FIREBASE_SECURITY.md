@@ -15,21 +15,24 @@ The **name-based “login”** in the app is **not** Firebase Auth. It controls 
 ## One-time setup (project owner)
 
 1. **Firebase Console → Authentication → Sign-in method:** enable **Google**. Add **authorized domains** (e.g. `localhost`, your Vercel domain, `*.github.io` if using GitHub Pages).
-2. **Deploy rules** (from repo root):
+2. **Enable Firebase Storage** (if not already): [Console → Storage → Get started](https://console.firebase.google.com/project/schafer-cookbook/storage). Community gallery uploads store files under `gallery/*`.
+3. **Deploy rules** (from repo root):
 
    ```bash
-   firebase deploy --only firestore:rules,storage:rules --project YOUR_PROJECT_ID
+   npm run deploy:firebase-rules
    ```
 
-3. Custodian signs in on the site with **Sign in with Google (custodian)** once.
-4. In **Authentication → Users**, copy their **User UID**.
-5. Grant the claim (same service account JSON you use for Vercel webhook / Admin):
+   Or: `firebase deploy --only firestore:rules,storage:rules --project schafer-cookbook`
+
+4. Custodian signs in on the site with **Sign in with Google (custodian)** once.
+5. In **Authentication → Users**, copy their **User UID**.
+6. Grant the claim (same service account JSON you use for Vercel webhook / Admin):
 
    ```bash
    FIREBASE_SERVICE_ACCOUNT='<paste-json-one-line>' npm run admin:set-claim -- <UID>
    ```
 
-6. Ask the custodian to **sign out** of Google (Admin tools) and **sign in again** (or wait up to ~1 hour for token refresh) so the new claim appears in the ID token.
+7. Ask the custodian to **sign out** of Google (Admin tools) and **sign in again** (or wait up to ~1 hour for token refresh) so the new claim appears in the ID token.
 
 ## Optional hardening
 

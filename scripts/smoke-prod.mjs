@@ -117,6 +117,44 @@ async function smokeVercelShareRoutes(vercelBase) {
   return 0;
 }
 
+/** After batch 9, production JS should include the community gallery upload panel. */
+async function smokeVercelGalleryBundle(vercelBase) {
+  const name = 'Vercel gallery upload bundle';
+  const indexUrl = `${vercelBase.replace(/\/$/, '')}/`;
+
+  try {
+    const indexRes = await fetch(indexUrl, { redirect: 'follow' });
+    if (!indexRes.ok) {
+      console.error(`❌ ${name}: index HTTP ${indexRes.status}`);
+      return 1;
+    }
+    const html = await indexRes.text();
+    const scriptMatch = html.match(/src="(\/assets\/[^"]+\.js)"/);
+    if (!scriptMatch) {
+      console.warn(`⚠️  ${name}: could not find main JS bundle in index.html (skipping)`);
+      return 0;
+    }
+    const jsUrl = new URL(scriptMatch[1], indexUrl).toString();
+    const jsRes = await fetch(jsUrl, { redirect: 'follow' });
+    if (!jsRes.ok) {
+      console.error(`❌ ${name}: bundle HTTP ${jsRes.status}`);
+      return 1;
+    }
+    const js = await jsRes.text();
+    const markers = ['Share a memory', 'gallery-upload-submit', 'Add to gallery'];
+    const missing = markers.filter((m) => !js.includes(m));
+    if (missing.length > 0) {
+      console.error(`❌ ${name}: bundle missing ${missing.join(', ')} (deploy may still be propagating)`);
+      return 1;
+    }
+    console.log(`✅ ${name}`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${name}: ${err.message}`);
+    return 1;
+  }
+}
+
 async function smoke() {
   let failed = 0;
   const vercel = URLS.find((u) => u.name === 'Vercel');
@@ -145,6 +183,7 @@ async function smoke() {
   if (vercel) {
     failed += await smokeVercelPing(vercel.url);
     failed += await smokeVercelShareRoutes(vercel.url);
+    failed += await smokeVercelGalleryBundle(vercel.url);
   }
 
   process.exit(failed > 0 ? 1 : 0);

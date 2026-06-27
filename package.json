@@ -32,6 +32,7 @@
     "images:verify": "node scripts/verify-recipe-images.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",
+    "deploy:firebase-rules": "node scripts/deploy-firebase-rules.mjs",
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
     "deploy": "node scripts/deploy-all.mjs",
     "deploy:prod": "node scripts/deploy-all.mjs",
