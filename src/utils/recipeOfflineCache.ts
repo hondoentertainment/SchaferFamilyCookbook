@@ -3,7 +3,6 @@ import type { Recipe } from '../types';
 const DB_NAME = 'schafer-recipe-offline';
 const STORE_NAME = 'recipes';
 const DB_VERSION = 1;
-const MAX_ENTRIES = 150;
 
 export const OFFLINE_CACHE_UPDATED_EVENT = 'schafer:offline-cache-updated';
 
@@ -63,12 +62,11 @@ export async function cacheRecipeOffline(recipe: Recipe): Promise<void> {
 export async function cacheRecipesOffline(recipes: Recipe[]): Promise<void> {
     if (!isIdbAvailable() || recipes.length === 0) return;
     try {
-        const slice = recipes.slice(0, MAX_ENTRIES);
         const db = await openDb();
         await new Promise<void>((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
-            for (const recipe of slice) {
+            for (const recipe of recipes) {
                 store.put(recipe);
             }
             tx.oncomplete = () => {

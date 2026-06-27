@@ -36,6 +36,7 @@
     "deploy": "node scripts/deploy-all.mjs",
     "deploy:prod": "node scripts/deploy-all.mjs",
     "backup:recipes": "node scripts/backup-recipes-json.mjs",
+    "seed:recipes": "node scripts/seed-recipes-firestore.mjs",
     "admin:set-claim": "node scripts/set-admin-claim.mjs"
   },
   "dependencies": {

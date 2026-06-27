@@ -37,6 +37,7 @@ import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 import { fuzzyMatch } from './utils/fuzzySearch';
+import { mergeWithDefaultRecipes } from './utils/mergeDefaultRecipes';
 import { cacheRecipeOffline, cacheRecipesOffline, getOfflineRecipe } from './utils/recipeOfflineCache';
 import {
     CATEGORY_META,
@@ -804,7 +805,7 @@ const App: React.FC = () => {
                     CloudArchive.getContributors(),
                     CloudArchive.getHistory()
                 ]);
-                setRecipes(normalizeRecipes(r));
+                setRecipes(mergeWithDefaultRecipes(normalizeRecipes(r)));
                 setTrivia(t);
                 setGallery(g);
                 setContributors(c);
@@ -836,7 +837,7 @@ const App: React.FC = () => {
         }
 
         const unsubR = CloudArchive.subscribeRecipes(r => {
-            setRecipes(normalizeRecipes(r));
+            setRecipes(mergeWithDefaultRecipes(normalizeRecipes(r)));
             setIsDataLoading(false);
             setIsInitialLoad(false);
         });

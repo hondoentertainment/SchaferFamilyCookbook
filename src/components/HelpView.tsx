@@ -106,6 +106,9 @@ export const HelpView: React.FC = () => {
                 </p>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
                     <li>
+                        <strong className="font-bold">Recipe catalog</strong> — run <code className="text-xs">npm run seed:recipes</code> (with <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code>) to upsert all bundled recipes into Firestore. The app also merges missing defaults from <code className="text-xs">recipes.json</code> for visitors automatically.
+                    </li>
+                    <li>
                         <strong className="font-bold">Sentry</strong> — set <code className="text-xs">VITE_SENTRY_DSN</code> on Vercel Production, then use the test button above. Optional build vars: <code className="text-xs">SENTRY_AUTH_TOKEN</code>, <code className="text-xs">SENTRY_ORG</code>, <code className="text-xs">SENTRY_PROJECT</code>.
                     </li>
                     <li>
