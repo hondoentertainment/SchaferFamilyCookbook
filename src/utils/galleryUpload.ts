@@ -1,4 +1,4 @@
-import type { GalleryItem } from '../types';
+import type { GalleryItem, GalleryModerationStatus } from '../types';
 
 /** Matches Twilio webhook and Firebase Storage rule limit */
 export const MAX_GALLERY_FILE_BYTES = 25 * 1024 * 1024;
@@ -34,7 +34,8 @@ export function buildGalleryItem(
     file: File,
     caption: string,
     contributor: string,
-    id = `g${Date.now()}`
+    id = `g${Date.now()}`,
+    status: GalleryModerationStatus = 'pending'
 ): GalleryItem {
     return {
         id,
@@ -43,5 +44,6 @@ export function buildGalleryItem(
         caption: caption.trim().slice(0, MAX_GALLERY_CAPTION_LENGTH),
         contributor: contributor.trim(),
         created_at: new Date().toISOString(),
+        status,
     };
 }

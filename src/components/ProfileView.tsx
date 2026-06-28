@@ -111,7 +111,7 @@ export interface AdminSectionProps {
     onDeleteTrivia: (id: string) => void | Promise<void>;
     onDeleteRecipe: (id: string) => void;
     onDeleteGalleryItem?: (id: string) => void | Promise<void>;
-    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date }) => Promise<void>;
+    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date; status?: GalleryItem['status'] }) => Promise<void>;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (recipe: Recipe) => void;

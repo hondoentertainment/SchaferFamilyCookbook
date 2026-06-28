@@ -18,7 +18,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Recently Viewed** | Track viewed recipes; **Profile** sections for favorites and recent | Solid |
 | **Grocery List** | Add from recipe modal, list view, local persistence, **cloud sync via `userPrefs`** | Solid |
 | **Meal Plan** | Weekly planner, add-from-modal/day picker, generate grocery list, optional `userPrefs` cloud sync | Solid |
-| **Gallery** | Photos/videos, lightbox, **community upload**, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
+| **Gallery** | Photos/videos, lightbox, **community upload + moderation queue**, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
 | **Trivia** | 32-question quiz (+ Family Story links), local scoreboard + **Firestore family leaderboard** (`triviaScores`) | Solid |
 | **Family Story** | Built-in narrative with TOC/print plus Firestore-backed Admin CMS override | Solid |
 | **Contributors** | Directory, filter recipes by contributor | Solid |
@@ -29,7 +29,6 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **E2E** | Playwright on **dedicated preview port**; CI: unit job + emulators + Chromium E2E | Solid |
 
 ### Gaps & Opportunities
-- **Gallery moderation** — community uploads go live immediately; optional pending/approve queue for custodians
 - Favorites / recent / ratings / meal-plan sync is **opt-in** via `userPrefs` in Firestore; not full “restore everywhere” for every guest
 - Trivia has **both** a local run history and a **cloud** leaderboard; local scores remain for offline / comparison
 - **Offline recipe text cache** — IndexedDB snapshot + **Offline badge** on cards (batch 7); not a full offline-first sync layer

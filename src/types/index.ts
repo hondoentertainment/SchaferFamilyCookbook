@@ -43,6 +43,8 @@ export interface Recipe {
   created_at?: string;
 }
 
+export type GalleryModerationStatus = 'pending' | 'approved';
+
 export interface GalleryItem {
   id: string;
   type: 'image' | 'video';
@@ -50,6 +52,8 @@ export interface GalleryItem {
   caption: string;
   contributor: string;
   created_at?: string;
+  /** Community uploads start as `pending` until a custodian approves. Omitted = approved (legacy). */
+  status?: GalleryModerationStatus;
 }
 
 export interface Trivia {

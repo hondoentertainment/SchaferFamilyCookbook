@@ -229,6 +229,7 @@ describe('firestore.rules (emulator)', () => {
                 caption: 'Hi',
                 contributor: 'Ada',
                 created_at: '2026-06-26T00:00:00.000Z',
+                status: 'pending',
             }),
         );
     });
@@ -243,6 +244,22 @@ describe('firestore.rules (emulator)', () => {
                 caption: 'Summer BBQ',
                 contributor: 'Ada',
                 created_at: '2026-06-26T00:00:00.000Z',
+                status: 'pending',
+            }),
+        );
+    });
+
+    it('anonymous cannot create gallery item without pending status', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'gallery/g-approved'), {
+                id: 'g-approved',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Skip queue',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+                status: 'approved',
             }),
         );
     });

@@ -35,7 +35,14 @@ describe('galleryUpload', () => {
         expect(item.type).toBe('image');
         expect(item.caption).toBe('Summer');
         expect(item.contributor).toBe('Ada');
+        expect(item.status).toBe('pending');
         expect(item.created_at).toBeTruthy();
+    });
+
+    it('builds approved items for admin uploads', () => {
+        const file = new File(['x'], 'pic.jpg', { type: 'image/jpeg' });
+        const item = buildGalleryItem(file, 'Holiday', 'Kyle', 'g-admin', 'approved');
+        expect(item.status).toBe('approved');
     });
 
     it('maps video files to video type', () => {

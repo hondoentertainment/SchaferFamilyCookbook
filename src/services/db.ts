@@ -298,11 +298,17 @@ export const CloudArchive = {
      * - `caption` stores as-is.
      * - `date` accepts a Date; persisted as ISO string on `created_at` so sort order reflects the edit.
      */
-    async updateGalleryItem(id: string, patch: { caption?: string; date?: Date }): Promise<void> {
+    async updateGalleryItem(
+        id: string,
+        patch: { caption?: string; date?: Date; status?: GalleryItem['status'] }
+    ): Promise<void> {
         const payload: Record<string, unknown> = {};
         if (typeof patch.caption === 'string') payload.caption = patch.caption;
         if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
             payload.created_at = patch.date.toISOString();
+        }
+        if (patch.status === 'pending' || patch.status === 'approved') {
+            payload.status = patch.status;
         }
         if (Object.keys(payload).length === 0) return;
 

@@ -1,41 +1,34 @@
 # Recommended Next Steps
 
-_Last updated: 2026-06-26 (ops pass after batch 9)_
+_Last updated: 2026-06-26 (batch 10 — gallery moderation)_
 
-## Recently shipped (June 2026 — batch 9)
+## Recently shipped (June 2026 — batch 10)
 
-### Community gallery uploads — ✅ shipped
+### Gallery moderation queue — ✅ shipped
 
-- **Gallery upload panel** — family members upload photos/videos from the Gallery tab
-- **Firebase Firestore rules** — append-only community create; **deployed** to `schafer-cookbook`
-- **Offline queue** — sync on reconnect + scroll/highlight new items
-- **Guardrails** — rate limit, analytics, Sentry breadcrumbs, E2E tests
-- **Ops tooling** — `npm run deploy:firebase-rules`, extended `smoke:prod` gallery bundle check
+- **Pending status** — community uploads create `status: 'pending'`; MMS/admin uploads stay `approved`
+- **Public filter** — gallery grid shows approved items + viewer's own pending submissions
+- **Admin approve** — pending queue + Approve buttons in Admin → Gallery
+- **Rules** — Firestore community create requires `status: 'pending'`
 
-### Ops completed (2026-06-26)
+### Batch 9 (prior)
 
-- [x] **Git push** — batch 9 on `origin/main` (Vercel auto-deploy)
-- [x] **Firestore rules deploy** — community gallery create rules live
-- [x] **`npm run verify:vercel-env`** — required vars present; `VITE_SENTRY_DSN` still missing
-- [ ] **Storage rules deploy** — blocked: Firebase Storage not enabled on project (enable in console, then `npm run deploy:firebase-rules`)
+- Community gallery upload panel, Firestore rules deployed, offline queue, rate limit, E2E
 
-## What to do next (manual — needs external consoles)
+## Ops status
 
-1. **Enable Firebase Storage** — [Firebase Console → Storage → Get started](https://console.firebase.google.com/project/schafer-cookbook/storage), then `npm run deploy:firebase-rules` (required for production photo file uploads)
-2. **Production smoke test** — Gallery tab → upload as a family member (not custodian) after Storage is live; or `npm run smoke:prod`
-3. **Sentry DSN** — add `VITE_SENTRY_DSN` on Vercel Production, then Help → Troubleshooting → test event
-4. **Sentry source maps** — `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` on Vercel (build env)
-5. **Firebase push (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
-6. **Lighthouse review** — download the next CI artifact (mobile + desktop)
-7. **Recipe images** — `npm run images:batch` for fallback cards (`GEMINI_API_KEY` required locally or on Vercel)
+- [x] Firestore rules (gallery create + moderation) — redeploy after batch 10: `npm run deploy:firebase-rules`
+- [ ] **Firebase Storage enable** — [Console → Storage](https://console.firebase.google.com/project/schafer-cookbook/storage) then `npm run deploy:firebase-rules`
+- [ ] **Live upload test** — family member upload after Storage is enabled
+- [ ] **Sentry** — `VITE_SENTRY_DSN` on Vercel (+ optional source-map vars)
+- [ ] **Push (optional)** — FCM env vars
+- [ ] **Lighthouse review** — next CI artifact
+- [ ] **Recipe images** — `npm run images:batch` (`GEMINI_API_KEY`)
 
-Run `npm run verify:vercel-env` after any Vercel env change. See Help → **Custodian ops checklist**.
+Run `npm run verify:vercel-env` after Vercel env changes.
 
 ## Explicitly deferred
 
-- Gallery moderation queue (pending → approved)
-- Real OAuth/email auth for guests
-- Gamification (trivia streaks, badges)
-- Multi-tenant / site forks
-- Full offline-first sync layer
-- Firebase App Check (optional hardening for open gallery writes)
+- Firebase App Check
+- Real OAuth for guests
+- Gamification, multi-tenant, full offline-first sync

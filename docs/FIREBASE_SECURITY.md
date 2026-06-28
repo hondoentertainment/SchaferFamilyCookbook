@@ -5,7 +5,7 @@
 The hosted app uses Firestore and Storage with:
 
 - **Read:** public (`allow read: if true`) — anyone with the site URL can view recipes, gallery, trivia, contributors, history, and config used by the client (e.g. archive phone display).
-- **Gallery append:** family members signed in with a display name may **create** gallery items (Firestore + Storage `gallery/*`) with validated shape and size. They cannot edit or delete existing items.
+- **Gallery append:** family members signed in with a display name may **create** gallery items (Firestore + Storage `gallery/*`) with validated shape and size. Community web uploads are stored as **`status: 'pending'`** until a custodian approves; MMS and admin uploads may go live immediately as **`approved`**. They cannot edit or delete existing items.
 - **Write (other collections + gallery moderation):** Firebase Authentication users with **custom claim** `admin: true` (set via Admin SDK) — full create/update/delete on recipes, gallery edits/deletes, trivia, etc.
 
 The **name-based “login”** in the app is **not** Firebase Auth. It controls UI and attributes uploads to a contributor name. **Cloud writes** for recipes/trivia still require the custodian to use **Sign in with Google** under **Profile → Admin tools** so requests carry a valid ID token with the `admin` claim.

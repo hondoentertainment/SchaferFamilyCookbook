@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
+import { isGalleryItemPending } from '../utils/galleryModeration';
 import * as geminiProxy from '../services/geminiProxy';
 import { CloudArchive } from '../services/db';
 import { storySectionsDiffer } from '../utils/storySections';
@@ -47,7 +48,7 @@ interface AdminViewProps {
     /** Optional for non-gallery callers; required to enable Delete in the Gallery subtab list. */
     onDeleteGalleryItem?: (id: string) => void | Promise<void>;
     /** Optional for non-gallery callers; required to enable Edit in the Gallery subtab list. */
-    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date }) => Promise<void>;
+    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date; status?: GalleryItem['status'] }) => Promise<void>;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (r: Recipe) => void;
@@ -663,6 +664,16 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         } finally { setIsSubmitting(false); }
     };
 
+    const handleApproveGalleryItem = async (item: GalleryItem) => {
+        if (!onUpdateGalleryItem) return;
+        try {
+            await onUpdateGalleryItem(item.id, { status: 'approved' });
+            toast('Memory approved for the family gallery', 'success');
+        } catch {
+            /* toast from caller */
+        }
+    };
+
     const handleGallerySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!galleryFile) {
@@ -678,7 +689,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 type: isVideo ? 'video' : 'image',
                 url: '',
                 caption: galleryForm.caption || (isVideo ? 'Family Video' : 'Family Memory'),
-                contributor: currentUser?.name || 'Family'
+                contributor: currentUser?.name || 'Family',
+                status: 'approved',
             }, galleryFile);
             toast('Gallery updated', 'success');
             setGalleryForm({ caption: '' });
@@ -714,7 +726,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     type: isVideo ? 'video' : 'image',
                     url: '',
                     caption: galleryForm.caption || baseName || 'Family Memory',
-                    contributor: currentUser?.name || 'Family'
+                    contributor: currentUser?.name || 'Family',
+                    status: 'approved',
                 }, file as File);
                 successCount++;
             } catch (e: unknown) {
@@ -1758,6 +1771,40 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                     </div>
 
+                                    {/* Pending moderation queue */}
+                                    {gallery.some(isGalleryItemPending) && onUpdateGalleryItem && (
+                                        <div className="mt-8 p-6 bg-sky-50 rounded-3xl border border-sky-100">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-sky-900 mb-4 flex items-center gap-2">
+                                                <span>⏳</span> Pending approval ({gallery.filter(isGalleryItemPending).length})
+                                            </h4>
+                                            <ul className="space-y-3" aria-label="Gallery items awaiting approval">
+                                                {gallery.filter(isGalleryItemPending).map((item) => (
+                                                    <li
+                                                        key={item.id}
+                                                        className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-sky-100"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium text-stone-800 truncate">
+                                                                {item.caption || 'Untitled memory'}
+                                                            </p>
+                                                            <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">
+                                                                {item.contributor}
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            data-testid={`gallery-approve-${item.id}`}
+                                                            onClick={() => handleApproveGalleryItem(item)}
+                                                            className="btn btn-primary shrink-0"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
                                     {/* Existing Gallery Items - Edit / Delete */}
                                     {gallery.length > 0 && (onUpdateGalleryItem || onDeleteGalleryItem) && (
                                         <div className="mt-8 pt-8 border-t border-stone-200">
@@ -1793,9 +1840,22 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             )}
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-stone-800 truncate">{item.caption || <span className="italic text-stone-400">No caption</span>}</p>
-                                                                <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">{createdLabel} · {item.contributor || 'Unknown'}</p>
+                                                                <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">
+                                                                    {createdLabel} · {item.contributor || 'Unknown'}
+                                                                    {isGalleryItemPending(item) ? ' · Pending' : ''}
+                                                                </p>
                                                             </div>
                                                             <div className="flex gap-2 flex-shrink-0">
+                                                                {onUpdateGalleryItem && isGalleryItemPending(item) && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleApproveGalleryItem(item)}
+                                                                        className="btn btn-primary shrink-0"
+                                                                        aria-label={`Approve "${item.caption || 'gallery item'}"`}
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                )}
                                                                 {onUpdateGalleryItem && (
                                                                     <button
                                                                         type="button"

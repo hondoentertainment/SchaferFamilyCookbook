@@ -44,6 +44,11 @@ import {
     checkGalleryUploadRateLimit,
     recordGalleryUpload,
 } from './utils/galleryUploadRateLimit';
+import {
+    countPendingForContributor,
+    filterGalleryForViewer,
+    isGalleryItemPending,
+} from './utils/galleryModeration';
 import { addSentryBreadcrumb } from './monitoring/sentry';
 import { cacheRecipeOffline, cacheRecipesOffline, getOfflineRecipe } from './utils/recipeOfflineCache';
 import {
@@ -782,6 +787,16 @@ const App: React.FC = () => {
         [contributors, recipes, gallery, trivia]
     );
 
+    const displayGallery = useMemo(
+        () => filterGalleryForViewer(gallery, currentUser?.name),
+        [gallery, currentUser?.name]
+    );
+
+    const myModerationPendingCount = useMemo(
+        () => (currentUser ? countPendingForContributor(gallery, currentUser.name) : 0),
+        [gallery, currentUser]
+    );
+
     useEffect(() => {
         if (!currentUser) return;
         const matched = contributorsForDisplay.find(c => c.name.toLowerCase() === currentUser.name.toLowerCase());
@@ -990,7 +1005,7 @@ const App: React.FC = () => {
     });
 
     const uploadGalleryMemory = useCallback(
-        async (g: GalleryItem, f?: File): Promise<'uploaded' | 'queued'> => {
+        async (g: GalleryItem, f?: File): Promise<'uploaded' | 'submitted' | 'queued'> => {
             if (!f) return 'uploaded';
             const validation = validateGalleryFile(f);
             if (!validation.ok) {
@@ -1003,33 +1018,39 @@ const App: React.FC = () => {
                 toast(msg, 'error');
                 throw new Error(msg);
             }
+            const isAdminUpload = currentUser?.role === 'admin';
+            const item: GalleryItem = {
+                ...g,
+                status: isAdminUpload ? 'approved' : (g.status ?? 'pending'),
+            };
             if (!navigator.onLine) {
-                await queueUpload(f, g.caption, g.contributor);
+                await queueUpload(f, item.caption, item.contributor);
                 await refreshPendingCount();
                 toast("You're offline. Photo saved to upload queue.", 'info');
-                addSentryBreadcrumb('gallery_upload_queued', { contributor: g.contributor });
+                addSentryBreadcrumb('gallery_upload_queued', { contributor: item.contributor });
                 return 'queued';
             }
             try {
                 const url = await CloudArchive.uploadFile(f, 'gallery');
-                await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
-                recordGalleryUpload(g.contributor);
+                await CloudArchive.upsertGalleryItem({ ...item, url: url || '' });
+                recordGalleryUpload(item.contributor);
                 trackEvent('gallery_upload', {
-                    contributor: g.contributor,
-                    type: g.type,
+                    contributor: item.contributor,
+                    type: item.type,
                     offline: false,
+                    status: item.status,
                 });
-                addSentryBreadcrumb('gallery_upload_success', { id: g.id, type: g.type });
+                addSentryBreadcrumb('gallery_upload_success', { id: item.id, type: item.type, status: item.status });
                 await refreshLocalState();
-                highlightGalleryItem(g.id);
-                return 'uploaded';
+                highlightGalleryItem(item.id);
+                return item.status === 'pending' ? 'submitted' : 'uploaded';
             } catch {
-                addSentryBreadcrumb('gallery_upload_failed', { id: g.id });
+                addSentryBreadcrumb('gallery_upload_failed', { id: item.id });
                 toast(CLOUD_ERROR_MSG, 'error');
                 throw new Error(CLOUD_ERROR_MSG);
             }
         },
-        [refreshLocalState, refreshPendingCount, toast, highlightGalleryItem]
+        [refreshLocalState, refreshPendingCount, toast, highlightGalleryItem, currentUser?.role]
     );
 
     const finalizeLogin = useCallback(
@@ -1420,6 +1441,12 @@ const App: React.FC = () => {
                         title="Family Gallery"
                         description="Captured moments across the generations."
                     />
+                    {myModerationPendingCount > 0 && (
+                        <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-50 border border-sky-200 text-sky-900 text-xs font-bold -mt-2" role="status" aria-live="polite">
+                            <span aria-hidden="true">⏳</span>
+                            {myModerationPendingCount} photo{myModerationPendingCount !== 1 ? 's' : ''} awaiting custodian approval
+                        </p>
+                    )}
                     {pendingUploadCount > 0 && (
                         <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold -mt-2" role="status" aria-live="polite">
                             <span aria-hidden="true">📤</span>
@@ -1433,6 +1460,8 @@ const App: React.FC = () => {
                                 const result = await uploadGalleryMemory(item, file);
                                 if (result === 'uploaded') {
                                     toast('Memory added to the gallery', 'success');
+                                } else if (result === 'submitted') {
+                                    toast('Photo submitted — a custodian will approve it soon.', 'success');
                                 }
                             }}
                         />
@@ -1482,7 +1511,7 @@ const App: React.FC = () => {
 
                     {isDataLoading ? (
                         <GallerySkeleton />
-                    ) : gallery.length === 0 ? (
+                    ) : displayGallery.length === 0 ? (
                         <div className="py-24 text-center space-y-8 animate-in fade-in duration-500" role="status">
                             <div className="w-32 h-32 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-5xl border-2 border-dashed border-stone-200">🖼️</div>
                             <div className="space-y-3">
@@ -1509,7 +1538,7 @@ const App: React.FC = () => {
                     ) : (
                         <>
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
-                                {gallery.map(item => (
+                                {displayGallery.map(item => (
                                     <article
                                         key={item.id}
                                         ref={(el) => {
@@ -1576,6 +1605,11 @@ const App: React.FC = () => {
                                             />
                                         )}
                                         <p className="font-serif italic text-stone-800 dark:text-stone-200 text-lg px-2 line-clamp-3">{item.caption}</p>
+                                        {isGalleryItemPending(item) && (
+                                            <p className="px-2 mt-1 text-[10px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
+                                                Awaiting approval
+                                            </p>
+                                        )}
                                         {item.created_at && (
                                             <time
                                                 dateTime={item.created_at}
@@ -2595,6 +2629,9 @@ const App: React.FC = () => {
                                         if (typeof patch.caption === 'string') next.caption = patch.caption;
                                         if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
                                             next.created_at = patch.date.toISOString();
+                                        }
+                                        if (patch.status === 'pending' || patch.status === 'approved') {
+                                            next.status = patch.status;
                                         }
                                         return next;
                                     }));
