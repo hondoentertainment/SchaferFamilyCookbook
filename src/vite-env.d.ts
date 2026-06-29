@@ -30,6 +30,8 @@ interface ImportMetaEnv {
     readonly VITE_FIREBASE_APP_ID?: string;
     /** When `true`, Firestore/Storage use local emulators (CI E2E). */
     readonly VITE_FIREBASE_USE_EMULATOR?: string;
+    /** reCAPTCHA v3 site key for Firebase App Check (production only). */
+    readonly VITE_FIREBASE_APP_CHECK_SITE_KEY?: string;
 }
 
 interface ImportMeta {

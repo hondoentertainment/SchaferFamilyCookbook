@@ -18,10 +18,10 @@ A strategic roadmap for the next phases of development, informed by the current 
 | **Recently Viewed** | Track viewed recipes; **Profile** sections for favorites and recent | Solid |
 | **Grocery List** | Add from recipe modal, list view, local persistence, **cloud sync via `userPrefs`** | Solid |
 | **Meal Plan** | Weekly planner, add-from-modal/day picker, generate grocery list, optional `userPrefs` cloud sync | Solid |
-| **Gallery** | Photos/videos, lightbox, **community upload + moderation queue**, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
+| **Gallery** | Photos/videos, lightbox, **community upload + moderation queue (approve/decline)**, contributor filter, text-to-archive (Twilio MMS), **admin caption/date edit** | Solid |
 | **Trivia** | 32-question quiz (+ Family Story links), local scoreboard + **Firestore family leaderboard** (`triviaScores`) | Solid |
 | **Family Story** | Built-in narrative with TOC/print plus Firestore-backed Admin CMS override | Solid |
-| **Contributors** | Directory, filter recipes by contributor | Solid |
+| **Contributors** | Directory, filter recipes by contributor, **View photos → Gallery filter** | Solid |
 | **Profile** | Display name, avatar, my recipes, contribution log, favorites & recently viewed | Solid |
 | **Admin** | Records, Gallery, Trivia, Directory, AI (Magic Import, Imagen), merge, bulk upload, **JSON/CSV export** | Solid |
 | **Share / SEO (Vercel)** | `api/og` (1200×630 PNG), `api/share` HTML with OG + redirect when `VITE_SHARE_BASE` is set | Solid |
@@ -39,12 +39,23 @@ A strategic roadmap for the next phases of development, informed by the current 
 ## Immediate Next Steps (1–2 weeks)
 
 ### 1. Product (next sprint)
-- [ ] **Deploy gallery Firebase rules** — `firestore:rules` + `storage:rules` for community uploads
+- [ ] **Enable Firebase Storage** — console enable, then `npm run deploy:firebase-rules` (Storage rules blocked until then)
 - [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` (+ optional source-map upload vars)
 - [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
+- [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY` after registering reCAPTCHA v3 in Firebase Console
 - [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
 
-### 2. Done (recent — June 2026 batch 9)
+### 2. Done (recent — June 2026 batch 11)
+- [x] **Gallery decline** — custodian reject pending submissions
+- [x] **Gallery contributor filter** — Gallery tab + Contributors “View photos”
+- [x] **Admin pending badge** — Profile Open Admin Tools count
+- [x] **Ops verify scripts** — `verify:storage`, `verify:ops`
+- [x] **App Check bootstrap** — optional production reCAPTCHA v3
+
+### 3. Done (June 2026 batch 10)
+- [x] **Gallery moderation queue** — pending status, public filter, admin approve, Firestore rules
+
+### 4. Done (June 2026 batch 9)
 - [x] **Community gallery upload** — Gallery tab panel, Firebase append-only rules, offline queue highlight
 - [x] **Upload guardrails** — rate limit, analytics, Sentry breadcrumbs, E2E + rules tests
 - [x] **Button polish (partial)** — Admin form CTAs + Recipe modal action bar use shared `.btn` / `ViewActionBar`

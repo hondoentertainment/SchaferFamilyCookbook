@@ -86,6 +86,8 @@ export interface UserProfile {
 export interface DBStats {
   recipeCount: number;
   galleryCount: number;
+  /** Gallery items awaiting custodian approval */
+  galleryPendingCount?: number;
   triviaCount: number;
   isCloudActive: boolean;
   activeProvider: 'local' | 'firebase';

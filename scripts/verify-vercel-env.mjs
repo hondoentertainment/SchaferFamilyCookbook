@@ -33,6 +33,8 @@ const OPTIONAL_PUSH = [
   'VITE_FCM_VAPID_KEY',
 ];
 
+const OPTIONAL_APP_CHECK = ['VITE_FIREBASE_APP_CHECK_SITE_KEY'];
+
 function listVercelEnv() {
   const r = spawnSync('npx', ['vercel', 'env', 'ls'], { encoding: 'utf8', shell: true });
   if (r.status !== 0) {
@@ -78,6 +80,12 @@ if (missingSentryBuild.length > 0 && names.has('VITE_SENTRY_DSN')) {
 if (missingPush.length > 0) {
   console.log('\nℹ️  Push notifications (optional — see docs/FIREBASE_PUSH_NOTIFICATIONS.md):');
   for (const k of missingPush) console.log(`   - ${k}`);
+}
+
+const missingAppCheck = OPTIONAL_APP_CHECK.filter((k) => !names.has(k));
+if (missingAppCheck.length > 0) {
+  console.log('\nℹ️  App Check (optional — see docs/FIREBASE_SECURITY.md):');
+  for (const k of missingAppCheck) console.log(`   - ${k}`);
 }
 
 const misnamed = [...names].filter((n) => n.startsWith('AIza'));

@@ -46,6 +46,8 @@ import {
 } from './utils/galleryUploadRateLimit';
 import {
     countPendingForContributor,
+    countPendingModeration,
+    filterGalleryByContributor,
     filterGalleryForViewer,
     isGalleryItemPending,
 } from './utils/galleryModeration';
@@ -715,6 +717,7 @@ const App: React.FC = () => {
     const [selectedTag, setSelectedTag] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [galleryContributorFilter, setGalleryContributorFilter] = useState<string>('All');
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
     const [prefsHydrationVersion, setPrefsHydrationVersion] = useState(0);
@@ -787,10 +790,18 @@ const App: React.FC = () => {
         [contributors, recipes, gallery, trivia]
     );
 
-    const displayGallery = useMemo(
-        () => filterGalleryForViewer(gallery, currentUser?.name),
-        [gallery, currentUser?.name]
-    );
+    const displayGallery = useMemo(() => {
+        const visible = filterGalleryForViewer(gallery, currentUser?.name);
+        return filterGalleryByContributor(visible, galleryContributorFilter);
+    }, [gallery, currentUser?.name, galleryContributorFilter]);
+
+    const galleryContributorOptions = useMemo(() => {
+        const names = new Set<string>();
+        filterGalleryForViewer(gallery, currentUser?.name)
+            .filter((item) => !isGalleryItemPending(item))
+            .forEach((item) => names.add(item.contributor));
+        return Array.from(names).sort((a, b) => a.localeCompare(b));
+    }, [gallery, currentUser?.name]);
 
     const myModerationPendingCount = useMemo(
         () => (currentUser ? countPendingForContributor(gallery, currentUser.name) : 0),
@@ -942,7 +953,13 @@ const App: React.FC = () => {
     }, [tab]);
 
     useEffect(() => {
-        setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
+        setDbStats(prev => ({
+            ...prev,
+            recipeCount: recipes.length,
+            triviaCount: trivia.length,
+            galleryCount: gallery.length,
+            galleryPendingCount: countPendingModeration(gallery),
+        }));
     }, [recipes, trivia, gallery]);
 
     useEffect(() => {
@@ -1537,6 +1554,35 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <>
+                            {galleryContributorOptions.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <label htmlFor="gallery-contributor-filter" className="sr-only">
+                                        Filter gallery by contributor
+                                    </label>
+                                    <select
+                                        id="gallery-contributor-filter"
+                                        data-testid="gallery-contributor-filter"
+                                        aria-label="Filter gallery by contributor"
+                                        className="min-h-11 cursor-pointer rounded-full border border-[#E8DCCB] bg-white/90 px-4 py-3 text-sm font-bold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+                                        value={galleryContributorFilter}
+                                        onChange={(e) => setGalleryContributorFilter(e.target.value)}
+                                    >
+                                        <option value="All">All contributors</option>
+                                        {galleryContributorOptions.map((c) => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                    {galleryContributorFilter !== 'All' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setGalleryContributorFilter('All')}
+                                            className="min-h-11 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50"
+                                        >
+                                            Clear filter
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
                                 {displayGallery.map(item => (
                                     <article
@@ -2501,7 +2547,15 @@ const App: React.FC = () => {
                             <ContributorsSkeleton />
                         </div>
                     ) : (
-                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributorsForDisplay} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
+                        <ContributorsView
+                            recipes={recipes}
+                            gallery={gallery}
+                            trivia={trivia}
+                            contributors={contributorsForDisplay}
+                            onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }}
+                            onViewGallery={(c) => { setGalleryContributorFilter(c); handleSetTab('Gallery'); window.scrollTo(0, 0); }}
+                            onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }}
+                        />
                     )}
                 </Suspense>
             )}

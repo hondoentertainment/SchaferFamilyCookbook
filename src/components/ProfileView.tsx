@@ -438,6 +438,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
     const isSuperAdminUser =
         isSuperAdmin(currentUser.email) || isSuperAdmin(currentUser.name);
     const showAdminSection = (isAdmin || isSuperAdminUser) && !!adminSectionProps;
+    const galleryPendingCount = adminSectionProps?.dbStats.galleryPendingCount ?? 0;
 
     const scrollToAdminSection = () => {
         document.getElementById('admin-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -588,9 +589,17 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     <button
                                         type="button"
                                         onClick={scrollToAdminSection}
-                                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                        className="inline-flex items-center gap-2 min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                     >
                                         Open Admin Tools →
+                                        {galleryPendingCount > 0 && (
+                                            <span
+                                                className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-sky-400 px-1.5 py-0.5 text-[9px] font-black text-[#2D4635]"
+                                                aria-label={`${galleryPendingCount} gallery item${galleryPendingCount !== 1 ? 's' : ''} awaiting approval`}
+                                            >
+                                                {galleryPendingCount}
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
                             )}

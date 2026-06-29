@@ -36,7 +36,7 @@ The **name-based “login”** in the app is **not** Firebase Auth. It controls 
 
 ## Optional hardening
 
-- **App Check** — reduce abuse of your client Firebase config.
+- **App Check** — reduce abuse of your client Firebase config. Set `VITE_FIREBASE_APP_CHECK_SITE_KEY` (reCAPTCHA v3 site key) on Vercel Production; the app initializes App Check only in production builds when this var is present.
 - **Tighter read** — e.g. hide `config/settings` from anonymous users (would require app changes to load phone another way).
 
 ## Related

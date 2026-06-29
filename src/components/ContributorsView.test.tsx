@@ -82,4 +82,33 @@ describe('ContributorsView', () => {
         fireEvent.click(browseBtn);
         expect(mockOnGoToRecipes).toHaveBeenCalled();
     });
+
+    it('should call onViewGallery when View photos is clicked', () => {
+        const mockOnViewGallery = vi.fn();
+        const gallery = [{ id: 'g1', type: 'image' as const, url: 'x', caption: 'x', contributor: 'Alice' }];
+        renderWithProviders(
+            <ContributorsView
+                recipes={[]}
+                gallery={gallery}
+                trivia={[]}
+                contributors={[]}
+                onSelectContributor={mockOnSelect}
+                onViewGallery={mockOnViewGallery}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: /View 1 photo from Alice/i }));
+        expect(mockOnViewGallery).toHaveBeenCalledWith('Alice');
+    });
+
+    it('should not count pending gallery items toward contributor photo totals', () => {
+        const gallery = [
+            { id: 'g1', type: 'image' as const, url: 'x', caption: 'x', contributor: 'Alice' },
+            { id: 'g2', type: 'image' as const, url: 'y', caption: 'y', contributor: 'Alice', status: 'pending' as const },
+        ];
+        renderWithProviders(
+            <ContributorsView recipes={[]} gallery={gallery} trivia={[]} contributors={[]} onSelectContributor={mockOnSelect} />
+        );
+        expect(screen.getByText(/1 memory/i)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /View photos/i })).not.toBeInTheDocument();
+    });
 });

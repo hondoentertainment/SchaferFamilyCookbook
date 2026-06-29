@@ -4,6 +4,7 @@ import { PLACEHOLDER_AVATAR } from '../constants';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 import { PageHeader } from './PageHeader';
+import { filterPublicGalleryItems } from '../utils/galleryModeration';
 
 interface ContributorsViewProps {
     recipes: Recipe[];
@@ -11,6 +12,8 @@ interface ContributorsViewProps {
     trivia?: Trivia[];
     contributors: ContributorProfile[];
     onSelectContributor: (name: string) => void;
+    /** Jump to Gallery tab filtered to this contributor's approved photos */
+    onViewGallery?: (name: string) => void;
     /** Optional: called when user taps "Browse recipes" in empty state */
     onGoToRecipes?: () => void;
     isDataLoading?: boolean;
@@ -55,9 +58,11 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
     trivia = [],
     contributors,
     onSelectContributor,
+    onViewGallery,
     onGoToRecipes,
     isDataLoading
 }) => {
+    const publicGallery = useMemo(() => filterPublicGalleryItems(gallery), [gallery]);
     const [search, setSearch] = useState('');
     const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
 
@@ -72,7 +77,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
             if (cat) s[key].categories.add(cat);
         };
         recipes.forEach(r => add(r.contributor, 1, 0, 0, r.category));
-        gallery.forEach(g => add(g.contributor, 0, 1, 0));
+        publicGallery.forEach(g => add(g.contributor, 0, 1, 0));
         trivia.forEach(t => add(t.contributor, 0, 0, 1));
         contributors.forEach(c => add(c.name));
         return Object.values(s)
@@ -82,7 +87,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                 if (tb !== ta) return tb - ta;
                 return a.name.localeCompare(b.name);
             });
-    }, [recipes, gallery, trivia, contributors]);
+    }, [recipes, publicGallery, trivia, contributors]);
 
     const filteredStats = useMemo(() => {
         if (!search.trim()) return stats;
@@ -237,14 +242,26 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                     <p className="text-xs text-stone-500 dark:text-stone-400 mb-6" aria-hidden="true">
                                         {contributionSummary(stat)}
                                     </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => onSelectContributor(stat.name)}
-                                        className="btn btn-secondary btn-invert-on-hover mt-auto w-full"
-                                        aria-label={`Explore ${stat.name}'s collection: ${contributionSummary(stat)}`}
-                                    >
-                                        Explore Collection ({totalContributions(stat)})
-                                    </button>
+                                    <div className="mt-auto w-full space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => onSelectContributor(stat.name)}
+                                            className="btn btn-secondary btn-invert-on-hover w-full"
+                                            aria-label={`Explore ${stat.name}'s collection: ${contributionSummary(stat)}`}
+                                        >
+                                            Explore Collection ({totalContributions(stat)})
+                                        </button>
+                                        {onViewGallery && stat.galleryCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onViewGallery(stat.name)}
+                                                className="btn btn-link btn-body w-full"
+                                                aria-label={`View ${stat.galleryCount} photo${stat.galleryCount !== 1 ? 's' : ''} from ${stat.name}`}
+                                            >
+                                                View photos ({stat.galleryCount})
+                                            </button>
+                                        )}
+                                    </div>
                                 </article>
                             </li>
                         );

@@ -674,6 +674,21 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         }
     };
 
+    const handleDeclineGalleryItem = async (item: GalleryItem) => {
+        if (!onDeleteGalleryItem) return;
+        const ok = await confirm(
+            `Decline "${item.caption || 'this memory'}"? It will not appear in the public gallery.`,
+            { title: 'Decline Submission', confirmLabel: 'Decline', variant: 'danger' }
+        );
+        if (!ok) return;
+        try {
+            await Promise.resolve(onDeleteGalleryItem(item.id));
+            toast('Submission declined', 'success');
+        } catch {
+            toast("Couldn't decline. Check your connection and try again.", 'error');
+        }
+    };
+
     const handleGallerySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!galleryFile) {
@@ -1791,14 +1806,24 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                 {item.contributor}
                                                             </p>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            data-testid={`gallery-approve-${item.id}`}
-                                                            onClick={() => handleApproveGalleryItem(item)}
-                                                            className="btn btn-primary shrink-0"
-                                                        >
-                                                            Approve
-                                                        </button>
+                                                        <div className="flex gap-2 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                data-testid={`gallery-decline-${item.id}`}
+                                                                onClick={() => handleDeclineGalleryItem(item)}
+                                                                className="btn shrink-0 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                                                            >
+                                                                Decline
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                data-testid={`gallery-approve-${item.id}`}
+                                                                onClick={() => handleApproveGalleryItem(item)}
+                                                                className="btn btn-primary shrink-0"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        </div>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -1847,14 +1872,25 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             </div>
                                                             <div className="flex gap-2 flex-shrink-0">
                                                                 {onUpdateGalleryItem && isGalleryItemPending(item) && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleApproveGalleryItem(item)}
-                                                                        className="btn btn-primary shrink-0"
-                                                                        aria-label={`Approve "${item.caption || 'gallery item'}"`}
-                                                                    >
-                                                                        Approve
-                                                                    </button>
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            data-testid={`gallery-decline-manage-${item.id}`}
+                                                                            onClick={() => handleDeclineGalleryItem(item)}
+                                                                            className="btn shrink-0 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                                                                            aria-label={`Decline "${item.caption || 'gallery item'}"`}
+                                                                        >
+                                                                            Decline
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleApproveGalleryItem(item)}
+                                                                            className="btn btn-primary shrink-0"
+                                                                            aria-label={`Approve "${item.caption || 'gallery item'}"`}
+                                                                        >
+                                                                            Approve
+                                                                        </button>
+                                                                    </>
                                                                 )}
                                                                 {onUpdateGalleryItem && (
                                                                     <button

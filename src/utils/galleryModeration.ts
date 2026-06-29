@@ -30,3 +30,18 @@ export function countPendingForContributor(items: GalleryItem[], contributor: st
         (item) => isGalleryItemPending(item) && item.contributor.trim().toLowerCase() === key
     ).length;
 }
+
+export function countPendingModeration(items: GalleryItem[]): number {
+    return items.filter(isGalleryItemPending).length;
+}
+
+export function filterGalleryByContributor(items: GalleryItem[], contributor: string | null): GalleryItem[] {
+    if (!contributor || contributor === 'All') return items;
+    const key = contributor.trim().toLowerCase();
+    return items.filter((item) => item.contributor.trim().toLowerCase() === key);
+}
+
+/** Approved (or legacy) items only — for public counts and contributor stats. */
+export function filterPublicGalleryItems(items: GalleryItem[]): GalleryItem[] {
+    return items.filter(isGalleryItemPublic);
+}

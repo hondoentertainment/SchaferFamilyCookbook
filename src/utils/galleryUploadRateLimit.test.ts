@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkGalleryUploadRateLimit,
     clearGalleryUploadRateLimit,
@@ -6,9 +6,30 @@ import {
     recordGalleryUpload,
 } from './galleryUploadRateLimit';
 
+/** In-memory localStorage — global test setup uses vi.fn() mocks that do not persist. */
+function installMemoryLocalStorage(): void {
+    const memory = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+        getItem: (key: string) => memory.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+            memory.set(key, value);
+        },
+        removeItem: (key: string) => {
+            memory.delete(key);
+        },
+        clear: () => {
+            memory.clear();
+        },
+        get length() {
+            return memory.size;
+        },
+        key: (index: number) => [...memory.keys()][index] ?? null,
+    });
+}
+
 describe('galleryUploadRateLimit', () => {
     beforeEach(() => {
-        localStorage.clear();
+        installMemoryLocalStorage();
         clearGalleryUploadRateLimit('Alice');
     });
 
@@ -22,6 +43,7 @@ describe('galleryUploadRateLimit', () => {
 
     it('blocks when limit exceeded', () => {
         for (let i = 0; i < GALLERY_UPLOAD_LIMIT; i++) {
+            expect(checkGalleryUploadRateLimit('Alice').allowed).toBe(true);
             recordGalleryUpload('Alice');
         }
         const result = checkGalleryUploadRateLimit('Alice');

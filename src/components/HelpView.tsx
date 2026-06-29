@@ -111,8 +111,13 @@ export const HelpView: React.FC = () => {
                         changes (Firestore + Storage rules).{' '}
                         <strong className="font-bold">Enable Firebase Storage</strong> in the console first if deploy
                         reports Storage is not set up — uploads need both Firestore metadata and Storage files. Then
-                        sign in as a non-custodian family member, upload a test photo on the Gallery tab, and confirm
-                        it appears.
+                        sign in as a non-custodian family member, upload a test photo on the Gallery tab, confirm
+                        it shows as pending, then approve or decline it in Admin → Gallery.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Ops audit</strong> — run{' '}
+                        <code className="text-xs">npm run verify:ops</code> (Vercel env names + Storage readiness) after
+                        console changes.
                     </li>
                     <li>
                         <strong className="font-bold">Recipe catalog</strong> — run <code className="text-xs">npm run seed:recipes</code> (with <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code>) to upsert all bundled recipes into Firestore. The app also merges missing defaults from <code className="text-xs">recipes.json</code> for visitors automatically.
@@ -121,7 +126,10 @@ export const HelpView: React.FC = () => {
                         <strong className="font-bold">Sentry</strong> — set <code className="text-xs">VITE_SENTRY_DSN</code> on Vercel Production, then use the test button above. Optional build vars: <code className="text-xs">SENTRY_AUTH_TOKEN</code>, <code className="text-xs">SENTRY_ORG</code>, <code className="text-xs">SENTRY_PROJECT</code>.
                     </li>
                     <li>
-                        <strong className="font-bold">Env audit</strong> — run <code className="text-xs">npm run verify:vercel-env</code> locally after changing Vercel variables.
+                        <strong className="font-bold">Env audit</strong> — run <code className="text-xs">npm run verify:vercel-env</code> or <code className="text-xs">npm run verify:ops</code> locally after changing Vercel variables.
+                    </li>
+                    <li>
+                        <strong className="font-bold">App Check (optional)</strong> — register reCAPTCHA v3 in Firebase Console → App Check; set <code className="text-xs">VITE_FIREBASE_APP_CHECK_SITE_KEY</code> on Vercel Production.
                     </li>
                     <li>
                         <strong className="font-bold">Lighthouse</strong> — download the mobile + desktop artifact from the monthly GitHub Actions Lighthouse job.
