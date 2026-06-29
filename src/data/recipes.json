@@ -2313,5 +2313,33 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of White Russian Pudding Shots, a main family recipe from Lex. Show the finished dish as it would look after these ingredients and method: 1 package instant vanilla pudding, 1½ cups milk, ½ cup vodka, ¼ cup coffee liqueur, Whipped cream. Whisk pudding mix and milk until thick. Stir in vodka and coffee liqueur. Spoon into small cups.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback"
+  },
+  {
+    "id": "9205785d",
+    "title": "Dill Pickle Wontons",
+    "contributor": "Family",
+    "category": "Appetizer",
+    "ingredients": [
+      "8 oz cream cheese, softened",
+      "¼ cup dill pickle, chopped fine and patted dry",
+      "2–3 Tbsp pickle juice",
+      "Dash garlic salt, pepper, and salt to taste",
+      "Egg roll wrappers, as needed",
+      "1 egg, beaten (for sealing)"
+    ],
+    "instructions": [
+      "Mix cream cheese, pickle, pickle juice, garlic salt, pepper, and salt until combined.",
+      "Place a small amount of filling on each egg roll wrapper and roll up, sealing edges with a bit of beaten egg.",
+      "Deep fry for a few minutes until golden.",
+      "Serve with jalapeño jelly and/or jalapeño apricot jelly."
+    ],
+    "image": "/recipe-images/9205785d.webp",
+    "notes": "Transcribed from a handwritten family recipe card.",
+    "imageSource": "upload",
+    "imageApprovalStatus": "approved",
+    "tags": [],
+    "occasions": [],
+    "collections": [],
+    "created_at": "2026-06-29T00:00:00.000Z"
   }
 ]
