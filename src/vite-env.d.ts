@@ -32,6 +32,8 @@ interface ImportMetaEnv {
     readonly VITE_FIREBASE_USE_EMULATOR?: string;
     /** reCAPTCHA v3 site key for Firebase App Check (production only). */
     readonly VITE_FIREBASE_APP_CHECK_SITE_KEY?: string;
+    /** Set to `true` once Firebase Storage is enabled for gallery uploads. */
+    readonly VITE_GALLERY_UPLOADS_ENABLED?: string;
 }
 
 interface ImportMeta {

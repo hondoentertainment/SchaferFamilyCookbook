@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfile } from '../types';
-import { PRIMARY_NAV_TABS } from '../config/navConfig';
+import { BOTTOM_NAV_TABS } from '../config/navConfig';
 import { hapticLight } from '../utils/haptics';
 import { avatarOnError } from '../utils/avatarFallback';
 
@@ -71,14 +71,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
             aria-label="Main navigation"
         >
             <div className="flex min-h-16 items-stretch justify-around px-1">
-                {PRIMARY_NAV_TABS.map(({ id, label, group }) => {
+                {BOTTOM_NAV_TABS.map(({ id, label, group }) => {
                     const isActive = group.some((tabId) => tabId === activeTab);
                     return (
                         <button
                             key={id}
                             type="button"
                             data-testid={
-                                id === 'Profile' ? 'bottom-nav-profile' : id === 'Index' ? 'bottom-nav-index' : undefined
+                                id === 'Profile' ? 'bottom-nav-profile' : undefined
                             }
                             onClick={() => {
                                 hapticLight();

@@ -5,6 +5,7 @@ import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 import { PageHeader } from './PageHeader';
 import { filterPublicGalleryItems } from '../utils/galleryModeration';
+import { normalizeContributorName } from '../constants/taxonomy';
 
 interface ContributorsViewProps {
     recipes: Recipe[];
@@ -68,9 +69,10 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
     const stats = useMemo<ContributorStats[]>(() => {
         const s: Record<string, ContributorStats> = {};
-        const add = (name: string, recipes = 0, gallery = 0, trivia = 0, cat?: string) => {
-            const key = name.trim() || 'Unknown';
-            if (!s[key]) s[key] = { name: key, recipeCount: 0, galleryCount: 0, triviaCount: 0, categories: new Set() };
+        const add = (rawName: string, recipes = 0, gallery = 0, trivia = 0, cat?: string) => {
+            const name = normalizeContributorName(rawName.trim() || 'Unknown');
+            const key = name.trim().toLowerCase();
+            if (!s[key]) s[key] = { name, recipeCount: 0, galleryCount: 0, triviaCount: 0, categories: new Set() };
             s[key].recipeCount += recipes;
             s[key].galleryCount += gallery;
             s[key].triviaCount += trivia;

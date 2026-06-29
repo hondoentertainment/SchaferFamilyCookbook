@@ -52,6 +52,15 @@ describe('galleryModeration', () => {
         expect(filterGalleryByContributor(items, 'Alice').map((i) => i.id)).toEqual(['a']);
     });
 
+    it('matches contributor aliases when filtering gallery', () => {
+        const items = [
+            createMockGalleryItem({ id: 'a', contributor: 'Wren' }),
+            createMockGalleryItem({ id: 'b', contributor: 'Wren Feyereisen' }),
+            createMockGalleryItem({ id: 'c', contributor: 'Bob' }),
+        ];
+        expect(filterGalleryByContributor(items, 'Wren').map((i) => i.id)).toEqual(['a', 'b']);
+    });
+
     it('returns only approved or legacy items for public counts', () => {
         const items = [
             createMockGalleryItem({ id: 'a' }),

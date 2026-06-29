@@ -24,11 +24,16 @@ export const CATEGORY_META: Record<RecipeCategory | 'Generic', { label: string; 
 };
 
 export const CONTRIBUTOR_ALIASES: Record<string, string> = {
-    'dawn schafer tessmer': 'Dawn (Schafer) Tessmer',
-    'dawn (schafer) tessmer': 'Dawn (Schafer) Tessmer',
-    dawn: 'Dawn (Schafer) Tessmer',
+    'dawn schafer tessmer': 'Dawn',
+    'dawn (schafer) tessmer': 'Dawn',
+    dawn: 'Dawn',
+    'harriet oehler schafer': 'Harriet',
+    'harriet (oehler) schafer': 'Harriet',
+    harriet: 'Harriet',
     'jana schafer': 'Jana',
     'robin henderson': 'Robin',
+    wren: 'Wren',
+    'wren feyereisen': 'Wren',
 };
 
 export const CONTRIBUTOR_LABELS_AS_TAGS = new Set([
@@ -97,6 +102,11 @@ export function normalizeContributorName(value?: string): string {
     const key = normalizeKey(name);
     if (CONTRIBUTOR_LABELS_AS_TAGS.has(key)) return 'Family';
     return CONTRIBUTOR_ALIASES[key] ?? name;
+}
+
+/** Stable key for matching contributor names across aliases (e.g. Wren / Wren Feyereisen). */
+export function contributorMatchKey(value?: string): string {
+    return normalizeKey(normalizeContributorName(value));
 }
 
 export type RecipeFacetInput = {

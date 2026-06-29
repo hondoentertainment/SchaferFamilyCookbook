@@ -15,6 +15,7 @@ export {
     getTagLabel,
     getTagOptions,
     normalizeCategory,
+    contributorMatchKey,
     normalizeContributorName,
     normalizeKey,
     normalizeRecipe,

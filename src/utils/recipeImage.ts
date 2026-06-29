@@ -14,3 +14,16 @@ export const isValidRecipeImageUrl = (url: string | undefined | null): url is st
  */
 export const isCookbookCoverImage = (recipe: Pick<Recipe, 'imageSource'>): boolean =>
     recipe.imageSource === 'local-generated';
+
+/**
+ * Handwritten recipe-card scans read better as category art in dense grids;
+ * the full card photo still shows in the recipe modal.
+ */
+export const isHandwrittenRecipeCard = (
+    recipe: Pick<Recipe, 'imageSource' | 'imageApprovalStatus' | 'generatedImageFallback' | 'notes'>,
+): boolean => {
+    if (recipe.imageSource !== 'upload' || recipe.imageApprovalStatus !== 'approved') return false;
+    if (recipe.generatedImageFallback === true) return false;
+    const notes = recipe.notes?.toLowerCase() ?? '';
+    return notes.includes('handwritten') || notes.includes('recipe card');
+};

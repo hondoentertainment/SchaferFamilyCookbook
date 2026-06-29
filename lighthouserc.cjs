@@ -26,5 +26,6 @@ module.exports = {
       target: 'filesystem',
       outputDir: './.lighthouseci',
     },
+    // Reports land in `.lighthouseci/` — attach as a CI artifact for trend review.
   },
 };

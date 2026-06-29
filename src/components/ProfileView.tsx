@@ -802,7 +802,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         role="status"
                         className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100"
                     >
-                        Your favorites, grocery lists, meal plans, and collections sync to the family cloud for <strong>{currentUser.name}</strong> on this device.
+                        Your favorites, grocery lists, meal plans, and collections are saved to the family cloud for <strong>{currentUser.name}</strong> and follow you on other devices when you sign in with the same name.
                     </p>
                 )}
                 {CloudArchive.getProvider() === 'firebase' && prefsSyncStatus === 'syncing' && (

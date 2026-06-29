@@ -50,6 +50,8 @@ interface RecipeImageProps {
     onError?: () => void;
     /** Override the fallback badge label. */
     fallbackLabel?: string;
+    /** Show category art instead of the photo (e.g. handwritten card scans in grids). */
+    preferCategoryFallback?: boolean;
 }
 
 /**
@@ -66,11 +68,12 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
     compact = false,
     onError,
     fallbackLabel,
+    preferCategoryFallback = false,
 }) => {
     const [broken, setBroken] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
-    const hasValidImage = isValidRecipeImageUrl(recipe.image) && !broken;
+    const hasValidImage = isValidRecipeImageUrl(recipe.image) && !broken && !preferCategoryFallback;
     const isCover = isCookbookCoverImage(recipe);
 
     const handleError = () => {
@@ -79,7 +82,7 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
     };
 
     if (!hasValidImage) {
-        return <RecipeImageFallback category={recipe.category} compact={compact} label={fallbackLabel} />;
+        return <RecipeImageFallback category={recipe.category} compact={compact} label={fallbackLabel ?? (preferCategoryFallback ? 'Recipe card' : undefined)} />;
     }
 
     const fitClasses = isCover ? 'object-contain p-2.5 sm:p-3' : 'object-cover';

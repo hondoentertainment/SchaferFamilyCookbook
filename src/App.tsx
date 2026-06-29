@@ -3,7 +3,7 @@ import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile }
 import { useUI } from './context/UIContext';
 import { shouldToastImageError } from './utils/imageErrorToast';
 import { RecipeImage, RecipeImageFallback } from './components/RecipeImage';
-import { isValidRecipeImageUrl, isCookbookCoverImage } from './utils/recipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard } from './utils/recipeImage';
 import { FirebaseError } from 'firebase/app';
 import { CloudArchive } from './services/db';
 import {
@@ -60,6 +60,7 @@ import {
     getTagLabel,
     getTagOptions,
     normalizeContributorName,
+    contributorMatchKey,
     normalizeRecipes,
 } from './constants/taxonomy';
 
@@ -81,6 +82,8 @@ const HelpView = lazy(() => import('./components/HelpView').then(m => ({ default
 const FeaturedStrip = lazy(() => import('./components/FeaturedStrip').then(m => ({ default: m.FeaturedStrip })));
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { SectionSubNav } from './components/SectionSubNav';
+import { FamilySubNavHint } from './components/FamilySubNavHint';
+import { shouldShowGalleryUploadUnavailableBanner } from './utils/galleryUploadAvailability';
 import {
     FAMILY_SECONDARY_NAV,
     getFamilyNavDetail,
@@ -108,7 +111,7 @@ function secondaryNavAriaLabel(items: typeof FAMILY_SECONDARY_NAV): string {
 }
 
 const RecipeGridSkeleton: React.FC = () => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6">
         {Array.from({ length: 15 }).map((_, i) => (
             <div key={i} className="aspect-[3/4] rounded-[2rem] bg-stone-200 animate-pulse" />
         ))}
@@ -431,6 +434,8 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
             recipe={recipe}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
             imgClassName={isCookbookCoverImage(recipe) ? '' : 'group-hover:scale-110'}
+            preferCategoryFallback={isHandwrittenRecipeCard(recipe)}
+            fallbackLabel={isHandwrittenRecipeCard(recipe) ? 'Recipe card' : undefined}
             onError={() => {
                 if (shouldToastImageError(recipe.id)) {
                     toast("Some recipe images couldn't load. Check your connection and refresh.", 'info');
@@ -591,27 +596,27 @@ const RecipeShelfCard: React.FC<{
     const ratingCount = getRatingCount(recipe.id);
     const effortLabel = getRecipeEffortLabel(recipe);
     return (
-        <article className="recipe-card-surface group relative w-60 shrink-0 overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
+        <article className="recipe-card-surface group relative flex h-full w-60 shrink-0 flex-col overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
             <button
                 type="button"
                 onClick={() => onSelect(recipe)}
                 data-testid="recipe-card-open"
                 data-recipe-id={recipe.id}
-                className="block w-full text-left"
+                className="flex h-full w-full flex-col text-left"
                 aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed, isOffline)}
             >
                 <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
                     <RecipeCardImage recipe={recipe} />
                     {isOffline && <OfflineRecipeBadge />}
                 </div>
-                <div className="space-y-2 p-3">
+                <div className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
                     <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-xs font-semibold text-[#A0522D]">{recipe.category}</p>
                         <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-xs font-semibold text-[#2D4635] dark:bg-stone-800 dark:text-emerald-100">
                             {effortLabel}
                         </span>
                     </div>
-                    <h3 className="line-clamp-2 font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
+                    <h3 className="line-clamp-2 min-h-[2.75rem] font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
                     <p className="line-clamp-1 text-xs text-stone-500 dark:text-stone-400">
                         {getRecipeCardMicrocopy(recipe, ratingCount, isFavorite, wasViewed)}
                     </p>
@@ -619,7 +624,7 @@ const RecipeShelfCard: React.FC<{
                         <span className="truncate font-serif italic">By {recipe.contributor}</span>
                         {rating > 0 && <span className="shrink-0 font-semibold text-amber-600">★ {rating.toFixed(1)}</span>}
                     </div>
-                    <span className="btn btn-secondary btn-body w-full pointer-events-none">
+                    <span className="btn btn-secondary btn-body mt-auto w-full pointer-events-none">
                         View recipe →
                     </span>
                 </div>
@@ -740,6 +745,20 @@ const App: React.FC = () => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
+    const [galleryUploadBannerDismissed, setGalleryUploadBannerDismissed] = useState(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEYS.galleryUploadBannerDismissed) === '1';
+        } catch {
+            return false;
+        }
+    });
+    const [familySubNavHintDismissed, setFamilySubNavHintDismissed] = useState(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEYS.familySubNavHintDismissed) === '1';
+        } catch {
+            return false;
+        }
+    });
     const recipeSearchRef = useRef<HTMLInputElement>(null);
 
     const handleSetTab = useCallback((newTab: string) => {
@@ -799,7 +818,7 @@ const App: React.FC = () => {
         const names = new Set<string>();
         filterGalleryForViewer(gallery, currentUser?.name)
             .filter((item) => !isGalleryItemPending(item))
-            .forEach((item) => names.add(item.contributor));
+            .forEach((item) => names.add(normalizeContributorName(item.contributor)));
         return Array.from(names).sort((a, b) => a.localeCompare(b));
     }, [gallery, currentUser?.name]);
 
@@ -961,6 +980,22 @@ const App: React.FC = () => {
             galleryPendingCount: countPendingModeration(gallery),
         }));
     }, [recipes, trivia, gallery]);
+
+    useEffect(() => {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        if (dbStats.galleryPendingCount <= 0) return;
+        try {
+            if (sessionStorage.getItem(SESSION_KEYS.adminPendingGalleryToastShown)) return;
+            sessionStorage.setItem(SESSION_KEYS.adminPendingGalleryToastShown, '1');
+        } catch {
+            return;
+        }
+        const count = dbStats.galleryPendingCount;
+        toast(
+            `${count} gallery photo${count !== 1 ? 's' : ''} awaiting your approval — open Family → Gallery to review.`,
+            'info',
+        );
+    }, [currentUser, dbStats.galleryPendingCount, toast]);
 
     useEffect(() => {
         if (tab !== 'Recipes') setShowMobileFilters(false);
@@ -1267,8 +1302,14 @@ const App: React.FC = () => {
     };
 
     const secondaryNavItems = getSecondaryNavForTab(tab);
+    const galleryUploadsUnavailable =
+        shouldShowGalleryUploadUnavailableBanner(CloudArchive.getProvider()) && !galleryUploadBannerDismissed;
     const secondarySubNav = secondaryNavItems ? (
-        <SectionSubNav
+        <>
+            {secondaryNavItems === FAMILY_SECONDARY_NAV && !familySubNavHintDismissed && (
+                <FamilySubNavHint onDismiss={() => setFamilySubNavHintDismissed(true)} />
+            )}
+            <SectionSubNav
             ariaLabel={secondaryNavAriaLabel(secondaryNavItems)}
             items={secondaryNavItems}
             activeTab={tab}
@@ -1283,7 +1324,8 @@ const App: React.FC = () => {
                           })
                     : undefined
             }
-        />
+            />
+        </>
     ) : null;
 
     const handleSelectRecipe = (recipe: Recipe) => {
@@ -1371,6 +1413,9 @@ const App: React.FC = () => {
                             <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100">{loginTitle}</h1>
                             <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-stone-700 dark:text-stone-300">
                                 {loginSubtitle}
+                            </p>
+                            <p className="mx-auto mt-2 max-w-sm text-sm text-stone-500 dark:text-stone-400">
+                                Your display name is shared with the family — it&apos;s not a password.
                             </p>
                         </div>
 
@@ -1470,9 +1515,36 @@ const App: React.FC = () => {
                             {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
                         </p>
                     )}
+                    {galleryUploadsUnavailable && (
+                        <div
+                            role="status"
+                            data-testid="gallery-upload-unavailable-banner"
+                            className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                        >
+                            <p>
+                                Photo uploads are temporarily unavailable while family cloud storage is being set up.
+                                You can still browse memories and text the archive number if enabled.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    try {
+                                        localStorage.setItem(STORAGE_KEYS.galleryUploadBannerDismissed, '1');
+                                    } catch {
+                                        /* ignore */
+                                    }
+                                    setGalleryUploadBannerDismissed(true);
+                                }}
+                                className="min-h-10 shrink-0 rounded-full border border-amber-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-amber-800 hover:bg-amber-100/80"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    )}
                     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
                         <GalleryUploadPanel
                             contributorName={currentUser.name}
+                            disabled={galleryUploadsUnavailable}
                             onUpload={async (item, file) => {
                                 const result = await uploadGalleryMemory(item, file);
                                 if (result === 'uploaded') {
@@ -1554,6 +1626,24 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <>
+                            {galleryContributorFilter !== 'All' && (
+                                <div
+                                    className="sticky top-[calc(4.5rem+env(safe-area-inset-top,0px))] z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E8DCCB] bg-[#FFF8EC]/95 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/90"
+                                    data-testid="gallery-contributor-filter-chip"
+                                    role="status"
+                                >
+                                    <span className="text-sm font-serif italic text-stone-700 dark:text-stone-200">
+                                        Showing <span className="font-bold not-italic text-[#A0522D]">{galleryContributorFilter}</span>&apos;s photos
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setGalleryContributorFilter('All')}
+                                        className="min-h-10 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            )}
                             {galleryContributorOptions.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-3">
                                     <label htmlFor="gallery-contributor-filter" className="sr-only">
@@ -1572,15 +1662,6 @@ const App: React.FC = () => {
                                             <option key={c} value={c}>{c}</option>
                                         ))}
                                     </select>
-                                    {galleryContributorFilter !== 'All' && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setGalleryContributorFilter('All')}
-                                            className="min-h-11 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50"
-                                        >
-                                            Clear filter
-                                        </button>
-                                    )}
                                 </div>
                             )}
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
@@ -1600,10 +1681,11 @@ const App: React.FC = () => {
                                         role="listitem"
                                     >
                                         {item.type === 'video' ? (
+                                            <div className="relative mb-4">
                                             <button
                                                 type="button"
                                                 onClick={() => setSelectedGalleryItem(item)}
-                                                className="w-full text-left rounded-2xl overflow-hidden mb-4 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
+                                                className="w-full text-left rounded-2xl overflow-hidden mb-0 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
                                                 aria-label={`View full size: ${item.caption || 'Family video'}`}
                                                 onFocus={e => {
                                                     const vid = e.currentTarget.querySelector('video');
@@ -1643,17 +1725,30 @@ const App: React.FC = () => {
                                                     Video
                                                 </div>
                                             </button>
+                                            {isGalleryItemPending(item) && (
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                    Pending review
+                                                </span>
+                                            )}
+                                            </div>
                                         ) : (
+                                            <div className="relative mb-4">
                                             <GalleryImage
                                                 url={item.url}
                                                 caption={item.caption}
                                                 onClick={() => setSelectedGalleryItem(item)}
                                             />
+                                            {isGalleryItemPending(item) && (
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                    Pending review
+                                                </span>
+                                            )}
+                                            </div>
                                         )}
                                         <p className="font-serif italic text-stone-800 dark:text-stone-200 text-lg px-2 line-clamp-3">{item.caption}</p>
                                         {isGalleryItemPending(item) && (
                                             <p className="px-2 mt-1 text-[10px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
-                                                Awaiting approval
+                                                {contributorMatchKey(item.contributor) === contributorMatchKey(currentUser?.name) ? 'Your upload · Pending review' : 'Awaiting approval'}
                                             </p>
                                         )}
                                         {item.created_at && (
@@ -1666,8 +1761,8 @@ const App: React.FC = () => {
                                         )}
                                         <div className="flex justify-between items-center mt-4 px-2">
                                             <div className="flex items-center gap-2">
-                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full object-cover" alt={item.contributor} onError={avatarOnError} />
-                                                <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
+                                                <img src={getAvatar(normalizeContributorName(item.contributor))} className="w-4 h-4 rounded-full object-cover" alt={normalizeContributorName(item.contributor)} onError={avatarOnError} />
+                                                <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {normalizeContributorName(item.contributor)}</span>
                                             </div>
                                             {currentUser?.role === 'admin' && (
                                                 <button
@@ -2315,7 +2410,7 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-1 items-stretch min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
+                        <div className="grid grid-cols-1 items-stretch min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
@@ -2423,15 +2518,6 @@ const App: React.FC = () => {
                                             <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleSelectRecipe(recipe)}
-                                                    className="btn btn-primary btn-body w-full"
-                                                    aria-label={`View recipe details for ${recipe.title}`}
-                                                >
-                                                    <span className="sm:hidden">View</span>
-                                                    <span className="hidden sm:inline">View Recipe</span>
-                                                </button>
-                                                <button
-                                                    type="button"
                                                     onClick={() => {
                                                         recordRecipeView(recipe.id, recipe.title);
                                                         setCookModeFromOfflineCache(false);
@@ -2439,11 +2525,20 @@ const App: React.FC = () => {
                                                         hapticLight();
                                                         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'recipe_card' });
                                                     }}
-                                                    className="btn btn-secondary btn-body w-full"
+                                                    className="btn btn-primary btn-body w-full"
                                                     aria-label={`Start cooking ${recipe.title}`}
                                                 >
                                                     <span className="sm:hidden">Cook</span>
                                                     <span className="hidden sm:inline">Start Cooking</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSelectRecipe(recipe)}
+                                                    className="btn btn-secondary btn-body w-full"
+                                                    aria-label={`View recipe details for ${recipe.title}`}
+                                                >
+                                                    <span className="sm:hidden">View</span>
+                                                    <span className="hidden sm:inline">View Recipe</span>
                                                 </button>
                                             </div>
                                         </div>

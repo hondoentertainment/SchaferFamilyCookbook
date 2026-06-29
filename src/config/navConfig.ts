@@ -40,7 +40,11 @@ export const COOK_SECONDARY_NAV: SecondaryNavItem[] = [
 export const RECIPES_SECONDARY_NAV: SecondaryNavItem[] = [
     { id: 'Recipes', label: 'Browse', icon: '📖' },
     { id: 'Collections', label: 'Collections', icon: '📚' },
+    { id: 'Index', label: 'A–Z', icon: '🔤' },
 ];
+
+/** Primary tabs shown in mobile bottom nav (A–Z lives under Recipes sub-nav). */
+export const BOTTOM_NAV_TABS: PrimaryNavTab[] = PRIMARY_NAV_TABS.filter((tab) => tab.id !== 'Index');
 
 export const ME_SECONDARY_NAV: SecondaryNavItem[] = [
     { id: 'Profile', label: 'Profile', icon: '👤' },

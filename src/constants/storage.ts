@@ -22,6 +22,8 @@ export const STORAGE_KEYS = {
   onboardingDone: 'schafer_onboarding_done',
   activityFeed: 'schafer_activity_feed',
   storyDraft: 'schafer_story_draft',
+  galleryUploadBannerDismissed: 'schafer_gallery_upload_banner_dismissed',
+  familySubNavHintDismissed: 'schafer_family_subnav_hint_dismissed',
 } as const;
 
 /** sessionStorage keys — cleared when the browser tab ends */
@@ -30,4 +32,5 @@ export const SESSION_KEYS = {
   onboardingDefer: 'schafer_onboarding_defer_session',
   /** Home → Recipes: focus the browse search field once Recipes mounts */
   focusRecipeSearch: 'schafer_focus_recipe_search',
+  adminPendingGalleryToastShown: 'schafer_admin_pending_gallery_toast_shown',
 } as const;

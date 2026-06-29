@@ -1,4 +1,5 @@
 import type { GalleryItem } from '../types';
+import { contributorMatchKey } from '../constants/taxonomy';
 
 export type GalleryModerationStatus = 'pending' | 'approved';
 
@@ -37,8 +38,8 @@ export function countPendingModeration(items: GalleryItem[]): number {
 
 export function filterGalleryByContributor(items: GalleryItem[], contributor: string | null): GalleryItem[] {
     if (!contributor || contributor === 'All') return items;
-    const key = contributor.trim().toLowerCase();
-    return items.filter((item) => item.contributor.trim().toLowerCase() === key);
+    const key = contributorMatchKey(contributor);
+    return items.filter((item) => contributorMatchKey(item.contributor) === key);
 }
 
 /** Approved (or legacy) items only — for public counts and contributor stats. */
