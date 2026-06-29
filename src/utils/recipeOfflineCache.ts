@@ -90,7 +90,7 @@ export async function listOfflineRecipeIds(): Promise<string[]> {
             const tx = db.transaction(STORE_NAME, 'readonly');
             const req = tx.objectStore(STORE_NAME).getAllKeys();
             req.onsuccess = () => {
-                resolve((req.result as IDBValidKey[]).map(String));
+                resolve((req.result ?? []).map(String));
             };
             req.onerror = () => reject(req.error);
             tx.oncomplete = () => db.close();
