@@ -2315,7 +2315,7 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
+                        <div className="grid grid-cols-1 items-stretch min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
@@ -2330,7 +2330,7 @@ const App: React.FC = () => {
                                 return (
                                     <article
                                         key={recipe.id}
-                                        className="recipe-card-surface group relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800 dark:focus-within:ring-offset-stone-950"
+                                        className="recipe-card-surface group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800 dark:focus-within:ring-offset-stone-950"
                                     >
                                         <button
                                             type="button"
@@ -2354,7 +2354,7 @@ const App: React.FC = () => {
                                             </div>
                                         </button>
 
-                                        <div className="flex flex-1 flex-col p-3 sm:p-4 space-y-2">
+                                        <div className="flex min-h-0 flex-1 flex-col p-3 sm:p-4">
                                             <div className="flex min-w-0 items-center justify-between gap-2">
                                                 <button
                                                     type="button"
@@ -2380,17 +2380,17 @@ const App: React.FC = () => {
                                                 type="button"
                                                 onClick={() => handleSelectRecipe(recipe)}
                                                 aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed, isOffline)}
-                                                className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
+                                                className="mt-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
                                             >
-                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
+                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2 min-h-[2.75rem] sm:min-h-[3rem] md:min-h-[3.25rem]">
                                                     {recipe.title}
                                                 </h3>
-                                                <p className="mt-1 hidden line-clamp-2 min-h-0 text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:block sm:min-h-[2rem]">
+                                                <p className="mt-1 hidden line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:block">
                                                     {microcopy}
                                                 </p>
                                             </button>
 
-                                            <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                                            <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-stone-400">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -2420,7 +2420,7 @@ const App: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-2 pt-1">
+                                            <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleSelectRecipe(recipe)}
