@@ -37,7 +37,7 @@ export const GalleryUploadPanel: React.FC<GalleryUploadPanelProps> = ({
         if (!file || disabled || isSubmitting) return;
 
         const validation = validateGalleryFile(file);
-        if (!validation.ok) {
+        if (validation.ok === false) {
             setError(validation.message);
             return;
         }

@@ -20,7 +20,7 @@ describe('galleryUpload', () => {
         });
         const result = validateGalleryFile(file);
         expect(result.ok).toBe(false);
-        if (!result.ok) expect(result.message).toMatch(/25 MB/i);
+        if (result.ok === false) expect(result.message).toMatch(/25 MB/i);
     });
 
     it('rejects non-media files', () => {

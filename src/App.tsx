@@ -1060,12 +1060,12 @@ const App: React.FC = () => {
         async (g: GalleryItem, f?: File): Promise<'uploaded' | 'submitted' | 'queued'> => {
             if (!f) return 'uploaded';
             const validation = validateGalleryFile(f);
-            if (!validation.ok) {
+            if (validation.ok === false) {
                 toast(validation.message, 'error');
                 throw new Error(validation.message);
             }
             const rate = checkGalleryUploadRateLimit(g.contributor);
-            if (!rate.allowed) {
+            if (rate.allowed === false) {
                 const msg = `Upload limit reached. Try again in about ${rate.retryAfterMinutes} minute(s).`;
                 toast(msg, 'error');
                 throw new Error(msg);

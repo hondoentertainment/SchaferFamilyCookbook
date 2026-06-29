@@ -48,7 +48,7 @@ describe('galleryUploadRateLimit', () => {
         }
         const result = checkGalleryUploadRateLimit('Alice');
         expect(result.allowed).toBe(false);
-        if (!result.allowed) {
+        if (result.allowed === false) {
             expect(result.retryAfterMinutes).toBeGreaterThan(0);
         }
     });
