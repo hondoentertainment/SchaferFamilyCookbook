@@ -80,7 +80,7 @@ const defaultConfig: SiteConfig = {
     subtitle: 'Captured moments across the generations.',
     textPromptTitle: 'Text your memories',
     textPromptHint: 'Photo/Video to:',
-    noPhoneHint: 'You can upload directly on this page. Admins can also enable text-to-archive in Profile → Admin Tools → Gallery.',
+    noPhoneHint: 'You can upload directly on this page. Admins can also enable text-to-gallery in Profile → Admin Tools → Gallery, or set VITE_ARCHIVE_PHONE on Vercel.',
   },
 };
 

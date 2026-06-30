@@ -41,7 +41,7 @@ export const PrivacyView: React.FC = () => {
                             Gemini through our server when you use Magic Import or image generation (Vercel only).
                         </li>
                         <li>
-                            <strong>Text-to-archive:</strong> If enabled, photos/videos sent via SMS are processed by
+                            <strong>Text-to-gallery:</strong> If enabled, photos/videos sent via SMS are processed by
                             Twilio and stored per your family&apos;s configuration.
                         </li>
                     </ul>

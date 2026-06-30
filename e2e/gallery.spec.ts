@@ -42,9 +42,8 @@ test.describe('Gallery', () => {
     await page.getByTestId('gallery-upload-caption').fill('E2E picnic');
     await page.getByTestId('gallery-upload-submit').click();
 
-    await expect(page.getByText(/custodian will approve/i)).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('E2E picnic')).toBeVisible();
-    await expect(page.getByText(/Awaiting approval/i)).toBeVisible();
+    await expect(page.getByText('E2E picnic')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Your upload · Pending review')).toBeVisible();
     await expect(page.getByText(/Added by Alice/i)).toBeVisible();
   });
 

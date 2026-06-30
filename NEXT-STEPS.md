@@ -1,35 +1,47 @@
 # Recommended Next Steps
 
-_Last updated: 2026-06-26 (batch 11 — gallery moderation polish & ops)_
+_Last updated: 2026-06-26 (batch 12 — UX polish, contributor names, gallery ops)_
 
-## Recently shipped (June 2026 — batch 11)
+## Recently shipped (June 2026 — batch 12)
 
-### Gallery moderation polish — ✅ shipped
+### UX polish — ✅ shipped
 
-- **Decline flow** — custodians can reject pending submissions (Admin → Gallery)
-- **Contributor filter** — Gallery tab dropdown; Contributors → “View photos” deep-link
-- **Pending badge** — Profile “Open Admin Tools” shows count awaiting approval
-- **Ops scripts** — `npm run verify:storage`, `npm run verify:ops`
-- **App Check (optional)** — wired when `VITE_FIREBASE_APP_CHECK_SITE_KEY` is set in production
+- **Gallery filter chip** — sticky “Showing X’s photos · Clear” when filtered
+- **Upload-unavailable banner** — until `VITE_GALLERY_UPLOADS_ENABLED=true`
+- **Recipe card CTA hierarchy** — Start Cooking primary; View secondary
+- **Admin pending toast** — once per session when gallery items await approval
+- **Mobile 5-tab nav** — A–Z under Recipes sub-nav
+- **Family sub-nav hint** — dismissible first-visit banner
+- **Handwritten-card grid fallback** — category art in grid; full card in modal
+- **Profile sync copy** — plain-language cloud sync message
 
-### Batch 10 (prior)
+### Contributor normalization — ✅ shipped
 
-- Pending status, public filter, admin approve, Firestore rules for `status: 'pending'`
+- **Canonical names** — Dawn, Harriet, Wren (merged aliases)
+- **Gallery filter dedupe** — one entry per contributor in dropdown
+- **Firestore migration script** — `npm run normalize:contributors:dry-run` then `npm run normalize:contributors`
 
-### Batch 9 (prior)
+### Gallery approve push — ✅ shipped (when FCM configured)
 
-- Community gallery upload panel, offline queue, rate limit, E2E
+- **Targeted notify** — `/api/notify` accepts `userName`; admin approve triggers push to uploader
+- Requires `NOTIFY_SECRET`, `VITE_NOTIFY_SECRET`, and FCM tokens in `fcm_tokens`
+
+### Batch 11 (prior)
+
+- Gallery decline, contributor filter, pending admin badge, ops scripts
 
 ## Ops status
 
 - [x] Firestore rules (gallery create + moderation)
-- [ ] **Firebase Storage enable** — [Console → Storage](https://console.firebase.google.com/project/schafer-cookbook/storage) then `npm run deploy:firebase-rules`
-- [ ] **Live upload test** — family upload → pending → custodian approve or decline → public
+- [x] **Firebase Storage** — enabled; rules deploy via `npm run verify:storage`
+- [ ] **Vercel `VITE_GALLERY_UPLOADS_ENABLED=true`** — enables upload panel in production (set + redeploy)
+- [ ] **Live upload test** — family upload → pending → custodian approve → public (+ optional push)
+- [ ] **Firestore contributor migration** — `npm run normalize:contributors` with `FIREBASE_WEB_CONFIG`
 - [ ] **Sentry** — `VITE_SENTRY_DSN` on Vercel (+ optional source-map vars)
-- [ ] **App Check (optional)** — register reCAPTCHA v3 in Firebase Console; set `VITE_FIREBASE_APP_CHECK_SITE_KEY`
-- [ ] **Push (optional)** — FCM env vars
-- [ ] **Lighthouse review** — next CI artifact
-- [ ] **Recipe images** — `npm run images:batch` (`GEMINI_API_KEY`)
+- [ ] **Push notify secrets** — `NOTIFY_SECRET` + `VITE_NOTIFY_SECRET` (same value)
+- [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY`
+- [ ] **FCM (optional)** — `VITE_FCM_VAPID_KEY`, messaging sender ID, app ID
+- [ ] **Lighthouse review** — CI artifact in `.lighthouseci/` (2 runs per preset)
 
 Run `npm run verify:ops` after Vercel or Firebase console changes.
 

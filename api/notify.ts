@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
 import { getClientIp, NOTIFY_PUSH_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
+import { contributorNameMatches, normalizeContributorKey } from './lib/contributorAliases';
 
 // Initialize Firebase Admin SDK once
 if (!admin.apps.length) {
@@ -54,6 +55,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const bodyText = typeof body.body === 'string' ? body.body.trim() : undefined;
+    const userNamesRaw = body.userNames;
+    const userNameKeys = new Set<string>();
+    if (typeof body.userName === 'string' && body.userName.trim()) {
+        userNameKeys.add(normalizeContributorKey(body.userName));
+    }
+    if (Array.isArray(userNamesRaw)) {
+        for (const name of userNamesRaw) {
+            if (typeof name === 'string' && name.trim()) {
+                userNameKeys.add(normalizeContributorKey(name));
+            }
+        }
+    }
 
     if (!title) {
         return res.status(400).json({ error: 'Missing required field: title' });
@@ -72,9 +85,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const tokens: string[] = [];
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (typeof data.token === 'string' && data.token.trim()) {
-                tokens.push(data.token.trim());
+            if (typeof data.token !== 'string' || !data.token.trim()) return;
+            if (userNameKeys.size > 0) {
+                const tokenUser = typeof data.userName === 'string' ? data.userName : '';
+                if (!contributorNameMatches(tokenUser, userNameKeys)) return;
             }
+            tokens.push(data.token.trim());
         });
 
         if (tokens.length === 0) {

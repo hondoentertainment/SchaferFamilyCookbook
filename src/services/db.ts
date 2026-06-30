@@ -4,6 +4,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectS
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
 import { normalizeRecipe, normalizeRecipes } from '../constants/taxonomy';
+import { resolveArchivePhone } from '../utils/textToGallery';
 
 async function retryWithBackoff<T>(
     fn: () => Promise<T>,
@@ -208,7 +209,7 @@ export const CloudArchive = {
         if (!fb) return () => { };
         return onSnapshot(doc(fb.db, 'config', 'settings'), (snapshot) => {
             const data = snapshot.data();
-            callback(data?.archivePhone || localStorage.getItem('schafer_archive_phone') || '');
+            callback(resolveArchivePhone(data?.archivePhone));
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeArchivePhone error:', error);

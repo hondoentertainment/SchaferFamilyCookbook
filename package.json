@@ -33,6 +33,7 @@
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",
     "verify:storage": "node scripts/verify-storage.mjs",
+    "enable:firebase-storage": "node scripts/enable-firebase-storage.mjs",
     "verify:ops": "node scripts/verify-ops.mjs",
     "deploy:firebase-rules": "node scripts/deploy-firebase-rules.mjs",
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
@@ -40,6 +41,10 @@
     "deploy:prod": "node scripts/deploy-all.mjs",
     "backup:recipes": "node scripts/backup-recipes-json.mjs",
     "seed:recipes": "node scripts/seed-recipes-firestore.mjs",
+    "set:archive-phone": "node scripts/set-archive-phone.mjs",
+    "configure:text-to-gallery": "node scripts/configure-text-to-gallery.mjs",
+    "normalize:contributors": "node scripts/normalize-contributor-names-firestore.mjs",
+    "normalize:contributors:dry-run": "node scripts/normalize-contributor-names-firestore.mjs --dry-run",
     "admin:set-claim": "node scripts/set-admin-claim.mjs"
   },
   "dependencies": {

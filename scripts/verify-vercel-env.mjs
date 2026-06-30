@@ -19,6 +19,18 @@ const RECOMMENDED = [
   'VITE_FIREBASE_AUTH_DOMAIN',
   'VITE_FIREBASE_STORAGE_BUCKET',
   'VITE_SENTRY_DSN',
+  'VITE_GALLERY_UPLOADS_ENABLED',
+];
+
+/** Required for Twilio MMS → gallery webhook (server-side). */
+const TEXT_TO_GALLERY = [
+  'FIREBASE_SERVICE_ACCOUNT',
+  'TWILIO_AUTH_TOKEN',
+];
+
+const TEXT_TO_GALLERY_RECOMMENDED = [
+  'TWILIO_ACCOUNT_SID',
+  'VITE_ARCHIVE_PHONE',
 ];
 
 const SENTRY_BUILD = [
@@ -33,7 +45,7 @@ const OPTIONAL_PUSH = [
   'VITE_FCM_VAPID_KEY',
 ];
 
-const OPTIONAL_APP_CHECK = ['VITE_FIREBASE_APP_CHECK_SITE_KEY'];
+const OPTIONAL_NOTIFY = ['VITE_NOTIFY_SECRET', 'NOTIFY_SECRET'];
 
 function listVercelEnv() {
   const r = spawnSync('npx', ['vercel', 'env', 'ls'], { encoding: 'utf8', shell: true });
@@ -54,6 +66,8 @@ const names = new Set(
 
 const missingRequired = REQUIRED_PRODUCTION.filter((k) => !names.has(k));
 const missingRecommended = RECOMMENDED.filter((k) => !names.has(k));
+const missingTextToGallery = TEXT_TO_GALLERY.filter((k) => !names.has(k));
+const missingTextToGalleryRecommended = TEXT_TO_GALLERY_RECOMMENDED.filter((k) => !names.has(k));
 const missingPush = OPTIONAL_PUSH.filter((k) => !names.has(k));
 
 console.log('Vercel env audit (names only)\n');
@@ -69,6 +83,18 @@ if (missingRequired.length === 0) {
 if (missingRecommended.length > 0) {
   console.log('\n⚠️  Recommended (optional):');
   for (const k of missingRecommended) console.log(`   - ${k}`);
+}
+
+if (missingTextToGallery.length === 0) {
+  console.log('\n✅ Text-to-gallery server vars present');
+} else {
+  console.log('\n❌ Text-to-gallery (Twilio MMS webhook) missing:');
+  for (const k of missingTextToGallery) console.log(`   - ${k}`);
+}
+
+if (missingTextToGalleryRecommended.length > 0) {
+  console.log('\nℹ️  Text-to-gallery (recommended):');
+  for (const k of missingTextToGalleryRecommended) console.log(`   - ${k}`);
 }
 
 const missingSentryBuild = SENTRY_BUILD.filter((k) => !names.has(k));
@@ -88,6 +114,12 @@ if (missingAppCheck.length > 0) {
   for (const k of missingAppCheck) console.log(`   - ${k}`);
 }
 
+const missingNotify = OPTIONAL_NOTIFY.filter((k) => !names.has(k));
+if (missingNotify.length > 0) {
+  console.log('\nℹ️  Push notify (optional — gallery approve + admin broadcast):');
+  for (const k of missingNotify) console.log(`   - ${k}`);
+}
+
 const misnamed = [...names].filter((n) => n.startsWith('AIza'));
 if (misnamed.length > 0) {
   console.log('\n❌ Misnamed env vars (delete and use VITE_FIREBASE_API_KEY):');
@@ -95,5 +127,5 @@ if (misnamed.length > 0) {
   console.log('   Run: npx vercel env rm <name> production preview development');
 }
 
-const exitCode = missingRequired.length > 0 || misnamed.length > 0 ? 1 : 0;
+const exitCode = missingRequired.length > 0 || missingTextToGallery.length > 0 || misnamed.length > 0 ? 1 : 0;
 process.exit(exitCode);

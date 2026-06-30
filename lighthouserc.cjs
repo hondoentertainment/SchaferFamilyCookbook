@@ -8,7 +8,7 @@ module.exports = {
   ci: {
     collect: {
       url: [url],
-      numberOfRuns: 1,
+      numberOfRuns: 2,
       settings: [
         { preset: 'desktop' },
         { preset: 'mobile' },

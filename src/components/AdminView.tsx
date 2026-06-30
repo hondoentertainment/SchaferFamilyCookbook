@@ -13,6 +13,7 @@ import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { useFocusTrap } from '../utils/focusTrap';
 import { getRecipeImageStatus, markRecipeImageAsApprovedActual, summarizeRecipeImageStatuses } from '../utils/imageProvenance';
 import { STORAGE_KEYS } from '../constants/storage';
+import { notifyGalleryApproved } from '../services/galleryApproveNotify';
 
 /** Pre-filled section scaffolding offered when the Family Story editor is empty. */
 const STORY_STARTER_TEMPLATE: ReadonlyArray<{ heading: string; body: string }> = [
@@ -669,6 +670,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         try {
             await onUpdateGalleryItem(item.id, { status: 'approved' });
             toast('Memory approved for the family gallery', 'success');
+            void notifyGalleryApproved(item);
         } catch {
             /* toast from caller */
         }

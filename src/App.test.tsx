@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import App from './App';
 import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithProviders } from './test/utils';
@@ -140,12 +140,19 @@ describe('Gallery', () => {
         expect(screen.getByLabelText(/alternative ways to add photos/i)).toBeInTheDocument();
     });
 
-    it('should show text-to-archive instructions when archive phone is set', async () => {
+    it('should show text-to-gallery instructions when archive phone is set', async () => {
         localStorage.setItem('schafer_archive_phone', '+15551234567');
         await loginAndNavigateToGallery();
         expect(screen.getByText('Text your memories')).toBeInTheDocument();
         expect(screen.getByText(/Photo\/Video to:/)).toBeInTheDocument();
         expect(screen.getByText('+15551234567')).toBeInTheDocument();
+        expect(screen.getByLabelText(/text-to-gallery instructions/i)).toBeInTheDocument();
+    });
+
+    it('should show text-to-gallery instructions from VITE_ARCHIVE_PHONE when localStorage is empty', async () => {
+        vi.stubEnv('VITE_ARCHIVE_PHONE', '+15559876543');
+        await loginAndNavigateToGallery();
+        expect(screen.getByText('+15559876543')).toBeInTheDocument();
     });
 
     it('should render gallery with semantic structure', async () => {

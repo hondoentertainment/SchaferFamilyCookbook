@@ -106,6 +106,15 @@ export const HelpView: React.FC = () => {
                 </p>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
                     <li>
+                        <strong className="font-bold">Text-to-gallery (Twilio MMS)</strong> — set{' '}
+                        <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code>,{' '}
+                        <code className="text-xs">TWILIO_AUTH_TOKEN</code>, and{' '}
+                        <code className="text-xs">TWILIO_ACCOUNT_SID</code> on Vercel; point your Twilio number&apos;s
+                        webhook to <code className="text-xs">/api/webhook</code>. Enable Firebase Storage, then set{' '}
+                        <code className="text-xs">VITE_ARCHIVE_PHONE</code> (E.164) or save the number in Admin → Gallery.
+                        Run <code className="text-xs">npm run configure:text-to-gallery</code> for a checklist.
+                    </li>
+                    <li>
                         <strong className="font-bold">Gallery community uploads</strong> — run{' '}
                         <code className="text-xs">npm run deploy:firebase-rules</code> after merging gallery
                         changes (Firestore + Storage rules).{' '}

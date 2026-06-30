@@ -176,7 +176,7 @@ describe('notify', () => {
   it('fans out multicast when tokens exist', async () => {
     notifyAdminMocks.apps = [{}];
     notifyAdminMocks.collectionGet.mockResolvedValue({
-      forEach: (fn: (d: { data: () => { token?: string } }) => void) => {
+      forEach: (fn: (d: { data: () => { token?: string; userName?: string } }) => void) => {
         fn({ data: () => ({ token: '  tok-a  ' }) });
         fn({ data: () => ({ token: '' }) });
         fn({ data: () => ({ token: 'tok-b' }) });
@@ -202,5 +202,32 @@ describe('notify', () => {
     expect(msg.notification).toEqual({ title: 'Dinner', body: 'Soup is ready' });
     expect(r.status).toHaveBeenCalledWith(200);
     expect(r.json).toHaveBeenCalledWith({ sent: 2, failed: 0 });
+  });
+
+  it('filters tokens by userName when provided', async () => {
+    notifyAdminMocks.apps = [{}];
+    notifyAdminMocks.collectionGet.mockResolvedValue({
+      forEach: (fn: (d: { data: () => { token?: string; userName?: string } }) => void) => {
+        fn({ data: () => ({ token: 'tok-wren', userName: 'Wren Feyereisen' }) });
+        fn({ data: () => ({ token: 'tok-alice', userName: 'Alice' }) });
+      },
+    });
+    notifyAdminMocks.sendEachForMulticast.mockResolvedValue({
+      successCount: 1,
+      failureCount: 0,
+      responses: [{ success: true }],
+    });
+    const handler = (await import('./notify')).default;
+    const r = res();
+    await handler(
+      postReq({
+        headers: { 'x-notify-secret': 'test-notify-secret' },
+        body: { title: 'Approved', userName: 'Wren' },
+      }),
+      r as unknown as VercelResponse
+    );
+    const msg = notifyAdminMocks.sendEachForMulticast.mock.calls[0][0];
+    expect(msg.tokens).toEqual(['tok-wren']);
+    expect(r.json).toHaveBeenCalledWith({ sent: 1, failed: 0 });
   });
 });

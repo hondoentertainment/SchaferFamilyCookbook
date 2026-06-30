@@ -84,6 +84,7 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { SectionSubNav } from './components/SectionSubNav';
 import { FamilySubNavHint } from './components/FamilySubNavHint';
 import { shouldShowGalleryUploadUnavailableBanner } from './utils/galleryUploadAvailability';
+import { resolveArchivePhone } from './utils/textToGallery';
 import {
     FAMILY_SECONDARY_NAV,
     getFamilyNavDetail,
@@ -417,9 +418,11 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import defaultRecipes from './data/recipes.json';
 
-const OfflineRecipeBadge: React.FC = () => (
+const OfflineRecipeBadge: React.FC<{ position?: 'left' | 'right' }> = ({ position = 'right' }) => (
     <span
-        className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[#2D4635]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
+        className={`absolute top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[#2D4635]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${
+            position === 'left' ? 'left-2' : 'right-2'
+        }`}
         title="Saved for offline cook mode"
     >
         <span aria-hidden>📥</span>
@@ -607,7 +610,7 @@ const RecipeShelfCard: React.FC<{
             >
                 <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
                     <RecipeCardImage recipe={recipe} />
-                    {isOffline && <OfflineRecipeBadge />}
+                    {isOffline && <OfflineRecipeBadge position="left" />}
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
                     <div className="flex items-center justify-between gap-2">
@@ -708,7 +711,7 @@ const App: React.FC = () => {
         activeProvider: CloudArchive.getProvider()
     });
 
-    const [archivePhone, setArchivePhone] = useState(() => localStorage.getItem('schafer_archive_phone') || '');
+    const [archivePhone, setArchivePhone] = useState(() => resolveArchivePhone(localStorage.getItem('schafer_archive_phone')));
 
     const [custodianAuth, setCustodianAuth] = useState<CustodianAuthState>({ user: null, isAdmin: false });
 
@@ -1555,12 +1558,12 @@ const App: React.FC = () => {
                             }}
                         />
                         {archivePhone ? (
-                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
+                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-gallery instructions">
                                 <span className="text-3xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">Text your memories</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">{siteConfig.galleryCopy.textPromptTitle}</h4>
                                     <p className="text-sm text-emerald-700 font-serif italic">
-                                        Photo/Video to:{' '}
+                                        {siteConfig.galleryCopy.textPromptHint}{' '}
                                         <a
                                             href={`sms:${archivePhone.replace(/\s/g, '')}`}
                                             className="font-bold not-italic underline decoration-emerald-600/50 hover:decoration-emerald-700 underline-offset-2 hover:text-emerald-800 transition-colors"

@@ -34,6 +34,10 @@ interface ImportMetaEnv {
     readonly VITE_FIREBASE_APP_CHECK_SITE_KEY?: string;
     /** Set to `true` once Firebase Storage is enabled for gallery uploads. */
     readonly VITE_GALLERY_UPLOADS_ENABLED?: string;
+    /** Twilio MMS number (E.164) shown on Gallery tab when Firestore config/settings is unset. */
+    readonly VITE_ARCHIVE_PHONE?: string;
+    /** Must match NOTIFY_SECRET on Vercel for /api/notify from admin UI. */
+    readonly VITE_NOTIFY_SECRET?: string;
 }
 
 interface ImportMeta {
