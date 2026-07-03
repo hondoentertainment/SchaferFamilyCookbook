@@ -352,19 +352,31 @@ textarea:focus-visible,
     top: auto !important;
   }
 
-  /* ===== Full-cookbook print view ===== */
-  .print-cookbook-content,
-  .print-cookbook-content * {
+  /* ===== Full-cookbook print view =====
+     The overlay is portaled to <body> and flagged with body.cookbook-print-open.
+     Keep the document in NORMAL FLOW when printing — absolutely/fixed
+     positioned boxes don't fragment across pages — and hide the app instead. */
+  body.cookbook-print-open > *:not(.cookbook-print-overlay) {
+    display: none !important;
+  }
+
+  body.cookbook-print-open .cookbook-print-overlay,
+  body.cookbook-print-open .cookbook-print-overlay * {
     visibility: visible;
   }
 
+  .cookbook-print-overlay {
+    position: static !important;
+    inset: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+  }
+
   .print-cookbook-content {
-    position: absolute !important;
-    inset: 0 !important;
+    position: static !important;
     width: 100% !important;
     max-width: none !important;
-    height: auto !important;
-    overflow: visible !important;
     margin: 0 !important;
     background: #ffffff !important;
     box-shadow: none !important;

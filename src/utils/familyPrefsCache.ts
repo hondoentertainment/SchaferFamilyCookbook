@@ -26,13 +26,30 @@ export const FAMILY_PREFS_CACHE_KEY = 'familyPrefs:v1';
 /** Window event dispatched whenever the cache is replaced with fresh data. */
 export const FAMILY_PREFS_UPDATED_EVENT = 'family-prefs-updated';
 
+function isValidMember(raw: unknown): raw is FamilyMemberPrefs {
+    if (!raw || typeof raw !== 'object') return false;
+    const m = raw as Record<string, unknown>;
+    return (
+        typeof m.userId === 'string' &&
+        !!m.userId &&
+        !!m.ratings &&
+        typeof m.ratings === 'object' &&
+        !Array.isArray(m.ratings) &&
+        Array.isArray(m.notes)
+    );
+}
+
 export function getFamilyPrefsCache(): FamilyPrefsCache | null {
     try {
         const raw = localStorage.getItem(FAMILY_PREFS_CACHE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw) as FamilyPrefsCache;
         if (!parsed || !Array.isArray(parsed.members)) return null;
-        return parsed;
+        // Drop malformed member entries so readers never crash on a stale cache.
+        return {
+            fetchedAt: typeof parsed.fetchedAt === 'string' ? parsed.fetchedAt : '',
+            members: parsed.members.filter(isValidMember),
+        };
     } catch {
         return null;
     }

@@ -323,6 +323,7 @@ describe('userPrefsSync', () => {
                 mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
                 groceryList: [],
                 notes: [],
+                deletedNoteIds: [],
                 displayName: undefined,
             });
         });
@@ -535,6 +536,110 @@ describe('userPrefsSync', () => {
                 [note('earlier', '2026-06-01T00:00:00.000Z')]
             );
             expect(merged.map((n) => n.id)).toEqual(['earlier', 'later']);
+        });
+
+        it('excludes tombstoned ids so deletions are not resurrected', () => {
+            const merged = mergeNotes(
+                [note('kept', '2026-06-01T00:00:00.000Z')],
+                [note('deleted-elsewhere', '2026-06-02T00:00:00.000Z')],
+                new Set(['deleted-elsewhere'])
+            );
+            expect(merged.map((n) => n.id)).toEqual(['kept']);
+        });
+    });
+
+    describe('deleted-note tombstones in mergePrefs', () => {
+        it('unions tombstones from both sides and filters merged notes', () => {
+            const base = {
+                favorites: [],
+                ratings: {},
+                collections: [],
+            };
+            const merged = mergePrefs(
+                {
+                    ...base,
+                    notes: [],
+                    deletedNoteIds: ['n1'],
+                },
+                {
+                    ...base,
+                    notes: [
+                        {
+                            id: 'n1',
+                            recipeId: 'r1',
+                            userName: 'Dawn',
+                            text: 'stale copy of a deleted note',
+                            timestamp: '2026-06-01T00:00:00.000Z',
+                        },
+                    ],
+                    deletedNoteIds: ['n2'],
+                }
+            );
+            expect(merged.deletedNoteIds?.sort()).toEqual(['n1', 'n2']);
+            expect(merged.notes).toEqual([]);
+        });
+    });
+
+    describe('writeRemotePrefs legacy fallback', () => {
+        function activateFirebase() {
+            localStorage.setItem('schafer_active_provider', 'firebase');
+            localStorage.setItem(
+                'schafer_firebase_config',
+                JSON.stringify({ apiKey: 'test', projectId: 'test' })
+            );
+        }
+
+        it('retries without new fields when rules reject the write', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            const denied = Object.assign(new Error('Missing or insufficient permissions.'), {
+                code: 'permission-denied',
+            });
+            setDocSpy.mockRejectedValueOnce(denied).mockResolvedValueOnce(undefined);
+
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: ['r1'],
+                ratings: {},
+                collections: [],
+                notes: [
+                    {
+                        id: 'n1',
+                        recipeId: 'r1',
+                        userName: 'Grandma Joan',
+                        text: 'tip',
+                        timestamp: '2026-07-01T00:00:00.000Z',
+                    },
+                ],
+                deletedNoteIds: ['n0'],
+                displayName: 'Grandma Joan',
+            });
+
+            expect(ok).toBe(true);
+            expect(setDocSpy).toHaveBeenCalledTimes(2);
+            const firstPayload = setDocSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+            const retryPayload = setDocSpy.mock.calls[1]?.[1] as Record<string, unknown>;
+            expect(firstPayload).toHaveProperty('notes');
+            expect(retryPayload).not.toHaveProperty('notes');
+            expect(retryPayload).not.toHaveProperty('deletedNoteIds');
+            expect(retryPayload).not.toHaveProperty('displayName');
+            expect(retryPayload).toHaveProperty('favorites', ['r1']);
+        });
+
+        it('does not retry on non-permission errors', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockRejectedValueOnce(new Error('network down'));
+
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: [],
+                ratings: {},
+                collections: [],
+            });
+
+            expect(ok).toBe(false);
+            expect(setDocSpy).toHaveBeenCalledTimes(1);
         });
     });
 });

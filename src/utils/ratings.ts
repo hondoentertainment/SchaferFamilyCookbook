@@ -76,7 +76,16 @@ export function setRating(recipeId: string, userName: string, rating: number): R
 export function getUserRating(recipeId: string, userName: string): number {
   const all = getAllRatings();
   const entry = all.find((r) => r.recipeId === recipeId && r.userName === userName);
-  return entry?.rating ?? 0;
+  if (entry) return entry.rating;
+  // Fall back to the family cache: on a fresh device the user's own rating
+  // may only exist in the synced aggregate until hydration completes.
+  const slug = deriveUserId(userName);
+  if (!slug) return 0;
+  const member = getFamilyPrefsCache()?.members.find((m) => m.userId === slug);
+  const cached = member?.ratings[recipeId];
+  return typeof cached === 'number' && Number.isFinite(cached)
+    ? Math.max(1, Math.min(5, cached))
+    : 0;
 }
 
 export function isFamilyApproved(recipeId: string): boolean {
@@ -140,6 +149,30 @@ export function addNote(recipeId: string, userName: string, text: string): Recip
 export function deleteNote(noteId: string): RecipeNote[] {
   const all = getAllNotes().filter((n) => n.id !== noteId);
   localStorage.setItem(STORAGE_KEYS.notes, JSON.stringify(all));
+  recordDeletedNoteIds([noteId]);
   notifyPrefsChanged();
   return all;
+}
+
+// --- Deleted-note tombstones ---
+// Deletions must survive cross-device merges: without a tombstone, a stale
+// copy of the note on another device would resurrect it on the next sync.
+
+export function getDeletedNoteIds(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.deletedNotes);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === 'string' && x.length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Append tombstones (deduped, newest kept when the cap is exceeded). */
+export function recordDeletedNoteIds(ids: string[]): void {
+  const merged = [...new Set([...getDeletedNoteIds(), ...ids])].slice(-500);
+  localStorage.setItem(STORAGE_KEYS.deletedNotes, JSON.stringify(merged));
 }

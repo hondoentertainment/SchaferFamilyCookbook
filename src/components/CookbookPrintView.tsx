@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Recipe } from '../types';
 import { siteConfig } from '../config/site';
 import { CATEGORY_META } from '../constants/taxonomy';
@@ -46,6 +47,13 @@ export const CookbookPrintView: React.FC<CookbookPrintViewProps> = ({ recipes, o
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [onClose]);
 
+    // Print CSS keys off this class to hide the app and keep the cookbook in
+    // normal flow (absolute/fixed boxes don't fragment across printed pages).
+    useEffect(() => {
+        document.body.classList.add('cookbook-print-open');
+        return () => document.body.classList.remove('cookbook-print-open');
+    }, []);
+
     const chapters = useMemo(() => groupByCategory(recipes), [recipes]);
     const contributorCount = useMemo(
         () => new Set(recipes.map((r) => r.contributor.trim()).filter(Boolean)).size,
@@ -53,13 +61,13 @@ export const CookbookPrintView: React.FC<CookbookPrintViewProps> = ({ recipes, o
     );
     const year = new Date().getFullYear();
 
-    return (
+    return createPortal(
         <div
             ref={containerRef}
             role="dialog"
             aria-modal="true"
             aria-label="Printable family cookbook"
-            className="fixed inset-0 z-[150] bg-stone-900/70 backdrop-blur-sm overflow-y-auto"
+            className="cookbook-print-overlay fixed inset-0 z-[150] bg-stone-900/70 backdrop-blur-sm overflow-y-auto"
         >
             <div className="print:hidden sticky top-0 z-10 flex items-center justify-between gap-3 bg-[#2D4635] text-white px-4 py-3 shadow-lg">
                 <p className="text-sm font-serif italic truncate">
@@ -190,6 +198,7 @@ export const CookbookPrintView: React.FC<CookbookPrintViewProps> = ({ recipes, o
                     {siteConfig.siteName} · {year}
                 </footer>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

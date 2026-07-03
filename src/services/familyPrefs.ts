@@ -1,6 +1,6 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { CloudArchive } from './db';
-import { parseNotes } from './userPrefsSync';
+import { parseNotes, parseDeletedNoteIds } from './userPrefsSync';
 import { Sentry } from '../monitoring/sentry';
 import {
     setFamilyPrefsCache,
@@ -36,6 +36,9 @@ export async function refreshFamilyPrefs(): Promise<boolean> {
                     ratings[recipeId] = Math.max(1, Math.min(5, value));
                 }
             }
+            // Respect the member's own tombstones in case a stale device
+            // re-uploaded a deleted note.
+            const deletedIds = new Set(parseDeletedNoteIds(data.deletedNoteIds));
             return {
                 userId: d.id,
                 displayName:
@@ -43,7 +46,7 @@ export async function refreshFamilyPrefs(): Promise<boolean> {
                         ? data.displayName.trim()
                         : undefined,
                 ratings,
-                notes: parseNotes(data.notes),
+                notes: parseNotes(data.notes).filter((n) => !deletedIds.has(n.id)),
             };
         });
         setFamilyPrefsCache({ fetchedAt: new Date().toISOString(), members });

@@ -8,7 +8,7 @@ import {
     type UserPrefsPayload,
 } from './userPrefsSync';
 import { getFavoriteIds } from '../utils/favorites';
-import { getAllRatings, getAllNotes } from '../utils/ratings';
+import { getAllRatings, getAllNotes, getDeletedNoteIds, recordDeletedNoteIds } from '../utils/ratings';
 import { getAllCollections } from '../utils/collections';
 import { getMealPlan } from '../utils/mealPlan';
 import { applyGroceryItemsFromSync, getItems as getGroceryItems } from '../utils/groceryList';
@@ -33,7 +33,8 @@ function readLocalPrefs(userName: string): UserPrefsPayload {
     const mealPlan = getMealPlan();
     const groceryList = getGroceryItems();
     const notes = getAllNotes().filter((n) => n.userName === userName);
-    return { favorites, ratings, collections, mealPlan, groceryList, notes, displayName: userName };
+    const deletedNoteIds = getDeletedNoteIds();
+    return { favorites, ratings, collections, mealPlan, groceryList, notes, deletedNoteIds, displayName: userName };
 }
 
 /**
@@ -85,6 +86,7 @@ function applyMergedPrefsToLocal(userName: string, merged: UserPrefsPayload): vo
         STORAGE_KEYS.notes,
         JSON.stringify([...otherNotes, ...(merged.notes ?? [])])
     );
+    recordDeletedNoteIds(merged.deletedNoteIds ?? []);
 }
 
 export interface UseUserPrefsSyncOptions {
@@ -196,7 +198,11 @@ export function useUserPrefsSync(
                 const mergedNotes = merged.notes ?? [];
                 const remoteNoteIds = new Set(remoteNotes.map((n) => n.id));
                 const mergedAddedNotes = mergedNotes.some((n) => !remoteNoteIds.has(n.id));
-                if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery || mergedAddedNotes) {
+                const remoteDeletedIds = new Set(remote.deletedNoteIds ?? []);
+                const mergedAddedTombstones = (merged.deletedNoteIds ?? []).some(
+                    (id) => !remoteDeletedIds.has(id)
+                );
+                if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery || mergedAddedNotes || mergedAddedTombstones) {
                     writerRef.current?.schedule(userId, merged);
                 }
             } catch {

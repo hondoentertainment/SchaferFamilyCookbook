@@ -11,6 +11,7 @@ import {
     getNotesForRecipe,
     addNote,
     deleteNote,
+    getDeletedNoteIds,
 } from './ratings';
 
 vi.mock('../services/userPrefsSync', () => ({
@@ -211,6 +212,32 @@ describe('ratings utility', () => {
             const notes = getNotesForRecipe('recipe-1');
             expect(notes).toHaveLength(2);
             expect(notes.map((n) => n.text).sort()).toEqual(['Family tip', 'Local tip']);
+        });
+
+        it("falls back to the family cache for the user's own rating", () => {
+            seedFamilyCache([
+                { userId: 'dawn', displayName: 'Dawn', ratings: { 'recipe-1': 4 }, notes: [] },
+            ]);
+            expect(getUserRating('recipe-1', 'Dawn')).toBe(4);
+            // A local rating still wins over the cached value.
+            setRating('recipe-1', 'Dawn', 2);
+            expect(getUserRating('recipe-1', 'Dawn')).toBe(2);
+        });
+
+        it('ignores malformed family cache members instead of crashing', () => {
+            seedFamilyCache([
+                { userId: 'broken' },
+                { userId: 'dawn', ratings: { 'recipe-1': 5 }, notes: [] },
+            ]);
+            expect(getRatingCount('recipe-1')).toBe(1);
+            expect(getNotesForRecipe('recipe-1')).toEqual([]);
+        });
+
+        it('records a tombstone when a note is deleted', () => {
+            const notes = addNote('recipe-1', 'Harriet', 'Soon deleted');
+            deleteNote(notes[0]!.id);
+            expect(getDeletedNoteIds()).toEqual([notes[0]!.id]);
+            expect(getNotesForRecipe('recipe-1')).toHaveLength(0);
         });
 
         it("excludes the current user's cached family notes so local deletes stick", () => {

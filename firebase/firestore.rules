@@ -71,7 +71,7 @@ service cloud.firestore {
      * allowed for everyone to unblock future social features (e.g. aggregate
      * ratings). Custodians (admin) retain full control for moderation.
      *
-     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, collections: list, mealPlan: list, groceryList: list, notes: list, displayName: string, updatedAt: Timestamp }
+     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, collections: list, mealPlan: list, groceryList: list, notes: list, deletedNoteIds: string[], displayName: string, updatedAt: Timestamp }
      *
      * `notes` and `displayName` power shared family notes/ratings: every client
      * reads all userPrefs docs to build a family-wide aggregate.
@@ -81,7 +81,7 @@ service cloud.firestore {
       allow create, update: if
         isAdmin() ||
         (
-          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'collections', 'mealPlan', 'groceryList', 'notes', 'displayName', 'updatedAt']) &&
+          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'collections', 'mealPlan', 'groceryList', 'notes', 'deletedNoteIds', 'displayName', 'updatedAt']) &&
           (
             !('favorites' in request.resource.data) ||
             request.resource.data.favorites is list
@@ -103,8 +103,22 @@ service cloud.firestore {
             request.resource.data.groceryList is list
           ) &&
           (
+            // Rules cannot iterate list elements, so per-note shape/attribution
+            // cannot be enforced here; clients validate shape on read
+            // (parseNotes) and attribution shares the collection's name-based
+            // trust model. Cap the list size to bound abuse.
             !('notes' in request.resource.data) ||
-            request.resource.data.notes is list
+            (
+              request.resource.data.notes is list &&
+              request.resource.data.notes.size() <= 500
+            )
+          ) &&
+          (
+            !('deletedNoteIds' in request.resource.data) ||
+            (
+              request.resource.data.deletedNoteIds is list &&
+              request.resource.data.deletedNoteIds.size() <= 500
+            )
           ) &&
           (
             !('displayName' in request.resource.data) ||

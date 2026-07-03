@@ -8,7 +8,7 @@ _Last updated: 2026-07-03 (batch 15 in review + ops)_
 
 - **Family-wide aggregate** — every client fetches all `userPrefs` docs (already world-readable by design) into a local cache (`familyPrefs:v1`); recipe averages, "Family Approved", "Cooked by N", and Family Notes now reflect the *whole family*, not just this device
 - **Notes + displayName sync** — `userPrefs` docs now carry `notes` (RecipeNote list) and `displayName`; merged on login like other prefs
-- **⚠️ Owner action after merge:** deploy updated Firestore rules (`firebase deploy --only firestore:rules` or the repo's rules deploy script) — until then, clients fall back gracefully (writes of the new fields are rejected, reads/local keep working)
+- **⚠️ Owner action — deploy updated Firestore rules** (`firebase deploy --only firestore:rules`), ideally before or immediately after merge. Until the new rules are live, clients whose full write is rejected automatically retry with the legacy payload shape (favorites/ratings/collections/meal plan/grocery keep syncing; notes/displayName wait for the rules)
 
 ### Printable heirloom cookbook — shipped in PR
 
