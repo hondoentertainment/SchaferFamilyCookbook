@@ -6,7 +6,9 @@ import { useUI } from '../context/UIContext';
 import { shouldToastImageError } from '../utils/imageErrorToast';
 import { useFocusTrap } from '../utils/focusTrap';
 import { scaleIngredients } from '../utils/scaleIngredients';
-import { hapticLight } from '../utils/haptics';
+import { hapticLight, hapticSuccess } from '../utils/haptics';
+import { getStepMinutes, formatTimer } from '../utils/stepDuration';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 import { isValidRecipeImageUrl } from '../utils/recipeImage';
@@ -285,9 +287,15 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     const [mobileIngredientsOpen, setMobileIngredientsOpen] = useState(false);
     const scaleInitRef = useRef(true);
     const [detailMode, setDetailMode] = useState<DetailMode>('read');
+    /** One kitchen timer at a time, tied to an instruction step (Cook tab). */
+    const [activeTimer, setActiveTimer] = useState<{ step: number; remaining: number } | null>(null);
     const hasValidImage = !!recipe && isValidRecipeImageUrl(recipe.image) && !imageBroken;
     useFocusTrap(true, modalRef);
     useFocusTrap(lightboxOpen, lightboxRef);
+    // Keep the screen on while the Cook tab is active, matching step-by-step cook mode.
+    useWakeLock(detailMode === 'cook', () =>
+        toast('Could not keep screen awake. Your device may lock during cooking.', 'info')
+    );
 
     useEffect(() => {
         closeButtonRef.current?.focus();
@@ -362,8 +370,26 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         setCheckedSteps(new Set(session.steps));
         setMobileIngredientsOpen(false);
         setDetailMode('read');
+        setActiveTimer(null);
         scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [recipe?.id, recipe?.servings]);
+
+    // Tick the active step timer once per second; celebrate when it finishes.
+    useEffect(() => {
+        if (!activeTimer || activeTimer.remaining <= 0) return;
+        const id = window.setInterval(() => {
+            setActiveTimer((current) => {
+                if (!current) return null;
+                if (current.remaining <= 1) {
+                    hapticSuccess();
+                    toast(`Step ${current.step + 1} timer done`, 'success');
+                    return null;
+                }
+                return { ...current, remaining: current.remaining - 1 };
+            });
+        }, 1000);
+        return () => window.clearInterval(id);
+    }, [activeTimer, toast]);
 
     useEffect(() => {
         if (!recipe?.id || scaleTo <= 0) return;
@@ -606,6 +632,16 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         });
     };
 
+    const startStepTimer = (stepIdx: number, minutes: number) => {
+        hapticLight();
+        setActiveTimer({ step: stepIdx, remaining: minutes * 60 });
+    };
+
+    const cancelStepTimer = () => {
+        hapticLight();
+        setActiveTimer(null);
+    };
+
     const toggleStep = (index: number) => {
         hapticLight();
         setCheckedSteps((current) => {
@@ -701,6 +737,30 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     </div>
                 </div>
             )}
+            {baseServings > 0 && scaleTo !== baseServings && (
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#A0522D]/10 dark:bg-amber-900/20 px-3 py-2 text-xs text-[#A0522D] dark:text-amber-300">
+                    <span>
+                        Quantities scaled for {scaleTo} — original recipe serves {baseServings}.
+                    </span>
+                    <button
+                        type="button"
+                        data-testid="recipe-scale-reset"
+                        onClick={() => {
+                            hapticLight();
+                            setScaleTo(baseServings);
+                        }}
+                        className="print:hidden shrink-0 px-3 py-1 min-h-8 rounded-full border border-[#A0522D]/40 font-bold uppercase tracking-widest hover:bg-[#A0522D] hover:text-white transition-colors"
+                        aria-label={`Reset to original ${baseServings} servings`}
+                    >
+                        Reset
+                    </button>
+                </div>
+            )}
+            <span className="sr-only" aria-live="polite">
+                {baseServings > 0 && scaleTo !== baseServings
+                    ? `Ingredient quantities scaled to serve ${scaleTo}`
+                    : ''}
+            </span>
             <ul className="space-y-2">
                 {displayedIngredients.map((ing, i) => {
                     const checked = checkedIngredients.has(i);
@@ -1185,6 +1245,8 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         {recipe.instructions.map((step, i) => {
                                             const stepImage = recipe.stepImages?.[i];
                                             const stepDone = checkedSteps.has(i);
+                                            const stepMinutes = detailMode === 'cook' ? getStepMinutes(step) : null;
+                                            const timerRunning = activeTimer?.step === i;
                                             return (
                                                 <article
                                                     key={i}
@@ -1245,6 +1307,36 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                                 {i === 0 && displayedIngredients.length > 0 && (
                                                                     <span className="px-3 py-1 rounded-full bg-[#A0522D]/10 text-[#A0522D] font-bold uppercase tracking-widest">
                                                                         Gather ingredients first
+                                                                    </span>
+                                                                )}
+                                                                {stepMinutes != null && !timerRunning && (
+                                                                    <button
+                                                                        type="button"
+                                                                        data-testid={`recipe-step-timer-start-${i}`}
+                                                                        onClick={() => startStepTimer(i, stepMinutes)}
+                                                                        className="px-3 py-1 min-h-8 rounded-full border border-[#2D4635]/30 dark:border-emerald-700 text-[#2D4635] dark:text-emerald-300 font-bold uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-colors"
+                                                                        aria-label={`Start ${stepMinutes} minute timer for step ${i + 1}`}
+                                                                    >
+                                                                        <span aria-hidden>⏱</span> Start {stepMinutes}-min timer
+                                                                    </button>
+                                                                )}
+                                                                {timerRunning && activeTimer && (
+                                                                    <span
+                                                                        role="timer"
+                                                                        data-testid={`recipe-step-timer-running-${i}`}
+                                                                        aria-label={`Step ${i + 1} timer: ${formatTimer(activeTimer.remaining)} remaining`}
+                                                                        className="inline-flex items-center gap-2 px-3 py-1 min-h-8 rounded-full bg-[#2D4635] text-white font-bold tabular-nums"
+                                                                    >
+                                                                        <span aria-hidden>⏱</span>
+                                                                        {formatTimer(activeTimer.remaining)}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={cancelStepTimer}
+                                                                            className="ml-1 -mr-1 w-6 h-6 rounded-full hover:bg-white/20 transition-colors"
+                                                                            aria-label={`Cancel step ${i + 1} timer`}
+                                                                        >
+                                                                            ✕
+                                                                        </button>
                                                                     </span>
                                                                 )}
                                                             </div>

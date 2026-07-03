@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import { RecipeModal } from './RecipeModal';
 import { createMockRecipe, renderWithProviders, setupLocalStorage } from '../test/utils';
 import { STORAGE_KEYS } from '../constants/storage';
@@ -244,6 +244,40 @@ describe('RecipeModal', () => {
         );
         fireEvent.click(screen.getByTestId('recipe-modal-browse-contributor'));
         expect(onBrowseContributor).toHaveBeenCalledWith('Test User');
+    });
+
+    it('Cook tab offers a step timer for steps with a duration and counts down', () => {
+        vi.useFakeTimers();
+        try {
+            const recipe = createMockRecipe({
+                instructions: ['Mix ingredients', 'Bake for 30 minutes'],
+            });
+            renderWithProviders(<RecipeModal {...defaultProps} recipe={recipe} />);
+            fireEvent.click(screen.getByRole('tab', { name: 'Cook' }));
+            // No timer chip for a step without a parseable duration
+            expect(screen.queryByTestId('recipe-step-timer-start-0')).not.toBeInTheDocument();
+            fireEvent.click(screen.getByTestId('recipe-step-timer-start-1'));
+            expect(screen.getByTestId('recipe-step-timer-running-1')).toHaveTextContent('30:00');
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(screen.getByTestId('recipe-step-timer-running-1')).toHaveTextContent('29:59');
+            fireEvent.click(screen.getByRole('button', { name: /Cancel step 2 timer/i }));
+            expect(screen.queryByTestId('recipe-step-timer-running-1')).not.toBeInTheDocument();
+            expect(screen.getByTestId('recipe-step-timer-start-1')).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('shows a scaled-quantities indicator with reset when servings differ from the original', () => {
+        const recipe = createMockRecipe({ servings: 4 });
+        renderWithProviders(<RecipeModal {...defaultProps} recipe={recipe} />);
+        expect(screen.queryAllByTestId('recipe-scale-reset')).toHaveLength(0);
+        fireEvent.click(screen.getAllByRole('button', { name: 'Increase servings' })[0]!);
+        expect(screen.getAllByText(/Quantities scaled for 5/i).length).toBeGreaterThan(0);
+        fireEvent.click(screen.getAllByTestId('recipe-scale-reset')[0]!);
+        expect(screen.queryAllByTestId('recipe-scale-reset')).toHaveLength(0);
     });
 
     it('restores ingredient checkmarks from session storage when reopened', () => {
