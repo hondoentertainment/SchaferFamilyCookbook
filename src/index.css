@@ -351,6 +351,33 @@ textarea:focus-visible,
     position: static !important;
     top: auto !important;
   }
+
+  /* ===== Full-cookbook print view ===== */
+  .print-cookbook-content,
+  .print-cookbook-content * {
+    visibility: visible;
+  }
+
+  .print-cookbook-content {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .print-page-break {
+    break-before: page;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+  }
 }
 
 /* Respect reduced-motion: keep functionality, soften transitions */

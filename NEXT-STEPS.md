@@ -1,6 +1,33 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-03 (batch 14 deployed + ops)_
+_Last updated: 2026-07-03 (batch 15 in review + ops)_
+
+## In review (July 2026 — batch 15, PR #64)
+
+### Shared family ratings & notes — code complete, needs rules deploy
+
+- **Family-wide aggregate** — every client fetches all `userPrefs` docs (already world-readable by design) into a local cache (`familyPrefs:v1`); recipe averages, "Family Approved", "Cooked by N", and Family Notes now reflect the *whole family*, not just this device
+- **Notes + displayName sync** — `userPrefs` docs now carry `notes` (RecipeNote list) and `displayName`; merged on login like other prefs
+- **⚠️ Owner action after merge:** deploy updated Firestore rules (`firebase deploy --only firestore:rules` or the repo's rules deploy script) — until then, clients fall back gracefully (writes of the new fields are rejected, reads/local keep working)
+
+### Printable heirloom cookbook — shipped in PR
+
+- **Print the family cookbook** button (Recipes hero, desktop + mobile) → cover, table of contents, category chapters, one-recipe-per-block print layout; browser print dialog does PDF export
+
+### Recipe Cook tab (earlier commits on PR #64)
+
+- **Step timers** — "Start N-min timer" chips on instruction cards with countdown + toast
+- **Wake lock** — screen stays awake in Cook tab; re-acquired after tab switches
+- **Scaled-servings indicator** — "Quantities scaled for N — original serves M" + Reset
+
+### Owner-action ops checklist (needs credentials; cannot be done from CI)
+
+1. **Deploy Firestore rules** after merging PR #64 (see above)
+2. **Sentry** — set `VITE_SENTRY_DSN` on Vercel (+ optional source-map vars) — still flying blind on prod errors
+3. **Live gallery upload test** — family upload → pending → custodian approve → public (+ push)
+4. **Contributor migration** — `npm run normalize:contributors:dry-run` then live (needs `FIREBASE_SERVICE_ACCOUNT`)
+5. **Push notify secrets** — `NOTIFY_SECRET` + `VITE_NOTIFY_SECRET` (`npm run configure:notify -- --generate`)
+6. **Lighthouse review** — check the monthly CI artifact in `.lighthouseci/`
 
 ## Recently shipped (June 2026 — batch 14)
 
