@@ -10,8 +10,10 @@
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadLocalOpsEnv } from './load-local-env.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
+loadLocalOpsEnv(join(root, '..'));
 const phoneArg = process.argv[2]?.trim();
 
 function ok(msg) {

@@ -38,6 +38,12 @@ export interface SiteConfig {
     helpText: string;
     /** Short trust bullets shown under the sign-in card */
     trustStrip?: string[];
+    chooserTitle?: string;
+    chooserSubtitle?: string;
+    returningTitle?: string;
+    returningSubtitle?: string;
+    newTitle?: string;
+    newSubtitle?: string;
   };
 
   /** Copy for gallery section */
@@ -74,6 +80,17 @@ const defaultConfig: SiteConfig = {
     placeholder: 'Your name',
     cta: 'Continue',
     helpText: 'Need access?',
+    chooserTitle: "Who's cooking?",
+    chooserSubtitle: 'Sign in with your family name, or take a quick look around first.',
+    returningTitle: 'Welcome back',
+    returningSubtitle: 'Find your name to connect with recipes, photos, and notes already in the archive.',
+    newTitle: 'Join the family table',
+    newSubtitle: 'Choose a display name your family will recognize. You can browse recipes right away.',
+    trustStrip: [
+      'Save favorites & notes across devices',
+      'Link to recipes already in the archive',
+      'Share photos with the family gallery',
+    ],
   },
   galleryCopy: {
     title: 'Family Gallery',

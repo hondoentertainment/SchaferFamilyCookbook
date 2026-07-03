@@ -1,6 +1,18 @@
 # Recommended Next Steps
 
-_Last updated: 2026-06-26 (batch 12 — UX polish, contributor names, gallery ops)_
+_Last updated: 2026-06-26 (batch 14 — recipe page UX)_
+
+## Recently shipped (June 2026 — batch 14)
+
+### Recipe page UX — ✅ shipped
+
+- **Prev/next recipe navigation** — desktop chevrons + mobile Previous/Next row
+- **Cook tab** — step checkboxes, progress bar, step-by-step CTA, auto-scroll to instructions
+- **Mobile jump links** — Jump to ingredients / Jump to steps (Read + Cook modes)
+- **Ingredient & step checkoffs** — clear buttons; session persistence per recipe
+- **Contributor browse** — tap byline to filter Recipes by contributor
+- **Total time** — prep + cook combined in header meta when parseable
+- **Tab keyboard nav** — arrow keys on Read/Cook/Share tabs (does not conflict with recipe prev/next)
 
 ## Recently shipped (June 2026 — batch 12)
 

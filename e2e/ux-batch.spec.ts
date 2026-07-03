@@ -23,7 +23,7 @@ test.describe('UX batch (June 2026)', () => {
   test('A–Z lives under Recipes sub-nav on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Recipes', exact: true }).first().click();
-    const az = page.getByRole('navigation', { name: 'Recipe browsing navigation' }).getByRole('button', { name: 'A–Z', exact: true });
+    const az = page.getByRole('region', { name: 'Recipe browsing navigation' }).getByRole('button', { name: 'A–Z', exact: true });
     await expect(az).toBeVisible();
     await az.click();
     await expect(page.getByRole('heading', { name: /Archival Index/i })).toBeVisible({ timeout: 10000 });

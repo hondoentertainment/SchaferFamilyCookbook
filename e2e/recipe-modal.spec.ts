@@ -125,4 +125,24 @@ test.describe('Recipe modal', () => {
 
     await expect(page.getByRole('menuitem', { name: /^Print recipe$/ })).toBeVisible({ timeout: 2000 });
   });
+
+  test('Cook tab shows progress and step-by-step entry', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    await expect(recipeDetailsDialog(page)).toBeVisible();
+    await recipeDetailsDialog(page).getByRole('tab', { name: 'Cook' }).click();
+    await expect(recipeDetailsDialog(page).getByTestId('recipe-cook-tab-start')).toBeVisible();
+    await expect(recipeDetailsDialog(page).getByRole('progressbar')).toBeVisible();
+  });
+
+  test('browse contributor closes modal and filters recipes', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    await expect(recipeDetailsDialog(page)).toBeVisible();
+    const contributorBtn = recipeDetailsDialog(page).getByTestId('recipe-modal-browse-contributor');
+    await expect(contributorBtn).toBeVisible();
+    const contributorName = (await contributorBtn.textContent())?.replace(/^By\s+/i, '').trim();
+    expect(contributorName).toBeTruthy();
+    await contributorBtn.click();
+    await expect(recipeDetailsDialog(page)).not.toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(new RegExp(`From ${contributorName!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'s kitchen`, 'i'))).toBeVisible({ timeout: 5000 });
+  });
 });

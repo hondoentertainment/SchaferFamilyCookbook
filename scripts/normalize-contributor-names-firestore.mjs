@@ -4,11 +4,20 @@
  * Uses the same alias map as src/constants/taxonomy.ts.
  *
  * Usage:
- *   FIREBASE_WEB_CONFIG='{"apiKey":"...","projectId":"..."}' node scripts/normalize-contributor-names-firestore.mjs
- *   ... --dry-run   # preview only
+ *   npm run normalize:contributors:dry-run
+ *   npm run normalize:contributors
+ *
+ * Loads `.env.vercel.local` / `.env.local` when present (see scripts/load-local-env.mjs).
  */
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { loadLocalOpsEnv } from './load-local-env.mjs';
+import { firebaseConfigFromEnv } from './firebase-config-from-env.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+loadLocalOpsEnv(root);
 
 const dryRun = process.argv.includes('--dry-run');
 
@@ -36,17 +45,12 @@ function normalizeContributor(value) {
 }
 
 function loadFirebaseConfig() {
-    const raw = process.env.FIREBASE_WEB_CONFIG;
-    if (!raw?.trim()) {
-        console.error('Set FIREBASE_WEB_CONFIG to your Firebase web app config JSON.');
+    try {
+        return firebaseConfigFromEnv();
+    } catch (err) {
+        console.error(err instanceof Error ? err.message : err);
         process.exit(1);
     }
-    const c = JSON.parse(raw);
-    if (!c.apiKey || !c.projectId) {
-        console.error('FIREBASE_WEB_CONFIG must include apiKey and projectId.');
-        process.exit(1);
-    }
-    return c;
 }
 
 async function normalizeCollection(db, collectionName, field) {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { confirmCookbookLogin, waitForHomeMainHeading } from './fixtures';
+import { confirmCookbookLogin, openLoginNameEntry, waitForHomeMainHeading } from './fixtures';
 
 test.describe('Onboarding walkthrough', () => {
   test('shows chapter 1 after first login when tour not completed', async ({ page }) => {
@@ -10,6 +10,7 @@ test.describe('Onboarding walkthrough', () => {
     });
     await page.reload();
 
+    await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('OnboardingTester');
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
@@ -26,6 +27,7 @@ test.describe('Onboarding walkthrough', () => {
     });
     await page.reload();
 
+    await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('DeferTester');
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
@@ -37,6 +39,7 @@ test.describe('Onboarding walkthrough', () => {
     await page.evaluate(() => localStorage.removeItem('schafer_user'));
     await page.reload();
 
+    await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('DeferTester');
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
@@ -53,6 +56,7 @@ test.describe('Onboarding walkthrough', () => {
     });
     await page.reload();
 
+    await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('SkipTester');
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);
@@ -64,6 +68,7 @@ test.describe('Onboarding walkthrough', () => {
     await page.evaluate(() => localStorage.removeItem('schafer_user'));
     await page.reload();
 
+    await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('SkipTester');
     await page.getByRole('button', { name: /^continue$/i }).click();
     await confirmCookbookLogin(page);

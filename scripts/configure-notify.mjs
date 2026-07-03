@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+/**
+ * Audit (and optionally bootstrap) gallery approve / admin push notify secrets.
+ *
+ * Usage:
+ *   npm run configure:notify
+ *   npm run configure:notify -- --generate   # print a random secret to set on Vercel
+ */
+import { randomBytes } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadLocalOpsEnv } from './load-local-env.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+loadLocalOpsEnv(root);
+
+const generate = process.argv.includes('--generate');
+
+function listVercelEnv() {
+    const r = spawnSync('npx', ['vercel', 'env', 'ls'], { encoding: 'utf8', shell: true });
+    if (r.status !== 0) return null;
+    return r.stdout ?? '';
+}
+
+console.log('Push notify configuration\n');
+
+const hasClient = !!process.env.VITE_NOTIFY_SECRET?.trim();
+const hasServer = !!process.env.NOTIFY_SECRET?.trim();
+
+if (hasClient && hasServer) {
+    if (process.env.VITE_NOTIFY_SECRET.trim() === process.env.NOTIFY_SECRET.trim()) {
+        console.log('✅ NOTIFY_SECRET and VITE_NOTIFY_SECRET are set (matching values required)');
+    } else {
+        console.log('❌ NOTIFY_SECRET and VITE_NOTIFY_SECRET differ — they must be the same value');
+    }
+} else {
+    if (!hasServer) console.log('❌ NOTIFY_SECRET missing on server (Vercel → api/notify)');
+    if (!hasClient) console.log('❌ VITE_NOTIFY_SECRET missing in client bundle');
+}
+
+const fcm = [
+    'VITE_FIREBASE_MESSAGING_SENDER_ID',
+    'VITE_FIREBASE_APP_ID',
+    'VITE_FCM_VAPID_KEY',
+].filter((k) => !process.env[k]?.trim());
+
+if (fcm.length === 0) {
+    console.log('✅ FCM client vars present (device tokens can register)');
+} else {
+    console.log('\nℹ️  FCM optional (needed for push delivery to devices):');
+    for (const k of fcm) console.log(`   - ${k}`);
+    console.log('   See docs/FIREBASE_PUSH_NOTIFICATIONS.md');
+}
+
+if (generate) {
+    const secret = randomBytes(24).toString('base64url');
+    console.log('\n── Generated shared secret (set BOTH vars to this value) ──');
+    console.log(secret);
+    console.log('\nVercel CLI (production):');
+    console.log(`  npx vercel env add NOTIFY_SECRET production`);
+    console.log(`  npx vercel env add VITE_NOTIFY_SECRET production`);
+    console.log('\nThen redeploy production.');
+} else if (!hasClient || !hasServer) {
+    console.log('\nGenerate a secret: npm run configure:notify -- --generate');
+}
+
+const vercelList = listVercelEnv();
+if (vercelList) {
+    const names = new Set(
+        vercelList
+            .split('\n')
+            .map((line) => line.trim().split(/\s+/)[0])
+            .filter((name) => name && /^[A-Z0-9_]+$/.test(name)),
+    );
+    if (!names.has('NOTIFY_SECRET') || !names.has('VITE_NOTIFY_SECRET')) {
+        console.log('\nℹ️  Vercel env names missing notify vars — add after generating a secret.');
+    }
+}
+
+process.exit(hasClient && hasServer && process.env.VITE_NOTIFY_SECRET.trim() === process.env.NOTIFY_SECRET.trim() ? 0 : 1);

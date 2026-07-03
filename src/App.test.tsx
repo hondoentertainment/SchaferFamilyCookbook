@@ -4,6 +4,7 @@ import App from './App';
 import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithProviders } from './test/utils';
 
 function login(name = 'Alice') {
+    fireEvent.click(screen.getByTestId('login-intent-new'));
     fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: name } });
     fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
 }
@@ -24,10 +25,11 @@ describe('App', () => {
         localStorage.clear();
     });
 
-    it('should show login form when not authenticated', async () => {
+    it('should show login chooser when not authenticated', async () => {
         renderWithProviders(<App />);
         expect(await screen.findByText(/who's cooking/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/your name/i)).toBeInTheDocument();
+        expect(screen.getByTestId('login-intent-new')).toBeInTheDocument();
+        expect(screen.getByTestId('login-browse-guest')).toBeInTheDocument();
     });
 
     it('should login and land on Home tab when name is submitted', async () => {

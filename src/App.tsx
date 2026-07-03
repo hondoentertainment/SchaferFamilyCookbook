@@ -38,6 +38,13 @@ import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 import { fuzzyMatch } from './utils/fuzzySearch';
+import { LoginScreen } from './components/LoginScreen';
+import {
+    historyForContributor,
+    recipesForContributor,
+    resolveLoginAffiliation,
+    totalContributorContent,
+} from './utils/loginMatch';
 import { mergeWithDefaultRecipes } from './utils/mergeDefaultRecipes';
 import { validateGalleryFile } from './utils/galleryUpload';
 import {
@@ -701,6 +708,12 @@ const App: React.FC = () => {
     const handleLogout = () => {
         void signOutFirebaseCustodian();
         localStorage.removeItem('schafer_user');
+        try {
+            sessionStorage.removeItem(SESSION_KEYS.guestBrowse);
+        } catch {
+            /* ignore */
+        }
+        setIsGuestBrowse(false);
         setCurrentUser(null);
         setTab('Home');
     };
@@ -715,7 +728,13 @@ const App: React.FC = () => {
 
     const [custodianAuth, setCustodianAuth] = useState<CustodianAuthState>({ user: null, isAdmin: false });
 
-    const [loginName, setLoginName] = useState('');
+    const [isGuestBrowse, setIsGuestBrowse] = useState(() => {
+        try {
+            return sessionStorage.getItem(SESSION_KEYS.guestBrowse) === '1';
+        } catch {
+            return false;
+        }
+    });
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
     // Filters
@@ -1109,18 +1128,36 @@ const App: React.FC = () => {
     );
 
     const finalizeLogin = useCallback(
-        (trimmed: string) => {
-            const existing = contributors.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
-            const isSuper = isSuperAdmin(trimmed);
+        (rawName: string) => {
+            const trimmed = rawName.trim();
+            if (!trimmed) return;
+
+            const affiliation = resolveLoginAffiliation(
+                trimmed,
+                contributorsForDisplay,
+                recipes,
+                gallery,
+                trivia
+            );
+            const displayName = affiliation.canonicalName || trimmed;
+            const existing = affiliation.profile
+                ?? contributors.find((c) => c.name.toLowerCase() === displayName.toLowerCase());
+            const isSuper = isSuperAdmin(trimmed) || isSuperAdmin(displayName);
             const email = isSuper && trimmed.includes('@') ? trimmed : existing?.email;
             const u: UserProfile = {
                 id: existing?.id || 'u' + Date.now(),
-                name: existing?.name || trimmed,
-                picture: existing?.avatar ?? contributorAvatarUrlForName(trimmed),
-                role: isSuper ? 'admin' : existing?.role || (trimmed.toLowerCase() === 'admin' ? 'admin' : 'user'),
+                name: displayName,
+                picture: existing?.avatar ?? contributorAvatarUrlForName(displayName),
+                role: isSuper ? 'admin' : existing?.role || (displayName.toLowerCase() === 'admin' ? 'admin' : 'user'),
                 email,
             };
             localStorage.setItem('schafer_user', JSON.stringify(u));
+            try {
+                sessionStorage.removeItem(SESSION_KEYS.guestBrowse);
+            } catch {
+                /* ignore */
+            }
+            setIsGuestBrowse(false);
             setCurrentUser(u);
             setTab('Home');
             window.scrollTo({ top: 0, behavior: 'auto' });
@@ -1133,16 +1170,47 @@ const App: React.FC = () => {
                 }
                 if (!defer) setShowOnboarding(true);
             }
+            const archiveLinked = totalContributorContent(affiliation);
+            if (archiveLinked > 0) {
+                try {
+                    if (!sessionStorage.getItem(SESSION_KEYS.affiliationWelcomeShown)) {
+                        sessionStorage.setItem(SESSION_KEYS.affiliationWelcomeShown, '1');
+                        const recipeCount = affiliation.recipeCount;
+                        if (recipeCount > 0) {
+                            toast(
+                                `Welcome back, ${displayName.split(' ')[0]}! ${recipeCount} recipe${recipeCount !== 1 ? 's' : ''} in the archive — open Profile → My recipes to see yours.`,
+                                'success'
+                            );
+                        } else {
+                            toast(`Welcome back, ${displayName.split(' ')[0]}! Your family contributions are linked to this name.`, 'success');
+                        }
+                    }
+                } catch {
+                    /* sessionStorage blocked */
+                }
+            }
         },
-        [contributors]
+        [contributors, contributorsForDisplay, recipes, gallery, trivia, toast]
     );
 
-    const handleLoginSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmed = loginName.trim();
-        if (!trimmed) return;
-        finalizeLogin(trimmed);
-    };
+    const enterGuestBrowse = useCallback(() => {
+        const guest: UserProfile = {
+            id: 'guest-' + Date.now(),
+            name: 'Guest',
+            picture: PLACEHOLDER_AVATAR,
+            role: 'user',
+        };
+        try {
+            sessionStorage.setItem(SESSION_KEYS.guestBrowse, '1');
+        } catch {
+            /* ignore */
+        }
+        setIsGuestBrowse(true);
+        setCurrentUser(guest);
+        setTab('Recipes');
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        toast('Browsing as guest — sign in with your name to save favorites and link your recipes.', 'info');
+    }, [toast]);
 
     useEffect(() => {
         if (!currentUser) return;
@@ -1194,18 +1262,6 @@ const App: React.FC = () => {
     }, [recipes, search, category, contributor, selectedTag]);
 
     const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
-    const matchedContributor = useMemo(
-        () => contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase()) ?? null,
-        [contributors, loginName]
-    );
-    const loginPreviewAvatar = useMemo(() => {
-        const n = loginName.trim();
-        if (!n) return PLACEHOLDER_AVATAR;
-        return (
-            contributorsForDisplay.find(c => c.name.toLowerCase() === n.toLowerCase())?.avatar
-            ?? contributorAvatarUrlForName(n)
-        );
-    }, [contributorsForDisplay, loginName]);
     const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
     const isBrowsingFiltered = Boolean(search.trim()) || activeFilterCount > 0;
     const wasBrowsingFilteredRef = useRef(false);
@@ -1356,6 +1412,14 @@ const App: React.FC = () => {
         handleSetTab('Recipes');
     };
 
+    const handleBrowseContributorFromRecipe = (name: string) => {
+        setSelectedRecipe(null);
+        if (window.location.hash.match(/^#recipe\//)) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        handleSelectContributorFromHome(name);
+    };
+
     const handleRecipeClose = () => {
         setSelectedRecipe(null);
         if (window.location.hash.match(/^#recipe\//)) {
@@ -1397,98 +1461,47 @@ const App: React.FC = () => {
     };
 
     if (!currentUser) {
-        const quickFamily = contributorsForDisplay.slice(0, 6);
-        const lc = siteConfig.loginCopy;
-        const loginTitle = lc?.title ?? "Who's cooking?";
-        const loginSubtitle = lc?.subtitle ?? 'Pick your name to save favorites and notes.';
-        const loginPlaceholder = lc?.placeholder ?? 'Your name';
-        const loginCta = lc?.cta ?? 'Continue';
-        const loginHelp = lc?.helpText ?? 'Need access?';
         return (
-            <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6">
-                <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
-                    Skip to main content
-                </a>
-                <main id="main-content-login" role="main" aria-label="Sign in" tabIndex={-1} className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-md items-center justify-center py-[max(1rem,env(safe-area-inset-top,0px))]">
-                    <section className="heirloom-card w-full rounded-[2rem] border border-white/80 p-6 shadow-2xl dark:border-stone-800 sm:p-8">
-                        <div className="mb-8 text-center">
-                            <p className="text-xs font-black uppercase tracking-[0.3em] text-[#7A3F22] dark:text-orange-200">The Schafer Cookbook</p>
-                            <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100">{loginTitle}</h1>
-                            <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-stone-700 dark:text-stone-300">
-                                {loginSubtitle}
-                            </p>
-                            <p className="mx-auto mt-2 max-w-sm text-sm text-stone-500 dark:text-stone-400">
-                                Your display name is shared with the family — it&apos;s not a password.
-                            </p>
-                        </div>
-
-                        {quickFamily.length > 0 && (
-                            <div className="mb-6">
-                                <p className="mb-3 text-center text-sm font-black uppercase tracking-[0.2em] text-stone-700 dark:text-stone-200">Tap your name</p>
-                                <div className="grid grid-cols-3 gap-2.5">
-                                    {quickFamily.map((c) => (
-                                        <button
-                                            key={c.id}
-                                            type="button"
-                                            onClick={() => finalizeLogin(c.name.trim())}
-                                            className="group flex min-h-[5.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl border border-stone-200/80 bg-white/80 p-2.5 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A0522D]/35 hover:bg-[#FFF8EC] hover:shadow-md active:scale-[0.98] dark:border-stone-700 dark:bg-stone-900/70 dark:hover:bg-stone-800"
-                                            aria-label={`Sign in as ${c.name}`}
-                                        >
-                                            <img
-                                                src={c.avatar || contributorAvatarUrlForName(c.name)}
-                                                alt=""
-                                                onError={avatarOnError}
-                                                className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-md transition-transform group-hover:scale-105 dark:border-stone-700"
-                                            />
-                                            <span className="max-w-full truncate text-xs font-bold text-stone-800 dark:text-stone-100">{c.name.split(' ')[0]}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <form onSubmit={handleLoginSubmit} className="space-y-4">
-                            <div className="relative">
-                                <label htmlFor="login-name" className="sr-only">Your name</label>
-                                <input
-                                    id="login-name"
-                                    type="text"
-                                    placeholder={loginPlaceholder}
-                                    autoComplete="name"
-                                    className="min-h-14 w-full rounded-2xl border border-stone-300 bg-white/90 py-4 pl-16 pr-4 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] focus:bg-white dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-400 dark:focus:bg-stone-900"
-                                    value={loginName}
-                                    onChange={e => setLoginName(e.target.value)}
-                                />
-                                <img
-                                    src={loginPreviewAvatar}
-                                    alt=""
-                                    onError={avatarOnError}
-                                    className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-stone-200 object-cover dark:border-stone-700"
-                                    aria-hidden
-                                />
-                            </div>
-                            {loginName.trim() && matchedContributor && (
-                                <p className="rounded-2xl bg-emerald-50 px-4 py-2.5 text-center font-serif text-sm italic text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" role="status">
-                                    Welcome back, {matchedContributor.name.split(' ')[0]}.
-                                </p>
-                            )}
-                            <button
-                                type="submit"
-                                disabled={!loginName.trim()}
-                                className="w-full min-h-14 rounded-2xl bg-[#2D4635] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
-                            >
-                                {loginCta}
-                            </button>
-                            <p className="pt-1 text-center text-sm text-stone-700 dark:text-stone-300">
-                                {loginHelp}{' '}
-                                <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[#2D4635] dark:text-orange-200 dark:hover:text-emerald-100">Email an admin.</a>
-                            </p>
-                        </form>
-                    </section>
-                </main>
-            </div>
+            <LoginScreen
+                contributors={contributorsForDisplay}
+                recipes={recipes}
+                gallery={gallery}
+                trivia={trivia}
+                recipeCount={dbStats.recipeCount}
+                onLogin={finalizeLogin}
+                onBrowseGuest={enterGuestBrowse}
+            />
         );
     }
+
+    const guestSignInBanner = isGuestBrowse ? (
+        <div
+            role="status"
+            data-testid="guest-sign-in-banner"
+            className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-[#A0522D]/20 bg-[#FFF8EC] px-4 py-3 text-sm text-[#2D4635] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100"
+        >
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+                <p>
+                    Browsing as guest — sign in with your family name to save favorites and connect with your recipes.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        try {
+                            sessionStorage.removeItem(SESSION_KEYS.guestBrowse);
+                        } catch {
+                            /* ignore */
+                        }
+                        setIsGuestBrowse(false);
+                        setCurrentUser(null);
+                    }}
+                    className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                >
+                    Sign in
+                </button>
+            </div>
+        </div>
+    ) : null;
 
     // Gallery View
     if (tab === 'Gallery') {
@@ -1499,6 +1512,7 @@ const App: React.FC = () => {
                 </a>
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                {guestSignInBanner}
                 {secondarySubNav}
                 <main id="main-content" className="view-shell-wide view-stack max-w-7xl mx-auto" role="main" aria-label="Family Gallery" tabIndex={-1}>
                     <PageHeader
@@ -1828,6 +1842,7 @@ const App: React.FC = () => {
                             onOpenGroceryList={openGroceryFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
+                            onBrowseContributor={handleBrowseContributorFromRecipe}
                         />
                     </Suspense>
                 )}
@@ -1856,6 +1871,7 @@ const App: React.FC = () => {
                 </a>
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+                {guestSignInBanner}
                 {secondarySubNav}
                 <div id="main-content-trivia" tabIndex={-1} role="main" aria-label="Family trivia">
                 <Suspense fallback={<TabFallback />}>
@@ -1900,6 +1916,7 @@ const App: React.FC = () => {
                             onOpenGroceryList={openGroceryFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
+                            onBrowseContributor={handleBrowseContributorFromRecipe}
                         />
                     </Suspense>
                 )}
@@ -1926,6 +1943,7 @@ const App: React.FC = () => {
             </a>
             <OfflineBanner />
             <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+            {guestSignInBanner}
             {secondarySubNav}
 
             {isInitialLoad && (
@@ -1985,6 +2003,7 @@ const App: React.FC = () => {
                         onOpenGroceryList={openGroceryFromRecipe}
                         breadcrumbContext={{ Home: 'Home', Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
+                        onBrowseContributor={handleBrowseContributorFromRecipe}
                     />
                 </Suspense>
             )}
@@ -2716,8 +2735,10 @@ const App: React.FC = () => {
                     <ProfileView
                         currentUser={currentUser}
                         prefsSyncStatus={prefsSyncStatus}
-                        userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
-                        userHistory={history.filter(h => h.contributor === currentUser.name)}
+                        userRecipes={recipesForContributor(currentUser.name, recipes).filter(
+                            (r) => !defaultRecipeIds.has(r.id)
+                        )}
+                        userHistory={historyForContributor(currentUser.name, history)}
                         favoriteRecipes={recipes.filter(r => favoriteIds.has(r.id))}
                         recentRecipes={getRecentlyViewedEntries()
                             .map(e => recipes.find(r => r.id === e.id))

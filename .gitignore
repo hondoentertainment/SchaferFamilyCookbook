@@ -45,3 +45,4 @@ images_audit.csv
 # Claude/Cursor
 .claude/
 .env*.local
+.env.vercel.audit.tmp

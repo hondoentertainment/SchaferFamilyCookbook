@@ -33,4 +33,8 @@ export const SESSION_KEYS = {
   /** Home → Recipes: focus the browse search field once Recipes mounts */
   focusRecipeSearch: 'schafer_focus_recipe_search',
   adminPendingGalleryToastShown: 'schafer_admin_pending_gallery_toast_shown',
+  /** Session-only browse without persisting a family identity */
+  guestBrowse: 'schafer_guest_browse_session',
+  /** Shown once after login when archive recipes are linked to the user */
+  affiliationWelcomeShown: 'schafer_affiliation_welcome_shown',
 } as const;

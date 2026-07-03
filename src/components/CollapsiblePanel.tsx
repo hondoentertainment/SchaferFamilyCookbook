@@ -6,6 +6,9 @@ interface CollapsiblePanelProps {
     title: React.ReactNode;
     children: React.ReactNode;
     defaultOpen?: boolean;
+    /** When set, panel open state is controlled by the parent. */
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
     className?: string;
     panelClassName?: string;
 }
@@ -15,10 +18,19 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     title,
     children,
     defaultOpen = false,
+    open: openProp,
+    onOpenChange,
     className = '',
     panelClassName = '',
 }) => {
-    const [open, setOpen] = useState(defaultOpen);
+    const [internalOpen, setInternalOpen] = useState(defaultOpen);
+    const isControlled = openProp !== undefined;
+    const open = isControlled ? openProp : internalOpen;
+    const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+        const value = typeof next === 'function' ? next(open) : next;
+        if (!isControlled) setInternalOpen(value);
+        onOpenChange?.(value);
+    };
     const panelId = `${id}-panel`;
 
     return (

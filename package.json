@@ -43,6 +43,7 @@
     "seed:recipes": "node scripts/seed-recipes-firestore.mjs",
     "set:archive-phone": "node scripts/set-archive-phone.mjs",
     "configure:text-to-gallery": "node scripts/configure-text-to-gallery.mjs",
+    "configure:notify": "node scripts/configure-notify.mjs",
     "normalize:contributors": "node scripts/normalize-contributor-names-firestore.mjs",
     "normalize:contributors:dry-run": "node scripts/normalize-contributor-names-firestore.mjs --dry-run",
     "admin:set-claim": "node scripts/set-admin-claim.mjs"

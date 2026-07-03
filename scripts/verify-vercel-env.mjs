@@ -6,6 +6,7 @@
  * Does not print secret values — only reports missing keys.
  */
 import { spawnSync } from 'node:child_process';
+import { readFileSync, unlinkSync, existsSync } from 'node:fs';
 
 const REQUIRED_PRODUCTION = [
   'GEMINI_API_KEY',
@@ -44,6 +45,8 @@ const OPTIONAL_PUSH = [
   'VITE_FIREBASE_APP_ID',
   'VITE_FCM_VAPID_KEY',
 ];
+
+const OPTIONAL_APP_CHECK = ['VITE_FIREBASE_APP_CHECK_SITE_KEY'];
 
 const OPTIONAL_NOTIFY = ['VITE_NOTIFY_SECRET', 'NOTIFY_SECRET'];
 
@@ -95,6 +98,31 @@ if (missingTextToGallery.length === 0) {
 if (missingTextToGalleryRecommended.length > 0) {
   console.log('\nℹ️  Text-to-gallery (recommended):');
   for (const k of missingTextToGalleryRecommended) console.log(`   - ${k}`);
+}
+
+if (names.has('VITE_GALLERY_UPLOADS_ENABLED')) {
+  const auditPath = '.env.vercel.audit.tmp';
+  const pull = spawnSync('npx', ['vercel', 'env', 'pull', auditPath, '--environment=production', '--yes'], {
+    encoding: 'utf8',
+    shell: true,
+  });
+  if (pull.status === 0 && existsSync(auditPath)) {
+    try {
+      const auditRaw = readFileSync(auditPath, 'utf8');
+      unlinkSync(auditPath);
+      const match = auditRaw.match(/^VITE_GALLERY_UPLOADS_ENABLED=(.*)$/m);
+      const value = match?.[1]?.trim().replace(/^["']|["']$/g, '').replace(/\r$/, '');
+      if (value === 'true') {
+        console.log('\n✅ VITE_GALLERY_UPLOADS_ENABLED=true (gallery uploads enabled)');
+      } else {
+        console.log(`\n⚠️  VITE_GALLERY_UPLOADS_ENABLED is set but not "true" (got: ${value ?? 'empty'})`);
+      }
+    } catch {
+      console.log('\n✅ VITE_GALLERY_UPLOADS_ENABLED is set (in-app gallery uploads)');
+    }
+  } else {
+    console.log('\n✅ VITE_GALLERY_UPLOADS_ENABLED is set (in-app gallery uploads)');
+  }
 }
 
 const missingSentryBuild = SENTRY_BUILD.filter((k) => !names.has(k));

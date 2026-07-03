@@ -4,6 +4,18 @@ import { test as base } from '@playwright/test';
 const HOME_H1_TEXT_RE = /Good (morning|afternoon|evening)|Late night/i;
 
 /**
+ * Choose a login path on the welcome screen and wait for the name field.
+ */
+export async function openLoginNameEntry(
+  page: import('@playwright/test').Page,
+  intent: 'new' | 'returning' = 'new',
+): Promise<void> {
+  const testId = intent === 'returning' ? 'login-intent-returning' : 'login-intent-new';
+  await page.getByTestId(testId).click();
+  await page.getByPlaceholder(/your name/i).waitFor({ state: 'visible', timeout: 10000 });
+}
+
+/**
  * After submitting the login form, wait for Home or the first onboarding chapter.
  */
 export async function confirmCookbookLogin(page: import('@playwright/test').Page): Promise<void> {
@@ -55,6 +67,7 @@ export async function loginAsWithFirebaseEmulator(
   await page.evaluate(() => localStorage.setItem('schafer_onboarding_done', 'true'));
   await page.reload();
 
+  await openLoginNameEntry(page, 'new');
   await page.getByPlaceholder(/your name/i).fill(name);
   await page.getByRole('button', { name: /^continue$/i }).click();
   await confirmCookbookLogin(page);
@@ -81,6 +94,7 @@ export async function loginAs(
   });
   await page.reload();
 
+  await openLoginNameEntry(page, 'new');
   await page.getByPlaceholder(/your name/i).fill(name);
   await page.keyboard.press('Enter');
 
@@ -113,6 +127,7 @@ export async function loginAsHome(
   });
   await page.reload();
 
+  await openLoginNameEntry(page, 'new');
   await page.getByPlaceholder(/your name/i).fill(name);
   await page.keyboard.press('Enter');
 
