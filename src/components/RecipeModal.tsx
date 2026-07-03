@@ -25,6 +25,7 @@ import { addItems as addGroceryItems, getItems as getGroceryItems } from '../uti
 import { trackEvent } from '../services/analytics';
 import { CATEGORY_META, getTagLabel } from '../constants/taxonomy';
 import { getRememberedServings, setRememberedServings } from '../utils/recipeServingsMemory';
+import { FAMILY_PREFS_UPDATED_EVENT } from '../utils/familyPrefsCache';
 import {
     loadRecipeCookSession,
     saveRecipeCookSession,
@@ -64,6 +65,16 @@ const RatingSection: React.FC<{
     const [avg, setAvg] = useState(() => getAverageRating(recipeId));
     const [count, setCount] = useState(() => getRatingCount(recipeId));
     const [userRating, setUserRating] = useState(() => getUserRating(recipeId, currentUserName));
+
+    // Refresh aggregates when a new family-wide snapshot lands.
+    useEffect(() => {
+        const onFamilyUpdate = () => {
+            setAvg(getAverageRating(recipeId));
+            setCount(getRatingCount(recipeId));
+        };
+        window.addEventListener(FAMILY_PREFS_UPDATED_EVENT, onFamilyUpdate);
+        return () => window.removeEventListener(FAMILY_PREFS_UPDATED_EVENT, onFamilyUpdate);
+    }, [recipeId]);
 
     const handleRate = (stars: number) => {
         setRating(recipeId, currentUserName, stars);
@@ -432,6 +443,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             steps: [...checkedSteps],
         });
     }, [recipe?.id, checkedIngredients, checkedSteps]);
+
+    // Refresh header rating badges when a fresh family aggregate arrives.
+    useEffect(() => {
+        const onFamilyUpdate = () => setRatingsVersion((v) => v + 1);
+        window.addEventListener(FAMILY_PREFS_UPDATED_EVENT, onFamilyUpdate);
+        return () => window.removeEventListener(FAMILY_PREFS_UPDATED_EVENT, onFamilyUpdate);
+    }, []);
 
     // Arrow keys: prev/next recipe (skip when tablist is focused)
     useEffect(() => {

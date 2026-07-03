@@ -5,10 +5,13 @@ import {
     mergeCollections,
     mergeMealPlan,
     mergeGroceryList,
+    mergeNotes,
+    parseNotes,
     fetchRemotePrefs,
     writeRemotePrefs,
     createDebouncedWriter,
 } from './userPrefsSync';
+import type { RecipeNote } from '../types';
 import type { RecipeCollection } from '../types';
 import type { MealPlanEntry } from '../utils/mealPlan';
 import type { GroceryItem } from '../utils/groceryList';
@@ -319,6 +322,8 @@ describe('userPrefsSync', () => {
                 collections: [],
                 mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
                 groceryList: [],
+                notes: [],
+                displayName: undefined,
             });
         });
 
@@ -470,6 +475,66 @@ describe('userPrefsSync', () => {
 
             expect(setDocSpy).toHaveBeenCalledTimes(1);
             expect(ok).toBe(true);
+        });
+    });
+
+    describe('parseNotes', () => {
+        it('keeps well-formed notes and drops malformed entries', () => {
+            const parsed = parseNotes([
+                {
+                    id: 'n1',
+                    recipeId: 'r1',
+                    userName: 'Dawn',
+                    text: 'Use browned butter.',
+                    timestamp: '2026-06-01T00:00:00.000Z',
+                },
+                { id: 'n2', recipeId: 'r1', userName: 'Dawn', text: '   ', timestamp: 'x' },
+                { id: '', recipeId: 'r1', userName: 'Dawn', text: 'no id', timestamp: 'x' },
+                'not an object',
+                null,
+            ]);
+            expect(parsed).toHaveLength(1);
+            expect(parsed[0]?.id).toBe('n1');
+        });
+
+        it('returns an empty list for non-array input', () => {
+            expect(parseNotes({ n1: {} })).toEqual([]);
+            expect(parseNotes(undefined)).toEqual([]);
+        });
+    });
+
+    describe('mergeNotes', () => {
+        const note = (id: string, timestamp: string, text = 'tip'): RecipeNote => ({
+            id,
+            recipeId: 'r1',
+            userName: 'Dawn',
+            text,
+            timestamp,
+        });
+
+        it('unions notes from both sides by id', () => {
+            const merged = mergeNotes(
+                [note('a', '2026-06-01T00:00:00.000Z')],
+                [note('b', '2026-06-02T00:00:00.000Z')]
+            );
+            expect(merged.map((n) => n.id)).toEqual(['a', 'b']);
+        });
+
+        it('prefers the newer version on id collision', () => {
+            const merged = mergeNotes(
+                [note('a', '2026-06-01T00:00:00.000Z', 'old')],
+                [note('a', '2026-06-05T00:00:00.000Z', 'new')]
+            );
+            expect(merged).toHaveLength(1);
+            expect(merged[0]?.text).toBe('new');
+        });
+
+        it('sorts merged notes oldest-first', () => {
+            const merged = mergeNotes(
+                [note('later', '2026-06-09T00:00:00.000Z')],
+                [note('earlier', '2026-06-01T00:00:00.000Z')]
+            );
+            expect(merged.map((n) => n.id)).toEqual(['earlier', 'later']);
         });
     });
 });

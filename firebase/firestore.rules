@@ -71,14 +71,17 @@ service cloud.firestore {
      * allowed for everyone to unblock future social features (e.g. aggregate
      * ratings). Custodians (admin) retain full control for moderation.
      *
-     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, collections: list, mealPlan: list, groceryList: list, updatedAt: Timestamp }
+     * Shape: { favorites: string[], ratings: map<recipeId, int 1-5>, collections: list, mealPlan: list, groceryList: list, notes: list, displayName: string, updatedAt: Timestamp }
+     *
+     * `notes` and `displayName` power shared family notes/ratings: every client
+     * reads all userPrefs docs to build a family-wide aggregate.
      */
     match /userPrefs/{userId} {
       allow read: if true;
       allow create, update: if
         isAdmin() ||
         (
-          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'collections', 'mealPlan', 'groceryList', 'updatedAt']) &&
+          request.resource.data.keys().hasOnly(['favorites', 'ratings', 'collections', 'mealPlan', 'groceryList', 'notes', 'displayName', 'updatedAt']) &&
           (
             !('favorites' in request.resource.data) ||
             request.resource.data.favorites is list
@@ -98,6 +101,18 @@ service cloud.firestore {
           (
             !('groceryList' in request.resource.data) ||
             request.resource.data.groceryList is list
+          ) &&
+          (
+            !('notes' in request.resource.data) ||
+            request.resource.data.notes is list
+          ) &&
+          (
+            !('displayName' in request.resource.data) ||
+            (
+              request.resource.data.displayName is string &&
+              request.resource.data.displayName.size() > 0 &&
+              request.resource.data.displayName.size() <= 80
+            )
           )
         );
       allow delete: if isAdmin();

@@ -2,7 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { CloudArchive } from './db';
 import { Sentry } from '../monitoring/sentry';
-import type { RecipeCollection } from '../types';
+import type { RecipeCollection, RecipeNote } from '../types';
 import type { MealPlanEntry } from '../utils/mealPlan';
 import type { GroceryItem } from '../utils/groceryList';
 
@@ -42,8 +42,14 @@ export function notifyPrefsChanged(): void {
  *     collections: RecipeCollection[],
  *     mealPlan: MealPlanEntry[],
  *     groceryList: GroceryItem[],
+ *     notes: RecipeNote[],
+ *     displayName: string,
  *     updatedAt: Timestamp
  *   }
+ *
+ * `ratings`, `notes`, and `displayName` are world-readable and feed the
+ * family-wide aggregate (see services/familyPrefs.ts) so everyone sees
+ * everyone's ratings and recipe notes.
  *
  * Local utilities in `src/utils/favorites.ts`, `src/utils/ratings.ts`, and
  * `src/utils/collections.ts` remain the source of truth for component state;
@@ -59,6 +65,53 @@ export interface UserPrefsPayload {
     collections: RecipeCollection[];
     mealPlan?: MealPlanEntry[];
     groceryList?: GroceryItem[];
+    notes?: RecipeNote[];
+    displayName?: string;
+}
+
+export function parseNoteEntry(raw: unknown): RecipeNote | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const o = raw as Record<string, unknown>;
+    if (typeof o.id !== 'string' || !o.id) return null;
+    if (typeof o.recipeId !== 'string' || !o.recipeId) return null;
+    if (typeof o.userName !== 'string') return null;
+    if (typeof o.text !== 'string' || !o.text.trim()) return null;
+    if (typeof o.timestamp !== 'string') return null;
+    return {
+        id: o.id,
+        recipeId: o.recipeId,
+        userName: o.userName,
+        text: o.text,
+        timestamp: o.timestamp,
+    };
+}
+
+export function parseNotes(raw: unknown): RecipeNote[] {
+    if (!Array.isArray(raw)) return [];
+    const out: RecipeNote[] = [];
+    for (const item of raw) {
+        const note = parseNoteEntry(item);
+        if (note) out.push(note);
+    }
+    return out;
+}
+
+/** Union notes by id; on id collision prefer the newer timestamp. */
+export function mergeNotes(local: RecipeNote[], remote: RecipeNote[]): RecipeNote[] {
+    const byId = new Map<string, RecipeNote>();
+    for (const note of [...local, ...remote]) {
+        const existing = byId.get(note.id);
+        if (!existing) {
+            byId.set(note.id, note);
+            continue;
+        }
+        const noteTime = Date.parse(note.timestamp) || 0;
+        const existingTime = Date.parse(existing.timestamp) || 0;
+        if (noteTime > existingTime) byId.set(note.id, note);
+    }
+    return [...byId.values()].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 }
 
 function parseMealPlanEntry(raw: unknown): MealPlanEntry | null {
@@ -330,7 +383,12 @@ export async function fetchRemotePrefs(userId: string): Promise<UserPrefsPayload
         const collections = parseCollections(data?.collections);
         const mealPlan = parseMealPlan(data?.mealPlan);
         const groceryList = parseGroceryList(data?.groceryList);
-        return { favorites, ratings, collections, mealPlan, groceryList };
+        const notes = parseNotes(data?.notes);
+        const displayName =
+            typeof data?.displayName === 'string' && data.displayName.trim()
+                ? data.displayName.trim()
+                : undefined;
+        return { favorites, ratings, collections, mealPlan, groceryList, notes, displayName };
     } catch (err) {
         logSyncError('fetchRemotePrefs', err);
         return null;
@@ -349,18 +407,17 @@ export async function writeRemotePrefs(
     if (!db || !userId) return false;
     try {
         const ref = doc(db, 'userPrefs', userId);
-        await setDoc(
-            ref,
-            {
-                favorites: [...new Set(payload.favorites)],
-                ratings: payload.ratings,
-                collections: payload.collections,
-                mealPlan: payload.mealPlan ?? [],
-                groceryList: payload.groceryList ?? [],
-                updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-        );
+        const docPayload: Record<string, unknown> = {
+            favorites: [...new Set(payload.favorites)],
+            ratings: payload.ratings,
+            collections: payload.collections,
+            mealPlan: payload.mealPlan ?? [],
+            groceryList: payload.groceryList ?? [],
+            notes: payload.notes ?? [],
+            updatedAt: serverTimestamp(),
+        };
+        if (payload.displayName?.trim()) docPayload.displayName = payload.displayName.trim();
+        await setDoc(ref, docPayload, { merge: true });
         return true;
     } catch (err) {
         logSyncError('writeRemotePrefs', err);
@@ -395,6 +452,8 @@ export function mergePrefs(
         collections: mergeCollections(local.collections, remote.collections),
         mealPlan: mergeMealPlan(local.mealPlan ?? [], remote.mealPlan ?? []),
         groceryList: mergeGroceryList(local.groceryList ?? [], remote.groceryList ?? []),
+        notes: mergeNotes(local.notes ?? [], remote.notes ?? []),
+        displayName: local.displayName ?? remote.displayName,
     };
 }
 
