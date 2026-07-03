@@ -984,6 +984,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             <div
                                 role="tablist"
                                 aria-label="Recipe view mode"
+                                tabIndex={-1}
                                 onKeyDown={handleDetailTabKeyDown}
                                 className="inline-flex max-w-full flex-wrap gap-1 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)]/95 p-1 shadow-sm"
                             >
