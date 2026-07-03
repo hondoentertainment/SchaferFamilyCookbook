@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { confirmCookbookLogin, waitForHomeMainHeading } from './fixtures';
+import { confirmCookbookLogin, openLoginNameEntry, seedLocalOnlyMode, waitForHomeMainHeading } from './fixtures';
 
 const loginAndOpenTrivia = async (
   page: import('@playwright/test').Page,
@@ -20,8 +20,12 @@ const loginAndOpenTrivia = async (
       localStorage.setItem('schafer_db_trivia', JSON.stringify(seed));
     }
   }, triviaSeed);
+  // Preview builds may bootstrap Firebase from env; force the local data layer
+  // so the seeded trivia is what the quiz actually uses.
+  await seedLocalOnlyMode(page);
   await page.reload();
 
+  await openLoginNameEntry(page, 'new');
   await page.getByPlaceholder(/your name/i).fill('Alice');
   await page.getByRole('button', { name: /^continue$/i }).click();
   await confirmCookbookLogin(page);
@@ -35,7 +39,7 @@ test.describe('Trivia', () => {
     await loginAndOpenTrivia(page);
 
     await expect(
-      page.getByRole('heading', { name: /Family Heritage Quiz|The Quiz Archive is Empty/i }).first()
+      page.getByRole('heading', { name: /Test your legacy knowledge|The Quiz Archive is Empty/i }).first()
     ).toBeVisible({ timeout: 5000 });
   });
 
@@ -51,7 +55,8 @@ test.describe('Trivia', () => {
       },
     ]);
 
-    await expect(page.getByRole('heading', { name: /Family Heritage Quiz/i })).toBeVisible();
+    await expect(page.getByText(/Family Heritage Quiz/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Test your legacy knowledge/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Begin The Challenge/i })).toBeVisible();
 
     await page.getByRole('button', { name: /Begin The Challenge/i }).click();
@@ -106,7 +111,7 @@ test.describe('Trivia', () => {
   });
 
   test('family leaderboard panel is visible after finishing a quiz', async ({ page }) => {
-    // Offline/local mode  leaderboard should render its shell with an
+    // Offline/local mode ï¿½ leaderboard should render its shell with an
     // "Unavailable offline" message since Firebase isn't configured.
     await loginAndOpenTrivia(page, [
       {
@@ -129,7 +134,8 @@ test.describe('Trivia', () => {
     await expect(page.getByRole('heading', { name: /Legacy Challenge Complete/i })).toBeVisible({ timeout: 5000 });
     // Panel shell still present on the results screen.
     await expect(page.getByTestId('family-leaderboard')).toBeVisible();
-    // In offline mode we should also surface the unavailable copy.
+    // Expand the collapsed panel; offline mode surfaces the unavailable copy.
+    await page.getByTestId('family-leaderboard').getByRole('button', { name: /Family Leaderboard/i }).click();
     await expect(page.getByText(/Leaderboard unavailable offline/i)).toBeVisible();
   });
 

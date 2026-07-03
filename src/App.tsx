@@ -908,14 +908,14 @@ const App: React.FC = () => {
         const provider = CloudArchive.getProvider();
         if (provider !== 'firebase' || !CloudArchive.getFirebase()) {
             refreshLocalState().then(() => { setIsDataLoading(false); setIsInitialLoad(false); });
-            // Auto-seed trivia if empty in local mode
+            // Auto-seed trivia only when the local archive is pristine (empty).
+            // Topping up missing ids on every boot would resurrect questions an
+            // admin deliberately deleted (and stomp E2E test seeds).
             if (provider === 'local') {
                 CloudArchive.getTrivia()
                     .then(current => {
-                        const existingIds = new Set(current.map((t) => t.id));
-                        const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
-                        if (missing.length === 0) return;
-                        return Promise.all(missing.map(t => CloudArchive.upsertTrivia(t as Trivia)))
+                        if (current.length > 0) return;
+                        return Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as Trivia)))
                             .then(refreshLocalState);
                     })
                     .catch(() => toast(CLOUD_ERROR_MSG, 'error'));
