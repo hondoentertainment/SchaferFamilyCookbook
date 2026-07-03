@@ -173,7 +173,9 @@ describe('ProfileView', () => {
         await waitFor(() => {
             expect(mockOnUpdateProfile).toHaveBeenCalledWith('Updated Name', expect.any(String));
         });
-        expect(screen.getByTestId('profile-save-announcement')).toHaveTextContent('Display name updated');
+        await waitFor(() => {
+            expect(screen.getByTestId('profile-save-announcement')).toHaveTextContent('Display name updated');
+        });
     });
 
     it('should cancel inline name edit on Escape without calling onUpdateProfile', async () => {
