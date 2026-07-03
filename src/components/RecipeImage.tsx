@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Recipe } from '../types';
 import { CATEGORY_META } from '../constants/taxonomy';
-import { isValidRecipeImageUrl, isCookbookCoverImage } from '../utils/recipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard } from '../utils/recipeImage';
 
 interface RecipeImageFallbackProps {
     category: Recipe['category'];
@@ -72,9 +72,23 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
 }) => {
     const [broken, setBroken] = useState(false);
     const [loaded, setLoaded] = useState(false);
+    const imgRef = useRef<HTMLImageElement>(null);
 
     const hasValidImage = isValidRecipeImageUrl(recipe.image) && !broken && !preferCategoryFallback;
     const isCover = isCookbookCoverImage(recipe);
+    const isScan = isHandwrittenRecipeCard(recipe);
+
+    useEffect(() => {
+        setBroken(false);
+        setLoaded(false);
+    }, [recipe.image]);
+
+    useEffect(() => {
+        const img = imgRef.current;
+        if (img?.complete && img.naturalWidth > 0) {
+            setLoaded(true);
+        }
+    }, [recipe.image]);
 
     const handleError = () => {
         setBroken(true);
@@ -82,13 +96,21 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
     };
 
     if (!hasValidImage) {
-        return <RecipeImageFallback category={recipe.category} compact={compact} label={fallbackLabel ?? (preferCategoryFallback ? 'Recipe card' : undefined)} />;
+        return (
+            <div className="absolute inset-0">
+                <RecipeImageFallback category={recipe.category} compact={compact} label={fallbackLabel ?? (preferCategoryFallback ? 'Recipe card' : undefined)} />
+            </div>
+        );
     }
 
-    const fitClasses = isCover ? 'object-contain p-2.5 sm:p-3' : 'object-cover';
+    const fitClasses = isCover
+        ? 'object-contain p-2.5 sm:p-3'
+        : isScan
+          ? 'object-contain object-center bg-stone-100 dark:bg-stone-900'
+          : 'object-cover';
 
     return (
-        <>
+        <div className="absolute inset-0">
             <div className={isCover ? 'absolute inset-0 bg-[#203629]' : 'absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300'} />
             {!loaded && (
                 <div className="absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 animate-pulse" />
@@ -97,6 +119,7 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
                 <div className="pointer-events-none absolute inset-2 rounded-[1.35rem] ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]" aria-hidden="true" />
             )}
             <img
+                ref={imgRef}
                 src={recipe.image}
                 width={800}
                 height={600}
@@ -109,7 +132,7 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
                 onLoad={() => setLoaded(true)}
                 onError={handleError}
             />
-        </>
+        </div>
     );
 };
 
