@@ -114,8 +114,10 @@ if (names.has('VITE_GALLERY_UPLOADS_ENABLED')) {
       const value = match?.[1]?.trim().replace(/^["']|["']$/g, '').replace(/\r$/, '');
       if (value === 'true') {
         console.log('\n✅ VITE_GALLERY_UPLOADS_ENABLED=true (gallery uploads enabled)');
+      } else if (!value) {
+        console.log('\n✅ VITE_GALLERY_UPLOADS_ENABLED is set on Vercel (encrypted — value not visible via env pull; redeploy after changes)');
       } else {
-        console.log(`\n⚠️  VITE_GALLERY_UPLOADS_ENABLED is set but not "true" (got: ${value ?? 'empty'})`);
+        console.log(`\n⚠️  VITE_GALLERY_UPLOADS_ENABLED is set but not "true" (got: ${value})`);
       }
     } catch {
       console.log('\n✅ VITE_GALLERY_UPLOADS_ENABLED is set (in-app gallery uploads)');

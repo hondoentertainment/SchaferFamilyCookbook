@@ -44,6 +44,8 @@
     "set:archive-phone": "node scripts/set-archive-phone.mjs",
     "configure:text-to-gallery": "node scripts/configure-text-to-gallery.mjs",
     "configure:notify": "node scripts/configure-notify.mjs",
+    "fix:gallery-uploads-env": "node scripts/fix-gallery-uploads-env.mjs",
+    "vercel:env:pull": "vercel env pull .env.vercel.local --environment=production --yes",
     "normalize:contributors": "node scripts/normalize-contributor-names-firestore.mjs",
     "normalize:contributors:dry-run": "node scripts/normalize-contributor-names-firestore.mjs --dry-run",
     "admin:set-claim": "node scripts/set-admin-claim.mjs"

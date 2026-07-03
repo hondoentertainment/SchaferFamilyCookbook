@@ -22,7 +22,7 @@ export function loadEnvFiles(...paths) {
             ) {
                 value = value.slice(1, -1);
             }
-            value = value.replace(/\r$/, '');
+            value = value.replace(/\r\n/g, '').replace(/\n/g, '').replace(/\r$/, '');
             if (process.env[key] === undefined || process.env[key] === '') {
                 process.env[key] = value;
             }

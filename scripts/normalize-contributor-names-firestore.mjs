@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 /**
  * Normalize contributor display names in Firestore (recipes, gallery, trivia, contributors).
- * Uses the same alias map as src/constants/taxonomy.ts.
+ * Uses firebase-admin (FIREBASE_SERVICE_ACCOUNT) — same as seed-recipes.
  *
  * Usage:
  *   npm run normalize:contributors:dry-run
  *   npm run normalize:contributors
  *
- * Loads `.env.vercel.local` / `.env.local` when present (see scripts/load-local-env.mjs).
+ * Loads `.env.vercel.local` when present. Encrypted Vercel vars may be empty locally;
+ * export FIREBASE_SERVICE_ACCOUNT from Firebase Console if needed.
  */
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import admin from 'firebase-admin';
 import { loadLocalOpsEnv } from './load-local-env.mjs';
-import { firebaseConfigFromEnv } from './firebase-config-from-env.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 loadLocalOpsEnv(root);
@@ -44,17 +43,28 @@ function normalizeContributor(value) {
     return ALIASES[normalizeKey(name)] ?? name;
 }
 
-function loadFirebaseConfig() {
-    try {
-        return firebaseConfigFromEnv();
-    } catch (err) {
-        console.error(err instanceof Error ? err.message : err);
+function initAdmin() {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
+    if (!raw) {
+        console.error('Set FIREBASE_SERVICE_ACCOUNT (Firebase Console → service account JSON).');
+        console.error('Tip: npm run vercel:env:pull then paste into .env.local if Vercel pull omits encrypted values.');
         process.exit(1);
     }
+    let serviceAccount;
+    try {
+        serviceAccount = JSON.parse(raw);
+    } catch {
+        console.error('FIREBASE_SERVICE_ACCOUNT must be valid JSON');
+        process.exit(1);
+    }
+    if (admin.apps.length === 0) {
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    }
+    return admin.firestore();
 }
 
 async function normalizeCollection(db, collectionName, field) {
-    const snapshot = await getDocs(collection(db, collectionName));
+    const snapshot = await db.collection(collectionName).get();
     let updated = 0;
     for (const itemDoc of snapshot.docs) {
         const item = itemDoc.data();
@@ -64,7 +74,7 @@ async function normalizeCollection(db, collectionName, field) {
         if (next === current) continue;
         console.log(`  ${collectionName}/${itemDoc.id}: "${current}" → "${next}"`);
         if (!dryRun) {
-            await updateDoc(doc(db, collectionName, itemDoc.id), { [field]: next });
+            await itemDoc.ref.update({ [field]: next });
         }
         updated++;
     }
@@ -72,7 +82,7 @@ async function normalizeCollection(db, collectionName, field) {
 }
 
 async function dedupeContributors(db) {
-    const snapshot = await getDocs(collection(db, 'contributors'));
+    const snapshot = await db.collection('contributors').get();
     const byCanonical = new Map();
     let removed = 0;
     for (const itemDoc of snapshot.docs) {
@@ -83,14 +93,14 @@ async function dedupeContributors(db) {
         if (!key) continue;
         if (byCanonical.has(key)) {
             console.log(`  contributors/${itemDoc.id}: remove duplicate "${current}"`);
-            if (!dryRun) await deleteDoc(doc(db, 'contributors', itemDoc.id));
+            if (!dryRun) await itemDoc.ref.delete();
             removed++;
             continue;
         }
         byCanonical.set(key, itemDoc.id);
         if (canonical !== current) {
             console.log(`  contributors/${itemDoc.id}: "${current}" → "${canonical}"`);
-            if (!dryRun) await updateDoc(doc(db, 'contributors', itemDoc.id), { name: canonical });
+            if (!dryRun) await itemDoc.ref.update({ name: canonical });
         }
     }
     return removed;
@@ -98,8 +108,7 @@ async function dedupeContributors(db) {
 
 async function main() {
     console.log(dryRun ? '🔍 Dry run — no writes' : '🔄 Normalizing contributor names in Firestore…');
-    const app = initializeApp(loadFirebaseConfig());
-    const db = getFirestore(app);
+    const db = initAdmin();
 
     const targets = [
         { name: 'recipes', field: 'contributor' },
