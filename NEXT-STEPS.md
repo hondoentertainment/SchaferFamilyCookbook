@@ -1,6 +1,6 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-04 (batch 15 — next-steps automation)_
+_Last updated: 2026-07-04 (batch 15 — ops run complete)_
 
 ## Recently shipped (July 2026 — batch 15)
 
@@ -10,7 +10,8 @@ _Last updated: 2026-07-04 (batch 15 — next-steps automation)_
 - **`npm run next-steps -- --apply`** — also applies notify secrets (and Sentry DSN if in `.env.local`)
 - **`npm run configure:sentry`** — audit + optional `--apply` for `VITE_SENTRY_DSN`
 - **`configure:notify --apply`** — auto-set matching `NOTIFY_SECRET` + `VITE_NOTIFY_SECRET` on Vercel
-- **E2E** — gallery upload→approve flow, recipe card photo visibility (opacity), returning login
+- **E2E** — gallery upload→approve flow (`e2e/gallery-flow.spec.ts`), recipe card photo visibility, returning login
+- **E2E fix** — `goToAdminTools()` expands the Profile admin collapsible before interacting with subtabs
 
 ### Recipe card photos — ✅ shipped (batch 15)
 
@@ -36,7 +37,7 @@ _Last updated: 2026-07-04 (batch 15 — next-steps automation)_
 - [x] **Vercel `VITE_GALLERY_UPLOADS_ENABLED=true`** — set; smoke confirms upload bundle
 - [x] **Gallery upload E2E** — upload → pending → admin approve → public (`e2e/gallery-flow.spec.ts`)
 - [ ] **Live upload test on production** — manual once against Firebase-backed prod (not local-only E2E)
-- [ ] **Firestore contributor migration** — needs `FIREBASE_SERVICE_ACCOUNT` in `.env.local`
+- [ ] **Firestore contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` (Vercel pull omits encrypted values)
 - [x] **Push notify secrets** — applied via `npm run configure:notify -- --apply` (redeploy to activate)
 - [ ] **Sentry** — add DSN to `.env.local`, then `npm run configure:sentry -- --apply`
 - [ ] **FCM (optional)** — messaging sender ID, app ID, VAPID key
