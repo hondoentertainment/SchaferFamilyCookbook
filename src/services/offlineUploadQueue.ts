@@ -149,23 +149,25 @@ export async function removeFromQueue(id: string): Promise<void> {
  * Returns counts of processed and failed entries.
  */
 export async function processPendingUploads(
-    uploadFn: (file: File, caption: string, contributor: string) => Promise<void>
-): Promise<{ processed: number; failed: number }> {
+    uploadFn: (file: File, caption: string, contributor: string) => Promise<string | void>
+): Promise<{ processed: number; failed: number; uploadedIds: string[] }> {
     const pending = await getPendingUploads();
     let processed = 0;
     let failed = 0;
+    const uploadedIds: string[] = [];
 
     for (const entry of pending) {
         try {
             const file = new File([entry.file], entry.fileName, { type: entry.mimeType });
-            await uploadFn(file, entry.caption, entry.contributor);
+            const id = await uploadFn(file, entry.caption, entry.contributor);
             await removeFromQueue(entry.id);
             processed++;
+            if (typeof id === 'string' && id) uploadedIds.push(id);
         } catch (err) {
             console.warn(`[offlineUploadQueue] failed to process entry ${entry.id}:`, err);
             failed++;
         }
     }
 
-    return { processed, failed };
+    return { processed, failed, uploadedIds };
 }

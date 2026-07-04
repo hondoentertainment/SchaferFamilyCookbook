@@ -7,11 +7,16 @@ const root = path.resolve(__dirname, '..');
 const recipesPath = path.join(root, 'src', 'data', 'recipes.json');
 
 const contributorAliases = new Map([
-  ['dawn schafer tessmer', 'Dawn (Schafer) Tessmer'],
-  ['dawn (schafer) tessmer', 'Dawn (Schafer) Tessmer'],
-  ['dawn', 'Dawn (Schafer) Tessmer'],
+  ['dawn schafer tessmer', 'Dawn'],
+  ['dawn (schafer) tessmer', 'Dawn'],
+  ['dawn', 'Dawn'],
+  ['harriet oehler schafer', 'Harriet'],
+  ['harriet (oehler) schafer', 'Harriet'],
+  ['harriet', 'Harriet'],
   ['jana schafer', 'Jana'],
   ['robin henderson', 'Robin'],
+  ['wren', 'Wren'],
+  ['wren feyereisen', 'Wren'],
 ]);
 
 const contributorLabelsAsTags = new Map([

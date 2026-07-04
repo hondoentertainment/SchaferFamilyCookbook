@@ -21,10 +21,20 @@ export const STORAGE_KEYS = {
   highContrast: 'schafer_high_contrast',
   onboardingDone: 'schafer_onboarding_done',
   activityFeed: 'schafer_activity_feed',
+  storyDraft: 'schafer_story_draft',
+  galleryUploadBannerDismissed: 'schafer_gallery_upload_banner_dismissed',
+  familySubNavHintDismissed: 'schafer_family_subnav_hint_dismissed',
 } as const;
 
 /** sessionStorage keys — cleared when the browser tab ends */
 export const SESSION_KEYS = {
   /** User chose "Resume later" on the onboarding tour; skip tour until next tab session */
   onboardingDefer: 'schafer_onboarding_defer_session',
+  /** Home → Recipes: focus the browse search field once Recipes mounts */
+  focusRecipeSearch: 'schafer_focus_recipe_search',
+  adminPendingGalleryToastShown: 'schafer_admin_pending_gallery_toast_shown',
+  /** Session-only browse without persisting a family identity */
+  guestBrowse: 'schafer_guest_browse_session',
+  /** Shown once after login when archive recipes are linked to the user */
+  affiliationWelcomeShown: 'schafer_affiliation_welcome_shown',
 } as const;

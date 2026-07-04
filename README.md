@@ -168,7 +168,7 @@ For quota-safe batch runs (resumable, missing-only), see IMAGE_GENERATION_STRATE
 
 - **Login:** Name-based (no password). Identity stored in localStorage.
 - **Roles:** `user` (read) and `admin` (full CRUD, AI tools). Super-admin (Kyle) can manage permissions.
-- **Cloud prefs:** When Firebase is configured, favorites, ratings, and **collections** sync to Firestore **`userPrefs/{userId}`** via `src/services/userPrefsSync.ts` (debounced writes; merge on login).
+- **Cloud prefs:** When Firebase is configured, favorites, ratings, **collections**, and **meal plans** sync to Firestore **`userPrefs/{userId}`** via `src/services/userPrefsSync.ts` (debounced writes; merge on login).
 - Suitable for family/internal use; document limitations in public deployments.
 
 ## Testing

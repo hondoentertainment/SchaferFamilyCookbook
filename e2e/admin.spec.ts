@@ -204,6 +204,64 @@ test.describe('Admin (admin user)', () => {
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
   });
 
+  test('admin can approve a pending gallery submission', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'schafer_db_gallery',
+        JSON.stringify([
+          {
+            id: 'g-pending-1',
+            type: 'image',
+            url: 'https://via.placeholder.com/400x300',
+            caption: 'Awaiting review',
+            contributor: 'Alice',
+            status: 'pending',
+            created_at: '2020-06-01T00:00:00.000Z',
+          },
+        ])
+      );
+    });
+    await page.reload();
+    await goToAdminTools(page);
+    await page.getByRole('tab', { name: /Gallery/i }).click();
+
+    await page.getByTestId('gallery-approve-g-pending-1').click();
+    await expect(page.getByText(/Memory approved/i)).toBeVisible({ timeout: 5000 });
+
+    const stored = await page.evaluate(() => localStorage.getItem('schafer_db_gallery'));
+    expect(stored).toContain('"status":"approved"');
+  });
+
+  test('admin can decline a pending gallery submission', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'schafer_db_gallery',
+        JSON.stringify([
+          {
+            id: 'g-pending-decline',
+            type: 'image',
+            url: 'https://via.placeholder.com/400x300',
+            caption: 'Reject me',
+            contributor: 'Alice',
+            status: 'pending',
+            created_at: '2020-06-01T00:00:00.000Z',
+          },
+        ])
+      );
+    });
+    await page.reload();
+    await goToAdminTools(page);
+    await page.getByRole('tab', { name: /Gallery/i }).click();
+
+    await page.getByTestId('gallery-decline-g-pending-decline').click();
+    await expect(page.getByRole('dialog', { name: /Decline Submission/i })).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: /^Decline$/i }).click();
+
+    await expect(page.getByText(/Submission declined/i)).toBeVisible({ timeout: 5000 });
+    const stored = await page.evaluate(() => localStorage.getItem('schafer_db_gallery'));
+    expect(stored).not.toContain('g-pending-decline');
+  });
+
   test('featured recipes appear on Recipes tab and open the recipe modal', async ({ page }) => {
     // Seed a featured recipe directly so the test is deterministic and does not
     // depend on the admin form persistence path (covered by AdminView unit tests).
@@ -268,6 +326,11 @@ test.describe('Admin (admin user)', () => {
             ingredients: ['1 cup flour'],
             instructions: ['Bake'],
             image: 'https://via.placeholder.com/600x400',
+            // Mark as an approved actual photo so the Manage Recipes row shows
+            // an "Edit" action (an unverified image would render "Replace Actual"
+            // via getRecipeImageStatus().needsCreatorActual).
+            imageSource: 'upload',
+            imageApprovalStatus: 'approved',
             created_at: '2025-02-01T00:00:00.000Z',
           },
         ])

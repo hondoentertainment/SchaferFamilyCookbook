@@ -1,57 +1,74 @@
 # Recommended Next Steps
 
-_Last updated: 2026-05-17_
+_Last updated: 2026-07-03 (batch 14 deployed + ops)_
 
-## Status of the previous recommendation
+## Recently shipped (June 2026 — batch 14)
 
-The three priority tracks below were assessed against the live codebase. P1 and
-P2 are now implemented on this branch; P3 turned out to be already done.
+### Recipe page UX — ✅ shipped
 
-### P1 — Vercel API surface — ✅ shipped
+- **Prev/next recipe navigation** — desktop chevrons + mobile Previous/Next row
+- **Cook tab** — step checkboxes, progress bar, step-by-step CTA, auto-scroll to instructions
+- **Mobile jump links** — Jump to ingredients / Jump to steps (Read + Cook modes)
+- **Ingredient & step checkoffs** — clear buttons; session persistence per recipe
+- **Contributor browse** — tap byline to filter Recipes by contributor
+- **Total time** — prep + cook combined in header meta when parseable
+- **Tab keyboard nav** — arrow keys on Read/Cook/Share tabs (does not conflict with recipe prev/next)
 
-- `/api/ping` upgraded from a bare `ok` string to a JSON diagnostics route that
-  reports whether the bundled recipe seed loaded (`recipeSeedCount`). This is the
-  exact surface that broke repeatedly during Vercel bundling work.
-- In-process handler tests added: `api/ping.test.ts`, `api/share.test.ts`, and
-  `api/recipes.seed.test.ts` (the seed-sync regression guard). They run in
-  `npm run test:run`, so CI now exercises the serverless handlers.
-- `scripts/smoke-prod.mjs` now also hits `/api/ping` and asserts the deployed
-  function loaded its seed.
+## Recently shipped (June 2026 — batch 12)
 
-### P2 — Meal Plan — ✅ shipped
+### UX polish — ✅ shipped
 
-- `src/utils/mealPlan.ts` — localStorage-backed weekly plan with date helpers,
-  add/remove, and range queries. Fully unit-tested.
-- `src/components/MealPlanView.tsx` — seven-day week view with week navigation,
-  a per-day recipe picker, and "Add this week to Grocery List" which reuses the
-  existing grocery flow.
-- Recipe modal overflow menu gained an "Add to meal plan" day picker.
-- Reachable from the Grocery List view; nav highlighting wired through Header
-  and BottomNav. One Playwright spec added (`e2e/meal-plan.spec.ts`).
+- **Gallery filter chip** — sticky “Showing X’s photos · Clear” when filtered
+- **Upload-unavailable banner** — until `VITE_GALLERY_UPLOADS_ENABLED=true`
+- **Recipe card CTA hierarchy** — Start Cooking primary; View secondary
+- **Admin pending toast** — once per session when gallery items await approval
+- **Mobile 5-tab nav** — A–Z under Recipes sub-nav
+- **Family sub-nav hint** — dismissible first-visit banner
+- **Handwritten-card grid fallback** — category art in grid; full card in modal
+- **Profile sync copy** — plain-language cloud sync message
 
-### P3 — Discoverability & accessibility — ✅ already implemented
+### Contributor normalization — ✅ shipped
 
-A code review found these were already in place, so no change was needed:
+- **Canonical names** — Dawn, Harriet, Wren (merged aliases)
+- **Gallery filter dedupe** — one entry per contributor in dropdown
+- **Firestore migration script** — `npm run normalize:contributors:dry-run` then `npm run normalize:contributors`
 
-- **Ingredient search** — recipe search already matches ingredient text.
-- **Admin form labels** — all Admin inputs already have `htmlFor`/`id`.
-- **A–Z scroll spy** — `AlphabeticalIndex` already uses an `IntersectionObserver`
-  with `aria-current`.
-- **`aria-current` on the active tab** — already set in Header and BottomNav.
+### Gallery approve push — ✅ shipped (when FCM configured)
 
-The `AUDIT-*.md` files predate this work and are stale on these points.
+- **Targeted notify** — `/api/notify` accepts `userName`; admin approve triggers push to uploader
+- Requires `NOTIFY_SECRET`, `VITE_NOTIFY_SECRET`, and FCM tokens in `fcm_tokens`
 
-## What to do next
+### Batch 11 (prior)
 
-1. **Meal Plan cloud sync** — the plan is local-only. Mirror the optional
-   `userPrefs` Firestore sync used by favorites so a plan follows a user across
-   devices. _Effort: M._
-2. **Featured recipes** — admin-curated highlights on the Recipes tab. _Effort: S._
-3. **Family Story CMS** — make the static narrative editable in Admin. _Effort: L._
+- Gallery decline, contributor filter, pending admin badge, ops scripts
+
+## Ops status
+
+- [x] Firestore rules (gallery create + moderation)
+- [x] **Firebase Storage** — enabled; rules deploy via `npm run verify:storage`
+- [x] **Vercel `VITE_GALLERY_UPLOADS_ENABLED=true`** — set on Vercel; production redeployed 2026-07-03 (`npm run smoke:prod` confirms upload bundle)
+- [ ] **Live upload test** — family upload → pending → custodian approve → public (+ optional push)
+- [ ] **Firestore contributor migration** — `npm run normalize:contributors:dry-run` then live (needs `FIREBASE_SERVICE_ACCOUNT` locally — not in `vercel env pull`)
+- [ ] **Sentry** — `VITE_SENTRY_DSN` on Vercel (+ optional source-map vars)
+- [ ] **Push notify secrets** — `NOTIFY_SECRET` + `VITE_NOTIFY_SECRET` (`npm run configure:notify -- --generate`)
+- [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY`
+- [ ] **FCM (optional)** — `VITE_FCM_VAPID_KEY`, messaging sender ID, app ID
+- [ ] **Lighthouse review** — CI artifact in `.lighthouseci/` (2 runs per preset)
+
+Run `npm run verify:ops` after Vercel or Firebase console changes.
+
+### Ops scripts (batch 14)
+
+| Script | Purpose |
+|--------|---------|
+| `npm run verify:ops` | Vercel env audit + Storage check |
+| `npm run verify:vercel-env` | Deep check incl. gallery uploads flag |
+| `npm run fix:gallery-uploads-env` | Re-set `VITE_GALLERY_UPLOADS_ENABLED=true` on production |
+| `npm run configure:notify` | Audit/generate notify + FCM secrets |
+| `npm run normalize:contributors:dry-run` | Preview Firestore name merges (admin SDK) |
+| `npm run smoke:prod` | Post-deploy health + gallery bundle smoke |
 
 ## Explicitly deferred
 
-- **Real auth (OAuth/email)** — only worth it if cross-device identity for
-  non-custodian users becomes a real need.
-- **Explicit offline recipe cache for Cook Mode** — PWA runtime caching already
-  covers the common case.
+- Real OAuth for guests
+- Gamification, multi-tenant, full offline-first sync

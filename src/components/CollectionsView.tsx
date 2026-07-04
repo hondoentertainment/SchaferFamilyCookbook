@@ -5,20 +5,32 @@ import {
   deleteCollection,
   removeFromCollection,
 } from '../utils/collections';
+import { addRecipeIngredientsToGrocery } from '../utils/groceryList';
 import { hapticLight } from '../utils/haptics';
+import { useUI } from '../context/UIContext';
 import type { Recipe, RecipeCollection } from '../types';
+import { PageHeader } from './PageHeader';
+
+const STARTER_TEMPLATES = [
+  { name: 'Weeknight rotation', description: 'Fast dinners for busy evenings', icon: '🍳' },
+  { name: 'Holiday table', description: 'Seasonal favorites for gatherings', icon: '🎄' },
+  { name: "Kids' favorites", description: 'Crowd-pleasers the young ones love', icon: '🧁' },
+] as const;
 
 interface CollectionsViewProps {
   recipes: Recipe[];
   currentUserName: string;
   onViewRecipe: (recipe: Recipe) => void;
+  onOpenGroceryList?: () => void;
 }
 
 export const CollectionsView: React.FC<CollectionsViewProps> = ({
   recipes,
   currentUserName,
   onViewRecipe,
+  onOpenGroceryList,
 }) => {
+  const { toast } = useUI();
   const [collections, setCollections] = useState<RecipeCollection[]>(() => getAllCollections());
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -47,16 +59,45 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
     setCollections(getAllCollections());
   };
 
+  const handleCreateFromTemplate = (name: string, description: string, icon: string) => {
+    hapticLight();
+    createCollection(name, currentUserName, description, icon);
+    setCollections(getAllCollections());
+  };
+
+  const handleAddCollectionToGrocery = (colRecipes: Recipe[], collectionName: string) => {
+    if (colRecipes.length === 0) {
+      toast('Add recipes to this collection first', 'info');
+      return;
+    }
+    hapticLight();
+    const { added, skipped } = addRecipeIngredientsToGrocery(colRecipes);
+    if (added === 0) {
+      toast('Those ingredients are already on your Grocery List', 'info');
+      return;
+    }
+    const skippedNote = skipped > 0 ? ` · ${skipped} duplicate${skipped === 1 ? '' : 's'} skipped` : '';
+    toast(`Added ${added} item${added === 1 ? '' : 's'} from ${collectionName}${skippedNote}`, 'success', {
+      action: onOpenGroceryList ? { label: 'View list', onClick: onOpenGroceryList } : undefined,
+    });
+  };
+
   return (
-    <section className="space-y-6" aria-label="Recipe collections">
-      <div className="flex items-center justify-between">
+    <section className="view-stack" aria-label="Recipe collections">
+      <PageHeader
+        eyebrow="Cook · Plan · Shop"
+        title="Collections"
+        description="Group recipes into shelves — add to grocery lists or meal plans in one tap."
+      />
+
+      <div className="section-heading-row">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
           Collections ({collections.length})
         </h3>
         <button
           type="button"
           onClick={() => setShowCreate((v) => !v)}
-          className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline"
+          className="btn btn-link"
         >
           {showCreate ? 'Cancel' : '+ New Collection'}
         </button>
@@ -82,7 +123,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
             type="button"
             onClick={handleCreate}
             disabled={!newName.trim()}
-            className="px-5 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40"
+            className="btn btn-primary"
           >
             Create
           </button>
@@ -90,18 +131,34 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
       )}
 
       {collections.length === 0 && !showCreate ? (
-        <div className="text-center py-8 space-y-3">
+        <div className="text-center py-8 space-y-5">
           <span className="text-4xl">📚</span>
-          <p className="text-sm text-stone-500 font-serif italic">
-            Organize recipes into custom collections like "Holiday Baking" or "Weeknight Dinners"
+          <p className="text-sm text-stone-500 font-serif italic max-w-md mx-auto">
+            Organize recipes into custom collections — start from a template or name your own shelf.
           </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
+            {STARTER_TEMPLATES.map((template) => (
+              <button
+                key={template.name}
+                type="button"
+                onClick={() => handleCreateFromTemplate(template.name, template.description, template.icon)}
+                className="rounded-2xl border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--card-bg)] p-4 text-left hover:border-[var(--color-brand)]/30 hover:shadow-sm transition-all"
+              >
+                <span className="text-2xl" aria-hidden>{template.icon}</span>
+                <p className="mt-2 text-sm font-bold text-[var(--color-brand)] dark:text-emerald-100">{template.name}</p>
+                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{template.description}</p>
+              </button>
+            ))}
+          </div>
+          <div className="empty-state-actions">
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-5 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest"
+            className="btn btn-primary"
           >
-            Create Your First Collection
+            Create your own
           </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -162,11 +219,21 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                         </div>
                       ))
                     )}
-                    <div className="pt-2 flex justify-end">
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+                      {colRecipes.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddCollectionToGrocery(colRecipes, col.name)}
+                          className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline min-h-11 px-1"
+                          data-testid={`collection-add-grocery-${col.id}`}
+                        >
+                          Add to grocery list
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleDelete(col.id)}
-                        className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600"
+                        className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600 ml-auto min-h-11 px-1"
                       >
                         Delete Collection
                       </button>

@@ -14,9 +14,15 @@ service firebase.storage {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /gallery/{allPaths=**} {
+    match /gallery/{fileName} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if
+        request.resource.size < 25 * 1024 * 1024 &&
+        (
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType.matches('video/.*')
+        );
+      allow update, delete: if isAdmin();
     }
   }
 }

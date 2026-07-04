@@ -58,6 +58,8 @@ In your **Vercel** project → **Settings → Environment Variables**, add:
 |----------|-------|-------|
 | `FIREBASE_SERVICE_ACCOUNT` | `{"type":"service_account","project_id":"...",...}` | Full JSON of your Firebase service account key |
 | `TWILIO_AUTH_TOKEN` | `your_auth_token` | From [Twilio Console → Account → Auth Token](https://console.twilio.com) |
+| `TWILIO_ACCOUNT_SID` | `ACxxxxxxxx` | From Twilio Console (needed to download MMS media in `/api/webhook`) |
+| `VITE_ARCHIVE_PHONE` | `+15551234567` | Twilio number shown on the Gallery tab (optional if set in Admin → Gallery) |
 
 ### Get `FIREBASE_SERVICE_ACCOUNT`
 

@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import type { StorySection } from '../types';
+import { CloudArchive } from '../services/db';
 
 const SECTIONS = [
     { id: 'intro', label: 'Introduction' },
@@ -10,10 +12,57 @@ const SECTIONS = [
 
 const SCROLL_THRESHOLD = 150;
 
+const slugifySectionId = (heading: string, fallback: string): string => {
+    const slug = heading
+        .toLowerCase()
+        .trim()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    return slug || fallback;
+};
+
+const normalizeStorySections = (sections: StorySection[]): StorySection[] =>
+    sections
+        .filter((section) => section.heading.trim() && section.body.trim())
+        .sort((a, b) => a.order - b.order);
+
 export const HistoryView: React.FC = () => {
     const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
     const [showBackToTop, setShowBackToTop] = useState(false);
+    const [storySections, setStorySections] = useState<StorySection[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
+    const dynamicSections = useMemo(() => normalizeStorySections(storySections), [storySections]);
+    const tocSections = useMemo(
+        () =>
+            dynamicSections.length > 0
+                ? [
+                    { id: 'intro', label: 'Introduction' },
+                    ...dynamicSections.map((section, index) => ({
+                        id: slugifySectionId(section.heading, `story-section-${index + 1}`),
+                        label: section.heading,
+                    })),
+                ]
+                : [...SECTIONS],
+        [dynamicSections]
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        CloudArchive.getStoryContent()
+            .then((sections) => {
+                if (!cancelled && normalizeStorySections(sections).length > 0) {
+                    setStorySections(sections);
+                }
+            })
+            .catch((error) => {
+                console.warn('HistoryView: failed to load custom story content', error);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Scroll spy: highlight TOC item for section in view
     useEffect(() => {
@@ -21,9 +70,8 @@ export const HistoryView: React.FC = () => {
         if (!el) return;
 
         const onScroll = () => {
-            type SectionId = (typeof SECTIONS)[number]['id'];
-            const sections = SECTIONS.map(({ id }) => ({ id, el: document.getElementById(id) })).filter(
-                (s): s is { id: SectionId; el: HTMLElement } => !!s.el
+            const sections = tocSections.map(({ id }) => ({ id, el: document.getElementById(id) })).filter(
+                (s): s is { id: string; el: HTMLElement } => !!s.el
             );
             const scrollTop = window.scrollY + 120;
 
@@ -42,7 +90,7 @@ export const HistoryView: React.FC = () => {
         window.addEventListener('scroll', onScroll, { passive: true });
         onScroll();
         return () => window.removeEventListener('scroll', onScroll);
-    }, []);
+    }, [tocSections]);
 
     const getScrollBehavior = (): 'auto' | 'smooth' => {
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -64,23 +112,44 @@ export const HistoryView: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] py-12 md:py-20 px-4 md:px-6 animate-in fade-in duration-1000" role="main" aria-label="Family food history">
+        <div className="min-h-screen bg-[#FDFBF7] view-shell-wide view-stack animate-in fade-in duration-1000" role="main" aria-label="Family food history">
             {/* Skip link */}
             <a href="#history-article" className="sr-only">
                 Skip to main content
             </a>
 
-            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-12 lg:gap-16">
+            <nav
+                aria-label="Story sections"
+                className="lg:hidden scroll-strip -mx-1 px-1 print:hidden"
+            >
+                {tocSections.map(({ id, label }) => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => scrollToSection(id)}
+                        aria-current={activeSection === id ? 'true' : undefined}
+                        className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-serif transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] ${
+                            activeSection === id
+                                ? 'bg-[#2D4635] text-white italic'
+                                : 'border border-stone-200 bg-white/90 text-stone-600 hover:bg-stone-50'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </nav>
+
+            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-16">
                 {/* Sticky Table of Contents */}
                 <nav
                     aria-label="Table of contents"
-                    className="print-history-toc lg:sticky lg:top-28 lg:self-start lg:w-56 shrink-0 order-2 lg:order-1"
+                    className="print-history-toc hidden lg:block lg:sticky lg:top-28 lg:self-start lg:w-56 shrink-0 order-2 lg:order-1"
                 >
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 mb-4 print:mb-2">
                         In this story
                     </h2>
                     <ul className="space-y-1">
-                        {SECTIONS.map(({ id, label }) => (
+                        {tocSections.map(({ id, label }) => (
                             <li key={id}>
                                 <button
                                     type="button"
@@ -112,7 +181,7 @@ export const HistoryView: React.FC = () => {
                 <article
                     id="history-article"
                     ref={containerRef}
-                    className="print-history-content flex-1 min-w-0 space-y-24 max-w-3xl lg:max-w-none"
+                    className="print-history-content flex-1 min-w-0 space-y-12 md:space-y-16 max-w-3xl lg:max-w-none"
                 >
                     {/* Hero / Introduction */}
                     <header id="intro" className="scroll-mt-28 text-center space-y-8">
@@ -131,21 +200,61 @@ export const HistoryView: React.FC = () => {
                     </header>
 
                     {/* Main Content Sections */}
-                    <div className="space-y-20 font-serif text-stone-800 leading-relaxed text-lg pb-32">
-                        <section className="relative">
-                            <div className="absolute -left-12 top-0 text-6xl text-[#A0522D]/10 font-serif hidden lg:block opacity-50" aria-hidden="true">
-                                &ldquo;
-                            </div>
-                            <p className="text-2xl italic text-[#2D4635] font-serif mb-12 border-l-4 border-[#F4A460] pl-8 py-2 max-w-2xl">
-                                Our family has been involved in producing and preparing food for centuries.
-                            </p>
-                        </section>
+                    <div className="space-y-12 md:space-y-16 font-serif text-stone-800 leading-relaxed text-lg pb-24">
+                        {dynamicSections.length > 0 ? (
+                            dynamicSections.map((section, index) => {
+                                const sectionId = slugifySectionId(section.heading, `story-section-${index + 1}`);
+                                return (
+                                    <section
+                                        key={section.id || sectionId}
+                                        id={sectionId}
+                                        className={`scroll-mt-28 space-y-6 p-6 md:p-12 border border-stone-100 shadow-sm relative overflow-hidden ${
+                                            index % 2 === 0
+                                                ? 'bg-white/50 backdrop-blur-sm rounded-[3rem] md:rounded-[4rem]'
+                                                : 'bg-[#2D4635] text-emerald-50 rounded-[3rem] md:rounded-[4rem] shadow-2xl'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50 ${
+                                                index % 2 === 0 ? 'bg-orange-50' : 'bg-emerald-400/20'
+                                            }`}
+                                            aria-hidden="true"
+                                        />
+                                        <h2
+                                            className={`text-3xl md:text-4xl font-serif italic mb-8 relative ${
+                                                index % 2 === 0 ? 'text-[#2D4635]' : 'text-[#F4A460]'
+                                            }`}
+                                        >
+                                            {section.heading}
+                                        </h2>
+                                        <div className={`space-y-6 relative max-w-prose ${index % 2 === 0 ? 'text-stone-600' : 'opacity-90'}`}>
+                                            {section.body
+                                                .split(/\n{2,}/)
+                                                .map((paragraph) => paragraph.trim())
+                                                .filter(Boolean)
+                                                .map((paragraph, paragraphIndex) => (
+                                                    <p key={`${sectionId}-${paragraphIndex}`}>{paragraph}</p>
+                                                ))}
+                                        </div>
+                                    </section>
+                                );
+                            })
+                        ) : (
+                            <>
+                                <section className="relative">
+                                    <div className="absolute -left-12 top-0 text-6xl text-[#A0522D]/10 font-serif hidden lg:block opacity-50" aria-hidden="true">
+                                        &ldquo;
+                                    </div>
+                                    <p className="text-2xl italic text-[#2D4635] font-serif mb-12 border-l-4 border-[#F4A460] pl-8 py-2 max-w-2xl">
+                                        Our family has been involved in producing and preparing food for centuries.
+                                    </p>
+                                </section>
 
-                        {/* The Oehler Family */}
-                        <section
-                            id="oehler"
-                            className="scroll-mt-28 space-y-8 bg-white/50 backdrop-blur-sm p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] border border-stone-100 shadow-sm relative overflow-hidden"
-                        >
+                                {/* The Oehler Family */}
+                                <section
+                                    id="oehler"
+                                    className="scroll-mt-28 space-y-8 bg-white/50 backdrop-blur-sm p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] border border-stone-100 shadow-sm relative overflow-hidden"
+                                >
                             <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50" aria-hidden="true" />
                             <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8 relative">The Oehler Family</h2>
                             <div className="space-y-6 relative text-stone-600 max-w-prose">
@@ -174,13 +283,13 @@ export const HistoryView: React.FC = () => {
                                     Sundays were special at the Oehler home. Minnie usually took the girls to church, while Edward sometimes stayed home to prepare Sunday dinner. Afternoons were spent visiting family or friends. Minnie was also a fisherwoman. After Sunday dinner she would pack a picnic, hitch up the horse-drawn buggy, and take the girls to Lake Preston to fish and eat together.
                                 </p>
                             </div>
-                        </section>
+                                </section>
 
-                        {/* The Schafer Family */}
-                        <section
-                            id="schafer"
-                            className="scroll-mt-28 space-y-8 p-8 md:p-20"
-                        >
+                                {/* The Schafer Family */}
+                                <section
+                                    id="schafer"
+                                    className="scroll-mt-28 space-y-8 p-8 md:p-20"
+                                >
                             <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8">The Schafer Family</h2>
                             <div className="space-y-6 text-stone-600 max-w-prose">
                                 <p>
@@ -196,13 +305,13 @@ export const HistoryView: React.FC = () => {
                                     Large gardens, orchards, canning, drying, and baking were all part of daily life on the Schafer farm. Oliver grew up eating frequent breakfasts of cornmeal mush with sorghum syrup. Harriet would sometimes make it for him later in life, though not too often—she did not care for it.
                                 </p>
                             </div>
-                        </section>
+                                </section>
 
-                        {/* Harriet and Oliver */}
-                        <section
-                            id="harriet-oliver"
-                            className="scroll-mt-28 space-y-8 bg-[#2D4635] text-emerald-50 p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] shadow-2xl relative overflow-hidden"
-                        >
+                                {/* Harriet and Oliver */}
+                                <section
+                                    id="harriet-oliver"
+                                    className="scroll-mt-28 space-y-8 bg-[#2D4635] text-emerald-50 p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] shadow-2xl relative overflow-hidden"
+                                >
                             <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-400 rounded-full blur-[120px] -ml-48 -mb-48 opacity-10" aria-hidden="true" />
                             <h2 className="text-3xl md:text-4xl font-serif italic text-[#F4A460] mb-8 relative">Harriet and Oliver</h2>
                             <div className="space-y-6 relative opacity-90 max-w-prose">
@@ -219,13 +328,13 @@ export const HistoryView: React.FC = () => {
                                     I remember butchering chickens in the fall—once so cold that we hung the birds from basement pipes to work inside. Dad and Jim planted field corn, oats, soybeans, sorghum, and alfalfa. Every season had its own rhythm and purpose.
                                 </p>
                             </div>
-                        </section>
+                                </section>
 
-                        {/* A Legacy of Food */}
-                        <section
-                            id="legacy"
-                            className="scroll-mt-28 text-center space-y-8 py-20"
-                        >
+                                {/* A Legacy of Food */}
+                                <section
+                                    id="legacy"
+                                    className="scroll-mt-28 text-center space-y-8 py-20"
+                                >
                             <div className="h-px w-24 bg-[#A0522D]/30 mx-auto" />
                             <h2 className="text-4xl font-serif italic text-[#2D4635]">A Legacy of Food</h2>
                             <div className="max-w-2xl mx-auto space-y-6 italic text-stone-500">
@@ -242,7 +351,9 @@ export const HistoryView: React.FC = () => {
                             <div className="pt-12">
                                 <span className="text-4xl" aria-hidden="true">🌾</span>
                             </div>
-                        </section>
+                                </section>
+                            </>
+                        )}
                     </div>
                 </article>
             </div>

@@ -160,7 +160,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             url: publicUrl,
             caption: Body || 'Preserved via MMS',
             contributor: contributorName,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            status: 'approved',
         };
 
         await db.collection('gallery').doc(itemId).set(galleryItem);

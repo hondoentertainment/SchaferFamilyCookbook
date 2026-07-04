@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
     GROCERY_LIST_STORAGE_KEY,
     addItems,
+    addRecipeIngredientsToGrocery,
+    applyGroceryItemsFromSync,
+    buildGroceryRowsFromRecipes,
     clearAll,
     clearChecked,
     getItems,
@@ -9,6 +12,11 @@ import {
     subscribeGroceryList,
     toggleItem,
 } from './groceryList';
+import { createMockRecipe } from '../test/utils';
+
+vi.mock('../services/userPrefsSync', () => ({
+    notifyPrefsChanged: vi.fn(),
+}));
 
 describe('groceryList utility', () => {
     beforeEach(() => {
@@ -208,6 +216,32 @@ describe('groceryList utility', () => {
 
             expect(listener).not.toHaveBeenCalled();
             unsubscribe();
+        });
+    });
+
+    describe('recipe ingredient helpers', () => {
+        it('buildGroceryRowsFromRecipes maps ingredients with recipe metadata', () => {
+            const rows = buildGroceryRowsFromRecipes([
+                createMockRecipe({ id: 'r1', title: 'Pie', ingredients: ['2 apples', ''] }),
+            ]);
+            expect(rows).toEqual([{ text: '2 apples', recipeId: 'r1', recipeTitle: 'Pie' }]);
+        });
+
+        it('addRecipeIngredientsToGrocery reports added and skipped counts', () => {
+            addItems([{ text: '2 apples', recipeId: 'r1', recipeTitle: 'Pie' }]);
+            const result = addRecipeIngredientsToGrocery([
+                createMockRecipe({ id: 'r1', title: 'Pie', ingredients: ['2 apples', '1 cup flour'] }),
+            ]);
+            expect(result.added).toBe(1);
+            expect(result.skipped).toBe(1);
+        });
+
+        it('applyGroceryItemsFromSync replaces items without requiring manual reload', () => {
+            applyGroceryItemsFromSync([
+                { id: 'g1', text: 'milk', checked: false, addedAt: 1 },
+            ]);
+            expect(getItems()).toHaveLength(1);
+            expect(getItems()[0].text).toBe('milk');
         });
     });
 });

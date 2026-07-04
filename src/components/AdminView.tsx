@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Recipe, GalleryItem, Trivia, UserProfile, DBStats, ContributorProfile, StorySection, RecipeVersion } from '../types';
+import { isGalleryItemPending } from '../utils/galleryModeration';
 import * as geminiProxy from '../services/geminiProxy';
 import { CloudArchive } from '../services/db';
+import { storySectionsDiffer } from '../utils/storySections';
 import { CATEGORY_IMAGES, RECIPE_CATEGORIES, normalizeRecipe } from '../constants';
 import { AvatarPicker } from './AvatarPicker';
 import { useUI } from '../context/UIContext';
@@ -10,6 +12,16 @@ import { avatarOnError } from '../utils/avatarFallback';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { useFocusTrap } from '../utils/focusTrap';
 import { getRecipeImageStatus, markRecipeImageAsApprovedActual, summarizeRecipeImageStatuses } from '../utils/imageProvenance';
+import { STORAGE_KEYS } from '../constants/storage';
+import { notifyGalleryApproved } from '../services/galleryApproveNotify';
+
+/** Pre-filled section scaffolding offered when the Family Story editor is empty. */
+const STORY_STARTER_TEMPLATE: ReadonlyArray<{ heading: string; body: string }> = [
+    { heading: 'Our Beginnings', body: 'Where the family story starts — the places, the people, and the kitchens that shaped us.' },
+    { heading: 'Traditions We Keep', body: 'The dishes and rituals that show up every holiday and gathering, and the stories behind them.' },
+    { heading: 'Recipes Through the Generations', body: 'How favorite recipes were passed down, tweaked, and made our own over the years.' },
+    { heading: 'Looking Forward', body: 'The new cooks in the family and the traditions we hope to carry on.' },
+];
 
 /** When the app uses hosted Firebase, custodians must sign in with Google and hold custom claim admin:true to write. */
 export interface FirebaseCustodianProps {
@@ -30,14 +42,14 @@ interface AdminViewProps {
     /** Existing gallery items; used by the Gallery subtab to list items with Edit/Delete controls. */
     gallery?: GalleryItem[];
     onAddRecipe: (r: Recipe, file?: File) => Promise<void>;
-    onAddGallery: (g: GalleryItem, file?: File) => Promise<void>;
+    onAddGallery: (g: GalleryItem, file?: File) => Promise<unknown>;
     onAddTrivia: (t: Trivia) => Promise<void>;
     onDeleteTrivia: (id: string) => void | Promise<void>;
     onDeleteRecipe: (id: string) => void;
     /** Optional for non-gallery callers; required to enable Delete in the Gallery subtab list. */
     onDeleteGalleryItem?: (id: string) => void | Promise<void>;
     /** Optional for non-gallery callers; required to enable Edit in the Gallery subtab list. */
-    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date }) => Promise<void>;
+    onUpdateGalleryItem?: (id: string, patch: { caption?: string; date?: Date; status?: GalleryItem['status'] }) => Promise<void>;
     onUpdateContributor: (c: ContributorProfile) => Promise<void>;
     onUpdateArchivePhone: (p: string) => void | Promise<void>;
     onEditRecipe: (r: Recipe) => void;
@@ -86,8 +98,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
     // Story CMS state
     const [storySections, setStorySections] = useState<StorySection[]>([]);
+    const [storyPublishedSections, setStoryPublishedSections] = useState<StorySection[]>([]);
     const [isLoadingStory, setIsLoadingStory] = useState(false);
     const [isSavingStory, setIsSavingStory] = useState(false);
+    const [storyPreview, setStoryPreview] = useState(false);
+    const [storyDraftAvailable, setStoryDraftAvailable] = useState(false);
+    const [storyDraftSavedAt, setStoryDraftSavedAt] = useState<number | null>(null);
+    // Skips the autosave that fires from the initial load's setStorySections.
+    const skipStoryAutosaveRef = useRef(true);
 
     // Recipe version history state
     const [versionModalRecipe, setVersionModalRecipe] = useState<Recipe | null>(null);
@@ -190,11 +208,105 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         if (activeSubtab !== 'story') return;
         let cancelled = false;
         setIsLoadingStory(true);
+        setStoryPreview(false);
+        // Detect an unsaved local draft so we can offer to restore it.
+        try {
+            const raw = localStorage.getItem(STORAGE_KEYS.storyDraft);
+            const draft = raw ? JSON.parse(raw) : null;
+            setStoryDraftAvailable(Array.isArray(draft?.sections) && draft.sections.length > 0);
+            setStoryDraftSavedAt(typeof draft?.savedAt === 'number' ? draft.savedAt : null);
+        } catch {
+            setStoryDraftAvailable(false);
+            setStoryDraftSavedAt(null);
+        }
         CloudArchive.getStoryContent().then(sections => {
-            if (!cancelled) setStorySections([...sections].sort((a, b) => a.order - b.order));
+            if (!cancelled) {
+                skipStoryAutosaveRef.current = true;
+                const sorted = [...sections].sort((a, b) => a.order - b.order);
+                setStorySections(sorted);
+                setStoryPublishedSections(sorted);
+            }
         }).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingStory(false); });
         return () => { cancelled = true; };
     }, [activeSubtab]);
+
+    // Autosave the working draft to localStorage so edits survive an accidental
+    // navigation or refresh before the admin commits to Firestore.
+    useEffect(() => {
+        if (activeSubtab !== 'story' || isLoadingStory) return;
+        if (skipStoryAutosaveRef.current) {
+            skipStoryAutosaveRef.current = false;
+            return;
+        }
+        const handle = setTimeout(() => {
+            try {
+                const savedAt = Date.now();
+                localStorage.setItem(
+                    STORAGE_KEYS.storyDraft,
+                    JSON.stringify({ savedAt, sections: storySections }),
+                );
+                setStoryDraftSavedAt(savedAt);
+                setStoryDraftAvailable(storySections.length > 0);
+            } catch {
+                // ignore quota / disabled storage
+            }
+        }, 600);
+        return () => clearTimeout(handle);
+    }, [storySections, activeSubtab, isLoadingStory]);
+
+    const handleRestoreStoryDraft = () => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEYS.storyDraft);
+            const draft = raw ? JSON.parse(raw) : null;
+            if (Array.isArray(draft?.sections)) {
+                skipStoryAutosaveRef.current = true;
+                setStorySections(
+                    draft.sections
+                        .filter((s: unknown): s is StorySection =>
+                            !!s && typeof s === 'object' && typeof (s as StorySection).heading === 'string')
+                        .map((s: StorySection, i: number) => ({
+                            id: s.id || 's_' + Date.now() + '_' + i,
+                            heading: s.heading || '',
+                            body: s.body || '',
+                            order: i,
+                        })),
+                );
+                setStoryDraftAvailable(false);
+                toast('Draft restored', 'success');
+            }
+        } catch {
+            toast("Couldn't restore the draft", 'error');
+        }
+    };
+
+    const handleDiscardStoryDraft = () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.storyDraft);
+        } catch { /* ignore */ }
+        setStoryDraftAvailable(false);
+        setStoryDraftSavedAt(null);
+    };
+
+    const handleRevertStoryToPublished = () => {
+        skipStoryAutosaveRef.current = true;
+        setStorySections([...storyPublishedSections]);
+        toast('Reverted to the published story', 'info');
+    };
+
+    const storyHasUnpublishedChanges = storySectionsDiffer(storySections, storyPublishedSections);
+
+    const handleInsertStoryStarter = () => {
+        skipStoryAutosaveRef.current = false;
+        setStorySections(prev => [
+            ...prev,
+            ...STORY_STARTER_TEMPLATE.map((t, i) => ({
+                id: 's_' + Date.now() + '_' + i,
+                heading: t.heading,
+                body: t.body,
+                order: prev.length + i,
+            })),
+        ]);
+    };
 
     // Fetch analytics when the analytics subtab becomes active
     useEffect(() => {
@@ -553,6 +665,32 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
         } finally { setIsSubmitting(false); }
     };
 
+    const handleApproveGalleryItem = async (item: GalleryItem) => {
+        if (!onUpdateGalleryItem) return;
+        try {
+            await onUpdateGalleryItem(item.id, { status: 'approved' });
+            toast('Memory approved for the family gallery', 'success');
+            void notifyGalleryApproved(item);
+        } catch {
+            /* toast from caller */
+        }
+    };
+
+    const handleDeclineGalleryItem = async (item: GalleryItem) => {
+        if (!onDeleteGalleryItem) return;
+        const ok = await confirm(
+            `Decline "${item.caption || 'this memory'}"? It will not appear in the public gallery.`,
+            { title: 'Decline Submission', confirmLabel: 'Decline', variant: 'danger' }
+        );
+        if (!ok) return;
+        try {
+            await Promise.resolve(onDeleteGalleryItem(item.id));
+            toast('Submission declined', 'success');
+        } catch {
+            toast("Couldn't decline. Check your connection and try again.", 'error');
+        }
+    };
+
     const handleGallerySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!galleryFile) {
@@ -568,7 +706,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 type: isVideo ? 'video' : 'image',
                 url: '',
                 caption: galleryForm.caption || (isVideo ? 'Family Video' : 'Family Memory'),
-                contributor: currentUser?.name || 'Family'
+                contributor: currentUser?.name || 'Family',
+                status: 'approved',
             }, galleryFile);
             toast('Gallery updated', 'success');
             setGalleryForm({ caption: '' });
@@ -604,7 +743,8 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                     type: isVideo ? 'video' : 'image',
                     url: '',
                     caption: galleryForm.caption || baseName || 'Family Memory',
-                    contributor: currentUser?.name || 'Family'
+                    contributor: currentUser?.name || 'Family',
+                    status: 'approved',
                 }, file as File);
                 successCount++;
             } catch (e: unknown) {
@@ -781,7 +921,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                 <div
                     role="tablist"
                     aria-label="Admin subtabs"
-                    className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2 mb-8 bg-stone-50/50 rounded-[2rem] px-2 border border-stone-100"
+                    className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-20 flex items-center gap-1 scroll-strip py-2 mb-6 bg-stone-50/95 dark:bg-stone-900/95 backdrop-blur-md rounded-[2rem] px-2 border border-stone-100 dark:border-stone-800 md:top-20"
                 >
                     {[
                         { id: 'records', label: '📖 Recipes' },
@@ -1473,10 +1613,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
 
                                         <div className="flex gap-4">
-                                            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
+                                            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="btn btn-primary flex-1">
                                                 {isSubmitting ? 'Saving...' : editingRecipe ? 'Update Record' : 'Commit to Archive'}
                                             </button>
-                                            {editingRecipe && <button type="button" onClick={clearEditing} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
+                                            {editingRecipe && <button type="button" onClick={clearEditing} disabled={isSubmitting} className="btn btn-secondary flex-1">Cancel</button>}
                                         </div>
                                     </form>
                                     )}
@@ -1524,7 +1664,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 }}
                                                 disabled={isSavingArchivePhone}
                                                 aria-busy={isSavingArchivePhone}
-                                                className="px-6 py-4 bg-[#2D4635] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                                                className="btn btn-primary whitespace-nowrap shrink-0"
                                             >
                                                 {isSavingArchivePhone ? 'Saving...' : 'Save'}
                                             </button>
@@ -1544,7 +1684,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <label htmlFor="admin-gallery-caption" className="sr-only">Gallery Caption</label>
                                             <input id="admin-gallery-caption" placeholder="Caption (e.g. Summer BBQ 1985)" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })} />
                                         </div>
-                                        <button type="submit" disabled={!galleryFile || isSubmitting} aria-busy={isSubmitting} className="w-full py-4 bg-[#A0522D] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+                                        <button type="submit" disabled={!galleryFile || isSubmitting} aria-busy={isSubmitting} className="btn btn-accent w-full">
                                             {isSubmitting ? 'Saving...' : 'Upload Memory'}
                                         </button>
                                     </form>
@@ -1648,6 +1788,50 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         </div>
                                     </div>
 
+                                    {/* Pending moderation queue */}
+                                    {gallery.some(isGalleryItemPending) && onUpdateGalleryItem && (
+                                        <div className="mt-8 p-6 bg-sky-50 rounded-3xl border border-sky-100">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-sky-900 mb-4 flex items-center gap-2">
+                                                <span>⏳</span> Pending approval ({gallery.filter(isGalleryItemPending).length})
+                                            </h4>
+                                            <ul className="space-y-3" aria-label="Gallery items awaiting approval">
+                                                {gallery.filter(isGalleryItemPending).map((item) => (
+                                                    <li
+                                                        key={item.id}
+                                                        className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-sky-100"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium text-stone-800 truncate">
+                                                                {item.caption || 'Untitled memory'}
+                                                            </p>
+                                                            <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">
+                                                                {item.contributor}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex gap-2 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                data-testid={`gallery-decline-${item.id}`}
+                                                                onClick={() => handleDeclineGalleryItem(item)}
+                                                                className="btn shrink-0 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                                                            >
+                                                                Decline
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                data-testid={`gallery-approve-${item.id}`}
+                                                                onClick={() => handleApproveGalleryItem(item)}
+                                                                className="btn btn-primary shrink-0"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
                                     {/* Existing Gallery Items - Edit / Delete */}
                                     {gallery.length > 0 && (onUpdateGalleryItem || onDeleteGalleryItem) && (
                                         <div className="mt-8 pt-8 border-t border-stone-200">
@@ -1683,9 +1867,33 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                             )}
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-stone-800 truncate">{item.caption || <span className="italic text-stone-400">No caption</span>}</p>
-                                                                <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">{createdLabel} · {item.contributor || 'Unknown'}</p>
+                                                                <p className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">
+                                                                    {createdLabel} · {item.contributor || 'Unknown'}
+                                                                    {isGalleryItemPending(item) ? ' · Pending' : ''}
+                                                                </p>
                                                             </div>
                                                             <div className="flex gap-2 flex-shrink-0">
+                                                                {onUpdateGalleryItem && isGalleryItemPending(item) && (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            data-testid={`gallery-decline-manage-${item.id}`}
+                                                                            onClick={() => handleDeclineGalleryItem(item)}
+                                                                            className="btn shrink-0 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                                                                            aria-label={`Decline "${item.caption || 'gallery item'}"`}
+                                                                        >
+                                                                            Decline
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleApproveGalleryItem(item)}
+                                                                            className="btn btn-primary shrink-0"
+                                                                            aria-label={`Approve "${item.caption || 'gallery item'}"`}
+                                                                        >
+                                                                            Approve
+                                                                        </button>
+                                                                    </>
+                                                                )}
                                                                 {onUpdateGalleryItem && (
                                                                     <button
                                                                         type="button"
@@ -1835,10 +2043,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <input id="admin-trivia-answer" placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-base font-bold bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20 outline-none" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
                                         </div>
                                         <div className="flex gap-4">
-                                            <button type="submit" disabled={isTriviaSubmitting} aria-busy={isTriviaSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-70 disabled:cursor-not-allowed">
+                                            <button type="submit" disabled={isTriviaSubmitting} aria-busy={isTriviaSubmitting} className="btn btn-primary flex-1">
                                                 {isTriviaSubmitting ? 'Saving...' : editingTrivia ? 'Update Question' : 'Add Question'}
                                             </button>
-                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} disabled={isTriviaSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">Cancel</button>}
+                                            {editingTrivia && <button type="button" onClick={() => { setEditingTrivia(null); setTriviaForm({ question: '', options: ['', '', '', ''], answer: '' }); }} disabled={isTriviaSubmitting} className="btn btn-secondary flex-1">Cancel</button>}
                                         </div>
                                     </form>
                                     <div className="pt-8 border-t border-stone-200 max-h-96 overflow-y-auto custom-scrollbar rounded-[2rem] p-4 bg-stone-50/50 border border-stone-100">
@@ -2030,17 +2238,112 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             <span className="w-12 h-12 rounded-full bg-[#2D4635]/5 flex items-center justify-center not-italic text-2xl">📜</span>
                             Family Story CMS
                         </h2>
-                        <p className="text-sm text-stone-500 mb-8 leading-relaxed">
-                            Edit the Family Story shown in the "Family Story" tab. Changes are saved to Firestore and appear for all visitors. When no sections are saved, the static built-in story is shown as a fallback.
+                        <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+                            Edit the Family Story shown in the &quot;Family Story&quot; tab. Autosave keeps a local draft; use <strong>Publish to family</strong> when ready for everyone to see changes. When no sections are published, the static built-in story is shown as a fallback.
                         </p>
+
+                        {storyHasUnpublishedChanges && !storyPreview && (
+                            <div
+                                data-testid="story-unpublished-banner"
+                                className="mb-6 p-4 bg-sky-50 border border-sky-200 rounded-2xl flex flex-wrap items-center justify-between gap-3"
+                            >
+                                <p className="text-sm text-sky-900">
+                                    Unpublished edits — visitors still see the last published version until you publish.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={handleRevertStoryToPublished}
+                                    className="px-4 py-2 bg-white border border-sky-200 text-sky-800 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-sky-100"
+                                >
+                                    Revert to published
+                                </button>
+                            </div>
+                        )}
+
+                        {storyDraftAvailable && (
+                            <div data-testid="story-draft-banner" className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-sm text-amber-800">
+                                    You have an unsaved draft{storyDraftSavedAt ? ` from ${new Date(storyDraftSavedAt).toLocaleString()}` : ''}.
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleRestoreStoryDraft}
+                                        className="px-4 py-2 bg-amber-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-700"
+                                    >
+                                        Restore draft
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleDiscardStoryDraft}
+                                        className="px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-100"
+                                    >
+                                        Discard
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isLoadingStory && (
+                            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                                <div className="inline-flex rounded-full border border-stone-200 p-1 bg-stone-50" role="group" aria-label="Editor mode">
+                                    <button
+                                        type="button"
+                                        data-testid="story-edit-toggle"
+                                        onClick={() => setStoryPreview(false)}
+                                        aria-pressed={!storyPreview}
+                                        className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${!storyPreview ? 'bg-[#2D4635] text-white' : 'text-stone-500 hover:text-stone-700'}`}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-testid="story-preview-toggle"
+                                        onClick={() => setStoryPreview(true)}
+                                        aria-pressed={storyPreview}
+                                        className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${storyPreview ? 'bg-[#2D4635] text-white' : 'text-stone-500 hover:text-stone-700'}`}
+                                    >
+                                        Preview
+                                    </button>
+                                </div>
+                                {storyDraftSavedAt && !storyDraftAvailable && (
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                                        Draft saved {new Date(storyDraftSavedAt).toLocaleTimeString()}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         {isLoadingStory ? (
                             <div className="text-center py-12 text-stone-400 text-sm">Loading story content…</div>
+                        ) : storyPreview ? (
+                            <div data-testid="story-preview" className="space-y-8 max-w-2xl">
+                                {storySections.length === 0 ? (
+                                    <p className="text-sm text-stone-400 italic">No custom sections — the built-in story will be shown to visitors.</p>
+                                ) : (
+                                    [...storySections].sort((a, b) => a.order - b.order).map((section) => (
+                                        <article key={section.id} className="space-y-3">
+                                            <h3 className="text-2xl font-serif italic text-[#2D4635]">{section.heading || 'Untitled section'}</h3>
+                                            {section.body.split(/\n{2,}/).filter(Boolean).map((para, i) => (
+                                                <p key={i} className="text-stone-600 leading-relaxed whitespace-pre-line">{para}</p>
+                                            ))}
+                                        </article>
+                                    ))
+                                )}
+                            </div>
                         ) : (
                             <div className="space-y-6">
                                 {storySections.length === 0 && (
-                                    <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800">
-                                        No custom sections saved yet. The static built-in story will display. Add sections below to override it.
+                                    <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800 space-y-4">
+                                        <p>No custom sections saved yet. The static built-in story will display. Add sections below to override it.</p>
+                                        <button
+                                            type="button"
+                                            data-testid="story-insert-starter"
+                                            onClick={handleInsertStoryStarter}
+                                            className="px-4 py-2 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23]"
+                                        >
+                                            Insert starter sections
+                                        </button>
                                     </div>
                                 )}
 
@@ -2138,7 +2441,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             setIsSavingStory(true);
                                             try {
                                                 await CloudArchive.saveStoryContent(storySections);
-                                                toast('Family Story saved!', 'success');
+                                                try { localStorage.removeItem(STORAGE_KEYS.storyDraft); } catch { /* ignore */ }
+                                                setStoryDraftAvailable(false);
+                                                setStoryDraftSavedAt(null);
+                                                setStoryPublishedSections([...storySections]);
+                                                toast('Family Story published!', 'success');
                                             } catch (e: unknown) {
                                                 toast(`Save failed: ${e instanceof Error ? e.message : 'unknown error'}`, 'error');
                                             } finally {
@@ -2147,7 +2454,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         }}
                                         className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
-                                        {isSavingStory ? 'Saving…' : 'Save Story Content'}
+                                        {isSavingStory ? 'Publishing…' : 'Publish to family'}
                                     </button>
                                 </div>
                             </div>

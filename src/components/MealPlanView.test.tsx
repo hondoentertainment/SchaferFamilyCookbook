@@ -3,7 +3,7 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { MealPlanView } from './MealPlanView';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
-vi.mock('../utils/haptics', () => ({ hapticLight: vi.fn() }));
+vi.mock('../utils/haptics', () => ({ hapticLight: vi.fn(), hapticSuccess: vi.fn() }));
 
 const recipes = [
   createMockRecipe({ id: 'r1', title: 'Apple Pie', ingredients: ['2 apples', '1 cup flour'] }),
@@ -55,8 +55,49 @@ describe('MealPlanView', () => {
   it('opens a recipe picker when "+ Add recipe" is clicked', () => {
     renderWithProviders(<MealPlanView {...defaultProps} />);
     fireEvent.click(screen.getAllByTestId('meal-plan-add-recipe')[0]);
-    expect(screen.getByLabelText(/search recipes to add to the meal plan/i)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/search recipes by name, ingredient, or contributor/i),
+    ).toBeInTheDocument();
     expect(screen.getAllByTestId('meal-plan-picker-option').length).toBeGreaterThan(0);
+  });
+
+  it('filters the picker by ingredient with fuzzy matching', () => {
+    renderWithProviders(<MealPlanView {...defaultProps} />);
+    fireEvent.click(screen.getAllByTestId('meal-plan-add-recipe')[0]);
+    const search = screen.getByLabelText(/search recipes by name, ingredient, or contributor/i);
+    fireEvent.change(search, { target: { value: 'banana' } });
+    const options = screen.getAllByTestId('meal-plan-picker-option');
+    expect(options).toHaveLength(1);
+    expect(options[0]).toHaveTextContent('Banana Bread');
+  });
+
+  it('copies a planned day forward to the next day', async () => {
+    renderWithProviders(<MealPlanView {...defaultProps} />);
+    fireEvent.click(screen.getAllByTestId('meal-plan-add-recipe')[0]);
+    const option = screen
+      .getAllByTestId('meal-plan-picker-option')
+      .find((el) => el.textContent?.includes('Apple Pie'))!;
+    fireEvent.click(option);
+    await screen.findByTestId('meal-plan-entry');
+
+    fireEvent.click(screen.getAllByTestId('meal-plan-copy-day')[0]);
+    await waitFor(() =>
+      expect(screen.getAllByText('Apple Pie').length).toBe(2),
+    );
+  });
+
+  it('copies the whole week forward via the copy-week action', async () => {
+    renderWithProviders(<MealPlanView {...defaultProps} />);
+    fireEvent.click(screen.getAllByTestId('meal-plan-add-recipe')[0]);
+    const option = screen
+      .getAllByTestId('meal-plan-picker-option')
+      .find((el) => el.textContent?.includes('Apple Pie'))!;
+    fireEvent.click(option);
+    await screen.findByTestId('meal-plan-entry');
+
+    fireEvent.click(screen.getByTestId('meal-plan-copy-week'));
+    // Toast confirms the copy; entry still visible on the current week.
+    expect(await screen.findByTestId('meal-plan-entry')).toBeInTheDocument();
   });
 
   it('assigns a recipe to a day and enables the grocery action', async () => {

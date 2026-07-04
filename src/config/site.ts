@@ -38,6 +38,12 @@ export interface SiteConfig {
     helpText: string;
     /** Short trust bullets shown under the sign-in card */
     trustStrip?: string[];
+    chooserTitle?: string;
+    chooserSubtitle?: string;
+    returningTitle?: string;
+    returningSubtitle?: string;
+    newTitle?: string;
+    newSubtitle?: string;
   };
 
   /** Copy for gallery section */
@@ -70,15 +76,20 @@ const defaultConfig: SiteConfig = {
   categories: RECIPE_CATEGORIES,
   loginCopy: {
     title: "Who's cooking?",
-    subtitle:
-      'Choose your name to personalize favorites, notes, and the recipes you return to in the family archive.',
-    placeholder: 'Your name or nickname',
+    subtitle: 'Pick your name to save favorites and notes.',
+    placeholder: 'Your name',
     cta: 'Continue',
-    helpText: 'Need access? Contact a cookbook custodian.',
+    helpText: 'Need access?',
+    chooserTitle: "Who's cooking?",
+    chooserSubtitle: 'Sign in with your family name, or take a quick look around first.',
+    returningTitle: 'Welcome back',
+    returningSubtitle: 'Find your name to connect with recipes, photos, and notes already in the archive.',
+    newTitle: 'Join the family table',
+    newSubtitle: 'Choose a display name your family will recognize. You can browse recipes right away.',
     trustStrip: [
-      'No password — pick the name your family knows you by.',
-      'Favorites and notes stay on this device; cloud sync depends on family setup.',
-      'Custodians manage the shared recipe directory.',
+      'Save favorites & notes across devices',
+      'Link to recipes already in the archive',
+      'Share photos with the family gallery',
     ],
   },
   galleryCopy: {
@@ -86,7 +97,7 @@ const defaultConfig: SiteConfig = {
     subtitle: 'Captured moments across the generations.',
     textPromptTitle: 'Text your memories',
     textPromptHint: 'Photo/Video to:',
-    noPhoneHint: 'Admins can enable text-to-archive in Profile → Admin Tools → Gallery. Or ask an administrator to add your memories.',
+    noPhoneHint: 'You can upload directly on this page. Admins can also enable text-to-gallery in Profile → Admin Tools → Gallery, or set VITE_ARCHIVE_PHONE on Vercel.',
   },
 };
 

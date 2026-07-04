@@ -198,5 +198,61 @@ export const TRIVIA_SEED = [
         answer: "Egg Kaka",
         explanation: "Julie's Egg Kaka has a note describing it as a simple family breakfast staple.",
         contributor: "Archive Keeper"
+    },
+    {
+        id: "t26",
+        question: "What did Harriet remember receiving as a very special Christmas treat as a child?",
+        options: ["An orange", "A silver dollar", "A tin of cookies", "A peppermint stick"],
+        answer: "An orange",
+        explanation: "Family Story notes that an orange, apple, and peanuts were treasured Christmas gifts in Harriet's childhood.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t27",
+        question: "The Oehler family name is tied to which trade in the family history?",
+        options: ["Milling grain", "Producing or dealing in oil", "Baking bread", "Shepherding"],
+        answer: "Producing or dealing in oil",
+        explanation: "Oehler means to produce or deal in oil — a detail from the Family Story introduction.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t28",
+        question: "What does the Schafer family name mean in German?",
+        options: ["Baker", "Shepherd", "Miller", "Farmer"],
+        answer: "Shepherd",
+        explanation: "Family Story notes that Schafer means shepherd in German.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t29",
+        question: "Which horses did Oliver fondly remember working the fields with as a boy?",
+        options: ["Pet and Patty", "Sam and Sally", "Duke and Daisy", "Jack and Jill"],
+        answer: "Pet and Patty",
+        explanation: "Oliver's happy farm stories mention his favorite horses, Pet and Patty.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t30",
+        question: "What special Christmas meal does the Family Story mention at the Oehler home?",
+        options: ["Oyster stew", "Ham and scalloped potatoes", "Turkey with dressing", "Beef stew"],
+        answer: "Oyster stew",
+        explanation: "Harriet remembered oyster stew as a special Christmas meal alongside treasured fruit and nuts.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t31",
+        question: "In what year did Harriet and Oliver marry?",
+        options: ["1925", "1930", "1935", "1940"],
+        answer: "1935",
+        explanation: "The Family Story states Harriet and Oliver married in 1935 during the Depression.",
+        contributor: "Archive Keeper"
+    },
+    {
+        id: "t32",
+        question: "Where did Minnie Oehler often take her daughters to fish after Sunday dinner?",
+        options: ["Lake Preston", "Buffalo Lake", "Lake Minnetonka", "Clear Lake"],
+        answer: "Lake Preston",
+        explanation: "Minnie packed a picnic and took Adelia and Harriet to Lake Preston to fish on Sunday afternoons.",
+        contributor: "Archive Keeper"
     }
 ];

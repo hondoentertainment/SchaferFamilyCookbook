@@ -191,8 +191,69 @@ describe('RecipeModal', () => {
         renderWithProviders(
             <RecipeModal {...defaultProps} recipe={r1} recipeList={[r1, r2]} onNavigate={mockNavigate} />
         );
-        expect(screen.getByLabelText(/You might also like/i)).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: /Beta Dish/i }));
+        expect(screen.getByRole('button', { name: /You might also like/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /You might also like/i }));
+        fireEvent.click(screen.getAllByRole('button', { name: /Beta Dish/i })[0]!);
         expect(mockNavigate).toHaveBeenCalledWith(r2);
+    });
+
+    it('shows prev/next recipe navigation when browsing a list', () => {
+        const mockNavigate = vi.fn();
+        const r1 = createMockRecipe({ id: 'recipe-a', title: 'Alpha Dish' });
+        const r2 = createMockRecipe({ id: 'recipe-b', title: 'Beta Dish' });
+        const r3 = createMockRecipe({ id: 'recipe-c', title: 'Gamma Dish' });
+        renderWithProviders(
+            <RecipeModal {...defaultProps} recipe={r2} recipeList={[r1, r2, r3]} onNavigate={mockNavigate} />
+        );
+        fireEvent.click(screen.getByTestId('recipe-nav-previous'));
+        expect(mockNavigate).toHaveBeenCalledWith(r1);
+        fireEvent.click(screen.getByTestId('recipe-nav-next'));
+        expect(mockNavigate).toHaveBeenCalledWith(r3);
+    });
+
+    it('Cook tab shows step progress and cook mode CTA', () => {
+        const mockStartCook = vi.fn();
+        renderWithProviders(
+            <RecipeModal {...defaultProps} onStartCook={mockStartCook} />
+        );
+        fireEvent.click(screen.getByRole('tab', { name: 'Cook' }));
+        expect(screen.getByRole('progressbar', { name: /0 of 2 steps completed/i })).toBeInTheDocument();
+        expect(screen.getByTestId('recipe-cook-tab-start')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('recipe-cook-tab-start'));
+        expect(mockStartCook).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears ingredient checkmarks when Clear checks is clicked', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /Ingredients \(2\)/i }));
+        fireEvent.click(screen.getAllByRole('checkbox')[0]);
+        expect(screen.getAllByRole('button', { name: /Clear ingredient checkmarks/i }).length).toBeGreaterThan(0);
+        fireEvent.click(screen.getAllByRole('button', { name: /Clear ingredient checkmarks/i })[0]!);
+        expect(screen.queryAllByRole('button', { name: /Clear ingredient checkmarks/i })).toHaveLength(0);
+    });
+
+    it('shows total time when prep and cook durations are parseable', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        expect(screen.getByText(/Total: 45 min/i)).toBeInTheDocument();
+    });
+
+    it('browse contributor button calls handler with contributor name', () => {
+        const onBrowseContributor = vi.fn();
+        renderWithProviders(
+            <RecipeModal {...defaultProps} onBrowseContributor={onBrowseContributor} />
+        );
+        fireEvent.click(screen.getByTestId('recipe-modal-browse-contributor'));
+        expect(onBrowseContributor).toHaveBeenCalledWith('Test User');
+    });
+
+    it('restores ingredient checkmarks from session storage when reopened', () => {
+        sessionStorage.setItem(
+            'schafer_recipe_cook_session',
+            JSON.stringify({ 'recipe-1': { ingredients: [0], steps: [] } }),
+        );
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /Ingredients \(2\)/i }));
+        const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+        expect(checkboxes[0]?.checked).toBe(true);
     });
 });

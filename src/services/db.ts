@@ -4,6 +4,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage, connectS
 import { Recipe, GalleryItem, Trivia, ContributorProfile, HistoryEntry, StorySection, RecipeVersion } from '../types';
 import defaultRecipes from '../data/recipes.json';
 import { normalizeRecipe, normalizeRecipes } from '../constants/taxonomy';
+import { resolveArchivePhone } from '../utils/textToGallery';
 
 async function retryWithBackoff<T>(
     fn: () => Promise<T>,
@@ -208,7 +209,7 @@ export const CloudArchive = {
         if (!fb) return () => { };
         return onSnapshot(doc(fb.db, 'config', 'settings'), (snapshot) => {
             const data = snapshot.data();
-            callback(data?.archivePhone || localStorage.getItem('schafer_archive_phone') || '');
+            callback(resolveArchivePhone(data?.archivePhone));
         }, (error) => {
             if (onError) onError(error);
             else console.error('subscribeArchivePhone error:', error);
@@ -298,11 +299,17 @@ export const CloudArchive = {
      * - `caption` stores as-is.
      * - `date` accepts a Date; persisted as ISO string on `created_at` so sort order reflects the edit.
      */
-    async updateGalleryItem(id: string, patch: { caption?: string; date?: Date }): Promise<void> {
+    async updateGalleryItem(
+        id: string,
+        patch: { caption?: string; date?: Date; status?: GalleryItem['status'] }
+    ): Promise<void> {
         const payload: Record<string, unknown> = {};
         if (typeof patch.caption === 'string') payload.caption = patch.caption;
         if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
             payload.created_at = patch.date.toISOString();
+        }
+        if (patch.status === 'pending' || patch.status === 'approved') {
+            payload.status = patch.status;
         }
         if (Object.keys(payload).length === 0) return;
 

@@ -9,7 +9,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const FROM_NAME = process.argv[2] || "Dawn";
-const TO_NAME = process.argv[3] || "Dawn (Schafer) Tessmer";
+const TO_NAME = process.argv[3] || "Dawn";
 
 function loadFirebaseConfig() {
     const raw = process.env.FIREBASE_WEB_CONFIG;

@@ -60,10 +60,10 @@ describe('GroceryListView', () => {
         const checkbox = screen.getByRole('checkbox', { name: /mark "salt" as bought/i });
         expect(checkbox).not.toBeChecked();
         fireEvent.click(checkbox);
+        fireEvent.click(await screen.findByRole('button', { name: /checked off \(1\)/i }));
         await waitFor(() =>
             expect(screen.getByRole('checkbox', { name: /mark "salt" as not bought/i })).toBeChecked(),
         );
-        // Checked item gets the strike-through class
         expect(screen.getByText('salt').className).toMatch(/line-through/);
     });
 

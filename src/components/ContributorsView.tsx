@@ -3,6 +3,9 @@ import { Recipe, GalleryItem, Trivia, ContributorProfile } from '../types';
 import { PLACEHOLDER_AVATAR } from '../constants';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
+import { PageHeader } from './PageHeader';
+import { filterPublicGalleryItems } from '../utils/galleryModeration';
+import { normalizeContributorName } from '../constants/taxonomy';
 
 interface ContributorsViewProps {
     recipes: Recipe[];
@@ -10,13 +13,15 @@ interface ContributorsViewProps {
     trivia?: Trivia[];
     contributors: ContributorProfile[];
     onSelectContributor: (name: string) => void;
+    /** Jump to Gallery tab filtered to this contributor's approved photos */
+    onViewGallery?: (name: string) => void;
     /** Optional: called when user taps "Browse recipes" in empty state */
     onGoToRecipes?: () => void;
     isDataLoading?: boolean;
 }
 
 const ContributorsSkeleton: React.FC = () => (
-    <section className="max-w-7xl mx-auto py-12 px-6">
+    <section className="view-shell-wide">
         <div className="animate-pulse space-y-10">
             <div className="space-y-4">
                 <div className="h-10 bg-stone-200 rounded w-1/3" />
@@ -54,24 +59,27 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
     trivia = [],
     contributors,
     onSelectContributor,
+    onViewGallery,
     onGoToRecipes,
     isDataLoading
 }) => {
+    const publicGallery = useMemo(() => filterPublicGalleryItems(gallery), [gallery]);
     const [search, setSearch] = useState('');
     const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
 
     const stats = useMemo<ContributorStats[]>(() => {
         const s: Record<string, ContributorStats> = {};
-        const add = (name: string, recipes = 0, gallery = 0, trivia = 0, cat?: string) => {
-            const key = name.trim() || 'Unknown';
-            if (!s[key]) s[key] = { name: key, recipeCount: 0, galleryCount: 0, triviaCount: 0, categories: new Set() };
+        const add = (rawName: string, recipes = 0, gallery = 0, trivia = 0, cat?: string) => {
+            const name = normalizeContributorName(rawName.trim() || 'Unknown');
+            const key = name.trim().toLowerCase();
+            if (!s[key]) s[key] = { name, recipeCount: 0, galleryCount: 0, triviaCount: 0, categories: new Set() };
             s[key].recipeCount += recipes;
             s[key].galleryCount += gallery;
             s[key].triviaCount += trivia;
             if (cat) s[key].categories.add(cat);
         };
         recipes.forEach(r => add(r.contributor, 1, 0, 0, r.category));
-        gallery.forEach(g => add(g.contributor, 0, 1, 0));
+        publicGallery.forEach(g => add(g.contributor, 0, 1, 0));
         trivia.forEach(t => add(t.contributor, 0, 0, 1));
         contributors.forEach(c => add(c.name));
         return Object.values(s)
@@ -81,7 +89,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                 if (tb !== ta) return tb - ta;
                 return a.name.localeCompare(b.name);
             });
-    }, [recipes, gallery, trivia, contributors]);
+    }, [recipes, publicGallery, trivia, contributors]);
 
     const filteredStats = useMemo(() => {
         if (!search.trim()) return stats;
@@ -122,19 +130,21 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
     return (
         <section
-            className="max-w-7xl mx-auto py-12 px-6"
+            className="view-shell-wide view-stack"
             aria-labelledby="contributors-heading"
             aria-describedby="contributors-description"
         >
-            <h2 id="contributors-heading" className="text-4xl md:text-5xl font-serif italic text-[#2D4635] mb-4">
-                The Contributors
-            </h2>
-            <p id="contributors-description" className="text-stone-500 font-serif italic text-lg mb-10 max-w-2xl">
-                The family members who have shared recipes, memories, and stories in this archive.
+            <PageHeader
+                id="contributors-heading"
+                title="The Contributors"
+                description="The family members who have shared recipes, memories, and stories in this archive."
+            />
+            <p id="contributors-description" className="sr-only">
+                Browse contributors and open their recipes from the archive.
             </p>
 
             {hasContributors && (
-                <div className="mb-10">
+                <div>
                     <label htmlFor="contributor-search" className="sr-only">
                         Search contributors by name
                     </label>
@@ -157,7 +167,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
             {!hasContributors ? (
                 <div
-                    className="py-20 text-center border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[3rem] bg-white/50 dark:bg-[var(--card-bg)]/50"
+                    className="py-12 text-center border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[2rem] bg-white/50 dark:bg-[var(--card-bg)]/50"
                     role="status"
                     aria-live="polite"
                 >
@@ -166,13 +176,15 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     <p className="text-stone-500 text-sm mt-2">Add recipes, photos, or trivia to see contributors appear here.</p>
                     <p className="text-stone-500 text-xs mt-4">Every contribution counts—recipes, gallery memories, and trivia questions.</p>
                     {onGoToRecipes && (
+                        <div className="empty-state-actions mt-6">
                         <button
                             type="button"
                             onClick={onGoToRecipes}
-                            className="mt-6 px-6 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                            className="btn btn-primary btn-body"
                         >
                             Browse recipes
                         </button>
+                        </div>
                     )}
                 </div>
             ) : filteredStats.length === 0 ? (
@@ -181,13 +193,13 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                     <button
                         type="button"
                         onClick={() => setSearch('')}
-                        className="mt-4 text-[#2D4635] font-bold underline hover:no-underline focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 rounded px-4 py-2"
+                        className="btn btn-link btn-body mt-4"
                     >
                         Clear search
                     </button>
                 </div>
             ) : (
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10 list-none p-0 m-0">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6 list-none p-0 m-0">
                     {filteredStats.map((stat) => {
                         const avatarUrl = avatarErrors.has(stat.name)
                             ? PLACEHOLDER_AVATAR
@@ -196,11 +208,11 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
 
                         return (
                             <li key={stat.name}>
-                                <article className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-10 border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-2xl transition-all duration-300 group relative overflow-hidden text-center h-full flex flex-col">
-                                    <div className="relative inline-block mb-6">
+                                <article className="bg-white dark:bg-[var(--card-bg)] rounded-[2rem] p-6 md:p-8 border border-stone-100 dark:border-stone-800 shadow-sm hover:shadow-xl transition-all duration-300 group relative overflow-hidden text-center h-full flex flex-col">
+                                    <div className="relative inline-block mb-4">
                                         <img
                                             src={avatarUrl}
-                                            className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-stone-50 dark:bg-stone-800 border-8 border-white dark:border-stone-700 shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
+                                            className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-stone-50 dark:bg-stone-800 border-4 border-white dark:border-stone-700 shadow-xl mx-auto group-hover:rotate-6 transition-transform duration-300 object-cover"
                                             alt={`${stat.name}'s avatar`}
                                             onError={(e) => { handleAvatarError(stat.name); avatarOnError(e); }}
                                             loading="lazy"
@@ -232,14 +244,26 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                     <p className="text-xs text-stone-500 dark:text-stone-400 mb-6" aria-hidden="true">
                                         {contributionSummary(stat)}
                                     </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => onSelectContributor(stat.name)}
-                                        className="mt-auto w-full py-4 bg-stone-50 dark:bg-stone-800 text-[#2D4635] dark:text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#2D4635] dark:hover:bg-[#2D4635] hover:text-white transition-all min-h-[2.75rem] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
-                                        aria-label={`Explore ${stat.name}'s collection: ${contributionSummary(stat)}`}
-                                    >
-                                        Explore Collection ({totalContributions(stat)})
-                                    </button>
+                                    <div className="mt-auto w-full space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => onSelectContributor(stat.name)}
+                                            className="btn btn-secondary btn-invert-on-hover w-full"
+                                            aria-label={`Explore ${stat.name}'s collection: ${contributionSummary(stat)}`}
+                                        >
+                                            Explore Collection ({totalContributions(stat)})
+                                        </button>
+                                        {onViewGallery && stat.galleryCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onViewGallery(stat.name)}
+                                                className="btn btn-link btn-body w-full"
+                                                aria-label={`View ${stat.galleryCount} photo${stat.galleryCount !== 1 ? 's' : ''} from ${stat.name}`}
+                                            >
+                                                View photos ({stat.galleryCount})
+                                            </button>
+                                        )}
+                                    </div>
                                 </article>
                             </li>
                         );

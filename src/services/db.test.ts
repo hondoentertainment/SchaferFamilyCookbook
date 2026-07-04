@@ -310,6 +310,23 @@ describe('CloudArchive', () => {
         });
     });
 
+    describe('Family Story CMS', () => {
+        it('saves and loads story content in local mode', async () => {
+            const sections = [
+                {
+                    id: 'story-1',
+                    heading: 'Custom Memory',
+                    body: 'A saved family memory.',
+                    order: 0,
+                },
+            ];
+
+            await CloudArchive.saveStoryContent(sections);
+
+            await expect(CloudArchive.getStoryContent()).resolves.toEqual(sections);
+        });
+    });
+
     describe('Firebase Provider Operations', () => {
         beforeEach(async () => {
             CloudArchive._firebaseApp = null;
@@ -400,6 +417,20 @@ describe('CloudArchive', () => {
             expect(setDoc).toHaveBeenCalled();
             await CloudArchive.deleteContributor('c1');
             expect(deleteDoc).toHaveBeenCalled();
+        });
+
+        it('should save story content in firebase mode', async () => {
+            const { setDoc } = await import('firebase/firestore');
+            await CloudArchive.saveStoryContent([
+                {
+                    id: 'story-1',
+                    heading: 'Custom Memory',
+                    body: 'A saved family memory.',
+                    order: 0,
+                },
+            ]);
+            expect(setDoc).toHaveBeenCalled();
+            expect(localStorage.getItem('schafer_story_content')).toContain('Custom Memory');
         });
 
         it('should get correct download URL when uploading file in firebase mode', async () => {

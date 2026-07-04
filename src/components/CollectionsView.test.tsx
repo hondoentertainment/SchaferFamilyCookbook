@@ -18,18 +18,24 @@ vi.mock('../utils/collections', () => ({
 // Mock haptics so the Vibration API absence doesn't throw in jsdom.
 vi.mock('../utils/haptics', () => ({ hapticLight: vi.fn() }));
 
+vi.mock('../utils/groceryList', () => ({
+    addRecipeIngredientsToGrocery: vi.fn(() => ({ added: 2, skipped: 0 })),
+}));
+
 import {
     getAllCollections,
     createCollection,
     deleteCollection,
     removeFromCollection,
 } from '../utils/collections';
+import { addRecipeIngredientsToGrocery } from '../utils/groceryList';
 
 // Typed mock handles for convenience.
 const mockGetAll = getAllCollections as ReturnType<typeof vi.fn>;
 const mockCreate = createCollection as ReturnType<typeof vi.fn>;
 const mockDelete = deleteCollection as ReturnType<typeof vi.fn>;
 const mockRemove = removeFromCollection as ReturnType<typeof vi.fn>;
+const mockAddGrocery = addRecipeIngredientsToGrocery as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,12 +72,13 @@ describe('CollectionsView', () => {
     // -----------------------------------------------------------------------
     // Empty state
     // -----------------------------------------------------------------------
-    it('renders empty state with "Create Your First Collection" button when no collections exist', () => {
+    it('renders empty state with starter templates and create-your-own button when no collections exist', () => {
         renderWithProviders(<CollectionsView {...defaultProps} />);
 
         expect(
-            screen.getByRole('button', { name: /create your first collection/i }),
+            screen.getByRole('button', { name: /create your own/i }),
         ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /weeknight rotation/i })).toBeInTheDocument();
         expect(screen.getByText(/organize recipes into custom collections/i)).toBeInTheDocument();
     });
 
@@ -229,5 +236,25 @@ describe('CollectionsView', () => {
         await waitFor(() =>
             expect(screen.queryByText('Favourites')).not.toBeInTheDocument(),
         );
+    });
+
+    it('adds collection recipes to the grocery list when the action is clicked', async () => {
+        const recipe = createMockRecipe({ id: 'r1', title: 'Grandma Pie', ingredients: ['2 apples'] });
+        const col = buildCollection({ recipeIds: ['r1'] });
+        mockGetAll.mockReturnValue([col]);
+        const onOpenGroceryList = vi.fn();
+
+        renderWithProviders(
+            <CollectionsView
+                {...defaultProps}
+                recipes={[recipe]}
+                onOpenGroceryList={onOpenGroceryList}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /favourites/i }));
+        fireEvent.click(await screen.findByRole('button', { name: /add to grocery list/i }));
+
+        expect(mockAddGrocery).toHaveBeenCalledWith([recipe]);
     });
 });

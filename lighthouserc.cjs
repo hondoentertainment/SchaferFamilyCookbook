@@ -8,10 +8,11 @@ module.exports = {
   ci: {
     collect: {
       url: [url],
-      numberOfRuns: 1,
-      settings: {
-        preset: 'desktop',
-      },
+      numberOfRuns: 2,
+      settings: [
+        { preset: 'desktop' },
+        { preset: 'mobile' },
+      ],
     },
     assert: {
       assertions: {
@@ -23,5 +24,10 @@ module.exports = {
         'categories:seo': ['warn', { minScore: 0.95 }],
       },
     },
+    upload: {
+      target: 'filesystem',
+      outputDir: './.lighthouseci',
+    },
+    // Reports land in `.lighthouseci/` — attach as a CI artifact for trend review.
   },
 };

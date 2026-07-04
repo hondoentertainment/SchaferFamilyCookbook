@@ -10,9 +10,11 @@ import {
     type LeaderboardEntry,
 } from '../services/leaderboard';
 import { trackEvent } from '../services/analytics';
+import { PageHeader } from './PageHeader';
 
 const FEEDBACK_DELAY_MS = 1500;
 const LEADERBOARD_LIMIT = 10;
+const TRIVIA_SHELL = 'view-shell view-stack max-w-3xl mx-auto';
 
 type LeaderboardStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unavailable';
 
@@ -29,7 +31,7 @@ function FamilyLeaderboard({
     onRefresh: () => void;
     highlightUserId?: string;
 }) {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
     const headerId = 'family-leaderboard-heading';
 
     return (
@@ -69,7 +71,7 @@ function FamilyLeaderboard({
                             <button
                                 type="button"
                                 onClick={() => { onRefresh(); }}
-                                className="min-h-10 rounded-full border border-stone-200 dark:border-stone-600 bg-white dark:bg-stone-800 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-200 hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors"
+                                className="btn btn-secondary"
                             >
                                 Check again
                             </button>
@@ -188,14 +190,14 @@ function Scoreboard({ scores, highlightId }: { scores: TriviaScore[]; highlightI
 }
 
 const TriviaSkeleton: React.FC = () => (
-    <div className="max-w-3xl mx-auto py-20 px-6 space-y-12 animate-pulse">
+    <div className={`${TRIVIA_SHELL} animate-pulse`}>
         <div className="h-4 bg-stone-200 dark:bg-stone-700 rounded w-1/3" />
         <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full" />
-        <div className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-16 border border-stone-100 dark:border-stone-800 space-y-6">
+        <div className="bg-white dark:bg-[var(--card-bg)] rounded-[2rem] p-6 md:p-10 border border-stone-100 dark:border-stone-800 space-y-6">
             <div className="h-8 bg-stone-200 dark:bg-stone-700 rounded w-4/5" />
             <div className="space-y-4">
                 {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-16 bg-stone-100 dark:bg-stone-800 rounded-2xl" />
+                    <div key={i} className="h-14 bg-stone-100 dark:bg-stone-800 rounded-2xl" />
                 ))}
             </div>
         </div>
@@ -400,23 +402,24 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
     if (!quizStarted) {
         return (
-            <div className="max-w-4xl mx-auto py-20 px-6 space-y-12 animate-in fade-in zoom-in duration-1000">
+            <div className={`${TRIVIA_SHELL} animate-in fade-in zoom-in duration-1000`}>
+                <PageHeader
+                    id="trivia-landing-heading"
+                    eyebrow="Family Heritage Quiz"
+                    title="Test your legacy knowledge"
+                    description={`${questions.length} questions curated from our history and recipes.`}
+                />
                 <div className="text-center space-y-6">
-                    <div className="w-24 h-24 bg-orange-50 rounded-full mx-auto flex items-center justify-center text-4xl shadow-inner border border-stone-100 mb-8">🎓</div>
-                    <h2 className="text-6xl font-serif italic text-[#2D4635]">Family Heritage Quiz</h2>
-                    <p className="text-stone-400 font-serif max-w-lg mx-auto italic text-lg leading-relaxed">
-                        Test your knowledge of the Schafer / Oehler legacy through {questions.length} questions curated from our history and recipes.
-                    </p>
+                    <div className="w-20 h-20 bg-orange-50 rounded-full mx-auto flex items-center justify-center text-3xl shadow-inner border border-stone-100 mb-4">🎓</div>
                     <button
                         onClick={startQuiz}
-                        className="mt-8 px-12 py-5 bg-[#2D4635] text-white rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                        className="btn btn-primary"
                     >
                         Begin The Challenge
                     </button>
                     <p className="text-[10px] text-stone-400 uppercase tracking-widest">Tip: press 1-4 on your keyboard to answer quickly</p>
-                    <p className="text-[10px] text-stone-300 uppercase tracking-widest mt-8">Prove your status as a legacy keeper</p>
                 </div>
-                <div className="mt-12 max-w-md mx-auto space-y-6">
+                <div className="max-w-md mx-auto space-y-6">
                     <FamilyLeaderboard
                         entries={leaderboard}
                         status={leaderboardStatus}
@@ -434,7 +437,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
         const q = questions[reviewIndex];
         const log = answerLog[reviewIndex];
         return (
-            <div className="max-w-3xl mx-auto py-20 px-6 space-y-10 animate-in slide-in-from-bottom-8 duration-500">
+            <div className={`${TRIVIA_SHELL} animate-in slide-in-from-bottom-8 duration-500`}>
                 <div className="flex justify-between items-center">
                     <button
                         onClick={goBackToResults}
@@ -499,7 +502,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 ? "Great job! You have a strong grasp of our family's flavor and history."
                 : "Keep exploring the archive—every recipe tells a story.";
         return (
-            <div className="max-w-3xl mx-auto py-20 px-6 text-center space-y-12 animate-in zoom-in duration-700">
+            <div className={`${TRIVIA_SHELL} text-center animate-in zoom-in duration-700`}>
                 <div className="sr-only" aria-live="polite" aria-atomic="true" role="status">
                     {ariaAnnouncement}
                 </div>
@@ -576,7 +579,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
     const currentQuestion = questions[currentQuestionIndex];
 
     return (
-        <div className="max-w-3xl mx-auto py-20 px-6 space-y-12 animate-in slide-in-from-bottom-8 duration-500">
+        <div className={`${TRIVIA_SHELL} animate-in slide-in-from-bottom-8 duration-500`}>
             <div
                 className="sr-only"
                 aria-live="assertive"

@@ -130,13 +130,13 @@ $env:PLAYWRIGHT_BASE_URL="https://schafer-family-cookbook.vercel.app"; npm run t
   ```
 - Run Chromium E2E if the change touches admin navigation, gallery upload/display, Twilio configuration, or archive phone behavior.
 
-### Collections, favorites, or userPrefs sync
+### Collections, favorites, meal plan, or userPrefs sync
 
 - Run:
   ```bash
-  npx vitest run src/utils/collections.test.ts src/utils/favorites.test.ts src/services/userPrefsSync.test.ts
-  npx vitest run src/components/ProfileView.test.tsx src/components/RecipeModal.test.tsx
-  npx playwright test e2e/profile.spec.ts --project=chromium
+  npx vitest run src/utils/collections.test.ts src/utils/favorites.test.ts src/utils/mealPlan.test.ts src/services/userPrefsSync.test.ts
+  npx vitest run src/components/ProfileView.test.tsx src/components/RecipeModal.test.tsx src/components/MealPlanView.test.tsx
+  npx playwright test e2e/profile.spec.ts e2e/meal-plan.spec.ts --project=chromium
   ```
 - After changing `firebase/firestore.rules` for `userPrefs`, run **`npm run test:rules`** in the emulator.
 
@@ -189,14 +189,14 @@ The GitHub Pages deployment workflow runs after CI succeeds on `main`, or manual
 - `src/data/recipes.test.ts`: canonical shape and integrity of every `recipes.json` entry.
 - `src/services/db.test.ts`: local/Firebase persistence, subscriptions, uploads, recipe image normalization, contributors.
 - `src/services/firebaseCustodianAuth.test.ts`: custodian sign-in and admin claim handling.
-- `src/services/userPrefsSync.test.ts`: favorites, ratings, and **collections** cloud sync (merge, fetch, write, debounce).
+- `src/services/userPrefsSync.test.ts`: favorites, ratings, **collections**, and **meal plan** cloud sync (merge, fetch, write, debounce).
 - `src/services/leaderboard.test.ts`: trivia leaderboard persistence.
 - `src/services/geminiProxy.test.ts`: recipe image generation proxy behavior.
 - `api/loadRecipesSeed.test.ts`: slim Vercel seed matches source recipe count and required fields.
 - `api/share.test.ts`, `api/og.test.ts`, `api/ping.test.ts`: share HTML, OG PNG, diagnostic route.
 - `api/webhook.test.ts`, `api/notify.test.ts`, `api/lib/rateLimit.test.ts`: Twilio MMS webhook, FCM notify, sliding-window limits.
 - `scripts/sync-firebase-sw-config.test.mjs`: FCM service worker config injection.
-- `firebase/firestore.rules.test.ts`: public read, admin write, **userPrefs** shape (including collections).
+- `firebase/firestore.rules.test.ts`: public read, admin write, **userPrefs** shape (including collections and meal plan).
 - `src/components/*.test.tsx`: user-facing components, forms, modals, profile/admin, navigation, sharing, grocery, collections, cook mode, featured strip.
 - `src/utils/*.test.ts`: ratings, favorites, collections, grocery list, scaling, recent views, haptics, swipes, scoreboards, activity feed, featured helpers.
 - `e2e/*.spec.ts`: browser-level login, navigation, recipes, recipe modal, gallery, trivia, **profile (favorites, recently viewed, collections)**, admin, cook mode, privacy.

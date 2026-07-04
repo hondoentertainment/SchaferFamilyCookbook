@@ -602,7 +602,7 @@
   {
     "id": "7c5dae4d",
     "title": "Raisin Cookies",
-    "contributor": "Harriet (Oehler) Schafer",
+    "contributor": "Harriet",
     "category": "Dessert",
     "ingredients": [
       "½ cup butter, softened",
@@ -754,7 +754,7 @@
   {
     "id": "8e99f38a",
     "title": "Stuffed Pepper Soup",
-    "contributor": "Dawn (Schafer) Tessmer",
+    "contributor": "Dawn",
     "category": "Main",
     "ingredients": [
       "1 lb ground beef",
@@ -790,7 +790,7 @@
   {
     "id": "60711174",
     "title": "Spinach Dip",
-    "contributor": "Dawn (Schafer) Tessmer",
+    "contributor": "Dawn",
     "category": "Dip/Sauce",
     "ingredients": [
       "1 package frozen chopped spinach, thawed and drained",
@@ -1028,7 +1028,7 @@
   {
     "id": "c7e4e9be",
     "title": "Sausage Egg & Cheese Breakfast Bake",
-    "contributor": "Dawn (Schafer) Tessmer",
+    "contributor": "Dawn",
     "category": "Breakfast",
     "ingredients": [
       "1 lb breakfast sausage",
@@ -1062,7 +1062,7 @@
   {
     "id": "55b909fd",
     "title": "Cinnamon Rolls",
-    "contributor": "Dawn (Schafer) Tessmer",
+    "contributor": "Dawn",
     "category": "Main",
     "ingredients": [
       "2 packages active dry yeast",
@@ -1112,7 +1112,7 @@
   {
     "id": "bce43b32",
     "title": "Poppy Seed Bread",
-    "contributor": "Dawn (Schafer) Tessmer",
+    "contributor": "Dawn",
     "category": "Bread",
     "ingredients": [
       "3 cups all-purpose flour",
@@ -1759,7 +1759,7 @@
   {
     "id": "c3e7edcc",
     "title": "Mock Chili",
-    "contributor": "Dawn (Schafer) Tessmer",
+    "contributor": "Dawn",
     "category": "Main",
     "ingredients": [
       "1 lb ground beef",
@@ -1980,7 +1980,7 @@
   {
     "id": "c88f6bcd",
     "title": "Glaze for Cinnamon Rolls",
-    "contributor": "Harriet (Oehler) Schafer",
+    "contributor": "Harriet",
     "category": "Main",
     "ingredients": [
       "1 cup powdered sugar",
@@ -2364,5 +2364,33 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of White Russian Pudding Shots, a main family recipe from Lex. Show the finished dish as it would look after these ingredients and method: 1 package instant vanilla pudding, 1½ cups milk, ½ cup vodka, ¼ cup coffee liqueur, Whipped cream. Whisk pudding mix and milk until thick. Stir in vodka and coffee liqueur. Spoon into small cups.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback"
+  },
+  {
+    "id": "9205785d",
+    "title": "Dill Pickle Wontons",
+    "contributor": "Wren",
+    "category": "Appetizer",
+    "ingredients": [
+      "8 oz cream cheese, softened",
+      "¼ cup dill pickle, chopped fine and patted dry",
+      "2–3 Tbsp pickle juice",
+      "Dash garlic salt, pepper, and salt to taste",
+      "Egg roll wrappers, as needed",
+      "1 egg, beaten (for sealing)"
+    ],
+    "instructions": [
+      "Mix cream cheese, pickle, pickle juice, garlic salt, pepper, and salt until combined.",
+      "Place a small amount of filling on each egg roll wrapper and roll up, sealing edges with a bit of beaten egg.",
+      "Deep fry for a few minutes until golden.",
+      "Serve with jalapeño jelly and/or jalapeño apricot jelly."
+    ],
+    "image": "/recipe-images/9205785d.webp",
+    "notes": "Transcribed from a handwritten family recipe card.",
+    "imageSource": "upload",
+    "imageApprovalStatus": "approved",
+    "tags": [],
+    "occasions": [],
+    "collections": [],
+    "created_at": "2026-06-29T00:00:00.000Z"
   }
 ]

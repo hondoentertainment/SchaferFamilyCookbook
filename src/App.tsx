@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } from 'react';
 import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile } from './types';
 import { useUI } from './context/UIContext';
+import { shouldToastImageError } from './utils/imageErrorToast';
+import { RecipeImage, RecipeImageFallback } from './components/RecipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage } from './utils/recipeImage';
 import { FirebaseError } from 'firebase/app';
 import { CloudArchive } from './services/db';
 import {
@@ -10,16 +13,19 @@ import {
     type CustodianAuthState,
 } from './services/firebaseCustodianAuth';
 import { Header } from './components/Header';
+import { PageHeader } from './components/PageHeader';
+import { GalleryUploadPanel } from './components/GalleryUploadPanel';
 import { OfflineBanner } from './components/OfflineBanner';
 import { PLACEHOLDER_AVATAR } from './constants';
 import { getAverageRating, getRatingCount, isFamilyApproved } from './utils/ratings';
 import { STORAGE_KEYS, SESSION_KEYS } from './constants/storage';
-import { addActivity, countRecipeCooksLastDays } from './utils/activityFeed';
+import { addActivity } from './utils/activityFeed';
 const RecipeModal = lazy(() => import('./components/RecipeModal').then(m => ({ default: m.RecipeModal })));
 const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({ default: m.CookModeView })));
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
-import { useUserPrefsSync } from './services/useUserPrefsSync';
+import { useUserPrefsSync, type UserPrefsSyncStatus } from './services/useUserPrefsSync';
+import { useOfflineRecipeIds } from './hooks/useOfflineRecipeIds';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
 import { avatarOnError } from './utils/avatarFallback';
@@ -31,6 +37,29 @@ import { useOfflineUploadQueue } from './hooks/useOfflineUploadQueue';
 import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
+import { fuzzyMatch } from './utils/fuzzySearch';
+import { LoginScreen } from './components/LoginScreen';
+import {
+    historyForContributor,
+    recipesForContributor,
+    resolveLoginAffiliation,
+    totalContributorContent,
+} from './utils/loginMatch';
+import { mergeWithDefaultRecipes } from './utils/mergeDefaultRecipes';
+import { validateGalleryFile } from './utils/galleryUpload';
+import {
+    checkGalleryUploadRateLimit,
+    recordGalleryUpload,
+} from './utils/galleryUploadRateLimit';
+import {
+    countPendingForContributor,
+    countPendingModeration,
+    filterGalleryByContributor,
+    filterGalleryForViewer,
+    isGalleryItemPending,
+} from './utils/galleryModeration';
+import { addSentryBreadcrumb } from './monitoring/sentry';
+import { cacheRecipeOffline, cacheRecipesOffline, getOfflineRecipe } from './utils/recipeOfflineCache';
 import {
     CATEGORY_META,
     RECIPE_CATEGORIES,
@@ -38,6 +67,7 @@ import {
     getTagLabel,
     getTagOptions,
     normalizeContributorName,
+    contributorMatchKey,
     normalizeRecipes,
 } from './constants/taxonomy';
 
@@ -58,7 +88,15 @@ const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => 
 const HelpView = lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })));
 const FeaturedStrip = lazy(() => import('./components/FeaturedStrip').then(m => ({ default: m.FeaturedStrip })));
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
-import { RecipeCardImage, HeroRecipeImage, isValidImageUrl } from './components/RecipeImages';
+import { SectionSubNav } from './components/SectionSubNav';
+import { FamilySubNavHint } from './components/FamilySubNavHint';
+import { shouldShowGalleryUploadUnavailableBanner } from './utils/galleryUploadAvailability';
+import { resolveArchivePhone } from './utils/textToGallery';
+import {
+    FAMILY_SECONDARY_NAV,
+    getFamilyNavDetail,
+    getSecondaryNavForTab,
+} from './config/navConfig';
 
 const TabFallback = () => (
     <div className="flex items-center justify-center min-h-[50vh] text-stone-500">
@@ -66,54 +104,22 @@ const TabFallback = () => (
     </div>
 );
 
-interface FamilyHubProps {
-    activeTab: string;
-    onSelect: (tabId: string) => void;
-    galleryCount: number;
-    triviaCount: number;
-    contributorCount: number;
-}
-
-const FamilyHub: React.FC<FamilyHubProps> = ({ activeTab, onSelect, galleryCount, triviaCount, contributorCount }) => {
-    const items = [
-        { id: 'Gallery', label: 'Gallery', detail: `${galleryCount} memories`, icon: '📷' },
-        { id: 'Trivia', label: 'Trivia', detail: `${triviaCount} questions`, icon: '🎲' },
-        { id: 'Family Story', label: 'Story', detail: 'Read the archive', icon: '📖' },
-        { id: 'Contributors', label: 'People', detail: `${contributorCount} contributors`, icon: '👥' },
-    ];
-    return (
-        <section
-            aria-label="Family hub navigation"
-            className="max-w-[1400px] mx-auto px-3 md:px-6 pt-3 md:pt-6 pb-1"
-        >
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
-                {items.map((item) => {
-                    const active = activeTab === item.id;
-                    return (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => { onSelect(item.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            aria-current={active ? 'page' : undefined}
-                            className={`min-h-11 shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98] ${
-                                active
-                                    ? 'bg-[#2D4635] text-white shadow-sm'
-                                            : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-700'
-                            }`}
-                        >
-                            <span aria-hidden className="text-base leading-none">{item.icon}</span>
-                            <span>{item.label}</span>
-                            <span className={`hidden sm:inline text-[10px] font-medium normal-case tracking-normal ${active ? 'text-emerald-100/80' : 'text-stone-600 dark:text-stone-300'}`}>· {item.detail}</span>
-                        </button>
-                    );
-                })}
-            </div>
-        </section>
-    );
+const SECONDARY_NAV_ARIA: Record<string, string> = {
+    family: 'Family hub navigation',
+    cook: 'Cooking tools navigation',
+    recipes: 'Recipe browsing navigation',
+    me: 'Account navigation',
 };
 
+function secondaryNavAriaLabel(items: typeof FAMILY_SECONDARY_NAV): string {
+    if (items === FAMILY_SECONDARY_NAV) return SECONDARY_NAV_ARIA.family;
+    if (items.some((i) => i.id === 'Grocery List')) return SECONDARY_NAV_ARIA.cook;
+    if (items.some((i) => i.id === 'Recipes')) return SECONDARY_NAV_ARIA.recipes;
+    return SECONDARY_NAV_ARIA.me;
+}
+
 const RecipeGridSkeleton: React.FC = () => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6">
         {Array.from({ length: 15 }).map((_, i) => (
             <div key={i} className="aspect-[3/4] rounded-[2rem] bg-stone-200 animate-pulse" />
         ))}
@@ -419,6 +425,75 @@ import { HistoryEntry } from './types';
 import { TRIVIA_SEED } from './data/trivia_seed';
 import defaultRecipes from './data/recipes.json';
 
+const OfflineRecipeBadge: React.FC<{ position?: 'left' | 'right' }> = ({ position = 'right' }) => (
+    <span
+        className={`absolute top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[#2D4635]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${
+            position === 'left' ? 'left-2' : 'right-2'
+        }`}
+        title="Saved for offline cook mode"
+    >
+        <span aria-hidden>📥</span>
+        <span>Offline</span>
+    </span>
+);
+
+const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
+    const { toast } = useUI();
+    return (
+        <RecipeImage
+            recipe={recipe}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
+            imgClassName={isCookbookCoverImage(recipe) ? '' : 'group-hover:scale-110'}
+            onError={() => {
+                if (shouldToastImageError(recipe.id)) {
+                    toast("Some recipe images couldn't load. Check your connection and refresh.", 'info');
+                }
+            }}
+        />
+    );
+};
+
+const HeroRecipeImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
+    const [broken, setBroken] = useState(false);
+    if (!isValidRecipeImageUrl(recipe.image) || broken) {
+        return <RecipeImageFallback category={recipe.category} compact label="Hero image unavailable" />;
+    }
+
+    if (isCookbookCoverImage(recipe)) {
+        return (
+            <>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_25%,rgba(160,82,45,0.35),transparent_34%),radial-gradient(circle_at_20%_75%,rgba(16,185,129,0.18),transparent_36%)]" />
+                <img
+                    src={recipe.image}
+                    alt=""
+                    className="absolute right-8 top-1/2 hidden h-[78%] w-auto max-w-[42%] -translate-y-1/2 rounded-[1.25rem] object-contain opacity-35 shadow-2xl lg:block"
+                    aria-hidden="true"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    onError={() => setBroken(true)}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/98 via-[#1a2a20]/86 to-[#1a2a20]/62" />
+            </>
+        );
+    }
+
+    return (
+        <>
+            <img
+                src={recipe.image}
+                alt=""
+                className="w-full h-full object-cover opacity-25"
+                aria-hidden="true"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                onError={() => setBroken(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2D4635] via-[#2D4635]/90 to-[#2D4635]/58" />
+        </>
+    );
+};
 
 interface BrowseShelf {
     id: string;
@@ -505,6 +580,7 @@ const getRecipeCardAriaLabel = (
     effortLabel: string,
     isFavorite: boolean,
     wasViewed: boolean,
+    isOffline = false,
 ) => {
     const parts = [`Open recipe: ${recipe.title}`, `from ${recipe.contributor}`, recipe.category, effortLabel];
     const time = getRecipeTimeLabel(recipe);
@@ -512,6 +588,7 @@ const getRecipeCardAriaLabel = (
     if (rating > 0) parts.push(`rated ${rating.toFixed(1)} out of 5 from ${ratingCount} ratings`);
     if (isFavorite) parts.push('saved to favorites');
     if (wasViewed) parts.push('recently viewed');
+    if (isOffline) parts.push('available offline');
     return parts.join(', ');
 };
 
@@ -521,54 +598,42 @@ const RecipeShelfCard: React.FC<{
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
     wasViewed?: boolean;
-    cookActivityEpoch?: number;
-}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false, cookActivityEpoch = 0 }) => {
+    isOffline?: boolean;
+}> = ({ recipe, onSelect, isFavorite, onToggleFavorite, wasViewed = false, isOffline = false }) => {
     const rating = getAverageRating(recipe.id);
     const ratingCount = getRatingCount(recipe.id);
     const effortLabel = getRecipeEffortLabel(recipe);
-    const cookCount = useMemo(() => countRecipeCooksLastDays(recipe.title), [recipe.title, cookActivityEpoch]);
     return (
-        <article className="recipe-card-surface group relative w-60 shrink-0 overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
+        <article className="recipe-card-surface group relative flex h-full w-60 shrink-0 flex-col overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
             <button
                 type="button"
                 onClick={() => onSelect(recipe)}
                 data-testid="recipe-card-open"
                 data-recipe-id={recipe.id}
-                className="block w-full text-left"
-                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed)}
+                className="flex h-full w-full flex-col text-left"
+                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFavorite, wasViewed, isOffline)}
             >
                 <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
                     <RecipeCardImage recipe={recipe} />
-                    {(isFavorite || wasViewed) && (
-                        <span className="absolute bottom-2 left-2 z-10 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#2D4635] shadow-sm backdrop-blur">
-                            {isFavorite ? 'Saved' : 'Viewed'}
-                        </span>
-                    )}
+                    {isOffline && <OfflineRecipeBadge position="left" />}
                 </div>
-                <div className="space-y-2 p-3">
+                <div className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
                     <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]">{recipe.category}</p>
-                        <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#2D4635] dark:bg-stone-800 dark:text-emerald-100">
+                        <p className="truncate text-xs font-semibold text-[#A0522D]">{recipe.category}</p>
+                        <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-xs font-semibold text-[#2D4635] dark:bg-stone-800 dark:text-emerald-100">
                             {effortLabel}
                         </span>
                     </div>
-                    <h3 className="line-clamp-2 font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
+                    <h3 className="line-clamp-2 min-h-[2.75rem] font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
                     <p className="line-clamp-1 text-xs text-stone-500 dark:text-stone-400">
                         {getRecipeCardMicrocopy(recipe, ratingCount, isFavorite, wasViewed)}
                     </p>
-                    <div className="flex items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-stone-400">
+                    <div className="flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
                         <span className="truncate font-serif italic">By {recipe.contributor}</span>
-                        <span className="flex shrink-0 items-center gap-1">
-                            {cookCount >= 2 && (
-                                <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" title={`Cooked ${cookCount} times recently`}>
-                                    🔥 {cookCount}x
-                                </span>
-                            )}
-                            {rating > 0 && <span className="font-bold text-amber-600">★ {rating.toFixed(1)}</span>}
-                        </span>
+                        {rating > 0 && <span className="shrink-0 font-semibold text-amber-600">★ {rating.toFixed(1)}</span>}
                     </div>
-                    <span className="inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#2D4635] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-colors group-hover:bg-[#24392B]">
-                        View recipe
+                    <span className="btn btn-secondary btn-body mt-auto w-full pointer-events-none">
+                        View recipe →
                     </span>
                 </div>
             </button>
@@ -605,7 +670,8 @@ function parseRecipeHash(hash: string): { id: string; openCook: boolean } | null
 const CLOUD_ERROR_MSG = "Couldn't save. Check your connection and try again.";
 
 const App: React.FC = () => {
-    const { toast, confirm } = useUI();
+    const { toast } = useUI();
+    const offlineRecipeIds = useOfflineRecipeIds();
     const [tab, setTab] = useState('Home');
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -618,6 +684,8 @@ const App: React.FC = () => {
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
     const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
     const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState<GalleryItem | null>(null);
+    const [highlightGalleryId, setHighlightGalleryId] = useState<string | null>(null);
+    const galleryItemRefs = useRef<Map<string, HTMLElement>>(new Map());
     const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
         const s = localStorage.getItem('schafer_user');
         if (!s) return null;
@@ -638,6 +706,12 @@ const App: React.FC = () => {
     const handleLogout = () => {
         void signOutFirebaseCustodian();
         localStorage.removeItem('schafer_user');
+        try {
+            sessionStorage.removeItem(SESSION_KEYS.guestBrowse);
+        } catch {
+            /* ignore */
+        }
+        setIsGuestBrowse(false);
         setCurrentUser(null);
         setTab('Home');
     };
@@ -648,12 +722,17 @@ const App: React.FC = () => {
         activeProvider: CloudArchive.getProvider()
     });
 
-    const [archivePhone, setArchivePhone] = useState(() => localStorage.getItem('schafer_archive_phone') || '');
+    const [archivePhone, setArchivePhone] = useState(() => resolveArchivePhone(localStorage.getItem('schafer_archive_phone')));
 
     const [custodianAuth, setCustodianAuth] = useState<CustodianAuthState>({ user: null, isAdmin: false });
 
-    const [loginName, setLoginName] = useState('');
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [isGuestBrowse, setIsGuestBrowse] = useState(() => {
+        try {
+            return sessionStorage.getItem(SESSION_KEYS.guestBrowse) === '1';
+        } catch {
+            return false;
+        }
+    });
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
     // Filters
@@ -663,39 +742,62 @@ const App: React.FC = () => {
     const [selectedTag, setSelectedTag] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [galleryContributorFilter, setGalleryContributorFilter] = useState<string>('All');
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
+    const [prefsHydrationVersion, setPrefsHydrationVersion] = useState(0);
+    const [prefsSyncStatus, setPrefsSyncStatus] = useState<UserPrefsSyncStatus>(() =>
+        CloudArchive.getProvider() === 'firebase' ? 'syncing' : 'local',
+    );
 
-    // Cloud-sync favorites + ratings under the user's identity slug. On login
-    // we merge remote into local (favorites union; remote-wins ratings) and
-    // refresh React state. Subsequent local changes debounce-write up to
-    // Firestore. Silently no-ops for guests or when cloud is unavailable.
     useUserPrefsSync(currentUser?.name, {
-        onHydrated: () => setFavoriteIds(getFavoriteIds()),
+        onHydrated: () => {
+            setFavoriteIds(getFavoriteIds());
+            setPrefsHydrationVersion((version) => version + 1);
+        },
+        onSyncStatus: setPrefsSyncStatus,
     });
 
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
+    const [cookModeFromOfflineCache, setCookModeFromOfflineCache] = useState(false);
     const [groceryHighlightTitle, setGroceryHighlightTitle] = useState<string | null>(null);
-    const [recipeCardActivityEpoch, setRecipeCardActivityEpoch] = useState(0);
-    const prevCookRecipeRef = useRef<Recipe | null>(null);
-
-    useEffect(() => {
-        if (prevCookRecipeRef.current !== null && cookModeRecipe === null) {
-            setRecipeCardActivityEpoch((epoch) => epoch + 1);
-        }
-        prevCookRecipeRef.current = cookModeRecipe;
-    }, [cookModeRecipe]);
 
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
+    const [galleryUploadBannerDismissed, setGalleryUploadBannerDismissed] = useState(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEYS.galleryUploadBannerDismissed) === '1';
+        } catch {
+            return false;
+        }
+    });
+    const [familySubNavHintDismissed, setFamilySubNavHintDismissed] = useState(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEYS.familySubNavHintDismissed) === '1';
+        } catch {
+            return false;
+        }
+    });
+    const recipeSearchRef = useRef<HTMLInputElement>(null);
 
-    const handleSetTab = (newTab: string) => {
+    const handleSetTab = useCallback((newTab: string) => {
         setTab(newTab);
-    };
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    const handleBrowseAllRecipes = useCallback(() => {
+        try {
+            sessionStorage.setItem(SESSION_KEYS.focusRecipeSearch, '1');
+        } catch {
+            /* sessionStorage unavailable */
+        }
+        handleSetTab('Recipes');
+    }, [handleSetTab]);
 
     const handleCookModeClose = useCallback(() => {
         setCookModeRecipe(null);
+        setCookModeFromOfflineCache(false);
         const { hash } = window.location;
         if (!hash.startsWith('#recipe/')) return;
         if (selectedRecipe) {
@@ -725,6 +827,24 @@ const App: React.FC = () => {
     const contributorsForDisplay = useMemo(
         () => mergeContributorsForDisplay(contributors, recipes, gallery, trivia),
         [contributors, recipes, gallery, trivia]
+    );
+
+    const displayGallery = useMemo(() => {
+        const visible = filterGalleryForViewer(gallery, currentUser?.name);
+        return filterGalleryByContributor(visible, galleryContributorFilter);
+    }, [gallery, currentUser?.name, galleryContributorFilter]);
+
+    const galleryContributorOptions = useMemo(() => {
+        const names = new Set<string>();
+        filterGalleryForViewer(gallery, currentUser?.name)
+            .filter((item) => !isGalleryItemPending(item))
+            .forEach((item) => names.add(normalizeContributorName(item.contributor)));
+        return Array.from(names).sort((a, b) => a.localeCompare(b));
+    }, [gallery, currentUser?.name]);
+
+    const myModerationPendingCount = useMemo(
+        () => (currentUser ? countPendingForContributor(gallery, currentUser.name) : 0),
+        [gallery, currentUser]
     );
 
     useEffect(() => {
@@ -759,7 +879,7 @@ const App: React.FC = () => {
                     CloudArchive.getContributors(),
                     CloudArchive.getHistory()
                 ]);
-                setRecipes(normalizeRecipes(r));
+                setRecipes(mergeWithDefaultRecipes(normalizeRecipes(r)));
                 setTrivia(t);
                 setGallery(g);
                 setContributors(c);
@@ -779,10 +899,11 @@ const App: React.FC = () => {
             if (provider === 'local') {
                 CloudArchive.getTrivia()
                     .then(current => {
-                        if (current.length === 0) {
-                            return Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as Trivia)))
-                                .then(refreshLocalState);
-                        }
+                        const existingIds = new Set(current.map((t) => t.id));
+                        const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
+                        if (missing.length === 0) return;
+                        return Promise.all(missing.map(t => CloudArchive.upsertTrivia(t as Trivia)))
+                            .then(refreshLocalState);
                     })
                     .catch(() => toast(CLOUD_ERROR_MSG, 'error'));
             }
@@ -790,7 +911,7 @@ const App: React.FC = () => {
         }
 
         const unsubR = CloudArchive.subscribeRecipes(r => {
-            setRecipes(normalizeRecipes(r));
+            setRecipes(mergeWithDefaultRecipes(normalizeRecipes(r)));
             setIsDataLoading(false);
             setIsInitialLoad(false);
         });
@@ -799,6 +920,16 @@ const App: React.FC = () => {
         const unsubC = CloudArchive.subscribeContributors(setContributors);
         const unsubH = CloudArchive.subscribeHistory(setHistory);
         const unsubPhone = CloudArchive.subscribeArchivePhone(setArchivePhone);
+
+        void CloudArchive.getTrivia()
+            .then((current) => {
+                const existingIds = new Set(current.map((t) => t.id));
+                const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
+                if (missing.length === 0) return;
+                return Promise.all(missing.map((t) => CloudArchive.upsertTrivia(t as Trivia)));
+            })
+            .catch(() => { /* non-fatal — live subscription still applies */ });
+
         return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); unsubPhone(); };
     }, []);
 
@@ -812,30 +943,79 @@ const App: React.FC = () => {
 
     // Deep-link handling: open recipe from #recipe/{id} or #recipe/{id}/cook
     useEffect(() => {
-        const applyHash = () => {
+        const applyHash = async () => {
             const parsed = parseRecipeHash(window.location.hash);
             if (!parsed) return;
-            const recipe = recipes.find((r) => r.id === parsed.id);
-            if (recipe) {
-                recordRecipeView(recipe.id, recipe.title);
-                setTab('Recipes');
-                if (parsed.openCook) {
-                    setSelectedRecipe(null);
-                    setCookModeRecipe(recipe);
-                    trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'deep_link' });
-                } else {
-                    setSelectedRecipe(recipe);
-                }
+            let recipe = recipes.find((r) => r.id === parsed.id) ?? null;
+            let fromOfflineCache = false;
+            if (!recipe) {
+                recipe = await getOfflineRecipe(parsed.id);
+                fromOfflineCache = !!recipe;
+            }
+            if (!recipe) return;
+            void cacheRecipeOffline(recipe);
+            recordRecipeView(recipe.id, recipe.title);
+            setTab('Recipes');
+            setCookModeFromOfflineCache(fromOfflineCache);
+            if (parsed.openCook) {
+                setSelectedRecipe(null);
+                setCookModeRecipe(recipe);
+                trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'deep_link' });
+            } else {
+                setSelectedRecipe(recipe);
             }
         };
-        applyHash();
-        window.addEventListener('hashchange', applyHash);
-        return () => window.removeEventListener('hashchange', applyHash);
+        if (recipes.length === 0) return;
+        void applyHash();
+        const onHashChange = () => { void applyHash(); };
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
+    }, [recipes, currentUser]);
+
+    useEffect(() => {
+        if (recipes.length === 0) return;
+        void cacheRecipesOffline(recipes);
     }, [recipes]);
 
     useEffect(() => {
-        setDbStats(prev => ({ ...prev, recipeCount: recipes.length, triviaCount: trivia.length, galleryCount: gallery.length }));
+        if (tab !== 'Recipes') return;
+        try {
+            if (!sessionStorage.getItem(SESSION_KEYS.focusRecipeSearch)) return;
+            sessionStorage.removeItem(SESSION_KEYS.focusRecipeSearch);
+        } catch {
+            return;
+        }
+        requestAnimationFrame(() => {
+            recipeSearchRef.current?.focus();
+            recipeSearchRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+    }, [tab]);
+
+    useEffect(() => {
+        setDbStats(prev => ({
+            ...prev,
+            recipeCount: recipes.length,
+            triviaCount: trivia.length,
+            galleryCount: gallery.length,
+            galleryPendingCount: countPendingModeration(gallery),
+        }));
     }, [recipes, trivia, gallery]);
+
+    useEffect(() => {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        const count = dbStats.galleryPendingCount ?? 0;
+        if (count <= 0) return;
+        try {
+            if (sessionStorage.getItem(SESSION_KEYS.adminPendingGalleryToastShown)) return;
+            sessionStorage.setItem(SESSION_KEYS.adminPendingGalleryToastShown, '1');
+        } catch {
+            return;
+        }
+        toast(
+            `${count} gallery photo${count !== 1 ? 's' : ''} awaiting your approval — open Family → Gallery to review.`,
+            'info',
+        );
+    }, [currentUser, dbStats.galleryPendingCount, toast]);
 
     useEffect(() => {
         if (tab !== 'Recipes') setShowMobileFilters(false);
@@ -849,11 +1029,16 @@ const App: React.FC = () => {
             const detail = (e as CustomEvent<string>).detail;
             if (typeof detail === 'string' && detail.length > 0) {
                 handleSetTab(detail);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
         window.addEventListener('schafer:navigate', handler);
         return () => window.removeEventListener('schafer:navigate', handler);
+    }, []);
+
+    useEffect(() => {
+        const handler = () => setShowOnboarding(true);
+        window.addEventListener('schafer:replay-onboarding', handler);
+        return () => window.removeEventListener('schafer:replay-onboarding', handler);
     }, []);
 
     // Listen for foreground FCM messages and show a toast when a new recipe
@@ -866,25 +1051,114 @@ const App: React.FC = () => {
         return unsubscribe;
     }, []);
 
+    const highlightGalleryItem = useCallback((id: string) => {
+        setHighlightGalleryId(id);
+        window.setTimeout(() => setHighlightGalleryId(null), 4000);
+    }, []);
+
+    useEffect(() => {
+        if (!highlightGalleryId || tab !== 'Gallery') return;
+        const el = galleryItemRefs.current.get(highlightGalleryId);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [highlightGalleryId, tab, gallery.length]);
+
+    const handleGalleryUploadsProcessed = useCallback(
+        async (uploadedIds: string[]) => {
+            await refreshLocalState();
+            const lastId = uploadedIds[uploadedIds.length - 1];
+            if (lastId) highlightGalleryItem(lastId);
+        },
+        [refreshLocalState, highlightGalleryItem]
+    );
+
     const { pendingUploadCount, refreshPendingCount } = useOfflineUploadQueue(tab, gallery.length, {
-        onUploadsProcessed: refreshLocalState,
+        onUploadsProcessed: handleGalleryUploadsProcessed,
         onToast: toast,
     });
 
+    const uploadGalleryMemory = useCallback(
+        async (g: GalleryItem, f?: File): Promise<'uploaded' | 'submitted' | 'queued'> => {
+            if (!f) return 'uploaded';
+            const validation = validateGalleryFile(f);
+            if (validation.ok === false) {
+                toast(validation.message, 'error');
+                throw new Error(validation.message);
+            }
+            const rate = checkGalleryUploadRateLimit(g.contributor);
+            if (rate.allowed === false) {
+                const msg = `Upload limit reached. Try again in about ${rate.retryAfterMinutes} minute(s).`;
+                toast(msg, 'error');
+                throw new Error(msg);
+            }
+            const isAdminUpload = currentUser?.role === 'admin';
+            const item: GalleryItem = {
+                ...g,
+                status: isAdminUpload ? 'approved' : (g.status ?? 'pending'),
+            };
+            if (!navigator.onLine) {
+                await queueUpload(f, item.caption, item.contributor);
+                await refreshPendingCount();
+                toast("You're offline. Photo saved to upload queue.", 'info');
+                addSentryBreadcrumb('gallery_upload_queued', { contributor: item.contributor });
+                return 'queued';
+            }
+            try {
+                const url = await CloudArchive.uploadFile(f, 'gallery');
+                await CloudArchive.upsertGalleryItem({ ...item, url: url || '' });
+                recordGalleryUpload(item.contributor);
+                trackEvent('gallery_upload', {
+                    contributor: item.contributor,
+                    type: item.type,
+                    offline: false,
+                    status: item.status,
+                });
+                addSentryBreadcrumb('gallery_upload_success', { id: item.id, type: item.type, status: item.status });
+                await refreshLocalState();
+                highlightGalleryItem(item.id);
+                return item.status === 'pending' ? 'submitted' : 'uploaded';
+            } catch {
+                addSentryBreadcrumb('gallery_upload_failed', { id: item.id });
+                toast(CLOUD_ERROR_MSG, 'error');
+                throw new Error(CLOUD_ERROR_MSG);
+            }
+        },
+        [refreshLocalState, refreshPendingCount, toast, highlightGalleryItem, currentUser?.role]
+    );
+
     const finalizeLogin = useCallback(
-        (trimmed: string) => {
-            const existing = contributors.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
-            const isSuper = isSuperAdmin(trimmed);
+        (rawName: string) => {
+            const trimmed = rawName.trim();
+            if (!trimmed) return;
+
+            const affiliation = resolveLoginAffiliation(
+                trimmed,
+                contributorsForDisplay,
+                recipes,
+                gallery,
+                trivia
+            );
+            const displayName = affiliation.canonicalName || trimmed;
+            const existing = affiliation.profile
+                ?? contributors.find((c) => c.name.toLowerCase() === displayName.toLowerCase());
+            const isSuper = isSuperAdmin(trimmed) || isSuperAdmin(displayName);
             const email = isSuper && trimmed.includes('@') ? trimmed : existing?.email;
             const u: UserProfile = {
                 id: existing?.id || 'u' + Date.now(),
-                name: existing?.name || trimmed,
-                picture: existing?.avatar ?? contributorAvatarUrlForName(trimmed),
-                role: isSuper ? 'admin' : existing?.role || (trimmed.toLowerCase() === 'admin' ? 'admin' : 'user'),
+                name: displayName,
+                picture: existing?.avatar ?? contributorAvatarUrlForName(displayName),
+                role: isSuper ? 'admin' : existing?.role || (displayName.toLowerCase() === 'admin' ? 'admin' : 'user'),
                 email,
             };
             localStorage.setItem('schafer_user', JSON.stringify(u));
+            try {
+                sessionStorage.removeItem(SESSION_KEYS.guestBrowse);
+            } catch {
+                /* ignore */
+            }
+            setIsGuestBrowse(false);
             setCurrentUser(u);
+            setTab('Home');
+            window.scrollTo({ top: 0, behavior: 'auto' });
             if (!localStorage.getItem(STORAGE_KEYS.onboardingDone)) {
                 let defer = false;
                 try {
@@ -894,25 +1168,47 @@ const App: React.FC = () => {
                 }
                 if (!defer) setShowOnboarding(true);
             }
+            const archiveLinked = totalContributorContent(affiliation);
+            if (archiveLinked > 0) {
+                try {
+                    if (!sessionStorage.getItem(SESSION_KEYS.affiliationWelcomeShown)) {
+                        sessionStorage.setItem(SESSION_KEYS.affiliationWelcomeShown, '1');
+                        const recipeCount = affiliation.recipeCount;
+                        if (recipeCount > 0) {
+                            toast(
+                                `Welcome back, ${displayName.split(' ')[0]}! ${recipeCount} recipe${recipeCount !== 1 ? 's' : ''} in the archive — open Profile → My recipes to see yours.`,
+                                'success'
+                            );
+                        } else {
+                            toast(`Welcome back, ${displayName.split(' ')[0]}! Your family contributions are linked to this name.`, 'success');
+                        }
+                    }
+                } catch {
+                    /* sessionStorage blocked */
+                }
+            }
         },
-        [contributors]
+        [contributors, contributorsForDisplay, recipes, gallery, trivia, toast]
     );
 
-    const handleLoginSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmed = loginName.trim();
-        if (!trimmed || isLoggingIn) return;
-
-        const ok = await confirm(`You'll use the cookbook as "${trimmed}". Sound right?`, {
-            confirmLabel: 'Yes, open the cookbook',
-            cancelLabel: 'Edit name',
-        });
-        if (!ok) return;
-
-        setIsLoggingIn(true);
-        finalizeLogin(trimmed);
-        setIsLoggingIn(false);
-    };
+    const enterGuestBrowse = useCallback(() => {
+        const guest: UserProfile = {
+            id: 'guest-' + Date.now(),
+            name: 'Guest',
+            picture: PLACEHOLDER_AVATAR,
+            role: 'user',
+        };
+        try {
+            sessionStorage.setItem(SESSION_KEYS.guestBrowse, '1');
+        } catch {
+            /* ignore */
+        }
+        setIsGuestBrowse(true);
+        setCurrentUser(guest);
+        setTab('Recipes');
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        toast('Browsing as guest — sign in with your name to save favorites and link your recipes.', 'info');
+    }, [toast]);
 
     useEffect(() => {
         if (!currentUser) return;
@@ -942,14 +1238,20 @@ const App: React.FC = () => {
     const contributorOptions = useMemo(() => getContributorOptions(recipes), [recipes]);
 
     const filteredRecipes = useMemo(() => {
+        const q = search.trim();
         return recipes.filter(r => {
-            const q = search.toLowerCase();
-            const matchS = !q ||
-                r.title.toLowerCase().includes(q) ||
-                r.ingredients.some(ing => ing.toLowerCase().includes(q)) ||
-                r.instructions.some(step => step.toLowerCase().includes(q)) ||
-                (r.notes?.toLowerCase().includes(q) ?? false) ||
-                r.contributor.toLowerCase().includes(q);
+            // Fuzzy match (typo + word-order tolerant) across the recipe's
+            // searchable text: title, ingredients, instructions, notes, author.
+            const matchS = !q || fuzzyMatch(
+                [
+                    r.title,
+                    r.ingredients.join(' '),
+                    r.instructions.join(' '),
+                    r.notes ?? '',
+                    r.contributor,
+                ].join(' \n '),
+                q,
+            );
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || normalizeContributorName(r.contributor) === contributor;
             const matchT = !selectedTag || (r.tags?.includes(selectedTag) ?? false);
@@ -958,19 +1260,18 @@ const App: React.FC = () => {
     }, [recipes, search, category, contributor, selectedTag]);
 
     const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
-    const matchedContributor = useMemo(
-        () => contributors.find(c => c.name.toLowerCase() === loginName.trim().toLowerCase()) ?? null,
-        [contributors, loginName]
-    );
-    const loginPreviewAvatar = useMemo(() => {
-        const n = loginName.trim();
-        if (!n) return PLACEHOLDER_AVATAR;
-        return (
-            contributorsForDisplay.find(c => c.name.toLowerCase() === n.toLowerCase())?.avatar
-            ?? contributorAvatarUrlForName(n)
-        );
-    }, [contributorsForDisplay, loginName]);
     const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
+    const isBrowsingFiltered = Boolean(search.trim()) || activeFilterCount > 0;
+    const wasBrowsingFilteredRef = useRef(false);
+
+    useEffect(() => {
+        if (tab === 'Recipes' && isBrowsingFiltered && !wasBrowsingFilteredRef.current) {
+            requestAnimationFrame(() => {
+                document.getElementById('recipe-card-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+        wasBrowsingFilteredRef.current = isBrowsingFiltered;
+    }, [tab, isBrowsingFiltered]);
 
     const sortedRecipes = useMemo(() => {
         const list = [...filteredRecipes];
@@ -999,14 +1300,6 @@ const App: React.FC = () => {
         }
     }, [filteredRecipes, sortBy, recentIds]);
 
-    const cookCountsByRecipeId = useMemo(() => {
-        const map = new Map<string, number>();
-        for (const recipe of sortedRecipes) {
-            map.set(recipe.id, countRecipeCooksLastDays(recipe.title));
-        }
-        return map;
-    }, [sortedRecipes, recipeCardActivityEpoch]);
-
     const recentlyViewedRecipes = useMemo(() => {
         return getRecentlyViewedEntries()
             .map((entry) => recipes.find((recipe) => recipe.id === entry.id))
@@ -1034,14 +1327,12 @@ const App: React.FC = () => {
             .filter((recipe) => recipe.category === 'Dessert')
             .slice(0, 8);
         return [
-            { id: 'favorites', label: 'Your favorites', detail: `${favoriteRecipes.length} saved`, recipes: favoriteRecipes.slice(0, 8), action: () => setSortBy('title-asc') },
-            { id: 'recent', label: 'Pick up again', detail: `${recentlyViewedRecipes.length} recent`, recipes: recentlyViewedRecipes.slice(0, 8), action: () => setSortBy('recent') },
             { id: 'family', label: 'Family favorites', detail: 'Most loved and saved', recipes: familyFavorites },
             { id: 'weeknight', label: 'Weeknight friendly', detail: 'Faster recipes for real evenings', recipes: weeknight },
             { id: 'seasonal', label: 'Fresh right now', detail: 'Seasonal ideas', recipes: seasonal },
             { id: 'desserts', label: 'Sweet finish', detail: 'Desserts and baking', recipes: desserts, action: () => setCategory('Dessert') },
         ].filter((shelf) => shelf.recipes.length > 0);
-    }, [favoriteRecipes, recentlyViewedRecipes, recipes]);
+    }, [recipes]);
 
     const localGeneratedImageCount = useMemo(
         () => recipes.filter((recipe) => recipe.imageSource === 'local-generated').length,
@@ -1067,11 +1358,64 @@ const App: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const secondaryNavItems = getSecondaryNavForTab(tab);
+    const galleryUploadsUnavailable =
+        shouldShowGalleryUploadUnavailableBanner(CloudArchive.getProvider()) && !galleryUploadBannerDismissed;
+    const secondarySubNav = secondaryNavItems ? (
+        <>
+            {secondaryNavItems === FAMILY_SECONDARY_NAV && !familySubNavHintDismissed && (
+                <FamilySubNavHint onDismiss={() => setFamilySubNavHintDismissed(true)} />
+            )}
+            <SectionSubNav
+            ariaLabel={secondaryNavAriaLabel(secondaryNavItems)}
+            items={secondaryNavItems}
+            activeTab={tab}
+            onSelect={handleSetTab}
+            getDetail={
+                secondaryNavItems === FAMILY_SECONDARY_NAV
+                    ? (id) =>
+                          getFamilyNavDetail(id, {
+                              gallery: gallery.length,
+                              trivia: trivia.length,
+                              contributors: contributorsForDisplay.length,
+                          })
+                    : undefined
+            }
+            />
+        </>
+    ) : null;
+
     const handleSelectRecipe = (recipe: Recipe) => {
         recordRecipeView(recipe.id, recipe.title);
+        void cacheRecipeOffline(recipe);
         setSelectedRecipe(recipe);
         trackEvent('recipe_viewed', { recipeId: recipe.id, title: recipe.title });
         window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
+    };
+
+    const handleStartCookFromHome = (recipe: Recipe) => {
+        recordRecipeView(recipe.id, recipe.title);
+        void cacheRecipeOffline(recipe);
+        setCookModeFromOfflineCache(false);
+        setSelectedRecipe(null);
+        setCookModeRecipe(recipe);
+        trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'home' });
+    };
+
+    const handleSelectContributorFromHome = (name: string) => {
+        setContributor(normalizeContributorName(name));
+        setCategory('All');
+        setSearch('');
+        setSelectedTag('');
+        handleSetTab('Recipes');
+    };
+
+    const handleBrowseContributorFromRecipe = (name: string) => {
+        setSelectedRecipe(null);
+        if (window.location.hash.match(/^#recipe\//)) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        handleSelectContributorFromHome(name);
     };
 
     const handleRecipeClose = () => {
@@ -1115,180 +1459,47 @@ const App: React.FC = () => {
     };
 
     if (!currentUser) {
-        const quickFamily = contributorsForDisplay.slice(0, 6);
-        const lc = siteConfig.loginCopy;
-        const loginTitle = lc?.title ?? "Who's cooking?";
-        const loginSubtitle =
-            lc?.subtitle ??
-            'Choose your name to personalize favorites, notes, and the recipes you return to.';
-        const loginPlaceholder = lc?.placeholder ?? 'Your name';
-        const loginCta = lc?.cta ?? 'Continue';
-        const loginHelp = lc?.helpText ?? 'Need access? Contact an administrator.';
-        const trustStrip = lc?.trustStrip ?? [];
-        const loginShowcaseRecipe = (() => {
-            const list = normalizeRecipes(defaultRecipes as Recipe[]);
-            return list.find((r) => r.image && isValidImageUrl(r.image)) ?? list[0] ?? null;
-        })();
         return (
-            <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] dark:bg-stone-950 p-4 sm:p-6 lg:p-10">
-                <a href="#main-content-login" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
-                    Skip to main content
-                </a>
-                <main id="main-content-login" role="main" aria-label="Sign in" tabIndex={-1} className="relative z-10 mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center py-[max(1rem,env(safe-area-inset-top,0px))]">
-                    <div className="grid w-full items-stretch gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:gap-8">
-                        <section className="heirloom-card hidden overflow-hidden rounded-[2rem] border border-white/70 p-8 text-[#1B2C22] dark:border-stone-800 dark:text-stone-100 lg:flex lg:flex-col lg:justify-between">
-                            <div className="space-y-8">
-                                <div className="inline-flex items-center gap-3 rounded-full border border-[#A0522D]/20 bg-white/60 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-[#7A3F22] dark:bg-stone-900/60 dark:text-orange-200">
-                                    <span aria-hidden="true">✦</span>
-                                    Family archive
-                                </div>
-                                <div className="space-y-5">
-                                    <p className="font-serif text-5xl italic leading-[0.95] tracking-tight text-[#2D4635] dark:text-emerald-100 xl:text-6xl">
-                                        Schafer Family Cookbook
-                                    </p>
-                                    <p className="max-w-xl font-serif text-xl italic leading-relaxed text-stone-700 dark:text-stone-300">
-                                        Recipes, memories, and kitchen notes gathered into one warm place for the people who know the stories behind the food.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="mt-12 grid grid-cols-3 gap-3">
-                                <div className="rounded-3xl border border-[#A0522D]/15 bg-white/60 p-4 dark:bg-stone-900/60">
-                                    <p className="font-serif text-3xl italic text-[#2D4635] dark:text-emerald-100">{dbStats.recipeCount || recipes.length}</p>
-                                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Recipes</p>
-                                </div>
-                                <div className="rounded-3xl border border-[#A0522D]/15 bg-white/60 p-4 dark:bg-stone-900/60">
-                                    <p className="font-serif text-3xl italic text-[#2D4635] dark:text-emerald-100">{contributorsForDisplay.length}</p>
-                                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Cooks</p>
-                                </div>
-                                <div className="rounded-3xl border border-[#A0522D]/15 bg-white/60 p-4 dark:bg-stone-900/60">
-                                    <p className="font-serif text-3xl italic text-[#2D4635] dark:text-emerald-100">{gallery.length}</p>
-                                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">Memories</p>
-                                </div>
-                            </div>
-                            {loginShowcaseRecipe && (
-                                <div className="mt-10 rounded-[2rem] border border-[#A0522D]/25 bg-white/55 p-5 dark:bg-stone-900/55" aria-label="Sample recipe from the archive">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#7A3F22] dark:text-orange-200 mb-4">Peek inside</p>
-                                    <div className="flex gap-4 items-center">
-                                        {loginShowcaseRecipe.image && isValidImageUrl(loginShowcaseRecipe.image) ? (
-                                            <img
-                                                src={loginShowcaseRecipe.image}
-                                                alt=""
-                                                className="w-24 h-24 shrink-0 rounded-2xl object-cover border border-white/80 shadow-md"
-                                            />
-                                        ) : null}
-                                        <div className="min-w-0 space-y-2">
-                                            <p className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100 leading-snug line-clamp-2">{loginShowcaseRecipe.title}</p>
-                                            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                                                Sign in to browse every recipe, build your grocery list, and use cook mode step by step.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-
-                        <section className="heirloom-card w-full rounded-[2rem] border border-white/80 p-5 shadow-2xl dark:border-stone-800 sm:p-7 md:rounded-[2.5rem] md:p-9 lg:p-10">
-                            <div className="mx-auto max-w-xl">
-                                <div className="family-script-rule mb-7 text-center md:mb-9">
-                                    <p className="text-xs font-black uppercase tracking-[0.3em] text-[#7A3F22] dark:text-orange-200">The Schafer Cookbook</p>
-                                    <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100 md:text-5xl">{loginTitle}</h1>
-                                    <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-stone-700 dark:text-stone-300">
-                                        {loginSubtitle}
-                                    </p>
-                                </div>
-
-                                {quickFamily.length > 0 && (
-                                    <div className="mb-7">
-                                        <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-stone-700 dark:text-stone-200">Tap your name</p>
-                                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                            {quickFamily.map((c) => (
-                                                <button
-                                                    key={c.id}
-                                                    type="button"
-                                                    onClick={() => finalizeLogin(c.name.trim())}
-                                                    className="group flex min-h-[6.25rem] flex-col items-center justify-center gap-2 rounded-3xl border border-stone-200/80 bg-white/80 p-3 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A0522D]/35 hover:bg-[#FFF8EC] hover:shadow-md active:scale-[0.98] dark:border-stone-700 dark:bg-stone-900/70 dark:hover:bg-stone-800"
-                                                    aria-label={`Sign in as ${c.name}`}
-                                                >
-                                                    <img
-                                                        src={c.avatar || contributorAvatarUrlForName(c.name)}
-                                                        alt=""
-                                                        onError={avatarOnError}
-                                                        className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md transition-transform group-hover:scale-105 dark:border-stone-700 sm:h-16 sm:w-16"
-                                                    />
-                                                    <span className="max-w-full truncate text-sm font-bold text-stone-800 dark:text-stone-100">{c.name.split(' ')[0]}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="relative my-6 flex items-center" aria-hidden>
-                                    <span className="h-px flex-1 bg-stone-300 dark:bg-stone-700" />
-                                    <span className="px-4 text-xs font-black uppercase tracking-widest text-stone-600 dark:text-stone-300">Or type a name</span>
-                                    <span className="h-px flex-1 bg-stone-300 dark:bg-stone-700" />
-                                </div>
-
-                                <form onSubmit={handleLoginSubmit} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label htmlFor="login-name" className="block text-sm font-black uppercase tracking-[0.18em] text-stone-700 dark:text-stone-200">Your name</label>
-                                        <div className="relative">
-                                            <input
-                                                id="login-name"
-                                                type="text"
-                                                placeholder={loginPlaceholder}
-                                                autoComplete="name"
-                                                disabled={isLoggingIn}
-                                                aria-busy={isLoggingIn}
-                                                className="min-h-14 w-full rounded-2xl border border-stone-300 bg-white/90 py-4 pl-16 pr-4 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-70 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-400 dark:focus:bg-stone-900"
-                                                value={loginName}
-                                                onChange={e => setLoginName(e.target.value)}
-                                            />
-                                            <img
-                                                src={loginPreviewAvatar}
-                                                alt=""
-                                                onError={avatarOnError}
-                                                className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-stone-200 object-cover dark:border-stone-700"
-                                                aria-hidden
-                                            />
-                                        </div>
-                                    </div>
-                                    {loginName.trim() && matchedContributor && (
-                                        <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center font-serif text-sm italic text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" role="status">
-                                            Welcome back, {matchedContributor.name.split(' ')[0]}.
-                                        </p>
-                                    )}
-                                    <button
-                                        type="submit"
-                                        disabled={isLoggingIn || !loginName.trim()}
-                                        aria-busy={isLoggingIn}
-                                        className="w-full min-h-14 rounded-2xl bg-[#2D4635] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
-                                    >
-                                        {isLoggingIn ? 'Opening…' : loginCta}
-                                    </button>
-                                    <p className="pt-1 text-center text-sm text-stone-700 dark:text-stone-300">
-                                        {loginHelp}{' '}
-                                        <a href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request" className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[#2D4635] dark:text-orange-200 dark:hover:text-emerald-100">Email an admin for access.</a>
-                                    </p>
-                                    {trustStrip.length > 0 && (
-                                        <ul className="mt-6 space-y-2 rounded-2xl border border-stone-200/80 bg-white/50 p-4 text-left dark:border-stone-700 dark:bg-stone-900/40">
-                                            {trustStrip.map((line) => (
-                                                <li key={line} className="flex gap-2 text-xs text-stone-600 dark:text-stone-400 leading-snug">
-                                                    <span className="mt-1 shrink-0 text-[#A0522D]" aria-hidden>
-                                                        ✓
-                                                    </span>
-                                                    <span>{line}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </form>
-                            </div>
-                        </section>
-                    </div>
-                </main>
-            </div>
+            <LoginScreen
+                contributors={contributorsForDisplay}
+                recipes={recipes}
+                gallery={gallery}
+                trivia={trivia}
+                recipeCount={dbStats.recipeCount}
+                onLogin={finalizeLogin}
+                onBrowseGuest={enterGuestBrowse}
+            />
         );
     }
+
+    const guestSignInBanner = isGuestBrowse ? (
+        <div
+            role="status"
+            data-testid="guest-sign-in-banner"
+            className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-[#A0522D]/20 bg-[#FFF8EC] px-4 py-3 text-sm text-[#2D4635] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100"
+        >
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+                <p>
+                    Browsing as guest — sign in with your family name to save favorites and connect with your recipes.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        try {
+                            sessionStorage.removeItem(SESSION_KEYS.guestBrowse);
+                        } catch {
+                            /* ignore */
+                        }
+                        setIsGuestBrowse(false);
+                        setCurrentUser(null);
+                    }}
+                    className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                >
+                    Sign in
+                </button>
+            </div>
+        </div>
+    ) : null;
 
     // Gallery View
     if (tab === 'Gallery') {
@@ -1299,26 +1510,72 @@ const App: React.FC = () => {
                 </a>
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <FamilyHub activeTab={tab} onSelect={handleSetTab} galleryCount={gallery.length} triviaCount={trivia.length} contributorCount={contributorsForDisplay.length} />
-                <main id="main-content" className="max-w-7xl mx-auto py-6 md:py-10 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:pl-[max(1.5rem,env(safe-area-inset-left,0px))] md:pr-[max(1.5rem,env(safe-area-inset-right,0px))]" role="main" aria-label="Family Gallery" tabIndex={-1}>
-                    <section className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-6">
-                        <div>
-                            <h2 className="text-4xl font-serif italic text-[#2D4635]">Family Gallery</h2>
-                            <p className="text-stone-500 font-serif italic mt-2">Captured moments across the generations.</p>
-                            {pendingUploadCount > 0 && (
-                                <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold" role="status" aria-live="polite">
-                                    <span aria-hidden="true">📤</span>
-                                    {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
-                                </p>
-                            )}
+                {guestSignInBanner}
+                {secondarySubNav}
+                <main id="main-content" className="view-shell-wide view-stack max-w-7xl mx-auto" role="main" aria-label="Family Gallery" tabIndex={-1}>
+                    <PageHeader
+                        id="gallery-heading"
+                        title="Family Gallery"
+                        description="Captured moments across the generations."
+                    />
+                    {myModerationPendingCount > 0 && (
+                        <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-50 border border-sky-200 text-sky-900 text-xs font-bold -mt-2" role="status" aria-live="polite">
+                            <span aria-hidden="true">⏳</span>
+                            {myModerationPendingCount} photo{myModerationPendingCount !== 1 ? 's' : ''} awaiting custodian approval
+                        </p>
+                    )}
+                    {pendingUploadCount > 0 && (
+                        <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold -mt-2" role="status" aria-live="polite">
+                            <span aria-hidden="true">📤</span>
+                            {pendingUploadCount} photo{pendingUploadCount !== 1 ? 's' : ''} queued for upload when online
+                        </p>
+                    )}
+                    {galleryUploadsUnavailable && (
+                        <div
+                            role="status"
+                            data-testid="gallery-upload-unavailable-banner"
+                            className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                        >
+                            <p>
+                                Photo uploads are temporarily unavailable while family cloud storage is being set up.
+                                You can still browse memories and text the archive number if enabled.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    try {
+                                        localStorage.setItem(STORAGE_KEYS.galleryUploadBannerDismissed, '1');
+                                    } catch {
+                                        /* ignore */
+                                    }
+                                    setGalleryUploadBannerDismissed(true);
+                                }}
+                                className="min-h-10 shrink-0 rounded-full border border-amber-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-amber-800 hover:bg-amber-100/80"
+                            >
+                                Dismiss
+                            </button>
                         </div>
+                    )}
+                    <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+                        <GalleryUploadPanel
+                            contributorName={currentUser.name}
+                            disabled={galleryUploadsUnavailable}
+                            onUpload={async (item, file) => {
+                                const result = await uploadGalleryMemory(item, file);
+                                if (result === 'uploaded') {
+                                    toast('Memory added to the gallery', 'success');
+                                } else if (result === 'submitted') {
+                                    toast('Photo submitted — a custodian will approve it soon.', 'success');
+                                }
+                            }}
+                        />
                         {archivePhone ? (
-                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-archive instructions">
+                            <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-gallery instructions">
                                 <span className="text-3xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">Text your memories</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">{siteConfig.galleryCopy?.textPromptTitle}</h4>
                                     <p className="text-sm text-emerald-700 font-serif italic">
-                                        Photo/Video to:{' '}
+                                        {siteConfig.galleryCopy?.textPromptHint}{' '}
                                         <a
                                             href={`sms:${archivePhone.replace(/\s/g, '')}`}
                                             className="font-bold not-italic underline decoration-emerald-600/50 hover:decoration-emerald-700 underline-offset-2 hover:text-emerald-800 transition-colors"
@@ -1346,24 +1603,24 @@ const App: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6 max-w-md" role="region" aria-label="How to add photos">
-                                <span className="text-2xl" aria-hidden="true">📷</span>
+                            <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6" role="region" aria-label="Alternative ways to add photos">
+                                <span className="text-2xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Want to add photos?</h4>
-                                    <p className="text-sm text-stone-500 font-serif italic">Admins can enable text-to-archive in Profile → Admin Tools → Gallery. Or ask an administrator to add your memories.</p>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Prefer texting?</h4>
+                                    <p className="text-sm text-stone-500 font-serif italic">{siteConfig.galleryCopy?.noPhoneHint}</p>
                                 </div>
                             </div>
                         )}
-                    </section>
+                    </div>
 
                     {isDataLoading ? (
                         <GallerySkeleton />
-                    ) : gallery.length === 0 ? (
+                    ) : displayGallery.length === 0 ? (
                         <div className="py-24 text-center space-y-8 animate-in fade-in duration-500" role="status">
                             <div className="w-32 h-32 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-5xl border-2 border-dashed border-stone-200">🖼️</div>
                             <div className="space-y-3">
                                 <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
-                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">Be the first to add a photo or video. Text to the archive number once admins enable it, or ask a family custodian to add your moments.</p>
+                                <p className="text-stone-500 font-serif italic max-w-md mx-auto">Upload a photo above, text the archive number if enabled, or ask a family custodian for help.</p>
                             </div>
                             <div className="flex flex-wrap justify-center gap-3">
                                 <button
@@ -1384,14 +1641,66 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <>
+                            {galleryContributorFilter !== 'All' && (
+                                <div
+                                    className="sticky top-[calc(4.5rem+env(safe-area-inset-top,0px))] z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E8DCCB] bg-[#FFF8EC]/95 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/90"
+                                    data-testid="gallery-contributor-filter-chip"
+                                    role="status"
+                                >
+                                    <span className="text-sm font-serif italic text-stone-700 dark:text-stone-200">
+                                        Showing <span className="font-bold not-italic text-[#A0522D]">{galleryContributorFilter}</span>&apos;s photos
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setGalleryContributorFilter('All')}
+                                        className="min-h-10 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            )}
+                            {galleryContributorOptions.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <label htmlFor="gallery-contributor-filter" className="sr-only">
+                                        Filter gallery by contributor
+                                    </label>
+                                    <select
+                                        id="gallery-contributor-filter"
+                                        data-testid="gallery-contributor-filter"
+                                        aria-label="Filter gallery by contributor"
+                                        className="min-h-11 cursor-pointer rounded-full border border-[#E8DCCB] bg-white/90 px-4 py-3 text-sm font-bold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+                                        value={galleryContributorFilter}
+                                        onChange={(e) => setGalleryContributorFilter(e.target.value)}
+                                    >
+                                        <option value="All">All contributors</option>
+                                        {galleryContributorOptions.map((c) => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8" role="list">
-                                {gallery.map(item => (
-                                    <article key={item.id} className="break-inside-avoid bg-white dark:bg-[var(--card-bg)] p-4 rounded-[2rem] border border-stone-100 dark:border-stone-800 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl" role="listitem">
+                                {displayGallery.map(item => (
+                                    <article
+                                        key={item.id}
+                                        ref={(el) => {
+                                            if (el) galleryItemRefs.current.set(item.id, el);
+                                            else galleryItemRefs.current.delete(item.id);
+                                        }}
+                                        data-testid={`gallery-item-${item.id}`}
+                                        className={`break-inside-avoid bg-white dark:bg-[var(--card-bg)] p-4 rounded-[2rem] border border-stone-100 dark:border-stone-800 shadow-md group hover:shadow-2xl transition-all focus-within:shadow-2xl ${
+                                            highlightGalleryId === item.id
+                                                ? 'ring-2 ring-[#A0522D] ring-offset-2 ring-offset-[#FDFBF7] dark:ring-offset-[var(--bg-primary)]'
+                                                : ''
+                                        }`}
+                                        role="listitem"
+                                    >
                                         {item.type === 'video' ? (
+                                            <div className="relative mb-4">
                                             <button
                                                 type="button"
                                                 onClick={() => setSelectedGalleryItem(item)}
-                                                className="w-full text-left rounded-2xl overflow-hidden mb-4 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
+                                                className="w-full text-left rounded-2xl overflow-hidden mb-0 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
                                                 aria-label={`View full size: ${item.caption || 'Family video'}`}
                                                 onFocus={e => {
                                                     const vid = e.currentTarget.querySelector('video');
@@ -1431,14 +1740,32 @@ const App: React.FC = () => {
                                                     Video
                                                 </div>
                                             </button>
+                                            {isGalleryItemPending(item) && (
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                    Pending review
+                                                </span>
+                                            )}
+                                            </div>
                                         ) : (
+                                            <div className="relative mb-4">
                                             <GalleryImage
                                                 url={item.url}
                                                 caption={item.caption}
                                                 onClick={() => setSelectedGalleryItem(item)}
                                             />
+                                            {isGalleryItemPending(item) && (
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                    Pending review
+                                                </span>
+                                            )}
+                                            </div>
                                         )}
                                         <p className="font-serif italic text-stone-800 dark:text-stone-200 text-lg px-2 line-clamp-3">{item.caption}</p>
+                                        {isGalleryItemPending(item) && (
+                                            <p className="px-2 mt-1 text-[10px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
+                                                {contributorMatchKey(item.contributor) === contributorMatchKey(currentUser?.name) ? 'Your upload · Pending review' : 'Awaiting approval'}
+                                            </p>
+                                        )}
                                         {item.created_at && (
                                             <time
                                                 dateTime={item.created_at}
@@ -1449,8 +1776,8 @@ const App: React.FC = () => {
                                         )}
                                         <div className="flex justify-between items-center mt-4 px-2">
                                             <div className="flex items-center gap-2">
-                                                <img src={getAvatar(item.contributor)} className="w-4 h-4 rounded-full object-cover" alt={item.contributor} onError={avatarOnError} />
-                                                <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {item.contributor}</span>
+                                                <img src={getAvatar(normalizeContributorName(item.contributor))} className="w-4 h-4 rounded-full object-cover" alt={normalizeContributorName(item.contributor)} onError={avatarOnError} />
+                                                <span className="text-[9px] uppercase tracking-widest text-[#A0522D]">Added by {normalizeContributorName(item.contributor)}</span>
                                             </div>
                                             {currentUser?.role === 'admin' && (
                                                 <button
@@ -1505,6 +1832,7 @@ const App: React.FC = () => {
                             isFavorite={(id) => favoriteIds.has(id)}
                             onToggleFavorite={handleToggleFavorite}
                             onStartCook={() => {
+                                setCookModeFromOfflineCache(false);
                                 setCookModeRecipe(selectedRecipe);
                                 trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
                                 window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
@@ -1512,6 +1840,7 @@ const App: React.FC = () => {
                             onOpenGroceryList={openGroceryFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
+                            onBrowseContributor={handleBrowseContributorFromRecipe}
                         />
                     </Suspense>
                 )}
@@ -1519,6 +1848,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
+                            servedFromOfflineCache={cookModeFromOfflineCache}
                             onClose={handleCookModeClose}
                         />
                     </Suspense>
@@ -1539,7 +1869,8 @@ const App: React.FC = () => {
                 </a>
                 <OfflineBanner />
                 <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
-                <FamilyHub activeTab={tab} onSelect={handleSetTab} galleryCount={gallery.length} triviaCount={trivia.length} contributorCount={contributorsForDisplay.length} />
+                {guestSignInBanner}
+                {secondarySubNav}
                 <div id="main-content-trivia" tabIndex={-1} role="main" aria-label="Family trivia">
                 <Suspense fallback={<TabFallback />}>
                     <TriviaView
@@ -1575,6 +1906,7 @@ const App: React.FC = () => {
                             isFavorite={(id) => favoriteIds.has(id)}
                             onToggleFavorite={handleToggleFavorite}
                             onStartCook={() => {
+                                setCookModeFromOfflineCache(false);
                                 setCookModeRecipe(selectedRecipe);
                                 trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
                                 window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
@@ -1582,6 +1914,7 @@ const App: React.FC = () => {
                             onOpenGroceryList={openGroceryFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
+                            onBrowseContributor={handleBrowseContributorFromRecipe}
                         />
                     </Suspense>
                 )}
@@ -1589,6 +1922,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
+                            servedFromOfflineCache={cookModeFromOfflineCache}
                             onClose={handleCookModeClose}
                         />
                     </Suspense>
@@ -1607,6 +1941,8 @@ const App: React.FC = () => {
             </a>
             <OfflineBanner />
             <Header activeTab={tab} setTab={handleSetTab} currentUser={currentUser} dbStats={dbStats} onLogout={handleLogout} />
+            {guestSignInBanner}
+            {secondarySubNav}
 
             {isInitialLoad && (
                 <div className="max-w-[1600px] mx-auto px-6 py-8 md:py-12 space-y-10" aria-label="Loading content" role="status">
@@ -1657,13 +1993,15 @@ const App: React.FC = () => {
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         onStartCook={() => {
+                            setCookModeFromOfflineCache(false);
                             setCookModeRecipe(selectedRecipe);
                             trackEvent('cook_mode_started', { recipeId: selectedRecipe.id });
                             window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
                         }}
                         onOpenGroceryList={openGroceryFromRecipe}
-                        breadcrumbContext={{ Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
+                        breadcrumbContext={{ Home: 'Home', Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
                         currentUserName={currentUser?.name}
+                        onBrowseContributor={handleBrowseContributorFromRecipe}
                     />
                 </Suspense>
             )}
@@ -1672,6 +2010,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                     <CookModeView
                         recipe={cookModeRecipe}
+                        servedFromOfflineCache={cookModeFromOfflineCache}
                         onClose={handleCookModeClose}
                     />
                 </Suspense>
@@ -1686,127 +2025,180 @@ const App: React.FC = () => {
                         recentlyViewedRecipes={recentlyViewedRecipes}
                         contributors={contributorsForDisplay}
                         onSelectRecipe={(r) => handleSelectRecipe(r)}
-                        onSetTab={(t) => { handleSetTab(t); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        onSelectCategory={(c) => { setCategory(c); }}
+                        onStartCook={handleStartCookFromHome}
+                        onSetTab={handleSetTab}
+                        onBrowseAllRecipes={handleBrowseAllRecipes}
+                        onSelectCategory={(c) => { setCategory(c); handleSetTab('Recipes'); }}
+                        onSelectContributor={handleSelectContributorFromHome}
+                        onOpenMealPlan={() => handleSetTab('Meal Plan')}
                         isFavorite={(id) => favoriteIds.has(id)}
                         onToggleFavorite={handleToggleFavorite}
                         triviaQuestionCount={trivia.length}
+                        mealPlanSyncVersion={prefsHydrationVersion}
                     />
                 </Suspense>
             )}
 
             {tab === 'Recipes' && (
-                <main aria-label="Recipes" className="relative z-10 mx-auto max-w-[1400px] space-y-5 py-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] md:space-y-7 md:py-6 md:pl-[max(1.5rem,env(safe-area-inset-left,0px))] md:pr-[max(1.5rem,env(safe-area-inset-right,0px))]">
-                    {/* Editorial masthead — compact on mobile, full editorial on desktop */}
-                    <section className="relative overflow-hidden rounded-[2rem] bg-[#2D4635] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:rounded-[2.75rem]">
-                        {(() => {
-                            const featured = sortedRecipes.find(r => r.image && isValidImageUrl(r.image));
-                            return featured ? (
-                                <div className="hidden md:block absolute inset-0 opacity-90">
-                                    <HeroRecipeImage recipe={featured} />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/95 via-[#1a2a20]/75 to-[#1a2a20]/30" />
-                                </div>
-                            ) : null;
-                        })()}
-                        <div className="relative z-10 p-6 sm:p-7 md:p-10 lg:p-12">
-                            <div className="max-w-3xl space-y-3 md:space-y-5">
-                                <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.28em] text-emerald-100/80">
-                                    <span className="inline-block h-px w-8 bg-emerald-100/40" aria-hidden />
-                                    The Schafer Cookbook
+                <main aria-label="Recipes" className="relative z-10 mx-auto max-w-[1400px] view-stack view-shell-wide">
+                    {contributor !== 'All' && (
+                        <section
+                            aria-label={`Recipes by ${contributor}`}
+                            className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-[2rem] border border-[#E8DCCB] bg-white/90 dark:bg-stone-900/80 px-5 py-4 shadow-sm"
+                        >
+                            <img
+                                src={getAvatar(contributor)}
+                                alt=""
+                                onError={avatarOnError}
+                                className="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-stone-700 shadow shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                                <h2 className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100 truncate">
+                                    From {contributor}&apos;s kitchen
+                                </h2>
+                                <p className="text-sm text-stone-500 dark:text-stone-400">
+                                    {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'} in the archive
                                 </p>
-                                <h1 className="font-serif text-3xl italic leading-[1.03] sm:text-4xl md:text-6xl">
-                                    Find something worth cooking tonight.
-                                </h1>
-                                <p className="max-w-xl font-serif text-base italic leading-relaxed text-emerald-50/85 md:text-lg">
-                                    Search {dbStats.recipeCount} family recipes by dish, ingredient, person, season, or occasion.
-                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetTab('Contributors')}
+                                    className="min-h-11 rounded-full border border-[#E8DCCB] px-4 py-2 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-300"
+                                >
+                                    Meet contributors
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setContributor('All')}
+                                    className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-[#A0522D] hover:bg-[#A0522D]/10"
+                                >
+                                    Clear filter
+                                </button>
+                            </div>
+                        </section>
+                    )}
+                    {isBrowsingFiltered ? (
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                            <p className="text-sm text-stone-600 dark:text-stone-400">
+                                {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'} found
+                                {activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active` : ''}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={clearRecipeFilters}
+                                className="text-sm font-semibold text-[#A0522D] hover:underline"
+                            >
+                                Clear all
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <section className="md:hidden rounded-2xl bg-[#2D4635] text-white px-5 py-4 shadow-sm">
+                                <h1 className="font-serif text-xl italic leading-snug">Find something worth cooking tonight.</h1>
                                 <button
                                     type="button"
                                     onClick={() => { handleSetTab('Home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                    className="md:hidden mt-1 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-100/80 underline-offset-2 hover:underline"
+                                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100/85 underline-offset-2 hover:underline"
                                 >
                                     ← Back to home
                                 </button>
-                            </div>
-                        </div>
-                    </section>
+                            </section>
 
-                    {recipes.some(r => r.featured === true) && (
-                        <Suspense fallback={null}>
-                            <FeaturedStrip recipes={recipes} onSelect={handleSelectRecipe} />
-                        </Suspense>
+                            <section className="relative hidden overflow-hidden rounded-[2.75rem] bg-[#2D4635] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:block">
+                                {(() => {
+                                    const featured = sortedRecipes.find(r => r.image && isValidRecipeImageUrl(r.image));
+                                    return featured ? (
+                                        <div className="absolute inset-0 opacity-90">
+                                            <HeroRecipeImage recipe={featured} />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/95 via-[#1a2a20]/75 to-[#1a2a20]/30" />
+                                        </div>
+                                    ) : null;
+                                })()}
+                                <div className="relative z-10 p-8 lg:p-10">
+                                    <div className="max-w-3xl space-y-5">
+                                        <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-emerald-100/80">
+                                            <span className="inline-block h-px w-8 bg-emerald-100/40" aria-hidden />
+                                            The Schafer Cookbook
+                                        </p>
+                                        <h1 className="font-serif text-4xl italic leading-[1.03] md:text-6xl">
+                                            Find something worth cooking tonight.
+                                        </h1>
+                                        <p className="max-w-xl font-serif text-lg italic leading-relaxed text-emerald-50/85">
+                                            Search {dbStats.recipeCount} family recipes by dish, ingredient, person, season, or occasion.
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {recipes.some(r => r.featured === true) && (
+                                <Suspense fallback={null}>
+                                    <FeaturedStrip recipes={recipes} onSelect={handleSelectRecipe} />
+                                </Suspense>
+                            )}
+
+                            <section aria-label="Quick browse" className="-mx-1 px-1">
+                                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                    <button
+                                        type="button"
+                                        onClick={resetBrowse}
+                                        className="min-h-11 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]"
+                                    >
+                                        All
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { resetBrowse(); setCategory('Main'); }}
+                                        className="min-h-11 shrink-0 rounded-full border border-[#E8DCCB] bg-white/80 px-5 py-2 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        Main dishes
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { resetBrowse(); setCategory('Dessert'); }}
+                                        className="min-h-11 shrink-0 rounded-full border border-[#E8DCCB] bg-white/80 px-5 py-2 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        Desserts
+                                    </button>
+                                    <span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700 shrink-0" aria-hidden />
+                                    {quickCategoryCounts.map(({ name, count }) => (
+                                        <button
+                                            key={name}
+                                            type="button"
+                                            onClick={() => { resetBrowse(); setCategory(name); }}
+                                            className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                                                category === name
+                                                    ? 'bg-[#2D4635] text-white border-[#2D4635] shadow-sm'
+                                                    : 'border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
+                                            }`}
+                                        >
+                                            {name} · {count}
+                                        </button>
+                                    ))}
+                                </div>
+                                {currentUser?.role === 'admin' && localGeneratedImageCount > 0 && (
+                                    <p className="mt-2 text-xs text-stone-600 dark:text-stone-300">
+                                        {localGeneratedImageCount} of {recipes.length} cards use the cookbook fallback.{' '}
+                                        <code className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 font-mono text-xs">npm run images:batch</code> upgrades them with Imagen.
+                                    </p>
+                                )}
+                            </section>
+                        </>
                     )}
 
-                    {/* Compact guided browse strip */}
-                    <section aria-label="Quick browse" className="-mx-1 px-1">
-                        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <button
-                                type="button"
-                                onClick={resetBrowse}
-                                className="min-h-11 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]"
-                            >
-                                All
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    resetBrowse();
-                                    setSortBy('recent');
-                                    setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-                                }}
-                                className="min-h-11 shrink-0 rounded-full border border-[#E8DCCB] bg-white/80 px-5 py-2 text-xs font-black uppercase tracking-widest text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                            >
-                                Recent {recentlyViewedRecipes.length ? `· ${recentlyViewedRecipes.length}` : ''}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    resetBrowse();
-                                    if (favoriteRecipes.length > 0) {
-                                        setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-                                    } else {
-                                        toast('Tap the heart on recipes you want to cook again.', 'info');
-                                    }
-                                }}
-                                className="min-h-11 shrink-0 rounded-full border border-red-100 bg-red-50 px-5 py-2 text-xs font-black uppercase tracking-widest text-red-700 transition-colors hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
-                            >
-                                Favorites {favoriteRecipes.length ? `· ${favoriteRecipes.length}` : ''}
-                            </button>
-                            <span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700 shrink-0" aria-hidden />
-                            {quickCategoryCounts.map(({ name, count }) => (
-                                <button
-                                    key={name}
-                                    type="button"
-                                    onClick={() => { resetBrowse(); setCategory(name); }}
-                                    className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
-                                        category === name
-                                            ? 'bg-[#2D4635] text-white border-[#2D4635] shadow-sm'
-                                            : 'border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
-                                    }`}
-                                >
-                                    {name} · {count}
-                                </button>
-                            ))}
-                        </div>
-                        {currentUser?.role === 'admin' && localGeneratedImageCount > 0 && (
-                            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-300">
-                                {localGeneratedImageCount} of {recipes.length} cards use the cookbook fallback. <code className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 normal-case font-mono text-[10px]">npm run images:batch</code> upgrades them with Imagen.
-                            </p>
-                        )}
-                    </section>
-
-                    <div className="sticky top-16 z-30 -mx-1 space-y-3 rounded-[2rem] border border-[#E8DCCB]/75 bg-[#FFF8EC]/88 px-2 py-2 shadow-[0_10px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl md:top-20 md:px-3 dark:border-stone-800 dark:bg-stone-950/80">
-                        <div className="flex items-center gap-2 md:gap-3">
-                            <div className="relative flex-1">
+                    <div className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 -mx-1 space-y-2 rounded-[1.5rem] border border-[#E8DCCB]/75 bg-[#FFF8EC]/88 px-2 py-1.5 shadow-[0_10px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl md:top-20 md:space-y-3 md:rounded-[2rem] md:px-3 md:py-2 dark:border-stone-800 dark:bg-stone-950/80">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:gap-3">
+                            <div className="relative flex-1 min-w-0">
                                 <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 dark:text-stone-300 text-sm" aria-hidden="true">Search</span>
+                                <span className="absolute left-4 top-1/2 hidden -translate-y-1/2 text-sm text-stone-600 dark:text-stone-300 md:block" aria-hidden="true">Search</span>
                                 <input
+                                    ref={recipeSearchRef}
                                     id="recipe-search"
                                     type="text"
                                     inputMode="search"
-                                    placeholder="Search recipes, ingredients, contributors…"
+                                    placeholder="Search recipes, ingredients…"
                                     aria-label="Search recipes, ingredients, or instructions"
-                                    className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-16 pr-10 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] md:py-3.5 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
+                                    className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-4 pr-11 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] md:pl-16 md:pr-10 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                 />
@@ -1815,13 +2207,13 @@ const App: React.FC = () => {
                                         type="button"
                                         onClick={() => setSearch('')}
                                         aria-label="Clear search"
-                                        className="absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-stone-100 text-xs text-stone-700 hover:bg-stone-200"
+                                        className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-700 hover:bg-stone-200"
                                     >
                                         ✕
                                     </button>
                                 )}
                             </div>
-                            <div className="flex md:hidden gap-2">
+                            <div className="flex shrink-0 gap-2 md:hidden">
                                 <button
                                     type="button"
                                     onClick={() => setShowMobileFilters(v => !v)}
@@ -1885,12 +2277,67 @@ const App: React.FC = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="hidden md:flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 px-2">
-                            <span>{sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}{activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active` : ' · tap a card to view, or start cooking from the card'}</span>
+                        <div className="flex flex-col gap-1 px-2 text-xs text-stone-500 dark:text-stone-400 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                            <span className="min-w-0">
+                                {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}
+                                {activeFilterCount > 0
+                                    ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active`
+                                    : !isBrowsingFiltered ? <span className="hidden sm:inline"> · tap a card to view, or start cooking from the card</span> : ''}
+                            </span>
                             {activeFilterCount > 0 && (
-                                <button type="button" onClick={clearRecipeFilters} className="text-[#A0522D] hover:underline">Reset filters</button>
+                                <button type="button" onClick={clearRecipeFilters} className="shrink-0 text-[#A0522D] hover:underline font-semibold">Reset filters</button>
                             )}
                         </div>
+
+                        {isBrowsingFiltered && (
+                            <div className="flex flex-wrap gap-2 px-1 scroll-strip" aria-label="Active filters">
+                                {search.trim() && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearch('')}
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        “{search.trim()}” <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {category !== 'All' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setCategory('All')}
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {category} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {contributor !== 'All' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setContributor('All')}
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {contributor} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {selectedTag && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedTag('')}
+                                        className="inline-flex max-w-[calc(100vw-2.5rem)] min-h-11 items-center gap-1.5 truncate rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {getTagLabel(selectedTag)} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                                {sortBy !== 'title-asc' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSortBy('title-asc')}
+                                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[#E8DCCB] bg-white/90 px-3 py-2 text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                    >
+                                        {sortBy === 'title-desc' ? 'Z–A' : sortBy === 'category' ? 'Category' : sortBy === 'contributor' ? 'Contributor' : 'Recent'} <span aria-hidden>×</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         <div
                             id="mobile-recipe-filters"
@@ -1934,7 +2381,7 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
-                    {!isDataLoading && recipes.length > 0 && browseShelves.length > 0 && (
+                    {!isBrowsingFiltered && !isDataLoading && recipes.length > 0 && browseShelves.length > 0 && (
                         <div id="quick-access-recipes" className="scroll-mt-40 space-y-5">
                             {browseShelves.map((shelf) => (
                                 <section key={shelf.id} aria-label={shelf.label} className="space-y-3">
@@ -1971,7 +2418,7 @@ const App: React.FC = () => {
                                                 isFavorite={favoriteIds.has(recipe.id)}
                                                 onToggleFavorite={handleToggleFavorite}
                                                 wasViewed={recentIds.includes(recipe.id)}
-                                                cookActivityEpoch={recipeCardActivityEpoch}
+                                                isOffline={offlineRecipeIds.has(recipe.id)}
                                             />
                                         ))}
                                     </div>
@@ -1983,57 +2430,47 @@ const App: React.FC = () => {
                     {isDataLoading ? (
                         <RecipeGridSkeleton />
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6" data-testid="recipe-card-grid">
+                        <div className="grid grid-cols-1 items-stretch min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
                                 const ratingCount = getRatingCount(recipe.id);
-                                const approved = isFamilyApproved(recipe.id);
                                 const contribAvatar = getAvatar(recipe.contributor);
                                 const effortLabel = getRecipeEffortLabel(recipe);
                                 const wasViewed = recentIds.includes(recipe.id);
+                                const isOffline = offlineRecipeIds.has(recipe.id);
                                 const microcopy = getRecipeCardMicrocopy(recipe, ratingCount, isFav, wasViewed);
                                 const timeLabel = getRecipeTimeLabel(recipe);
                                 const normalizedContributor = normalizeContributorName(recipe.contributor);
-                                const cookCount = cookCountsByRecipeId.get(recipe.id) ?? 0;
                                 return (
                                     <article
                                         key={recipe.id}
-                                        className="recipe-card-surface group relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800 dark:focus-within:ring-offset-stone-950"
+                                        className="recipe-card-surface group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-stone-800 dark:focus-within:ring-offset-stone-950"
                                     >
                                         <button
                                             type="button"
                                             onClick={() => handleSelectRecipe(recipe)}
-                                            aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
+                                            aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed, isOffline)}
                                             data-testid="recipe-card-open"
                                             data-recipe-id={recipe.id}
                                             className="block w-full text-left"
                                         >
                                             <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                                                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]">
+                                                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100">
                                                     <RecipeCardImage recipe={recipe} />
                                                 </div>
+                                                {isOffline && <OfflineRecipeBadge />}
                                                 {timeLabel && (
-                                                    <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white">
+                                                    <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-white">
                                                         <span aria-hidden>⏱</span>
                                                         <span>{timeLabel}</span>
-                                                    </span>
-                                                )}
-                                                {approved && (
-                                                    <span className="absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-50/95 backdrop-blur px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 shadow-sm">
-                                                        ★ Approved
-                                                    </span>
-                                                )}
-                                                {(isFav || wasViewed) && (
-                                                    <span className="pointer-events-none absolute top-2 left-[3.65rem] z-10 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#2D4635] shadow-sm backdrop-blur">
-                                                        {isFav ? 'Saved' : 'Viewed'}
                                                     </span>
                                                 )}
                                             </div>
                                         </button>
 
-                                        <div className="flex flex-1 flex-col p-3 sm:p-4 space-y-2.5">
-                                            <div className="flex items-center justify-between gap-2">
+                                        <div className="flex min-h-0 flex-1 flex-col p-3 sm:p-4">
+                                            <div className="flex min-w-0 items-center justify-between gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -2057,18 +2494,18 @@ const App: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => handleSelectRecipe(recipe)}
-                                                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed)}
-                                                className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
+                                                aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed, isOffline)}
+                                                className="mt-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
                                             >
-                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2">
+                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2 min-h-[2.75rem] sm:min-h-[3rem] md:min-h-[3.25rem]">
                                                     {recipe.title}
                                                 </h3>
-                                                <p className="mt-1 line-clamp-2 min-h-0 text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:min-h-[2rem]">
+                                                <p className="mt-1 hidden line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:block">
                                                     {microcopy}
                                                 </p>
                                             </button>
 
-                                            <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                                            <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-stone-400">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -2098,50 +2535,30 @@ const App: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-                                                {cookCount >= 2 && (
-                                                    <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-orange-800 dark:bg-orange-950/40 dark:text-orange-300">
-                                                        🔥 Cooked {cookCount}x (30 days)
-                                                    </span>
-                                                )}
-                                                {ratingCount >= 3 && (
-                                                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                                                        Family approved by {ratingCount}
-                                                    </span>
-                                                )}
-                                                {wasViewed && (
-                                                    <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-stone-600 dark:bg-stone-800 dark:text-stone-300">
-                                                        Pick up again
-                                                    </span>
-                                                )}
-                                                {isFav && (
-                                                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-red-600 dark:bg-red-950/40 dark:text-red-300">
-                                                        Saved
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSelectRecipe(recipe)}
-                                                    className="min-h-11 rounded-full bg-[#2D4635] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-[#24392B] focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950"
-                                                    aria-label={`View recipe details for ${recipe.title}`}
-                                                >
-                                                    View Recipe
-                                                </button>
+                                            <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
                                                         recordRecipeView(recipe.id, recipe.title);
+                                                        setCookModeFromOfflineCache(false);
                                                         setCookModeRecipe(recipe);
                                                         hapticLight();
                                                         trackEvent('cook_mode_started', { recipeId: recipe.id, source: 'recipe_card' });
                                                     }}
-                                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#2D4635] transition-colors hover:bg-[#FDF6EC] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100 dark:hover:bg-stone-800"
+                                                    className="btn btn-primary btn-body w-full"
                                                     aria-label={`Start cooking ${recipe.title}`}
                                                 >
-                                                    Start Cooking
+                                                    <span className="sm:hidden">Cook</span>
+                                                    <span className="hidden sm:inline">Start Cooking</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSelectRecipe(recipe)}
+                                                    className="btn btn-secondary btn-body w-full"
+                                                    aria-label={`View recipe details for ${recipe.title}`}
+                                                >
+                                                    <span className="sm:hidden">View</span>
+                                                    <span className="hidden sm:inline">View Recipe</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -2231,10 +2648,6 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
-            {(tab === 'Family Story' || tab === 'Contributors') && (
-                <FamilyHub activeTab={tab} onSelect={handleSetTab} galleryCount={gallery.length} triviaCount={trivia.length} contributorCount={contributorsForDisplay.length} />
-            )}
-
             {tab === 'Family Story' && (
                 <Suspense fallback={<HistorySkeleton />}>
                     <HistoryView />
@@ -2249,7 +2662,15 @@ const App: React.FC = () => {
                             <ContributorsSkeleton />
                         </div>
                     ) : (
-                        <ContributorsView recipes={recipes} gallery={gallery} trivia={trivia} contributors={contributorsForDisplay} onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }} onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }} />
+                        <ContributorsView
+                            recipes={recipes}
+                            gallery={gallery}
+                            trivia={trivia}
+                            contributors={contributorsForDisplay}
+                            onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }}
+                            onViewGallery={(c) => { setGalleryContributorFilter(c); handleSetTab('Gallery'); window.scrollTo(0, 0); }}
+                            onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }}
+                        />
                     )}
                 </Suspense>
             )}
@@ -2270,9 +2691,9 @@ const App: React.FC = () => {
                 <Suspense fallback={<TabFallback />}>
                     <section id="main-content-grocery" aria-label="Grocery list" tabIndex={-1}>
                         <GroceryListView
-                            onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            onOpenCollections={() => { handleSetTab('Collections'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            onOpenMealPlan={() => { handleSetTab('Meal Plan'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onBrowseRecipes={() => handleSetTab('Recipes')}
+                            onOpenCollections={() => handleSetTab('Collections')}
+                            onOpenMealPlan={() => handleSetTab('Meal Plan')}
                             highlightRecipeTitle={groceryHighlightTitle}
                             onHighlightConsumed={clearGroceryHighlight}
                         />
@@ -2282,12 +2703,12 @@ const App: React.FC = () => {
 
             {tab === 'Collections' && currentUser && (
                 <Suspense fallback={<TabFallback />}>
-                    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-12" aria-label="Recipe collections" tabIndex={-1}>
-                        <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8">Collections</h2>
+                    <section className="view-shell" aria-label="Recipe collections" tabIndex={-1}>
                         <CollectionsView
                             recipes={recipes}
                             currentUserName={currentUser.name}
                             onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
+                            onOpenGroceryList={() => handleSetTab('Grocery List')}
                         />
                     </section>
                 </Suspense>
@@ -2299,8 +2720,9 @@ const App: React.FC = () => {
                         <MealPlanView
                             recipes={recipes}
                             onViewRecipe={(recipe) => handleSelectRecipe(recipe)}
-                            onBrowseRecipes={() => { handleSetTab('Recipes'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            onOpenGroceryList={() => { handleSetTab('Grocery List'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onBrowseRecipes={() => handleSetTab('Recipes')}
+                            onOpenGroceryList={() => handleSetTab('Grocery List')}
+                            syncVersion={prefsHydrationVersion}
                         />
                     </section>
                 </Suspense>
@@ -2310,8 +2732,11 @@ const App: React.FC = () => {
                 <Suspense fallback={<ProfileSkeleton />}>
                     <ProfileView
                         currentUser={currentUser}
-                        userRecipes={recipes.filter(r => r.contributor === currentUser.name && !defaultRecipeIds.has(r.id))}
-                        userHistory={history.filter(h => h.contributor === currentUser.name)}
+                        prefsSyncStatus={prefsSyncStatus}
+                        userRecipes={recipesForContributor(currentUser.name, recipes).filter(
+                            (r) => !defaultRecipeIds.has(r.id)
+                        )}
+                        userHistory={historyForContributor(currentUser.name, history)}
                         favoriteRecipes={recipes.filter(r => favoriteIds.has(r.id))}
                         recentRecipes={getRecentlyViewedEntries()
                             .map(e => recipes.find(r => r.id === e.id))
@@ -2376,6 +2801,9 @@ const App: React.FC = () => {
                                         if (patch.date instanceof Date && !isNaN(patch.date.getTime())) {
                                             next.created_at = patch.date.toISOString();
                                         }
+                                        if (patch.status === 'pending' || patch.status === 'approved') {
+                                            next.status = patch.status;
+                                        }
                                         return next;
                                     }));
                                     await refreshLocalState();
@@ -2393,22 +2821,7 @@ const App: React.FC = () => {
                                     toast(CLOUD_ERROR_MSG, 'error');
                                 }
                             },
-                            onAddGallery: async (g, f) => {
-                                // If offline and there's a file, queue it for later upload.
-                                if (!navigator.onLine && f) {
-                                    await queueUpload(f, g.caption, g.contributor);
-                                    await refreshPendingCount();
-                                    toast("You're offline. Photo saved to upload queue.", 'info');
-                                    return;
-                                }
-                                try {
-                                    const url = f ? await CloudArchive.uploadFile(f, 'gallery') : '';
-                                    await CloudArchive.upsertGalleryItem({ ...g, url: url || '' });
-                                    await refreshLocalState();
-                                } catch {
-                                    toast(CLOUD_ERROR_MSG, 'error');
-                                }
-                            },
+                            onAddGallery: uploadGalleryMemory,
                             onAddTrivia: async (t) => {
                                 try {
                                     await CloudArchive.upsertTrivia(t);

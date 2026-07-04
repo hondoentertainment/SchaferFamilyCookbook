@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import App from './App';
 import { setupLocalStorage, createMockRecipe, createMockGalleryItem, renderWithProviders } from './test/utils';
 
 function login(name = 'Alice') {
+    fireEvent.click(screen.getByTestId('login-intent-new'));
     fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: name } });
     fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /yes, open the cookbook/i }));
 }
 
 async function loginAndNavigateToGallery(_initialTab = 'Recipes') {
@@ -25,10 +25,11 @@ describe('App', () => {
         localStorage.clear();
     });
 
-    it('should show login form when not authenticated', async () => {
+    it('should show login chooser when not authenticated', async () => {
         renderWithProviders(<App />);
         expect(await screen.findByText(/who's cooking/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/your name/i)).toBeInTheDocument();
+        expect(screen.getByTestId('login-intent-new')).toBeInTheDocument();
+        expect(screen.getByTestId('login-browse-guest')).toBeInTheDocument();
     });
 
     it('should login and land on Home tab when name is submitted', async () => {
@@ -47,11 +48,17 @@ describe('Gallery', () => {
         localStorage.clear();
     });
 
+    it('should show upload panel on gallery tab', async () => {
+        await loginAndNavigateToGallery();
+        expect(screen.getByRole('heading', { name: /share a memory/i })).toBeInTheDocument();
+        expect(screen.getByTestId('gallery-upload-submit')).toBeInTheDocument();
+    });
+
     it('should show empty state when gallery has no items', async () => {
         await loginAndNavigateToGallery();
         expect(screen.getByRole('main', { name: /family gallery/i })).toBeInTheDocument();
         expect(screen.getByText('The gallery awaits your memories')).toBeInTheDocument();
-        expect(screen.getByText(/be the first to add a photo or video/i)).toBeInTheDocument();
+        expect(screen.getByText(/upload a photo above/i)).toBeInTheDocument();
     });
 
     it('should show gallery items when data exists', async () => {
@@ -129,18 +136,25 @@ describe('Gallery', () => {
         expect(deleteButton).toBeInTheDocument();
     });
 
-    it('should show "Want to add photos?" when no archive phone is set', async () => {
+    it('should show texting hint when no archive phone is set', async () => {
         await loginAndNavigateToGallery();
-        expect(screen.getByText('Want to add photos?')).toBeInTheDocument();
-        expect(screen.getByLabelText(/how to add photos/i)).toBeInTheDocument();
+        expect(screen.getByText('Prefer texting?')).toBeInTheDocument();
+        expect(screen.getByLabelText(/alternative ways to add photos/i)).toBeInTheDocument();
     });
 
-    it('should show text-to-archive instructions when archive phone is set', async () => {
+    it('should show text-to-gallery instructions when archive phone is set', async () => {
         localStorage.setItem('schafer_archive_phone', '+15551234567');
         await loginAndNavigateToGallery();
         expect(screen.getByText('Text your memories')).toBeInTheDocument();
         expect(screen.getByText(/Photo\/Video to:/)).toBeInTheDocument();
         expect(screen.getByText('+15551234567')).toBeInTheDocument();
+        expect(screen.getByLabelText(/text-to-gallery instructions/i)).toBeInTheDocument();
+    });
+
+    it('should show text-to-gallery instructions from VITE_ARCHIVE_PHONE when localStorage is empty', async () => {
+        vi.stubEnv('VITE_ARCHIVE_PHONE', '+15559876543');
+        await loginAndNavigateToGallery();
+        expect(screen.getByText('+15559876543')).toBeInTheDocument();
     });
 
     it('should render gallery with semantic structure', async () => {
@@ -194,7 +208,11 @@ describe('Featured recipes on Recipes tab', () => {
         localStorage.clear();
     });
 
-    it('does not render the Featured strip when no recipes are featured', async () => {
+    // The bundled seed now curates six featured recipes, and the app merges
+    // bundled defaults with the local DB, so the strip renders even when the
+    // local DB itself has no featured entries. The strip-hides-when-empty
+    // behavior stays covered by FeaturedStrip.test.tsx and featured.test.ts.
+    it('renders the Featured strip from bundled seed data even when local recipes are unfeatured', async () => {
         const recipes = [createMockRecipe({ id: 'plain', title: 'Plain Toast' })];
         localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
         renderWithProviders(<App />);
@@ -204,7 +222,7 @@ describe('Featured recipes on Recipes tab', () => {
         fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
         await screen.findAllByText('Plain Toast', {}, { timeout: 3000 });
 
-        expect(screen.queryByTestId('featured-strip')).not.toBeInTheDocument();
+        expect(screen.getByTestId('featured-strip')).toBeInTheDocument();
     });
 
     it('renders the Featured strip on the Recipes tab when at least one recipe is featured', async () => {

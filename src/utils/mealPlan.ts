@@ -5,6 +5,7 @@
  * `MealPlanEntry`. Each entry assigns one recipe to one calendar day.
  */
 import { STORAGE_KEYS } from '../constants/storage';
+import { notifyPrefsChanged } from '../services/userPrefsSync';
 
 export interface MealPlanEntry {
   id: string;
@@ -64,6 +65,7 @@ export function getMealPlan(): MealPlanEntry[] {
 function save(entries: MealPlanEntry[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.mealPlan, JSON.stringify(entries));
+    notifyPrefsChanged();
   } catch {
     // ignore quota / disabled storage
   }
@@ -108,6 +110,63 @@ export function removeFromMealPlan(entryId: string): MealPlanEntry[] {
   const next = getMealPlan().filter((e) => e.id !== entryId);
   save(next);
   return next;
+}
+
+function genEntryId(): string {
+  return 'mp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+/**
+ * Copy every recipe assigned to `fromKey` onto `toKey`, skipping recipes that
+ * already exist on the destination day. Returns the number of entries added.
+ */
+export function copyDay(fromKey: string, toKey: string): number {
+  if (fromKey === toKey) return 0;
+  const all = getMealPlan();
+  const source = all.filter((e) => e.date === fromKey);
+  if (source.length === 0) return 0;
+
+  const existing = new Set(
+    all.filter((e) => e.date === toKey).map((e) => e.recipeId),
+  );
+  const now = Date.now();
+  const added: MealPlanEntry[] = [];
+  for (const entry of source) {
+    if (existing.has(entry.recipeId)) continue;
+    existing.add(entry.recipeId);
+    added.push({ id: genEntryId(), date: toKey, recipeId: entry.recipeId, addedAt: now });
+  }
+  if (added.length === 0) return 0;
+  save([...all, ...added]);
+  return added.length;
+}
+
+/**
+ * Copy a full week's plan onto another week. `fromWeekKeys` and `toWeekKeys`
+ * are parallel 7-element arrays of date keys. Recipes already present on a
+ * destination day are skipped. Returns the number of entries added.
+ */
+export function copyWeek(fromWeekKeys: string[], toWeekKeys: string[]): number {
+  const all = getMealPlan();
+  const now = Date.now();
+  const added: MealPlanEntry[] = [];
+  const len = Math.min(fromWeekKeys.length, toWeekKeys.length);
+  for (let i = 0; i < len; i++) {
+    const fromKey = fromWeekKeys[i];
+    const toKey = toWeekKeys[i];
+    if (fromKey === toKey) continue;
+    const existing = new Set(
+      [...all, ...added].filter((e) => e.date === toKey).map((e) => e.recipeId),
+    );
+    for (const entry of all.filter((e) => e.date === fromKey)) {
+      if (existing.has(entry.recipeId)) continue;
+      existing.add(entry.recipeId);
+      added.push({ id: genEntryId(), date: toKey, recipeId: entry.recipeId, addedAt: now });
+    }
+  }
+  if (added.length === 0) return 0;
+  save([...all, ...added]);
+  return added.length;
 }
 
 /** Remove every entry from the plan. */

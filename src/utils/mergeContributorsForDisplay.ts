@@ -1,7 +1,8 @@
 import type { ContributorProfile, GalleryItem, Recipe, Trivia } from '../types';
+import { normalizeContributorName } from '../constants/taxonomy';
 import { contributorAvatarUrlForName } from './contributorAvatar';
 
-const keyFor = (n: string) => n.trim().toLowerCase();
+const keyFor = (n: string) => normalizeContributorName(n).trim().toLowerCase();
 
 function seedIdForName(name: string): string {
     const slug = name
@@ -24,12 +25,19 @@ export function mergeContributorsForDisplay(
 ): ContributorProfile[] {
     const byKey = new Map<string, ContributorProfile>();
     for (const c of fromDb) {
-        const k = keyFor(c.name);
-        if (k) byKey.set(k, c);
+        const canonical = normalizeContributorName(c.name);
+        const k = keyFor(canonical);
+        if (!k) continue;
+        const existing = byKey.get(k);
+        byKey.set(k, {
+            ...c,
+            name: canonical,
+            avatar: c.avatar || existing?.avatar || contributorAvatarUrlForName(canonical),
+        });
     }
 
     const ensure = (raw: string) => {
-        const name = raw?.trim();
+        const name = normalizeContributorName(raw?.trim());
         if (!name) return;
         const k = keyFor(name);
         if (byKey.has(k)) return;

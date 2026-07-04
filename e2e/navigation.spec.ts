@@ -10,13 +10,21 @@ test.describe('Tab navigation', () => {
   });
 
   test('shows the six primary nav tabs and no More menu', async ({ page }) => {
+    const headerNav = page.getByRole('navigation', { name: 'Main navigation' });
     await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Recipes', exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'A–Z', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Family', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Groceries', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Me', exact: true })).toBeVisible();
+    await expect(headerNav.getByRole('button', { name: 'Recipes', exact: true })).toBeVisible();
+    await expect(headerNav.getByRole('button', { name: 'A–Z', exact: true })).toBeVisible();
+    await expect(headerNav.getByRole('button', { name: 'Family', exact: true })).toBeVisible();
+    await expect(headerNav.getByRole('button', { name: 'Groceries', exact: true })).toBeVisible();
+    await expect(headerNav.getByRole('button', { name: 'Me', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'More sections' })).toHaveCount(0);
+  });
+
+  test('mobile bottom nav shows five tabs without A–Z', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    await expect(page.getByTestId('bottom-nav-profile')).toBeVisible();
+    await expect(page.getByTestId('bottom-nav-index')).toHaveCount(0);
   });
 
   test('Recipes tab still has its editorial masthead', async ({ page }) => {

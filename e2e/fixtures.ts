@@ -4,13 +4,21 @@ import { test as base } from '@playwright/test';
 const HOME_H1_TEXT_RE = /Good (morning|afternoon|evening)|Late night/i;
 
 /**
- * After submitting the typed-name login form, confirm the in-app name dialog.
- * Waits for either the Home masthead (returning users) or the first onboarding chapter (first visit).
+ * Choose a login path on the welcome screen and wait for the name field.
+ */
+export async function openLoginNameEntry(
+  page: import('@playwright/test').Page,
+  intent: 'new' | 'returning' = 'new',
+): Promise<void> {
+  const testId = intent === 'returning' ? 'login-intent-returning' : 'login-intent-new';
+  await page.getByTestId(testId).click();
+  await page.getByPlaceholder(/your name/i).waitFor({ state: 'visible', timeout: 10000 });
+}
+
+/**
+ * After submitting the login form, wait for Home or the first onboarding chapter.
  */
 export async function confirmCookbookLogin(page: import('@playwright/test').Page): Promise<void> {
-  const openCookbook = page.getByRole('button', { name: /Yes, open the cookbook/i });
-  await openCookbook.waitFor({ state: 'visible', timeout: 15000 });
-  await openCookbook.click();
   await Promise.race([
     page
       .locator('#main-content-home')
@@ -27,6 +35,43 @@ export async function waitForHomeMainHeading(page: import('@playwright/test').Pa
     state: 'visible',
     timeout: 15000,
   });
+}
+
+/** Force local-only data layer so gallery/recipe E2E use localStorage (preview builds may bootstrap Firebase from env). */
+export async function seedLocalOnlyMode(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(() => {
+    localStorage.setItem('schafer_active_provider', 'local');
+    localStorage.setItem('schafer_firebase_config', '{"e2e":"local-only"}');
+  });
+}
+
+/** Seed Firebase emulator config so cloud sync E2E can run against Firestore emulator. */
+export async function seedFirebaseEmulatorConfig(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(() => {
+    localStorage.setItem('schafer_active_provider', 'firebase');
+    localStorage.setItem(
+      'schafer_firebase_config',
+      JSON.stringify({ apiKey: 'demo-key', projectId: 'demo-schafer' }),
+    );
+  });
+}
+
+/** Login with Firebase emulator + onboarding skipped (for cloud-sync specs). */
+export async function loginAsWithFirebaseEmulator(
+  page: import('@playwright/test').Page,
+  name: string,
+): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await seedFirebaseEmulatorConfig(page);
+  await page.evaluate(() => localStorage.setItem('schafer_onboarding_done', 'true'));
+  await page.reload();
+
+  await openLoginNameEntry(page, 'new');
+  await page.getByPlaceholder(/your name/i).fill(name);
+  await page.getByRole('button', { name: /^continue$/i }).click();
+  await confirmCookbookLogin(page);
+  await waitForHomeMainHeading(page);
 }
 
 /**
@@ -49,6 +94,7 @@ export async function loginAs(
   });
   await page.reload();
 
+  await openLoginNameEntry(page, 'new');
   await page.getByPlaceholder(/your name/i).fill(name);
   await page.keyboard.press('Enter');
 
@@ -61,6 +107,33 @@ export async function loginAs(
     .waitFor({ state: 'visible', timeout: 15000 });
 
   // Safety net: if onboarding somehow appears, dismiss it.
+  const skipBtn = page.getByRole('button', { name: /Skip Tour/i });
+  if (await skipBtn.isVisible().catch(() => false)) {
+    await skipBtn.click();
+  }
+}
+
+/**
+ * Log in and remain on the Home tab (does not navigate to Recipes).
+ */
+export async function loginAsHome(
+  page: import('@playwright/test').Page,
+  name: string
+): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.setItem('schafer_onboarding_done', 'true');
+  });
+  await page.reload();
+
+  await openLoginNameEntry(page, 'new');
+  await page.getByPlaceholder(/your name/i).fill(name);
+  await page.keyboard.press('Enter');
+
+  await confirmCookbookLogin(page);
+  await waitForHomeMainHeading(page);
+
   const skipBtn = page.getByRole('button', { name: /Skip Tour/i });
   if (await skipBtn.isVisible().catch(() => false)) {
     await skipBtn.click();

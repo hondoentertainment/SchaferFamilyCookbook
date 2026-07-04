@@ -94,6 +94,49 @@ describe('firestore.rules (emulator)', () => {
         );
     });
 
+    it('anonymous can write userPrefs with meal plan shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'userPrefs/scout'), {
+                favorites: [],
+                ratings: {},
+                collections: [],
+                mealPlan: [
+                    {
+                        id: 'mp1',
+                        date: '2026-06-21',
+                        recipeId: 'r1',
+                        addedAt: 1782000000000,
+                    },
+                ],
+                updatedAt: serverTimestamp(),
+            }),
+        );
+    });
+
+    it('anonymous can write userPrefs with grocery list shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'userPrefs/scout'), {
+                favorites: [],
+                ratings: {},
+                collections: [],
+                mealPlan: [],
+                groceryList: [
+                    {
+                        id: 'g1',
+                        text: '2 cups flour',
+                        recipeId: 'r1',
+                        recipeTitle: 'Bread',
+                        checked: false,
+                        addedAt: 1782000000000,
+                    },
+                ],
+                updatedAt: serverTimestamp(),
+            }),
+        );
+    });
+
     it('anonymous cannot add unexpected keys to userPrefs', async () => {
         const anon = env.unauthenticatedContext().firestore();
         await assertFails(
@@ -172,6 +215,76 @@ describe('firestore.rules (emulator)', () => {
             setDoc(doc(anon, 'fcm_tokens/tk1'), {
                 token: 'device-token-sample',
                 userName: 'Alice',
+            }),
+        );
+    });
+
+    it('anonymous cannot create gallery items with invalid shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'gallery/g1'), {
+                id: 'g1',
+                type: 'image',
+                url: 'http://insecure.example/photo.jpg',
+                caption: 'Hi',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+                status: 'pending',
+            }),
+        );
+    });
+
+    it('anonymous can create valid gallery item', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'gallery/g2'), {
+                id: 'g2',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Summer BBQ',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+                status: 'pending',
+            }),
+        );
+    });
+
+    it('anonymous cannot create gallery item without pending status', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'gallery/g-approved'), {
+                id: 'g-approved',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Skip queue',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
+                status: 'approved',
+            }),
+        );
+    });
+
+    it('anonymous cannot update or delete gallery items', async () => {
+        const db = adminFirestore();
+        await assertSucceeds(
+            setDoc(doc(db, 'gallery/g3'), {
+                id: 'g3',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Original',
+                contributor: 'Kyle',
+                created_at: '2026-06-26T00:00:00.000Z',
+            }),
+        );
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'gallery/g3'), {
+                id: 'g3',
+                type: 'image',
+                url: 'https://storage.googleapis.com/demo-bucket/gallery/photo.jpg',
+                caption: 'Hacked',
+                contributor: 'Ada',
+                created_at: '2026-06-26T00:00:00.000Z',
             }),
         );
     });

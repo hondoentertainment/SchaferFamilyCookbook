@@ -61,7 +61,7 @@ describe('TriviaView', () => {
         renderWithProviders(<TriviaView {...defaultProps} />);
 
         expect(screen.getByText('Family Heritage Quiz')).toBeInTheDocument();
-        expect(screen.getByText(/Test your knowledge/)).toBeInTheDocument();
+        expect(screen.getByText(/Test your legacy knowledge/)).toBeInTheDocument();
         expect(screen.getByText('Begin The Challenge')).toBeInTheDocument();
     });
 
@@ -161,6 +161,7 @@ describe('TriviaView', () => {
     it('shows offline/unavailable message when Firebase is not configured', async () => {
         vi.mocked(leaderboard.isLeaderboardAvailable).mockReturnValue(false);
         renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /Family Leaderboard/i }));
         await waitFor(() =>
             expect(screen.getByText(/Leaderboard unavailable offline/i)).toBeInTheDocument()
         );
@@ -190,6 +191,7 @@ describe('TriviaView', () => {
             },
         ]);
         renderWithProviders(<TriviaView {...defaultProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /Family Leaderboard/i }));
         await waitFor(() => expect(screen.getByText('Grandma Joan')).toBeInTheDocument());
         expect(screen.getByText('Cousin Alex')).toBeInTheDocument();
         expect(screen.getByText('5/5')).toBeInTheDocument();
@@ -224,6 +226,7 @@ describe('TriviaView', () => {
         fireEvent.click(screen.getByText('45 min'));
         fireEvent.click(screen.getByText('Finish Archive Challenge'));
 
+        fireEvent.click(screen.getByRole('button', { name: /Family Leaderboard/i }));
         await waitFor(() => expect(screen.getByText(/permission-denied/)).toBeInTheDocument());
     });
 
@@ -263,6 +266,7 @@ describe('TriviaView', () => {
         await waitFor(() =>
             expect(screen.getByText('Legacy Challenge Complete')).toBeInTheDocument()
         );
+        fireEvent.click(screen.getByRole('button', { name: /Family Leaderboard/i }));
         await waitFor(() =>
             expect(
                 screen.getByText(/Missing or insufficient permissions\./i)

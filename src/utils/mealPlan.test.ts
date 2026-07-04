@@ -3,6 +3,8 @@ import {
   addDays,
   addToMealPlan,
   clearMealPlan,
+  copyDay,
+  copyWeek,
   getEntriesForDate,
   getEntriesInRange,
   getMealPlan,
@@ -98,5 +100,34 @@ describe('mealPlan persistence', () => {
     addToMealPlan('2026-05-11', 'r1');
     clearMealPlan();
     expect(getMealPlan()).toEqual([]);
+  });
+
+  it('copyDay duplicates a day onto another, skipping duplicates', () => {
+    addToMealPlan('2026-05-11', 'r1');
+    addToMealPlan('2026-05-11', 'r2');
+    addToMealPlan('2026-05-12', 'r2');
+
+    const added = copyDay('2026-05-11', '2026-05-12');
+    expect(added).toBe(1); // r1 copied, r2 already present
+    expect(getEntriesForDate('2026-05-12').map((e) => e.recipeId).sort()).toEqual(['r1', 'r2']);
+  });
+
+  it('copyDay is a no-op for the same day or an empty source', () => {
+    addToMealPlan('2026-05-11', 'r1');
+    expect(copyDay('2026-05-11', '2026-05-11')).toBe(0);
+    expect(copyDay('2026-05-20', '2026-05-21')).toBe(0);
+  });
+
+  it('copyWeek copies each day forward, skipping duplicates', () => {
+    const from = getWeekDates(getWeekStart(new Date(2026, 4, 10))).map(toDateKey);
+    const to = getWeekDates(getWeekStart(new Date(2026, 4, 17))).map(toDateKey);
+    addToMealPlan(from[0], 'r1');
+    addToMealPlan(from[1], 'r2');
+    addToMealPlan(to[1], 'r2'); // already present on destination
+
+    const added = copyWeek(from, to);
+    expect(added).toBe(1); // r1 copied to to[0]; r2 skipped on to[1]
+    expect(getEntriesForDate(to[0]).map((e) => e.recipeId)).toEqual(['r1']);
+    expect(getEntriesForDate(to[1]).map((e) => e.recipeId)).toEqual(['r2']);
   });
 });

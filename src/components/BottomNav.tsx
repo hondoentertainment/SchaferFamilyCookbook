@@ -1,16 +1,8 @@
 import React from 'react';
 import { UserProfile } from '../types';
+import { BOTTOM_NAV_TABS } from '../config/navConfig';
 import { hapticLight } from '../utils/haptics';
 import { avatarOnError } from '../utils/avatarFallback';
-
-const MAIN_TABS = [
-    { id: 'Home', label: 'Home', group: ['Home'] },
-    { id: 'Recipes', label: 'Recipes', group: ['Recipes', 'Collections'] },
-    { id: 'Index', label: 'A–Z', group: ['Index'] },
-    { id: 'Gallery', label: 'Family', group: ['Gallery', 'Trivia', 'Family Story', 'Contributors'] },
-    { id: 'Grocery List', label: 'Groceries', group: ['Grocery List', 'Meal Plan'] },
-    { id: 'Profile', label: 'Me', group: ['Profile', 'Privacy', 'Help'] },
-] as const;
 
 const NavIcon: React.FC<{ id: string; active: boolean }> = ({ id, active }) => {
     const stroke = active ? 'var(--color-brand)' : 'currentColor';
@@ -79,14 +71,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
             aria-label="Main navigation"
         >
             <div className="flex min-h-16 items-stretch justify-around px-1">
-                {MAIN_TABS.map(({ id, label, group }) => {
+                {BOTTOM_NAV_TABS.map(({ id, label, group }) => {
                     const isActive = group.some((tabId) => tabId === activeTab);
                     return (
                         <button
                             key={id}
                             type="button"
                             data-testid={
-                                id === 'Profile' ? 'bottom-nav-profile' : id === 'Index' ? 'bottom-nav-index' : undefined
+                                id === 'Profile' ? 'bottom-nav-profile' : undefined
                             }
                             onClick={() => {
                                 hapticLight();
@@ -119,7 +111,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                                 )}
                             </span>
                             <span
-                                className={`max-w-full truncate px-0.5 text-[10px] font-black tracking-wider ${
+                                className={`max-w-full truncate px-0.5 text-[10px] font-bold tracking-wide sm:text-xs ${
                                     isActive ? 'text-[var(--color-brand)] dark:text-emerald-300' : 'text-stone-700 dark:text-stone-300'
                                 }`}
                             >

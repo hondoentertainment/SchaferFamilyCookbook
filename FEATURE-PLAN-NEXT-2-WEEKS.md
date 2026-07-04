@@ -20,29 +20,30 @@
 | **FCM service worker build-time config** — `@inject-firebase-config` + `scripts/sync-firebase-sw-config.mjs` | **Shipped** (prior sprint) |
 | **API recipe seed for Vercel** — `api/recipes.seed.generated.ts`, `postinstall` sync, smoke `/api/ping` | **Shipped** |
 | **Collections cloud sync** — extend `userPrefs` to mirror custom lists across devices | **Shipped** |
+| **Meal plan MVP + cloud sync** — week view, modal picker, grocery generation, `userPrefs.mealPlan` | **Shipped** |
+| **Ingredient search** — browse search matches recipe ingredient text | **Shipped** |
+| **Family Story CMS render path** — saved Admin sections drive the public Family Story view | **Shipped** |
 
 ---
 
 ## Next 2 weeks
 
-### 1. Meal plan MVP
+### 1. Meal plan polish
 
-- Simple week view (7 days × 1 slot per day or breakfast/lunch/dinner columns — pick smallest viable)
-- Persist in `localStorage`; optional `userPrefs` cloud sync (same pattern as collections)
-- Add recipe from modal or browse (“Add to meal plan”)
-- Unit tests for persistence helpers; optional E2E happy path
+- Add copy-week/copy-day actions
+- Improve picker search with ingredient/contributor matching
+- Clarify grocery-list de-dupe summaries after generating a week
 
-### 2. Featured recipes admin strip (polish)
+### 2. Family Story CMS polish
 
-- Featured toggle already in Admin; verify strip ordering, empty state, and mobile layout
-- E2E: admin toggles featured → strip visible on Recipes tab
-- Document custodian workflow in `RUNBOOK.md` or Admin help copy if missing
+- Add preview before saving
+- Add autosave draft in localStorage
+- Add optional starter section templates for custodians
 
-### 3. Ingredient search
+### 3. Search polish
 
-- Extend browse search to match ingredient strings (case-insensitive, tokenized)
-- Fuzzy or substring match on `recipe.ingredients[]`
-- Unit tests for search helper; update empty-state copy when no ingredient matches
+- Add fuzzy matching for title, contributor, and ingredient typo tolerance
+- Improve empty-state copy based on whether the query matched ingredients, categories, or contributors
 
 ### 4. Lighthouse baseline
 
@@ -56,15 +57,14 @@
 
 | Week | Focus | Deliverables |
 |------|--------|--------------|
-| **1** | Meal plan MVP + ingredient search | Week view UI, local persistence, search helper + tests |
-| **2** | Featured strip polish + Lighthouse | Admin E2E assertion, baseline CI run |
+| **1** | Meal plan + Story CMS polish | Copy actions, preview/draft UX, focused tests |
+| **2** | Search polish + Lighthouse | Fuzzy search helper, baseline CI run |
 
 ---
 
 ## File checklist (likely touched)
 
-- `src/components/MealPlanView.tsx` (new), routing in `App.tsx`
-- `src/utils/mealPlan.ts` (new), `src/utils/search.ts` or browse filter in `App.tsx`
-- `src/components/FeaturedStrip.tsx`, `src/components/AdminView.tsx`, `e2e/admin.spec.ts`
+- `src/components/MealPlanView.tsx`, routing in `App.tsx`
+- `src/utils/mealPlan.ts`, `src/services/userPrefsSync.ts`, `firebase/firestore.rules`
+- `src/components/HistoryView.tsx`, `src/components/AdminView.tsx`, `src/services/db.ts`
 - `.github/workflows/` Lighthouse job notes, `TESTING.md`, `FEATURE-ROADMAP.md`
-- `src/services/userPrefsSync.ts` — reference for meal-plan cloud sync if added later
