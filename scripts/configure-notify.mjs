@@ -5,6 +5,7 @@
  * Usage:
  *   npm run configure:notify
  *   npm run configure:notify -- --generate   # print a random secret to set on Vercel
+ *   npm run configure:notify -- --apply        # generate + set both secrets on Vercel production
  */
 import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -16,11 +17,26 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 loadLocalOpsEnv(root);
 
 const generate = process.argv.includes('--generate');
+const apply = process.argv.includes('--apply');
+
+function run(cmd, args, input) {
+    const r = spawnSync(cmd, args, {
+        encoding: 'utf8',
+        shell: true,
+        input,
+    });
+    return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
+}
 
 function listVercelEnv() {
     const r = spawnSync('npx', ['vercel', 'env', 'ls'], { encoding: 'utf8', shell: true });
     if (r.status !== 0) return null;
     return r.stdout ?? '';
+}
+
+function setVercelEnv(name, value) {
+    run('npx', ['vercel', 'env', 'rm', name, 'production', '--yes']);
+    return run('npx', ['vercel', 'env', 'add', name, 'production'], `${value}\n`);
 }
 
 console.log('Push notify configuration\n');
@@ -60,9 +76,27 @@ if (generate) {
     console.log('\nVercel CLI (production):');
     console.log(`  npx vercel env add NOTIFY_SECRET production`);
     console.log(`  npx vercel env add VITE_NOTIFY_SECRET production`);
+    console.log('\nOr: npm run configure:notify -- --apply');
     console.log('\nThen redeploy production.');
+} else if (apply) {
+    const secret =
+        hasClient && hasServer && process.env.VITE_NOTIFY_SECRET.trim() === process.env.NOTIFY_SECRET.trim()
+            ? process.env.VITE_NOTIFY_SECRET.trim()
+            : randomBytes(24).toString('base64url');
+    console.log('\nApplying notify secrets to Vercel production…');
+    for (const name of ['NOTIFY_SECRET', 'VITE_NOTIFY_SECRET']) {
+        const add = setVercelEnv(name, secret);
+        if (add.status !== 0) {
+            console.error(`Failed to set ${name}:`, add.stderr || add.stdout);
+            process.exit(add.status);
+        }
+    }
+    console.log('✅ NOTIFY_SECRET and VITE_NOTIFY_SECRET set (matching).');
+    console.log('Redeploy: npx vercel deploy --prod --yes');
+    process.exit(0);
 } else if (!hasClient || !hasServer) {
     console.log('\nGenerate a secret: npm run configure:notify -- --generate');
+    console.log('Auto-apply on Vercel: npm run configure:notify -- --apply');
 }
 
 const vercelList = listVercelEnv();

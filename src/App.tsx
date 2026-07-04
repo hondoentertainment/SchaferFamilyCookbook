@@ -3,7 +3,7 @@ import { UserProfile, Recipe, GalleryItem, Trivia, DBStats, ContributorProfile }
 import { useUI } from './context/UIContext';
 import { shouldToastImageError } from './utils/imageErrorToast';
 import { RecipeImage, RecipeImageFallback } from './components/RecipeImage';
-import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard } from './utils/recipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage } from './utils/recipeImage';
 import { FirebaseError } from 'firebase/app';
 import { CloudArchive } from './services/db';
 import {
@@ -446,8 +446,6 @@ const RecipeCardImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
             recipe={recipe}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 380px"
             imgClassName={isCookbookCoverImage(recipe) ? '' : 'group-hover:scale-110'}
-            preferCategoryFallback={isHandwrittenRecipeCard(recipe)}
-            fallbackLabel={isHandwrittenRecipeCard(recipe) ? 'Recipe card' : undefined}
             onError={() => {
                 if (shouldToastImageError(recipe.id)) {
                     toast("Some recipe images couldn't load. Check your connection and refresh.", 'info');
@@ -2499,7 +2497,7 @@ const App: React.FC = () => {
                                             className="block w-full text-left"
                                         >
                                             <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-stone-800">
-                                                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]">
+                                                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:group-hover:scale-100">
                                                     <RecipeCardImage recipe={recipe} />
                                                 </div>
                                                 {isOffline && <OfflineRecipeBadge />}
