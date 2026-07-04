@@ -30,6 +30,31 @@ test.describe('Login', () => {
     await expect(page.getByRole('button', { name: 'Recipes', exact: true }).first()).toBeVisible();
   });
 
+  test('returning member can sign back in', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('schafer_onboarding_done', 'true');
+    });
+    await page.reload();
+
+    await openLoginNameEntry(page, 'new');
+    await page.getByPlaceholder(/your name/i).fill('Robin');
+    await page.getByRole('button', { name: /^continue$/i }).click();
+    await confirmCookbookLogin(page);
+    await waitForHomeMainHeading(page);
+
+    await page.evaluate(() => localStorage.removeItem('schafer_user'));
+    await page.reload();
+
+    await expect(page.getByRole('heading', { name: /who's cooking/i })).toBeVisible();
+    await openLoginNameEntry(page, 'returning');
+    await page.getByPlaceholder(/your name/i).fill('Robin');
+    await page.getByRole('button', { name: /^continue$/i }).click();
+    await confirmCookbookLogin(page);
+    await waitForHomeMainHeading(page);
+  });
+
   test('guest browse opens recipes without persisting login', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
@@ -37,6 +62,7 @@ test.describe('Login', () => {
 
     await page.getByTestId('login-browse-guest').click();
     await expect(page.getByTestId('guest-sign-in-banner')).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: 'Recipes', exact: true }).first().click();
     await expect(page.getByRole('textbox', { name: /Search recipes, ingredients/i })).toBeVisible();
 
     const storedUser = await page.evaluate(() => localStorage.getItem('schafer_user'));

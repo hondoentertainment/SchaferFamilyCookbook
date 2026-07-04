@@ -24,7 +24,7 @@ export default defineConfig({
         url: e2eBase,
         // Only reuse if you intentionally point another preview at the same port (e.g. parallel manual runs)
         reuseExistingServer: process.env.PW_REUSE_E2E_SERVER === '1',
-        timeout: 120000,
+        timeout: 180000,
       },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

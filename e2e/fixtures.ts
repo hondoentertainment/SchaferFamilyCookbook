@@ -179,6 +179,27 @@ export async function loginAsAdmin(
   await loginAs(page, 'Kyle');
 }
 
+/** Profile → Admin Tools (custodian UI). Expands the admin collapsible if needed. */
+export async function goToAdminTools(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('[data-testid="nav-profile"]').click();
+  await page.getByRole('button', { name: /Open Admin Tools/i }).waitFor({ state: 'visible', timeout: 5000 });
+  await page.getByRole('button', { name: /Open Admin Tools/i }).click();
+
+  const adminPanel = page.getByRole('button', { name: /Admin — archive control room/i });
+  await adminPanel.waitFor({ state: 'visible', timeout: 5000 });
+  if ((await adminPanel.getAttribute('aria-expanded')) === 'false') {
+    await adminPanel.click();
+  }
+  await page.getByRole('heading', { name: /Manage Recipes/i }).first().waitFor({ state: 'visible', timeout: 15000 });
+}
+
+/** Log out from Profile (returns to welcome screen). */
+export async function logoutFromProfile(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('[data-testid="nav-profile"]').click();
+  await page.getByRole('button', { name: /Log out/i }).click();
+  await page.getByRole('heading', { name: /who's cooking/i }).waitFor({ state: 'visible', timeout: 10000 });
+}
+
 /**
  * Extended test with logged-in admin
  */

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, loginAsAdmin, recipeCardOpenInMainGrid } from './fixtures';
+import { loginAs, loginAsAdmin, goToAdminTools, recipeCardOpenInMainGrid } from './fixtures';
 
 /**
  * Admin E2E coverage strategy:
@@ -72,13 +72,6 @@ test.describe('Admin (admin user)', () => {
     await page.reload();
     await loginAsAdmin(page);
   });
-
-  const goToAdminTools = async (page: import('@playwright/test').Page) => {
-    await page.locator('[data-testid="nav-profile"]').click();
-    // Wait for the Profile view to be fully rendered before clicking Admin Tools
-    await page.getByRole('button', { name: /Open Admin Tools/i }).waitFor({ state: 'visible', timeout: 5000 });
-    await page.getByRole('button', { name: /Open Admin Tools/i }).click();
-  };
 
   test('shows admin panel for admin user', async ({ page }) => {
     await goToAdminTools(page);
