@@ -59,11 +59,11 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
             onError={avatarOnError}
             className="w-28 h-28 rounded-full mx-auto border-4 border-white dark:border-stone-700 shadow-xl object-cover"
           />
-          <h2 className="text-3xl font-serif italic text-[#2D4635] dark:text-emerald-400">
+          <h2 className="text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-400">
             {contributor.name}
           </h2>
           <div className="flex flex-wrap justify-center gap-2">
-            <span className="px-3 py-1 bg-[#2D4635]/10 dark:bg-emerald-900/30 text-[#2D4635] dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest">
+            <span className="px-3 py-1 bg-[var(--color-brand)]/10 dark:bg-emerald-900/30 text-[var(--color-brand)] dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest">
               {contributorRecipes.length} recipes
             </span>
             {categories.map((cat) => (

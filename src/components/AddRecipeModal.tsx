@@ -205,7 +205,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
             />
             <div className="relative bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-start mb-6">
-                    <h2 id="add-recipe-modal-title" className="text-2xl font-serif italic text-[#2D4635]">Add New Recipe</h2>
+                    <h2 id="add-recipe-modal-title" className="text-2xl font-serif italic text-[var(--color-brand)]">Add New Recipe</h2>
                     <button
                         type="button"
                         onClick={onClose}
@@ -237,7 +237,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         <div className="relative group">
                             <label htmlFor="add-recipe-image-upload" className="block cursor-pointer">
                                 <input id="add-recipe-image-upload" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; if (f && f.size > 10 * 1024 * 1024) { toast('Image must be under 10 MB.', 'error'); e.target.value = ''; return; } setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Upload recipe image" />
-                                <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[#2D4635] transition-all bg-stone-50/30">
+                                <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[var(--color-brand)] transition-all bg-stone-50/30">
                                     <span className="text-lg">📁</span>
                                     <span className="text-[10px] font-black uppercase tracking-widest">{recipeFile ? recipeFile.name : 'Upload Heritage Photo'}</span>
                                 </div>
@@ -255,17 +255,17 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                     <div>
                         <label htmlFor="add-recipe-magic" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Paste recipe text for AI</label>
                         <textarea id="add-recipe-magic" placeholder="Paste recipe text here for AI to parse…" className="w-full h-24 p-4 border border-stone-100 rounded-2xl text-base bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
-                        <button type="button" onClick={handleMagicImport} disabled={isMagicLoading || !rawText.trim() || isAICooldownActive} className="mt-2 w-full py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
+                        <button type="button" onClick={handleMagicImport} disabled={isMagicLoading || !rawText.trim() || isAICooldownActive} className="mt-2 w-full py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
                             {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
                         </button>
                     </div>
                     <div>
                         <label htmlFor="add-recipe-title-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Recipe Title</label>
-                        <input id="add-recipe-title-input" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
+                        <input id="add-recipe-title-input" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
                     </div>
                     <div>
                         <label htmlFor="add-recipe-contributor" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Contributed By</label>
-                        <select id="add-recipe-contributor" className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20 mt-1" value={recipeForm.contributor || currentUser?.name || ''} onChange={e => setRecipeForm({ ...recipeForm, contributor: e.target.value })}>
+                        <select id="add-recipe-contributor" className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[var(--color-brand)]/20 mt-1" value={recipeForm.contributor || currentUser?.name || ''} onChange={e => setRecipeForm({ ...recipeForm, contributor: e.target.value })}>
                             <option value={currentUser?.name || 'Me'}>{currentUser?.name || 'Me'} (you)</option>
                             {contributors.filter(c => c.name !== currentUser?.name).map(c => (
                                 <option key={c.id} value={c.name}>{c.name}</option>
@@ -275,34 +275,34 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label htmlFor="add-recipe-category" className="sr-only">Category</label>
-                            <select id="add-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as Recipe['category'] })}>
+                            <select id="add-recipe-category" className="p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[var(--color-brand)]/20 w-full" value={recipeForm.category} onChange={e => setRecipeForm({ ...recipeForm, category: e.target.value as Recipe['category'] })}>
                                 {RECIPE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                             </select>
                         </div>
                         <div>
                             <label htmlFor="add-recipe-preptime" className="sr-only">Prep time</label>
-                            <input id="add-recipe-preptime" placeholder="Prep (e.g. 15 min)" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
+                            <input id="add-recipe-preptime" placeholder="Prep (e.g. 15 min)" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[var(--color-brand)]/20 w-full" value={recipeForm.prepTime || ''} onChange={e => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
                         </div>
                         <div>
                             <label htmlFor="add-recipe-cooktime" className="sr-only">Cook Time</label>
-                            <input id="add-recipe-cooktime" placeholder="Cook (e.g. 30 min)" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
+                            <input id="add-recipe-cooktime" placeholder="Cook (e.g. 30 min)" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[var(--color-brand)]/20 w-full" value={recipeForm.cookTime || ''} onChange={e => setRecipeForm({ ...recipeForm, cookTime: e.target.value })} />
                         </div>
                         <div>
                             <label htmlFor="add-recipe-calories" className="sr-only">Calories</label>
-                            <input id="add-recipe-calories" type="number" placeholder="Calories" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[#2D4635]/20 w-full" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
+                            <input id="add-recipe-calories" type="number" placeholder="Calories" className="p-4 border border-stone-200 rounded-2xl text-base focus:ring-2 focus:ring-[var(--color-brand)]/20 w-full" value={recipeForm.calories || ''} onChange={e => setRecipeForm({ ...recipeForm, calories: parseInt(e.target.value) || 0 })} />
                         </div>
                     </div>
                     <div>
                         <label htmlFor="add-recipe-ingredients" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Ingredients (one per line)</label>
-                        <textarea id="add-recipe-ingredients" placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
+                        <textarea id="add-recipe-ingredients" placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
                     </div>
                     <div>
                         <label htmlFor="add-recipe-instructions" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Instructions (one per line)</label>
-                        <textarea id="add-recipe-instructions" placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
+                        <textarea id="add-recipe-instructions" placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
                     </div>
                     <div>
                         <label htmlFor="add-recipe-notes" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Heirloom Notes (optional)</label>
-                        <textarea id="add-recipe-notes" placeholder="Add any special memories or tips…" className="w-full h-24 p-4 border border-[#2D4635]/20 rounded-2xl text-base bg-[#2D4635]/5 focus:ring-2 focus:ring-[#2D4635]/20 italic mt-1" value={recipeForm.notes || ''} onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })} />
+                        <textarea id="add-recipe-notes" placeholder="Add any special memories or tips…" className="w-full h-24 p-4 border border-[var(--color-brand)]/20 rounded-2xl text-base bg-[var(--color-brand)]/5 focus:ring-2 focus:ring-[var(--color-brand)]/20 italic mt-1" value={recipeForm.notes || ''} onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                         <label htmlFor="add-recipe-tag-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Tags (optional)</label>
@@ -310,7 +310,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                             id="add-recipe-tag-input"
                             type="text"
                             placeholder="Add tag (e.g. vegetarian) and press Enter"
-                            className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[#2D4635]/20"
+                            className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20"
                             value={tagInput}
                             onChange={e => setTagInput(e.target.value)}
                             onKeyDown={e => {
@@ -346,7 +346,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         )}
                     </div>
                     <div className="flex gap-4 pt-4">
-                        <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
                             {isSubmitting ? 'Saving...' : 'Add Recipe'}
                         </button>
                         <button type="button" onClick={onClose} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">

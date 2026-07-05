@@ -43,14 +43,14 @@ export const RecipeNotes: React.FC<RecipeNotesProps> = ({ recipeId, recipeTitle,
           onChange={(e) => setNewNote(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
           placeholder="Add a tip or note..."
-          className="flex-1 px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-2xl text-sm font-serif italic outline-none focus:ring-2 focus:ring-[#2D4635]/10 transition-all"
+          className="flex-1 px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-2xl text-sm font-serif italic outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10 transition-all"
           aria-label="Write a note"
         />
         <button
           type="button"
           onClick={handleAddNote}
           disabled={!newNote.trim()}
-          className="px-4 py-3 bg-[#2D4635] text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-11 min-w-11"
+          className="px-4 py-3 bg-[var(--color-brand)] text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-11 min-w-11"
           aria-label="Post note"
         >
           Post
@@ -70,7 +70,7 @@ export const RecipeNotes: React.FC<RecipeNotesProps> = ({ recipeId, recipeTitle,
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-[#2D4635] dark:text-emerald-400">{note.userName}</span>
+                  <span className="text-xs font-bold text-[var(--color-brand)] dark:text-emerald-400">{note.userName}</span>
                   <span className="text-[10px] text-stone-400">{formatTimeAgo(note.timestamp)}</span>
                 </div>
                 <p className="text-sm text-stone-700 dark:text-stone-300 font-serif italic">{note.text}</p>

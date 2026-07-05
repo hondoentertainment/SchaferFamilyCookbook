@@ -67,7 +67,7 @@ export const GalleryUploadPanel: React.FC<GalleryUploadPanelProps> = ({
                 <div>
                     <h3
                         id="gallery-upload-heading"
-                        className="text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-300 leading-none mb-1"
+                        className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-300 leading-none mb-1"
                     >
                         Share a memory
                     </h3>
@@ -121,7 +121,7 @@ export const GalleryUploadPanel: React.FC<GalleryUploadPanelProps> = ({
                         disabled={disabled || isSubmitting}
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
-                        className="w-full p-4 border border-stone-200 dark:border-stone-600 rounded-2xl text-base bg-white dark:bg-[var(--bg-secondary)] outline-none focus:ring-2 focus:ring-[#2D4635]/20 disabled:opacity-60"
+                        className="w-full p-4 border border-stone-200 dark:border-stone-600 rounded-2xl text-base bg-white dark:bg-[var(--bg-secondary)] outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20 disabled:opacity-60"
                     />
                 </div>
 

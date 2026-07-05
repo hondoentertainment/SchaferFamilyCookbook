@@ -6,19 +6,28 @@
  * cues and populate the fields. Conservative: only writes when a clear cue
  * is found. Also selects up to six featured recipes.
  *
- * Run: node scripts/extract-recipe-metadata.mjs
+ * Run: node scripts/extract-recipe-metadata.mjs [--reset-times]
+ *   --reset-times  Clear all prepTime/cookTime before extracting (use after
+ *                  improving the extraction heuristics).
  *
  * Always re-runs the seed sync afterwards so the API recipe seed stays
  * consistent with the source.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const SRC = new URL('../src/data/recipes.json', import.meta.url);
+const SYNC_SCRIPT = fileURLToPath(new URL('./sync-recipes-for-api.mjs', import.meta.url));
 const recipes = JSON.parse(readFileSync(SRC, 'utf8'));
 
+const RESET_TIMES = process.argv.includes('--reset-times');
+
+// Combined "1 hour 15 minutes" style takes priority over single-unit matches.
+const COMBINED_TIME_REGEX =
+    /(\d+)\s*(?:hr|hrs|hour|hours)\.?\s*(?:and\s*)?(\d+)\s*(?:min|mins|minute|minutes)\b/i;
 const TIME_REGEX =
-    /(\d+)\s*(?:-|to|–)\s*(\d+)?\s*(min|minute|minutes|hr|hour|hours)\b|\b(\d+)\s*(min|minute|minutes|hr|hour|hours)\b/i;
+    /(\d+)\s*(?:-|to|–)\s*(\d+)?\s*(min|minute|minutes|hr|hrs|hour|hours)\b|\b(\d+)\s*(min|minute|minutes|hr|hrs|hour|hours)\b/i;
 
 function parseToMinutes(match) {
     if (!match) return null;
@@ -31,22 +40,32 @@ function parseToMinutes(match) {
 
 function formatMinutes(min) {
     if (min == null) return null;
-    if (min >= 60 && min % 60 === 0) return `${min / 60} hr`;
-    if (min >= 60) return `${(min / 60).toFixed(1).replace(/\.0$/, '')} hr`;
+    if (min >= 60) {
+        const hrs = Math.floor(min / 60);
+        const rem = min % 60;
+        // Whole units only — "1 hr 15 min", never "1.3 hr" (decimal hour
+        // strings mis-parse in downstream duration parsers).
+        return rem === 0 ? `${hrs} hr` : `${hrs} hr ${rem} min`;
+    }
     return `${min} min`;
 }
 
-const COOK_VERBS =
-    /\b(bake|roast|simmer|boil|cook|broil|fry|grill|saut[eé]|brown|braise|steam|cool|chill|refrigerate)\b/i;
+// Active cooking only. Passive time (chill, refrigerate, cool, rest, rise,
+// freeze, marinate) is deliberately excluded — displaying "Chill 1 hour" as
+// cookTime misrepresents no-cook recipes in the UI and recipe schema.
+const COOK_VERBS = /\b(bake|roast|simmer|boil|cook|broil|fry|grill|saut[eé]|brown|braise|steam)\b/i;
+const PASSIVE_VERBS = /\b(chill|refrigerate|cool|rest|rise|freeze|marinate|overnight)\b/i;
 const PREP_VERBS = /\b(mix|combine|whisk|stir|chop|dice|mince|slice|peel|knead|roll|cream|blend)\b/i;
 
 function pullTimes(instructions) {
     let cook = null;
     let prep = null;
     for (const step of instructions) {
-        const m = TIME_REGEX.exec(step);
-        if (!m) continue;
-        const mins = parseToMinutes(m);
+        if (PASSIVE_VERBS.test(step)) continue;
+        const combined = COMBINED_TIME_REGEX.exec(step);
+        const mins = combined
+            ? Number(combined[1]) * 60 + Number(combined[2])
+            : parseToMinutes(TIME_REGEX.exec(step));
         if (!mins) continue;
         if (COOK_VERBS.test(step) && (cook == null || mins > cook)) cook = mins;
         else if (PREP_VERBS.test(step) && (prep == null || mins > prep)) prep = mins;
@@ -58,8 +77,7 @@ const YIELD_REGEX =
     /\b(serves?|servings?|makes|yields?)\s*(?:about\s*)?(\d+(?:\s*(?:-|to|–)\s*\d+)?)\s*([A-Za-z]+)?/i;
 
 function pullServings(recipe) {
-    const haystack = [recipe.notes || '', ...recipe.instructions]
-        .join(' ');
+    const haystack = [recipe.notes || '', ...(recipe.instructions || [])].join(' ');
     const m = YIELD_REGEX.exec(haystack);
     if (!m) return null;
     const number = m[2].replace(/\s+/g, '');
@@ -74,9 +92,6 @@ function pullServings(recipe) {
     return `Serves ${number}`;
 }
 
-// Recipes promoted to featured: a mix of marquee desserts, breakfast, and
-// classic mains so the homepage strip has variety. Six entries per the
-// food-blogger review's recommendation.
 // Six featured recipes spanning the food-blogger reviewer's recommended
 // variety: marquee dessert, breakfast, classic main, dip, soup, bar.
 // Titles use the exact source-of-truth strings (curly apostrophes preserved).
@@ -95,6 +110,10 @@ let servingsFilled = 0;
 let featuredFilled = 0;
 
 for (const recipe of recipes) {
+    if (RESET_TIMES) {
+        delete recipe.prepTime;
+        delete recipe.cookTime;
+    }
     if (!recipe.prepTime || !recipe.cookTime) {
         const { prep, cook } = pullTimes(recipe.instructions || []);
         if (!recipe.prepTime && prep != null) {
@@ -124,5 +143,6 @@ console.log(
     `[extract-recipe-metadata] prepTime+${prepFilled} cookTime+${cookFilled} servings+${servingsFilled} featured+${featuredFilled}`,
 );
 
-// Keep the bundled serverless seed in sync.
-execSync('node scripts/sync-recipes-for-api.mjs', { stdio: 'inherit' });
+// Keep the bundled serverless seed in sync (path resolved relative to this
+// script so the command works from any working directory).
+execFileSync(process.execPath, [SYNC_SCRIPT], { stdio: 'inherit' });

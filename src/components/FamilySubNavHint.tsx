@@ -23,7 +23,7 @@ export const FamilySubNavHint: React.FC<FamilySubNavHintProps> = ({ onDismiss })
         >
             <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[#E8DCCB] bg-[#FFF8EC] px-4 py-3 text-sm text-stone-700 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200">
                 <p>
-                    <span className="font-bold text-[#2D4635] dark:text-emerald-200">Family hub:</span>{' '}
+                    <span className="font-bold text-[var(--color-brand)] dark:text-emerald-200">Family hub:</span>{' '}
                     switch between gallery, trivia, story, and contributors using the tabs above.
                 </p>
                 <button

@@ -77,14 +77,14 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
   const chapterLabel = `Chapter ${step + 1} of ${STEPS.length}`;
 
   return (
-    <div className="fixed inset-0 z-[400] bg-[#2D4635]/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[400] bg-[var(--color-brand)]/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
       <div className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-8 md:p-12 max-w-lg w-full shadow-2xl text-center space-y-8 animate-in zoom-in-95 duration-500">
         <div className="flex justify-center gap-2 mb-4">
           {STEPS.map((_, i) => (
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all ${
-                i === step ? 'w-8 bg-[#2D4635]' : i < step ? 'w-3 bg-[#2D4635]/40' : 'w-3 bg-stone-200 dark:bg-stone-600'
+                i === step ? 'w-8 bg-[var(--color-brand)]' : i < step ? 'w-3 bg-[var(--color-brand)]/40' : 'w-3 bg-stone-200 dark:bg-stone-600'
               }`}
             />
           ))}
@@ -94,7 +94,7 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
 
         <div className="space-y-4 animate-fade-slide-in" key={step}>
           <span className="text-6xl block">{current.icon}</span>
-          <h2 className="text-2xl font-serif italic text-[#2D4635] dark:text-emerald-400">
+          <h2 className="text-2xl font-serif italic text-[var(--color-brand)] dark:text-emerald-400">
             {current.title}
           </h2>
           <p className="text-stone-600 dark:text-stone-400 font-serif italic leading-relaxed">
@@ -126,7 +126,7 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
           <button
             type="button"
             onClick={handleNext}
-            className="order-1 sm:order-3 px-8 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] active:scale-95 transition-all w-full sm:w-auto"
+            className="order-1 sm:order-3 px-8 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] active:scale-95 transition-all w-full sm:w-auto"
           >
             {step < STEPS.length - 1 ? 'Next' : "Let's cook!"}
           </button>

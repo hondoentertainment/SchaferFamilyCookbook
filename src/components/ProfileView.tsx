@@ -87,7 +87,7 @@ const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
                     type="button"
                     onClick={handleSubscribe}
                     disabled={loading}
-                    className="px-8 py-4 min-h-11 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2D4635] motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
+                    className="px-8 py-4 min-h-11 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-brand)] motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
                     aria-busy={loading}
                 >
                     {loading ? 'Enabling…' : 'Get notified when new recipes are added'}
@@ -249,7 +249,7 @@ const RecipeRow: React.FC<{ recipe: Recipe; onView?: (r: Recipe) => void; rightS
                 }}
             />
             <div className="flex-1 min-w-0">
-                <h4 className="font-serif italic text-[#2D4635] dark:text-emerald-200 text-lg md:text-xl truncate">
+                <h4 className="font-serif italic text-[var(--color-brand)] dark:text-emerald-200 text-lg md:text-xl truncate">
                     {recipe.title}
                 </h4>
                 <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">
@@ -257,7 +257,7 @@ const RecipeRow: React.FC<{ recipe: Recipe; onView?: (r: Recipe) => void; rightS
                 </span>
             </div>
             {rightSlot ?? (
-                <span className="text-stone-400 group-hover:text-[#2D4635] transition-colors">→</span>
+                <span className="text-stone-400 group-hover:text-[var(--color-brand)] transition-colors">→</span>
             )}
         </>
     );
@@ -485,7 +485,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             <button
                                 type="button"
                                 onClick={() => setShowPicker(true)}
-                                className="absolute -bottom-1 -right-1 w-11 h-11 min-w-11 min-h-11 bg-[#2D4635] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-base focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
+                                className="absolute -bottom-1 -right-1 w-11 h-11 min-w-11 min-h-11 bg-[var(--color-brand)] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-base focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
                                 aria-label="Change avatar"
                             >
                                 🎭
@@ -496,7 +496,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             {!isEditingName ? (
                                 <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                                     <h2
-                                        className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200 leading-tight"
+                                        className="text-2xl md:text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-200 leading-tight"
                                         data-testid="profile-display-name"
                                     >
                                         {name}
@@ -504,7 +504,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     <button
                                         type="button"
                                         onClick={startNameEdit}
-                                        className="inline-flex items-center justify-center w-11 h-11 min-w-11 min-h-11 rounded-full text-stone-500 hover:text-[#2D4635] hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] dark:text-stone-400 dark:hover:text-emerald-200 transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                        className="inline-flex items-center justify-center w-11 h-11 min-w-11 min-h-11 rounded-full text-stone-500 hover:text-[var(--color-brand)] hover:bg-stone-50 dark:hover:bg-[var(--bg-tertiary)] dark:text-stone-400 dark:hover:text-emerald-200 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                         aria-label="Edit display name"
                                     >
                                         <span aria-hidden="true">✎</span>
@@ -525,7 +525,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                         disabled={isSaving}
                                         aria-label="Display name"
                                         aria-busy={isSaving}
-                                        className="flex-1 min-w-0 px-4 py-3 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] border border-stone-200 dark:border-[var(--border-color)] rounded-2xl text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200 outline-none focus:ring-2 focus:ring-[#2D4635]/30 focus:bg-white dark:focus:bg-[var(--card-bg)] transition-all"
+                                        className="flex-1 min-w-0 px-4 py-3 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] border border-stone-200 dark:border-[var(--border-color)] rounded-2xl text-2xl md:text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-200 outline-none focus:ring-2 focus:ring-[var(--color-brand)]/30 focus:bg-white dark:focus:bg-[var(--card-bg)] transition-all"
                                     />
                                     <div className="flex gap-2 justify-center sm:justify-start">
                                         <button
@@ -589,12 +589,12 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     <button
                                         type="button"
                                         onClick={scrollToAdminSection}
-                                        className="inline-flex items-center gap-2 min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                        className="inline-flex items-center gap-2 min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                     >
                                         Open Admin Tools →
                                         {galleryPendingCount > 0 && (
                                             <span
-                                                className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-sky-400 px-1.5 py-0.5 text-[9px] font-black text-[#2D4635]"
+                                                className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-sky-400 px-1.5 py-0.5 text-[9px] font-black text-[var(--color-brand)]"
                                                 aria-label={`${galleryPendingCount} gallery item${galleryPendingCount !== 1 ? 's' : ''} awaiting approval`}
                                             >
                                                 {galleryPendingCount}
@@ -655,7 +655,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     }}
                                     className={`min-h-11 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
                                         active
-                                            ? 'bg-[#2D4635] text-white shadow-sm'
+                                            ? 'bg-[var(--color-brand)] text-white shadow-sm'
                                             : 'bg-white dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-[var(--border-color)]'
                                     }`}
                                 >
@@ -713,7 +713,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                             <button
                                                 type="button"
                                                 onClick={() => onEditRecipe(recipe)}
-                                                className="p-3 min-w-11 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] text-stone-400 rounded-2xl hover:bg-[#2D4635] hover:text-white transition-all text-sm shadow-inner shrink-0 focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                                className="p-3 min-w-11 min-h-11 bg-stone-50 dark:bg-[var(--bg-tertiary)] text-stone-400 rounded-2xl hover:bg-[var(--color-brand)] hover:text-white transition-all text-sm shadow-inner shrink-0 focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                                 title="Edit recipe"
                                                 aria-label="Edit recipe"
                                             >
@@ -752,7 +752,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     </div>
                                     <div className="flex-1 space-y-1 min-w-0">
                                         <p className="text-xs md:text-sm text-stone-600 dark:text-stone-300">
-                                            <span className="font-bold text-[#2D4635] dark:text-emerald-200 capitalize">
+                                            <span className="font-bold text-[var(--color-brand)] dark:text-emerald-200 capitalize">
                                                 {entry.action}
                                             </span>{' '}
                                             {entry.type}{' '}
@@ -826,7 +826,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         <PreferencesPanel />
                     </div>
                     <div className="space-y-4">
-                        <h4 className="text-xl md:text-2xl font-serif italic text-[#2D4635] dark:text-emerald-200 flex items-center gap-3">
+                        <h4 className="text-xl md:text-2xl font-serif italic text-[var(--color-brand)] dark:text-emerald-200 flex items-center gap-3">
                             <span className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center not-italic text-lg md:text-xl">📚</span>
                             Collections
                         </h4>
@@ -856,7 +856,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     <button
                         type="button"
                         onClick={handleNavigateToHelp}
-                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                         aria-label="Open Help and shortcuts"
                     >
                         Open Help &amp; shortcuts →
@@ -875,7 +875,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         <button
                             type="button"
                             onClick={handleNavigateToPrivacy}
-                            className="inline-flex items-center min-h-11 px-6 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                            className="inline-flex items-center min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                             aria-label="Open Privacy and Data view"
                         >
                             Open Privacy &amp; Data →
@@ -907,7 +907,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">
                                     Admin tools
                                 </p>
-                                <h3 id="profile-admin-heading" className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-200">
+                                <h3 id="profile-admin-heading" className="text-2xl md:text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-200">
                                     Archive control room
                                 </h3>
                                 <p className="max-w-2xl text-sm text-stone-600 dark:text-stone-400 font-serif italic">
@@ -979,7 +979,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                         onError={avatarOnError}
                                     />
                                     <div className="text-center">
-                                        <h4 className="font-serif italic text-[#2D4635] dark:text-emerald-200 text-lg leading-none">
+                                        <h4 className="font-serif italic text-[var(--color-brand)] dark:text-emerald-200 text-lg leading-none">
                                             {admin.name}
                                         </h4>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 mt-2 block">

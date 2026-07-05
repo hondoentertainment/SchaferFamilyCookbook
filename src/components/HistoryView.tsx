@@ -128,9 +128,9 @@ export const HistoryView: React.FC = () => {
                         type="button"
                         onClick={() => scrollToSection(id)}
                         aria-current={activeSection === id ? 'true' : undefined}
-                        className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-serif transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] ${
+                        className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-serif transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${
                             activeSection === id
-                                ? 'bg-[#2D4635] text-white italic'
+                                ? 'bg-[var(--color-brand)] text-white italic'
                                 : 'border border-stone-200 bg-white/90 text-stone-600 hover:bg-stone-50'
                         }`}
                     >
@@ -156,10 +156,10 @@ export const HistoryView: React.FC = () => {
                                     onClick={() => scrollToSection(id)}
                                     aria-current={activeSection === id ? 'true' : undefined}
                                     aria-label={`Jump to ${label}`}
-                                    className={`block w-full text-left py-2 px-4 rounded-xl text-sm font-serif transition-all focus:outline-none focus:ring-2 focus:ring-[#2D4635] focus:ring-offset-1 focus:ring-offset-[#FDFBF7] ${
+                                    className={`block w-full text-left py-2 px-4 rounded-xl text-sm font-serif transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)] focus:ring-offset-1 focus:ring-offset-[#FDFBF7] ${
                                         activeSection === id
-                                            ? 'bg-[#2D4635] text-white italic'
-                                            : 'text-stone-500 hover:bg-stone-100 hover:text-[#2D4635]'
+                                            ? 'bg-[var(--color-brand)] text-white italic'
+                                            : 'text-stone-500 hover:bg-stone-100 hover:text-[var(--color-brand)]'
                                     }`}
                                 >
                                     {label}
@@ -170,7 +170,7 @@ export const HistoryView: React.FC = () => {
                     <button
                         type="button"
                         onClick={handlePrint}
-                        className="mt-6 w-full py-3 px-4 rounded-xl border border-stone-200 text-stone-600 text-xs font-bold uppercase tracking-widest hover:bg-stone-50 hover:border-stone-300 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2D4635] focus:ring-offset-1 print:hidden"
+                        className="mt-6 w-full py-3 px-4 rounded-xl border border-stone-200 text-stone-600 text-xs font-bold uppercase tracking-widest hover:bg-stone-50 hover:border-stone-300 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)] focus:ring-offset-1 print:hidden"
                         aria-label="Print family story"
                     >
                         🖨 Print Story
@@ -185,10 +185,10 @@ export const HistoryView: React.FC = () => {
                 >
                     {/* Hero / Introduction */}
                     <header id="intro" className="scroll-mt-28 text-center space-y-8">
-                        <div className="inline-block px-4 py-1.5 rounded-full border border-[#2D4635]/10 bg-[#2D4635]/5 text-[10px] font-black uppercase tracking-widest text-[#2D4635] mb-4">
+                        <div className="inline-block px-4 py-1.5 rounded-full border border-[var(--color-brand)]/10 bg-[var(--color-brand)]/5 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] mb-4">
                             Legacy & Heritage
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-serif italic text-[#2D4635] leading-tight">
+                        <h1 className="text-5xl md:text-7xl font-serif italic text-[var(--color-brand)] leading-tight">
                             Schafer / Oehler <br />
                             <span className="text-[#A0522D]">Family Food History</span>
                         </h1>
@@ -211,7 +211,7 @@ export const HistoryView: React.FC = () => {
                                         className={`scroll-mt-28 space-y-6 p-6 md:p-12 border border-stone-100 shadow-sm relative overflow-hidden ${
                                             index % 2 === 0
                                                 ? 'bg-white/50 backdrop-blur-sm rounded-[3rem] md:rounded-[4rem]'
-                                                : 'bg-[#2D4635] text-emerald-50 rounded-[3rem] md:rounded-[4rem] shadow-2xl'
+                                                : 'bg-[var(--color-brand)] text-emerald-50 rounded-[3rem] md:rounded-[4rem] shadow-2xl'
                                         }`}
                                     >
                                         <div
@@ -222,7 +222,7 @@ export const HistoryView: React.FC = () => {
                                         />
                                         <h2
                                             className={`text-3xl md:text-4xl font-serif italic mb-8 relative ${
-                                                index % 2 === 0 ? 'text-[#2D4635]' : 'text-[#F4A460]'
+                                                index % 2 === 0 ? 'text-[var(--color-brand)]' : 'text-[#F4A460]'
                                             }`}
                                         >
                                             {section.heading}
@@ -245,7 +245,7 @@ export const HistoryView: React.FC = () => {
                                     <div className="absolute -left-12 top-0 text-6xl text-[#A0522D]/10 font-serif hidden lg:block opacity-50" aria-hidden="true">
                                         &ldquo;
                                     </div>
-                                    <p className="text-2xl italic text-[#2D4635] font-serif mb-12 border-l-4 border-[#F4A460] pl-8 py-2 max-w-2xl">
+                                    <p className="text-2xl italic text-[var(--color-brand)] font-serif mb-12 border-l-4 border-[#F4A460] pl-8 py-2 max-w-2xl">
                                         Our family has been involved in producing and preparing food for centuries.
                                     </p>
                                 </section>
@@ -256,7 +256,7 @@ export const HistoryView: React.FC = () => {
                                     className="scroll-mt-28 space-y-8 bg-white/50 backdrop-blur-sm p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] border border-stone-100 shadow-sm relative overflow-hidden"
                                 >
                             <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50" aria-hidden="true" />
-                            <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8 relative">The Oehler Family</h2>
+                            <h2 className="text-3xl md:text-4xl font-serif italic text-[var(--color-brand)] mb-8 relative">The Oehler Family</h2>
                             <div className="space-y-6 relative text-stone-600 max-w-prose">
                                 <p>
                                     <span className="float-left text-6xl md:text-7xl font-serif text-[#A0522D] mr-4 leading-[0.8] mt-1 italic">T</span>
@@ -269,7 +269,7 @@ export const HistoryView: React.FC = () => {
                                     Edward and his second wife, Minnie Willmert (born 1875, married in 1910, from Blue Earth, Minnesota), raised their two daughters—Adelia (born 1912) and Harriet Wilma (born 1915)—on a farm about one mile south of Buffalo Lake and one mile east of the original Buffalo Lake Schafer farm where Teal and Jana now live.
                                 </p>
                                 <div className="py-6 border-y border-stone-50">
-                                    <p className="italic text-[#2D4635]/80">
+                                    <p className="italic text-[var(--color-brand)]/80">
                                         &ldquo;Harriet told stories of childhood Christmases when it was very special to receive an orange, an apple, peanuts, and a new pair of hand-knit mittens. Oyster stew was a special Christmas meal.&rdquo;
                                     </p>
                                 </div>
@@ -290,7 +290,7 @@ export const HistoryView: React.FC = () => {
                                     id="schafer"
                                     className="scroll-mt-28 space-y-8 p-8 md:p-20"
                                 >
-                            <h2 className="text-3xl md:text-4xl font-serif italic text-[#2D4635] mb-8">The Schafer Family</h2>
+                            <h2 className="text-3xl md:text-4xl font-serif italic text-[var(--color-brand)] mb-8">The Schafer Family</h2>
                             <div className="space-y-6 text-stone-600 max-w-prose">
                                 <p>
                                     The Schafer family immigrated from northern Germany to the United States in the mid-1800s, living first in Indiana, Illinois, and Iowa before settling in the Sherburne, Minnesota area just north of the Iowa border. Schafer means shepherd in German, and it seems likely the Schafers were shepherds and farmers for generations.
@@ -298,7 +298,7 @@ export const HistoryView: React.FC = () => {
                                 <p>
                                     John Daniel &ldquo;JD&rdquo; Schafer (born 1873) and Dora (Finke) Schafer (born 1875) had eleven children in the Sherburne area. Oliver (born 1915) was the tenth of the eleven. In 1919, JD and Dora moved the family to the farm south of Buffalo Lake where James, Kay, Ruthann, and I were raised.
                                 </p>
-                                <div className="bg-stone-50 p-6 md:p-8 rounded-3xl border border-stone-100 italic text-[#2D4635]/80">
+                                <div className="bg-stone-50 p-6 md:p-8 rounded-3xl border border-stone-100 italic text-[var(--color-brand)]/80">
                                     &ldquo;Oliver told happy stories of growing up in a large farm family. When he was young, the fields were worked with horses—Pet and Patty were his favorites. East of the old farmhouse was an orchard of plums and apples. Oliver fondly remembered his sisters drying plums on screens laid out on the porch roof.&rdquo;
                                 </div>
                                 <p>
@@ -310,7 +310,7 @@ export const HistoryView: React.FC = () => {
                                 {/* Harriet and Oliver */}
                                 <section
                                     id="harriet-oliver"
-                                    className="scroll-mt-28 space-y-8 bg-[#2D4635] text-emerald-50 p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] shadow-2xl relative overflow-hidden"
+                                    className="scroll-mt-28 space-y-8 bg-[var(--color-brand)] text-emerald-50 p-8 md:p-20 rounded-[3rem] md:rounded-[4rem] shadow-2xl relative overflow-hidden"
                                 >
                             <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-400 rounded-full blur-[120px] -ml-48 -mb-48 opacity-10" aria-hidden="true" />
                             <h2 className="text-3xl md:text-4xl font-serif italic text-[#F4A460] mb-8 relative">Harriet and Oliver</h2>
@@ -336,12 +336,12 @@ export const HistoryView: React.FC = () => {
                                     className="scroll-mt-28 text-center space-y-8 py-20"
                                 >
                             <div className="h-px w-24 bg-[#A0522D]/30 mx-auto" />
-                            <h2 className="text-4xl font-serif italic text-[#2D4635]">A Legacy of Food</h2>
+                            <h2 className="text-4xl font-serif italic text-[var(--color-brand)]">A Legacy of Food</h2>
                             <div className="max-w-2xl mx-auto space-y-6 italic text-stone-500">
                                 <p>
                                     Harriet was an excellent farm cook. Nearly everything she made was from scratch, using ingredients from her garden, her canner, her freezer, the chicken coop, the feedlot, the hog pen, and the local lakes.
                                 </p>
-                                <p className="text-[#2D4635] font-bold not-italic text-xl">
+                                <p className="text-[var(--color-brand)] font-bold not-italic text-xl">
                                     Food was not just nourishment—it was work, tradition, love, and survival.
                                 </p>
                             </div>
@@ -363,7 +363,7 @@ export const HistoryView: React.FC = () => {
                 <button
                     type="button"
                     onClick={scrollToTop}
-                    className="fixed bottom-8 right-8 z-40 w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] bg-[#2D4635] text-white rounded-full shadow-xl flex items-center justify-center hover:bg-[#2D4635]/90 hover:scale-110 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#2D4635] print:hidden mb-[env(safe-area-inset-bottom)] mr-[env(safe-area-inset-right)]"
+                    className="fixed bottom-8 right-8 z-40 w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] bg-[var(--color-brand)] text-white rounded-full shadow-xl flex items-center justify-center hover:bg-[var(--color-brand)]/90 hover:scale-110 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[var(--color-brand)] print:hidden mb-[env(safe-area-inset-bottom)] mr-[env(safe-area-inset-right)]"
                     aria-label="Scroll to top"
                 >
                     <span className="text-xl leading-none">↑</span>

@@ -1,7 +1,7 @@
 # Site Review — Path to World-Class
 
 _Three-lens review by food blogger, designer, and senior front-end engineer._
-_Last updated: 2026-06-10._
+_Last updated: 2026-07-04 (post-merge with batches 12-14)._
 
 ## Verdict
 
@@ -18,7 +18,7 @@ bones, uneven flesh.**
 | --- | --- | --- |
 | Recipes with cook time | 0 | **44** |
 | Recipes with prep time | 0 | 1 |
-| Recipes with servings | 0 | 0 |
+| Recipes with servings | 0 | **68** (authored culinary estimates) |
 | Recipes with real (non-AI) photos | 0 | 0 |
 | Recipes with family notes | 36 | 36 |
 | Featured recipes | 0 | **6** |
@@ -54,9 +54,8 @@ Gaps from the review and the state after this PR:
 | Gap | Before | After |
 | --- | --- | --- |
 | Files hardcoding `#2D4635` | 34 | **28** (header, bottom nav, grocery, meal plan, collections, A–Z, recipe images now use `var(--color-brand)`) |
-| Documented `<Button>` component | none | shipped with 5 variants × 3 sizes (+ unit tests) |
-| Documented `<EmptyState>` component | none | shipped |
-| Documented `<LoadingSpinner>` component | none | shipped |
+| Documented button system | none | main shipped `.btn` CSS utilities (primary/secondary/danger/link), adopted across 10+ components |
+| Documented empty-state pattern | none | main shipped `.empty-state-actions` + consistent markup |
 | Border-radius patterns | 5+ ad-hoc | unchanged — still 5+ |
 | Button styles | 11+ ad-hoc | shipped primitive; adoption pending |
 

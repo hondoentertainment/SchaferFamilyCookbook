@@ -540,7 +540,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
             ref={containerRef}
             tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- Cook mode needs focus for keyboard nav (arrow keys)
             role="application"
-            className="fixed inset-0 z-[150] bg-[#2D4635] text-white flex flex-col items-stretch overflow-hidden focus:outline-none pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
+            className="fixed inset-0 z-[150] bg-[var(--color-brand)] text-white flex flex-col items-stretch overflow-hidden focus:outline-none pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
             aria-label={`Cook mode: ${recipe.title}. Swipe left for next, right for previous.`}
         >
             {(isOffline || servedFromOfflineCache) && (
@@ -659,7 +659,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
                         <div className="flex items-start justify-between gap-4 mb-6">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Cook Mode</p>
-                                <h2 className="font-serif italic text-3xl text-[#2D4635]">Ingredients</h2>
+                                <h2 className="font-serif italic text-3xl text-[var(--color-brand)]">Ingredients</h2>
                                 <p className="text-sm text-stone-500 mt-1">Scaled for {scaleTo} serving{scaleTo !== 1 ? 's' : ''}.</p>
                             </div>
                             <button
@@ -765,14 +765,14 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
                                 <button
                                     type="button"
                                     onClick={() => setTimerSeconds(currentStepMinutes * 60)}
-                                    className="min-h-12 px-5 py-3 rounded-full bg-[#F4A460] text-[#2D4635] font-bold text-xs uppercase tracking-widest transition-colors hover:bg-[#F4A460]/90"
+                                    className="min-h-12 px-5 py-3 rounded-full bg-[#F4A460] text-[var(--color-brand)] font-bold text-xs uppercase tracking-widest transition-colors hover:bg-[#F4A460]/90"
                                     aria-label={`Start ${currentStepMinutes} minute timer`}
                                 >
                                     Start {currentStepMinutes} min timer
                                 </button>
                             )}
                             {timerSeconds !== null && (
-                                <div className={`min-h-12 px-5 py-3 rounded-full font-bold text-sm uppercase tracking-widest ${timerSeconds === 0 ? 'bg-emerald-400 text-[#2D4635]' : 'bg-white text-[#2D4635]'}`} role="timer" aria-live="polite">
+                                <div className={`min-h-12 px-5 py-3 rounded-full font-bold text-sm uppercase tracking-widest ${timerSeconds === 0 ? 'bg-emerald-400 text-[var(--color-brand)]' : 'bg-white text-[var(--color-brand)]'}`} role="timer" aria-live="polite">
                                     {timerSeconds === 0 ? 'Timer done' : formatTimer(timerSeconds)}
                                 </div>
                             )}
@@ -802,7 +802,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
                 {isLast ? (
                     <button
                         onClick={handleFinishCook}
-                        className="min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90 active:scale-95"
+                        className="min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all bg-[#F4A460] text-[var(--color-brand)] hover:bg-[#F4A460]/90 active:scale-95"
                         aria-label="Done cooking"
                         data-testid="cook-mode-finish"
                     >
@@ -811,7 +811,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
                 ) : (
                     <button
                         onClick={() => setStepIndex((i) => i + 1)}
-                        className="min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all bg-[#F4A460] text-[#2D4635] hover:bg-[#F4A460]/90 active:scale-95"
+                        className="min-h-[3.5rem] min-w-[3.5rem] px-6 rounded-full font-bold uppercase tracking-widest text-sm transition-all bg-[#F4A460] text-[var(--color-brand)] hover:bg-[#F4A460]/90 active:scale-95"
                         aria-label="Next step"
                     >
                         Next →

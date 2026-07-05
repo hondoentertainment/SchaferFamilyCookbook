@@ -8,8 +8,11 @@ import { getStoredTheme, setStoredTheme } from '../utils/theme';
 import type { ThemeMode } from '../types';
 import { ThemeIcon } from './ThemeIcon';
 
+// Data-URI SVGs rendered via <img> are isolated documents: CSS custom
+// properties from the page do NOT resolve inside them, so the brand color
+// must stay a literal hex here (mirror of --color-brand in src/index.css).
 const FALLBACK_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="var(--color-brand)"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
 )}`;
 
 interface HeaderProps {

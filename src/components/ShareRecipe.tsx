@@ -12,7 +12,7 @@ interface ShareRecipeProps {
 }
 
 const secondaryBtn =
-  'flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-700 dark:text-stone-300 transition-colors min-h-11 border border-transparent focus-visible:ring-2 focus-visible:ring-[#2D4635] motion-reduce:transition-none';
+  'flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-stone-200 dark:hover:bg-stone-600 rounded-full text-xs font-bold uppercase tracking-widest text-stone-700 dark:text-stone-300 transition-colors min-h-11 border border-transparent focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] motion-reduce:transition-none';
 
 export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe, variant = 'inline' }) => {
   const { toast } = useUI();
@@ -96,7 +96,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe, variant = 'inl
   };
 
   const primaryClass =
-    'w-full flex items-center justify-center gap-2 min-h-12 px-5 py-3.5 bg-[#2D4635] hover:bg-[#24382b] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-md transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 motion-reduce:transition-none';
+    'w-full flex items-center justify-center gap-2 min-h-12 px-5 py-3.5 bg-[var(--color-brand)] hover:bg-[#24382b] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-md transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none';
 
   if (variant === 'featured') {
     return (
@@ -144,7 +144,7 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe, variant = 'inl
         onClick={handleCopyLink}
         data-testid="share-copy-link"
         data-share-url={shareUrl}
-        className="flex items-center gap-2 px-4 py-2.5 bg-[#2D4635] hover:bg-[#24382b] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm transition-colors min-h-11 motion-reduce:transition-none"
+        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--color-brand)] hover:bg-[#24382b] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm transition-colors min-h-11 motion-reduce:transition-none"
         aria-label="Copy share link"
       >
         <span aria-hidden>🔗</span>

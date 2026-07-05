@@ -34,13 +34,13 @@ export class ErrorBoundary extends Component<Props, State> {
                     role="alert"
                     className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#FDFBF7] text-stone-800"
                 >
-                    <h1 className="text-2xl font-serif italic text-[#2D4635]">Something went wrong</h1>
+                    <h1 className="text-2xl font-serif italic text-[var(--color-brand)]">Something went wrong</h1>
                     <p className="text-stone-600 mt-3 text-center max-w-md leading-relaxed">
                         Please reload the page. If this keeps happening, contact a family administrator.
                     </p>
                     <button
                         type="button"
-                        className="mt-8 px-8 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                        className="mt-8 px-8 py-3 bg-[var(--color-brand)] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                         onClick={() => window.location.reload()}
                     >
                         Reload
