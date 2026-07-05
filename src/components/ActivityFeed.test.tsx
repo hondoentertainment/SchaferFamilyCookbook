@@ -19,7 +19,7 @@ const makeEvent = (overrides: Partial<ActivityEvent> = {}): ActivityEvent =>
         id: 'evt-1',
         type: 'recipe_rated',
         userName: 'Alice',
-        summary: 'rated "Pie" 5 stars',
+        detail: 'rated "Pie" 5 stars',
         timestamp: new Date().toISOString(),
         ...overrides,
     }) as ActivityEvent;
@@ -36,8 +36,8 @@ describe('ActivityFeed', () => {
 
     it('renders a list of activity events', () => {
         mockGetFeed.mockReturnValue([
-            makeEvent({ id: 'e1', summary: 'rated "Pie" 5 stars' }),
-            makeEvent({ id: 'e2', summary: 'left a note on "Fudge"' }),
+            makeEvent({ id: 'e1', detail: 'rated "Pie" 5 stars' }),
+            makeEvent({ id: 'e2', detail: 'left a note on "Fudge"' }),
         ]);
         renderWithProviders(<ActivityFeed />);
         expect(screen.getByRole('list', { name: /family activity feed/i })).toBeInTheDocument();
