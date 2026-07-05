@@ -932,14 +932,10 @@ const App: React.FC = () => {
         const unsubH = CloudArchive.subscribeHistory(setHistory);
         const unsubPhone = CloudArchive.subscribeArchivePhone(setArchivePhone);
 
-        void CloudArchive.getTrivia()
-            .then((current) => {
-                const existingIds = new Set(current.map((t) => t.id));
-                const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
-                if (missing.length === 0) return;
-                return Promise.all(missing.map((t) => CloudArchive.upsertTrivia(t as Trivia)));
-            })
-            .catch(() => { /* non-fatal — live subscription still applies */ });
+        // Note: no trivia auto-seed in firebase mode. getTrivia() reads local
+        // storage, so the old seed loop saw every built-in question as missing
+        // and issued 32 anonymous setDocs on EVERY boot — all denied by rules
+        // (trivia writes require admin). Cloud trivia is managed via Admin.
 
         return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); unsubPhone(); };
     }, []);
