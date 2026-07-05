@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, loginAsAdmin } from './fixtures';
+import { goToAdminTools, loginAs, loginAsAdmin } from './fixtures';
 
 /**
  * Family Story CMS coverage:
@@ -60,10 +60,9 @@ test.describe('Family Story CMS', () => {
   test('admin can author story sections that surface on the public tab', async ({ page }) => {
     await loginAsAdmin(page);
 
-    // Open Admin Tools → Family Story subtab.
-    await page.locator('[data-testid="nav-profile"]').click();
-    await page.getByRole('button', { name: /Open Admin Tools/i }).waitFor({ state: 'visible', timeout: 5000 });
-    await page.getByRole('button', { name: /Open Admin Tools/i }).click();
+    // Open Admin Tools → Family Story subtab. goToAdminTools also expands
+    // the admin collapsible, without which the subtab tabs never render.
+    await goToAdminTools(page);
     await page.getByRole('tab', { name: /Family Story/i }).click();
 
     // Insert the starter scaffold.
@@ -73,10 +72,10 @@ test.describe('Family Story CMS', () => {
     await page.getByTestId('story-preview-toggle').click();
     await expect(page.getByTestId('story-preview').getByRole('heading', { name: 'Our Beginnings' })).toBeVisible({ timeout: 5000 });
 
-    // Back to edit mode to commit (the Save button lives in the editor).
+    // Back to edit mode to commit (the publish button lives in the editor).
     await page.getByTestId('story-edit-toggle').click();
-    await page.getByRole('button', { name: /Save Story Content/i }).click();
-    await expect(page.getByText(/Family Story saved/i)).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: /Publish to family/i }).click();
+    await expect(page.getByText(/Family Story published/i)).toBeVisible({ timeout: 5000 });
 
     // The saved sections appear on the public Family Story tab.
     await goToFamilyStory(page);

@@ -626,6 +626,58 @@ describe('userPrefsSync', () => {
             expect(retryPayload).toHaveProperty('favorites', ['r1']);
         });
 
+        it('strips explicit undefined fields so Firestore accepts the write', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockResolvedValueOnce(undefined);
+
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: [],
+                ratings: {},
+                collections: [
+                    {
+                        id: 'col1',
+                        name: 'Holiday',
+                        description: undefined,
+                        recipeIds: [],
+                        createdBy: 'joan',
+                        icon: '🎄',
+                        timestamp: '2026-07-01T00:00:00.000Z',
+                    },
+                ],
+                groceryList: [
+                    {
+                        id: 'g1',
+                        text: 'Manual item',
+                        recipeId: undefined,
+                        recipeTitle: undefined,
+                        checked: false,
+                        addedAt: 100,
+                    },
+                ],
+            });
+
+            expect(ok).toBe(true);
+            const written = setDocSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+            const hasUndefinedDeep = (v: unknown): boolean => {
+                if (v === undefined) return true;
+                if (Array.isArray(v)) return v.some(hasUndefinedDeep);
+                if (v && typeof v === 'object') {
+                    return Object.values(v as Record<string, unknown>).some(hasUndefinedDeep);
+                }
+                return false;
+            };
+            expect(hasUndefinedDeep(written.groceryList)).toBe(false);
+            expect(hasUndefinedDeep(written.collections)).toBe(false);
+            expect(
+                Object.prototype.hasOwnProperty.call(
+                    (written.groceryList as Record<string, unknown>[])[0]!,
+                    'recipeId'
+                )
+            ).toBe(false);
+        });
+
         it('does not retry on non-permission errors', async () => {
             activateFirebase();
             const firestore = await import('firebase/firestore');

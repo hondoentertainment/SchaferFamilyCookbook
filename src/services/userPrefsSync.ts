@@ -431,17 +431,21 @@ export async function writeRemotePrefs(
     const db = getDb();
     if (!db || !userId) return false;
     const ref = doc(db, 'userPrefs', userId);
+    // Firestore rejects the ENTIRE write when any nested field is an explicit
+    // `undefined` (e.g. a manual grocery item's recipeId, or a collection
+    // without a description). JSON round-trip drops those keys.
+    const stripUndefined = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
     const legacyPayload: Record<string, unknown> = {
         favorites: [...new Set(payload.favorites)],
-        ratings: payload.ratings,
-        collections: payload.collections,
-        mealPlan: payload.mealPlan ?? [],
-        groceryList: payload.groceryList ?? [],
+        ratings: stripUndefined(payload.ratings),
+        collections: stripUndefined(payload.collections),
+        mealPlan: stripUndefined(payload.mealPlan ?? []),
+        groceryList: stripUndefined(payload.groceryList ?? []),
         updatedAt: serverTimestamp(),
     };
     const docPayload: Record<string, unknown> = {
         ...legacyPayload,
-        notes: payload.notes ?? [],
+        notes: stripUndefined(payload.notes ?? []),
         deletedNoteIds: payload.deletedNoteIds ?? [],
     };
     if (payload.displayName?.trim()) docPayload.displayName = payload.displayName.trim();

@@ -32,8 +32,16 @@ test.describe('Grocery list', () => {
         const totalBefore = await checkboxes.count();
         expect(totalBefore).toBeGreaterThan(0);
 
-        // Check the first item
-        await checkboxes.first().check();
+        // Check one specific item. Plain click (not check()): checking flips
+        // the aria-label to "as not bought" and moves the row into the bought
+        // group, so check()'s post-click verification would wait forever for
+        // the original locator. Force skips stability checks during the
+        // reorder; the flipped-label assertion verifies the state change.
+        const firstLabel = await checkboxes.first().getAttribute('aria-label');
+        await page.getByRole('checkbox', { name: firstLabel!, exact: true }).click({ force: true });
+        // The bought row moves into a collapsed section; the Clear-checked
+        // counter is the stable signal that exactly one item is now checked.
+        await expect(page.getByRole('button', { name: /Clear checked \(1\)/i })).toBeVisible({ timeout: 5000 });
 
         // Clear checked
         await page.getByRole('button', { name: /Clear checked/i }).click();
