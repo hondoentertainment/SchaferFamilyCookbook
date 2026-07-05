@@ -32,6 +32,7 @@ export default defineConfig({
                 'scripts/bulk-*.mjs',
                 'scripts/deploy-*.mjs',
                 'scripts/set-admin-claim.mjs',
+                'scripts/extract-recipe-metadata.mjs',
                 'scripts/sync-firebase-sw-config.test.mjs',
                 '**/*.test.{ts,tsx,mjs}',
                 '**/*.spec.{ts,tsx,mjs}',
