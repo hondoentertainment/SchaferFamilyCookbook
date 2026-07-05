@@ -29,7 +29,7 @@ export const FamilySubNavHint: React.FC<FamilySubNavHintProps> = ({ onDismiss })
                 <button
                     type="button"
                     onClick={handleDismiss}
-                    className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                    className="min-h-10 shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 label text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
                 >
                     Got it
                 </button>

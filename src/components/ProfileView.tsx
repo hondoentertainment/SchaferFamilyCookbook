@@ -80,14 +80,14 @@ const NotificationsSection: React.FC<{ userName: string }> = ({ userName }) => {
             {enabled ? (
                 <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 w-fit">
                     <span className="text-lg" aria-hidden="true">✓</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest">Notifications enabled</span>
+                    <span className="label">Notifications enabled</span>
                 </div>
             ) : (
                 <button
                     type="button"
                     onClick={handleSubscribe}
                     disabled={loading}
-                    className="px-8 py-4 min-h-11 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-brand)] motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
+                    className="px-8 py-4 min-h-11 bg-[var(--color-brand)] text-white rounded-full label shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-brand)] motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
                     aria-busy={loading}
                 >
                     {loading ? 'Enabling…' : 'Get notified when new recipes are added'}
@@ -452,7 +452,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
 
     const roleBadge = (
         <span
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border label ${
                 isAdmin
                     ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 border-orange-100 dark:border-orange-700'
                     : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-700'
@@ -563,7 +563,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                             <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap pt-1">
                                 {roleBadge}
                                 <span
-                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border label ${
                                         archiveProvider === 'firebase'
                                             ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200 border-sky-200 dark:border-sky-800'
                                             : 'bg-stone-50 dark:bg-stone-900/50 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700'
@@ -589,7 +589,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     <button
                                         type="button"
                                         onClick={scrollToAdminSection}
-                                        className="inline-flex items-center gap-2 min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                                        className="inline-flex items-center gap-2 min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full label shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                                     >
                                         Open Admin Tools →
                                         {galleryPendingCount > 0 && (
@@ -758,7 +758,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                             {entry.type}{' '}
                                             <span className="italic font-serif">"{entry.itemName}"</span>
                                         </p>
-                                        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-stone-300">
+                                        <p className="text-[9px] md:label text-stone-300">
                                             {new Date(entry.timestamp).toLocaleDateString()}
                                         </p>
                                     </div>
@@ -856,7 +856,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     <button
                         type="button"
                         onClick={handleNavigateToHelp}
-                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                        className="inline-flex items-center min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full label shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                         aria-label="Open Help and shortcuts"
                     >
                         Open Help &amp; shortcuts →
@@ -875,7 +875,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                         <button
                             type="button"
                             onClick={handleNavigateToPrivacy}
-                            className="inline-flex items-center min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                            className="inline-flex items-center min-h-11 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full label shadow-md hover:bg-[#24382b] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
                             aria-label="Open Privacy and Data view"
                         >
                             Open Privacy &amp; Data →
@@ -904,7 +904,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     >
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div className="space-y-2">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">
+                                <p className="label text-orange-500">
                                     Admin tools
                                 </p>
                                 <h3 id="profile-admin-heading" className="text-2xl md:text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-200">
@@ -916,7 +916,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                 </p>
                             </div>
                             {adminSectionProps.editingRecipe && (
-                                <div className="rounded-full border border-orange-200 dark:border-orange-700 bg-white/90 dark:bg-[var(--card-bg)]/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-300 shadow-sm">
+                                <div className="rounded-full border border-orange-200 dark:border-orange-700 bg-white/90 dark:bg-[var(--card-bg)]/90 px-5 py-3 label text-orange-600 dark:text-orange-300 shadow-sm">
                                     Editing: {adminSectionProps.editingRecipe.title}
                                 </div>
                             )}

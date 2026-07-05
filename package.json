@@ -30,6 +30,7 @@
     "images:generate:local": "node scripts/generate-recipe-derived-local-images.mjs",
     "images:apply:realistic-temp": "node scripts/apply-realistic-temporary-images.mjs && node scripts/sync-recipes-for-api.mjs",
     "images:verify": "node scripts/verify-recipe-images.mjs",
+    "images:responsive": "node scripts/generate-responsive-images.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",
     "verify:storage": "node scripts/verify-storage.mjs",

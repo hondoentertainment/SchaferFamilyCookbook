@@ -217,7 +217,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                 </div>
                 <form onSubmit={handleRecipeSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block" id="archival-image-label">Archival Image</span>
+                        <span className="label text-stone-400 ml-2 block" id="archival-image-label">Archival Image</span>
                         {previewUrl && (
                             <div className="relative w-full h-48 rounded-[2rem] overflow-hidden mb-4 border border-stone-100 shadow-inner">
                                 <img
@@ -231,7 +231,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         )}
                         {!previewUrl && (
                             <div className="w-full h-48 rounded-[2rem] mb-4 border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Recipe image to be added</p>
+                                <p className="label text-stone-400">Recipe image to be added</p>
                             </div>
                         )}
                         <div className="relative group">
@@ -239,32 +239,32 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                                 <input id="add-recipe-image-upload" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; if (f && f.size > 10 * 1024 * 1024) { toast('Image must be under 10 MB.', 'error'); e.target.value = ''; return; } setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Upload recipe image" />
                                 <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[var(--color-brand)] transition-all bg-stone-50/30">
                                     <span className="text-lg">📁</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{recipeFile ? recipeFile.name : 'Upload Heritage Photo'}</span>
+                                    <span className="label">{recipeFile ? recipeFile.name : 'Upload Heritage Photo'}</span>
                                 </div>
                             </label>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                            <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title || isAICooldownActive} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-all disabled:opacity-50">
+                            <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title || isAICooldownActive} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl label border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-all disabled:opacity-50">
                                 {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isGeneratingImage ? 'Generating...' : '✨ Generate Photo (Imagen)'}
                             </button>
-                            <button type="button" onClick={useDefaultImageForForm} className="w-full py-3 bg-stone-100 text-stone-700 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-stone-200 hover:bg-stone-200 transition-all">
+                            <button type="button" onClick={useDefaultImageForForm} className="w-full py-3 bg-stone-100 text-stone-700 rounded-2xl label border border-stone-200 hover:bg-stone-200 transition-all">
                                 🖼️ Use Default Image
                             </button>
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="add-recipe-magic" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Paste recipe text for AI</label>
+                        <label htmlFor="add-recipe-magic" className="label text-stone-400 ml-2 block mb-1">Paste recipe text for AI</label>
                         <textarea id="add-recipe-magic" placeholder="Paste recipe text here for AI to parse…" className="w-full h-24 p-4 border border-stone-100 rounded-2xl text-base bg-stone-50 outline-none" value={rawText} onChange={(e) => setRawText(e.target.value)} />
-                        <button type="button" onClick={handleMagicImport} disabled={isMagicLoading || !rawText.trim() || isAICooldownActive} className="mt-2 w-full py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
+                        <button type="button" onClick={handleMagicImport} disabled={isMagicLoading || !rawText.trim() || isAICooldownActive} className="mt-2 w-full py-3 bg-[var(--color-brand)] text-white rounded-full label disabled:opacity-50">
                             {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isMagicLoading ? 'Analyzing...' : '✨ Organize with AI'}
                         </button>
                     </div>
                     <div>
-                        <label htmlFor="add-recipe-title-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Recipe Title</label>
+                        <label htmlFor="add-recipe-title-input" className="label text-stone-400 ml-2 block mb-1">Recipe Title</label>
                         <input id="add-recipe-title-input" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
                     </div>
                     <div>
-                        <label htmlFor="add-recipe-contributor" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Contributed By</label>
+                        <label htmlFor="add-recipe-contributor" className="label text-stone-400 ml-2">Contributed By</label>
                         <select id="add-recipe-contributor" className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[var(--color-brand)]/20 mt-1" value={recipeForm.contributor || currentUser?.name || ''} onChange={e => setRecipeForm({ ...recipeForm, contributor: e.target.value })}>
                             <option value={currentUser?.name || 'Me'}>{currentUser?.name || 'Me'} (you)</option>
                             {contributors.filter(c => c.name !== currentUser?.name).map(c => (
@@ -293,19 +293,19 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="add-recipe-ingredients" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Ingredients (one per line)</label>
+                        <label htmlFor="add-recipe-ingredients" className="label text-stone-400 ml-2 block mb-1">Ingredients (one per line)</label>
                         <textarea id="add-recipe-ingredients" placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
                     </div>
                     <div>
-                        <label htmlFor="add-recipe-instructions" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Instructions (one per line)</label>
+                        <label htmlFor="add-recipe-instructions" className="label text-stone-400 ml-2 block mb-1">Instructions (one per line)</label>
                         <textarea id="add-recipe-instructions" placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
                     </div>
                     <div>
-                        <label htmlFor="add-recipe-notes" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Heirloom Notes (optional)</label>
+                        <label htmlFor="add-recipe-notes" className="label text-stone-400 ml-2">Heirloom Notes (optional)</label>
                         <textarea id="add-recipe-notes" placeholder="Add any special memories or tips…" className="w-full h-24 p-4 border border-[var(--color-brand)]/20 rounded-2xl text-base bg-[var(--color-brand)]/5 focus:ring-2 focus:ring-[var(--color-brand)]/20 italic mt-1" value={recipeForm.notes || ''} onChange={e => setRecipeForm({ ...recipeForm, notes: e.target.value })} />
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="add-recipe-tag-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Tags (optional)</label>
+                        <label htmlFor="add-recipe-tag-input" className="label text-stone-400 ml-2">Tags (optional)</label>
                         <input
                             id="add-recipe-tag-input"
                             type="text"
@@ -346,7 +346,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                         )}
                     </div>
                     <div className="flex gap-4 pt-4">
-                        <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="flex-1 py-4 bg-[var(--color-brand)] text-white rounded-full label shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
                             {isSubmitting ? 'Saving...' : 'Add Recipe'}
                         </button>
                         <button type="button" onClick={onClose} disabled={isSubmitting} className="flex-1 py-4 border border-stone-200 rounded-full text-[10px] font-black uppercase text-stone-400 disabled:opacity-70">

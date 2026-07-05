@@ -88,14 +88,14 @@ export const InstallPrompt: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleInstall}
-                        className="px-4 py-2 rounded-full bg-white text-[var(--color-brand)] text-[10px] font-black uppercase tracking-widest hover:bg-stone-100 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                        className="px-4 py-2 rounded-full bg-white text-[var(--color-brand)] label hover:bg-stone-100 transition-colors min-h-[2.75rem] whitespace-nowrap"
                     >
                         Install
                     </button>
                     <button
                         type="button"
                         onClick={handleDismiss}
-                        className="px-4 py-2 rounded-full border border-white/30 text-white/80 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                        className="px-4 py-2 rounded-full border border-white/30 text-white/80 label hover:bg-white/10 transition-colors min-h-[2.75rem] whitespace-nowrap"
                     >
                         Not now
                     </button>

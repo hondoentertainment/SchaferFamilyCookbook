@@ -57,24 +57,22 @@ Gaps from the review and the state after this PR:
 | Documented button system | none | main shipped `.btn` CSS utilities (primary/secondary/danger/link), adopted across 10+ components |
 | Documented empty-state pattern | none | main shipped `.empty-state-actions` + consistent markup |
 | Border-radius patterns | 5+ ad-hoc | unchanged — still 5+ |
-| Button styles | 11+ ad-hoc | shipped primitive; adoption pending |
+| Label micro-caps style | 21 files copy-pasting `text-[10px] font-black uppercase tracking-widest` | ✅ single `.label` utility in `index.css`, adopted across all 21 |
 
 Remaining design work:
 
-1. **Mechanical brand sweep** — replace `#2D4635` in the remaining 28 files
-   with `var(--color-brand)`. The pattern is proven; just hasn't been
-   applied everywhere.
-2. **Button adoption** — replace inline button `className` strings across
-   the app with `<Button variant="…">`.
-3. **EmptyState adoption** — same, for the ad-hoc empty states in
-   `CollectionsView`, `GroceryListView`, `MealPlanView`, `ActivityFeed`,
-   `AlphabeticalIndex`.
-4. **Icon system** — choose one (all custom SVG, or emoji-only for
-   sentiment) and unify.
-5. **Type scale** — name the 172 occurrences of
-   `text-[10px] font-black uppercase tracking-widest` (the "label" style)
-   into a `font-size: { label: [...] }` Tailwind extension so it stops
-   being copy-pasted.
+1. **Brand sweep** — ✅ done. `#2D4635` now survives only in two data-URI
+   SVGs (CSS vars can't resolve in isolated `<img>` documents) and
+   `constants/theme.ts` (the JS token constant).
+2. **Button / empty-state adoption** — ✅ resolved. `main` shipped `.btn`
+   and `.empty-state-actions` CSS utilities adopted across 10+ components,
+   so a second React primitive was dropped rather than compete with it.
+3. **Type scale** — ✅ `.label` utility replaces the copy-pasted eyebrow
+   style across all 21 files.
+4. **Icon system** — still open. Choose one (all custom SVG, or emoji-only
+   for sentiment) and unify. Larger, more subjective; its own PR.
+5. **Border-radius tokens** — still open. Collapse the 5+ ad-hoc radii to
+   2–3 named tokens.
 
 ## Senior engineer — "B+ codebase, architecture lagging the ambition"
 
@@ -107,15 +105,23 @@ Remaining architecture work (sequenced by ROI):
    recentlyViewed), each with its own (or no) event bus; cloud sync
    covers only three. Adopt Zustand (or similar) with one
    persistence/sync layer.
-4. **Responsive image pipeline** (M). All `<img>` tags already have
-   `loading="lazy" decoding="async" sizes=...`, but there's no
-   `srcset` — the build only produces one variant. Add 480w / 800w /
-   1200w plus AVIF.
+4. **Responsive image pipeline** — ✅ done. `scripts/generate-responsive-images.mjs`
+   emits 480w/800w WebP variants for all 68 photos (26 KB / 56 KB vs the
+   174 KB source), and `RecipeImage` serves them via `srcset` with a
+   tested `buildRecipeImageSrcSet` helper. On a 2-col mobile grid the
+   browser now fetches the ~26 KB variant instead of the full source.
+   (AVIF is a possible future add; WebP variants already capture most of
+   the win.)
 5. **Grid virtualization** (M). Use `react-window` once the recipe
-   archive grows past ~200 entries; current grid renders all cards.
-6. **Extend offline queue** (M). Currently only recipe additions are
-   queued; favorites, ratings, grocery, meal plan mutations should be
-   too, with a pending-sync indicator.
+   archive grows past ~200 entries; current grid renders all 68 cards —
+   genuinely not needed yet.
+6. **Extend offline queue** — mostly a non-issue on inspection. Cloud
+   prefs sync (`useUserPrefsSync`) already covers favorites, ratings,
+   collections, meal plan, and grocery list with debounced writes and
+   merge-on-reconnect; the IndexedDB queue exists specifically for
+   gallery photo uploads (Firebase Storage, which Workbox can't
+   intercept). Only `recentlyViewed` is device-local by design. A
+   pending-sync UI indicator remains a nice-to-have.
 
 ## What this PR actually changed
 

@@ -91,7 +91,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
       />
 
       <div className="section-heading-row">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+        <h3 className="label text-stone-500">
           Collections ({collections.length})
         </h3>
         <button

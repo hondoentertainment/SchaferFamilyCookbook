@@ -67,7 +67,7 @@ export const GalleryUploadPanel: React.FC<GalleryUploadPanelProps> = ({
                 <div>
                     <h3
                         id="gallery-upload-heading"
-                        className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-300 leading-none mb-1"
+                        className="label text-[var(--color-brand)] dark:text-emerald-300 leading-none mb-1"
                     >
                         Share a memory
                     </h3>
@@ -100,7 +100,7 @@ export const GalleryUploadPanel: React.FC<GalleryUploadPanelProps> = ({
                             <span className="text-3xl" aria-hidden="true">
                                 🏞️
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-center">
+                            <span className="label text-center">
                                 {file ? file.name : 'Tap to choose photo or video'}
                             </span>
                             <span className="text-[10px] text-stone-400">Max 25 MB</span>

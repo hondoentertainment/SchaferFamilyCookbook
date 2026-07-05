@@ -32,7 +32,7 @@ export const RecipeNotes: React.FC<RecipeNotesProps> = ({ recipeId, recipeTitle,
 
   return (
     <section className="space-y-4" aria-label="Family notes">
-      <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+      <h4 className="label text-stone-500">
         Family Notes {notes.length > 0 && `(${notes.length})`}
       </h4>
 

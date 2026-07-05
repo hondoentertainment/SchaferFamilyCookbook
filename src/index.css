@@ -448,6 +448,21 @@ textarea:focus-visible,
   display: none;
 }
 
+/* ===== Typography scale ===== */
+/*
+ * The eyebrow/label style (uppercase micro-caps) was previously copy-pasted as
+ * `text-[10px] font-black uppercase tracking-widest` across ~20 components.
+ * `.label` is the single source of truth. Colour is intentionally left to the
+ * caller (e.g. add `text-stone-500`), so this only owns size/weight/case/track.
+ */
+.label {
+  font-size: 0.625rem;      /* 10px */
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+}
+
 /* ===== Shared buttons & action rows (batch 8 UX) ===== */
 .btn {
   display: inline-flex;

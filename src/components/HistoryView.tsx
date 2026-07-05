@@ -185,7 +185,7 @@ export const HistoryView: React.FC = () => {
                 >
                     {/* Hero / Introduction */}
                     <header id="intro" className="scroll-mt-28 text-center space-y-8">
-                        <div className="inline-block px-4 py-1.5 rounded-full border border-[var(--color-brand)]/10 bg-[var(--color-brand)]/5 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] mb-4">
+                        <div className="inline-block px-4 py-1.5 rounded-full border border-[var(--color-brand)]/10 bg-[var(--color-brand)]/5 label text-[var(--color-brand)] mb-4">
                             Legacy & Heritage
                         </div>
                         <h1 className="text-5xl md:text-7xl font-serif italic text-[var(--color-brand)] leading-tight">

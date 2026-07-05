@@ -47,7 +47,7 @@ export const PreferencesPanel: React.FC = () => {
 
   return (
     <section className="space-y-6" aria-label="Display preferences">
-      <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+      <h3 className="label text-stone-500">
         Display Preferences
       </h3>
 

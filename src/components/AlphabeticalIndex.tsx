@@ -123,8 +123,8 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
             {/* Mobile: compact horizontal scrollable letter strip */}
             <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2 border-b border-stone-100 dark:border-stone-800">
                 <div className="px-4 pt-3 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Jump by letter</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Scroll for more →</p>
+                    <p className="label text-stone-500">Jump by letter</p>
+                    <p className="label text-stone-500">Scroll for more →</p>
                 </div>
                 <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex flex-nowrap gap-1.5 justify-start py-2 min-w-max">

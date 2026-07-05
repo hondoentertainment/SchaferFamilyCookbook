@@ -301,7 +301,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     setPickerDate(pickerOpen ? null : dateKey);
                   }}
                   aria-expanded={pickerOpen}
-                  className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline min-h-11 px-2"
+                  className="shrink-0 label text-[var(--color-brand)] dark:text-emerald-400 hover:underline min-h-11 px-2"
                 >
                   {pickerOpen ? 'Close' : '+ Add'}
                 </button>

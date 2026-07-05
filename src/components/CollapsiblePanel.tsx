@@ -48,7 +48,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
                 aria-controls={panelId}
                 className="w-full flex items-center justify-between gap-4 px-5 py-3.5 text-left hover:bg-stone-50/80 dark:hover:bg-stone-800/60 transition-colors min-h-11"
             >
-                <span id={id} className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                <span id={id} className="label text-stone-500 dark:text-stone-400">
                     {title}
                 </span>
                 <span aria-hidden="true" className="text-stone-400 dark:text-stone-500 text-xs shrink-0">

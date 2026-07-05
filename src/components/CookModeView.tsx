@@ -658,7 +658,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
                     >
                         <div className="flex items-start justify-between gap-4 mb-6">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Cook Mode</p>
+                                <p className="label text-[#A0522D]">Cook Mode</p>
                                 <h2 className="font-serif italic text-3xl text-[var(--color-brand)]">Ingredients</h2>
                                 <p className="text-sm text-stone-500 mt-1">Scaled for {scaleTo} serving{scaleTo !== 1 ? 's' : ''}.</p>
                             </div>

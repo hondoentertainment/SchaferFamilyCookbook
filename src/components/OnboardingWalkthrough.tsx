@@ -112,21 +112,21 @@ export const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ on
           <button
             type="button"
             onClick={handleResumeLater}
-            className="order-2 sm:order-1 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-700 transition-colors"
+            className="order-2 sm:order-1 px-6 py-3 label text-stone-500 hover:text-stone-700 transition-colors"
           >
             Resume later
           </button>
           <button
             type="button"
             onClick={handleSkip}
-            className="order-3 sm:order-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-700 transition-colors"
+            className="order-3 sm:order-2 px-6 py-3 label text-stone-500 hover:text-stone-700 transition-colors"
           >
             Skip tour
           </button>
           <button
             type="button"
             onClick={handleNext}
-            className="order-1 sm:order-3 px-8 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] active:scale-95 transition-all w-full sm:w-auto"
+            className="order-1 sm:order-3 px-8 py-3 bg-[var(--color-brand)] text-white rounded-full label shadow-lg hover:bg-[#1e2f23] active:scale-95 transition-all w-full sm:w-auto"
           >
             {step < STEPS.length - 1 ? 'Next' : "Let's cook!"}
           </button>

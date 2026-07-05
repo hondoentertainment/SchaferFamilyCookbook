@@ -75,7 +75,7 @@ const RatingSection: React.FC<{
     return (
         <div className="space-y-3 print:hidden">
             <div className="space-y-1">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Rate This Recipe</h4>
+                <h4 className="label text-stone-500">Rate This Recipe</h4>
                 <StarRating rating={userRating || avg} onRate={currentUserName ? handleRate : undefined} readOnly={!currentUserName} showCount={count} />
             </div>
             {count > 0 && (
@@ -649,7 +649,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         Check items off as you cook.
                     </p>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 whitespace-nowrap">
+                <span className="label text-stone-600 dark:text-stone-300 whitespace-nowrap">
                     {checkedIngredients.size}/{displayedIngredients.length}
                 </span>
             </div>
@@ -838,7 +838,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     {/* Mobile-only "back to context" pill (top-left) */}
                     <button
                         onClick={onClose}
-                        className="absolute top-2 left-2 z-20 md:hidden max-w-[42vw] truncate px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 print:hidden"
+                        className="absolute top-2 left-2 z-20 md:hidden max-w-[42vw] truncate px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl label text-stone-600 dark:text-stone-300 print:hidden"
                         aria-label={`Back to ${breadcrumbContext}`}
                     >
                         ← {breadcrumbContext}
@@ -921,12 +921,12 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <div className="flex flex-wrap items-center gap-2 mb-3">
                                     <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
                                     {headerApproved && (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50/95 text-amber-800 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50/95 text-amber-800 rounded-full label border border-amber-200">
                                             Family Approved
                                         </span>
                                     )}
                                     {headerCount >= 3 && (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50/95 text-emerald-800 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-200">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50/95 text-emerald-800 rounded-full label border border-emerald-200">
                                             Cooked by {headerCount}
                                         </span>
                                     )}
@@ -1004,7 +1004,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             hapticLight();
                                             setDetailMode(id);
                                         }}
-                                        className={`min-h-10 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors motion-reduce:transition-none ${
+                                        className={`min-h-10 rounded-full px-4 py-2 label transition-colors motion-reduce:transition-none ${
                                             detailMode === id
                                                 ? 'bg-[var(--color-brand)] text-white shadow-sm'
                                                 : 'text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-[var(--bg-tertiary)]'
@@ -1022,7 +1022,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     type="button"
                                     onClick={jumpToIngredients}
                                     aria-label="Jump to ingredients"
-                                    className="min-h-10 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
+                                    className="min-h-10 rounded-full px-4 py-2 label border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
                                 >
                                     Jump to ingredients
                                 </button>
@@ -1030,7 +1030,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     type="button"
                                     onClick={jumpToInstructions}
                                     aria-label="Jump to steps"
-                                    className="min-h-10 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
+                                    className="min-h-10 rounded-full px-4 py-2 label border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
                                 >
                                     Jump to steps
                                 </button>
@@ -1045,7 +1045,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 >
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                         <div className="flex-1 space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-100/80">Focused cooking</p>
+                                            <p className="label text-emerald-100/80">Focused cooking</p>
                                             <h3 className="font-serif italic text-xl md:text-2xl">Open step-by-step cook mode</h3>
                                             <p className="text-sm text-emerald-50/90">
                                                 Keeps your screen awake, supports timers, swipe navigation, and read-aloud.
@@ -1055,7 +1055,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             type="button"
                                             onClick={() => { hapticLight(); onStartCook(); }}
                                             data-testid="recipe-cook-tab-start"
-                                            className="shrink-0 min-h-11 px-6 py-3 rounded-full bg-white text-[var(--color-brand)] text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-emerald-50 transition-colors"
+                                            className="shrink-0 min-h-11 px-6 py-3 rounded-full bg-white text-[var(--color-brand)] label shadow-sm hover:bg-emerald-50 transition-colors"
                                         >
                                             Start step-by-step
                                         </button>
@@ -1106,7 +1106,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                             {detailMode === 'read' && storyPreview && (
                                 <section className="print-simplify rounded-3xl bg-gradient-to-br from-[var(--color-brand)]/5 to-[#A0522D]/10 dark:from-[var(--color-brand)]/20 dark:to-[#A0522D]/20 border border-[var(--color-brand)]/10 dark:border-[var(--color-brand)]/30 p-6 md:p-8">
                                     <div className="space-y-2">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Heirloom Notes</p>
+                                        <p className="label text-[#A0522D]">Heirloom Notes</p>
                                         <p className="font-serif italic text-lg md:text-xl leading-relaxed text-[var(--color-brand)] dark:text-emerald-300">
                                             {storyPreview}
                                         </p>
@@ -1162,7 +1162,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             </div>
                                             {recipe.instructions.length >= 5 && (
                                                 <div className="flex flex-wrap gap-2 print:hidden">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300 self-center">Jump to:</span>
+                                                    <span className="label text-stone-600 dark:text-stone-300 self-center">Jump to:</span>
                                                     {recipe.instructions.map((_, i) => (
                                                         <button
                                                             key={i}
@@ -1314,7 +1314,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                             {detailMode === 'read' && (
                             <details className="print:hidden rounded-3xl border border-stone-200 dark:border-[var(--border-color)] bg-white/65 dark:bg-[var(--card-bg)] p-5 md:p-6">
-                                <summary className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300">
+                                <summary className="cursor-pointer label text-stone-600 dark:text-stone-300">
                                     Notes, ratings, and sharing
                                 </summary>
                                 <div className="mt-5 grid gap-6 md:grid-cols-2">
@@ -1325,7 +1325,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         onChange={() => setRatingsVersion((v) => v + 1)}
                                     />
                                     <div className="space-y-2">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500">Share This Recipe</h4>
+                                        <h4 className="label text-stone-500">Share This Recipe</h4>
                                         <ShareRecipe recipe={recipe} />
                                     </div>
                                     {currentUserName && (
@@ -1387,7 +1387,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     className="flex-1 min-h-11 px-3 py-2 rounded-xl border border-stone-200 dark:border-[var(--border-color)] text-left text-xs text-stone-600 dark:text-stone-300 truncate"
                                     aria-label={`Previous recipe: ${prevRecipe.title}`}
                                 >
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Previous</span>
+                                    <span className="block label text-stone-400">Previous</span>
                                     <span className="font-serif italic text-[var(--color-brand)] dark:text-emerald-200 truncate">{prevRecipe.title}</span>
                                 </button>
                             ) : (
@@ -1401,7 +1401,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     className="flex-1 min-h-11 px-3 py-2 rounded-xl border border-stone-200 dark:border-[var(--border-color)] text-right text-xs text-stone-600 dark:text-stone-300 truncate"
                                     aria-label={`Next recipe: ${nextRecipe.title}`}
                                 >
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Next</span>
+                                    <span className="block label text-stone-400">Next</span>
                                     <span className="font-serif italic text-[var(--color-brand)] dark:text-emerald-200 truncate">{nextRecipe.title}</span>
                                 </button>
                             ) : null}

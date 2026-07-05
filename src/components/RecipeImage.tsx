@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Recipe } from '../types';
 import { CATEGORY_META } from '../constants/taxonomy';
-import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard } from '../utils/recipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard, buildRecipeImageSrcSet } from '../utils/recipeImage';
 
 interface RecipeImageFallbackProps {
     category: Recipe['category'];
@@ -121,6 +121,7 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
             <img
                 ref={imgRef}
                 src={recipe.image}
+                srcSet={buildRecipeImageSrcSet(recipe.image)}
                 width={800}
                 height={600}
                 sizes={sizes}

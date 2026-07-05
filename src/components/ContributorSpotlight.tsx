@@ -63,13 +63,13 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
             {contributor.name}
           </h2>
           <div className="flex flex-wrap justify-center gap-2">
-            <span className="px-3 py-1 bg-[var(--color-brand)]/10 dark:bg-emerald-900/30 text-[var(--color-brand)] dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest">
+            <span className="px-3 py-1 bg-[var(--color-brand)]/10 dark:bg-emerald-900/30 text-[var(--color-brand)] dark:text-emerald-400 rounded-full label">
               {contributorRecipes.length} recipes
             </span>
             {categories.map((cat) => (
               <span
                 key={cat}
-                className="px-3 py-1 bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400 rounded-full text-[10px] font-black uppercase tracking-widest"
+                className="px-3 py-1 bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400 rounded-full label"
               >
                 {cat}
               </span>
@@ -80,7 +80,7 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
         {/* Top Rated */}
         {topRated.length > 0 && (
           <section className="mb-8">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">
+            <h3 className="label text-stone-500 mb-3">
               Highest Rated
             </h3>
             <div className="space-y-2">
@@ -104,7 +104,7 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
 
         {/* All Recipes */}
         <section>
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">
+          <h3 className="label text-stone-500 mb-3">
             All Recipes
           </h3>
           {contributorRecipes.length === 0 ? (

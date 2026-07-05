@@ -876,7 +876,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             setCustodianBusy(false);
                                         }
                                     }}
-                                    className="shrink-0 px-6 py-3 rounded-full border border-emerald-300 text-emerald-900 text-[10px] font-black uppercase tracking-widest hover:bg-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-60"
+                                    className="shrink-0 px-6 py-3 rounded-full border border-emerald-300 text-emerald-900 label hover:bg-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-60"
                                 >
                                     Sign out Google
                                 </button>
@@ -904,7 +904,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             setCustodianBusy(false);
                                         }
                                     }}
-                                    className="px-8 py-4 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 disabled:opacity-60"
+                                    className="px-8 py-4 bg-[var(--color-brand)] text-white rounded-full label shadow-lg hover:bg-[#1e2f23] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 disabled:opacity-60"
                                 >
                                     {custodianBusy ? 'Opening Google…' : 'Sign in with Google (custodian)'}
                                 </button>
@@ -954,7 +954,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         setActiveSubtab(tabs[i - 1]);
                                     }
                                 }}
-                                className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-h-[2.75rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ${activeSubtab === tab.id ? 'bg-[var(--color-brand)] text-white shadow-lg ring-2 ring-[var(--color-brand)] ring-offset-2 ring-offset-stone-50' : 'text-stone-400 hover:bg-white hover:text-stone-600'}`}
+                                className={`px-4 py-2 rounded-full text-[9px] md:label transition-all whitespace-nowrap min-h-[2.75rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ${activeSubtab === tab.id ? 'bg-[var(--color-brand)] text-white shadow-lg ring-2 ring-[var(--color-brand)] ring-offset-2 ring-offset-stone-50' : 'text-stone-400 hover:bg-white hover:text-stone-600'}`}
                             >
                                 {tab.label}
                             </button>
@@ -996,14 +996,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             }}
                                             disabled={isPromotingAdmin}
                                             aria-busy={isPromotingAdmin}
-                                            className="px-8 py-4 bg-[var(--color-brand)] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                                            className="px-8 py-4 bg-[var(--color-brand)] text-white rounded-2xl label shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                                         >
                                             {isPromotingAdmin ? 'Saving...' : 'Grant Access'}
                                         </button>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Current Administrators</h4>
+                                    <h4 className="label text-[#A0522D]">Current Administrators</h4>
                                     <div className="flex flex-wrap gap-3">
                                         {props.contributors.filter(c => c.role === 'admin').map(admin => (
                                             <div key={admin.id} className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-full border border-stone-100 group">
@@ -1045,7 +1045,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 setShowNotifyForm(true);
                                                 setTimeout(() => notifyInputRef.current?.focus(), 50);
                                             }}
-                                            className="px-5 py-2.5 rounded-full bg-[var(--color-brand)]/10 text-[var(--color-brand)] border border-[var(--color-brand)]/20 text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-brand)]/20 transition-all whitespace-nowrap"
+                                            className="px-5 py-2.5 rounded-full bg-[var(--color-brand)]/10 text-[var(--color-brand)] border border-[var(--color-brand)]/20 label hover:bg-[var(--color-brand)]/20 transition-all whitespace-nowrap"
                                         >
                                             🔔 Notify Family
                                         </button>
@@ -1096,14 +1096,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 type="submit"
                                                 disabled={isSendingNotify || !notifyTitle.trim()}
                                                 aria-busy={isSendingNotify}
-                                                className="px-5 py-2.5 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-60 whitespace-nowrap"
+                                                className="px-5 py-2.5 rounded-full bg-[var(--color-brand)] text-white label disabled:opacity-60 whitespace-nowrap"
                                             >
                                                 {isSendingNotify ? 'Sending…' : 'Send Notification'}
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => { setShowNotifyForm(false); setNotifyTitle(''); }}
-                                                className="px-4 py-2.5 rounded-full border border-stone-200 text-stone-400 text-[10px] font-black uppercase tracking-widest hover:bg-stone-50"
+                                                className="px-4 py-2.5 rounded-full border border-stone-200 text-stone-400 label hover:bg-stone-50"
                                             >
                                                 Cancel
                                             </button>
@@ -1136,7 +1136,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             </div>
                                             <button
                                                 onClick={clearEditing}
-                                                className="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 transition-colors"
+                                                className="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl label hover:bg-amber-200 transition-colors"
                                             >
                                                 Cancel Edit
                                             </button>
@@ -1154,7 +1154,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <button
                                                         type="button"
                                                         onClick={handleExportJSON}
-                                                        className="px-3 py-2 rounded-xl border border-stone-200 bg-white text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-[var(--color-brand)]/30 hover:text-[var(--color-brand)] transition-colors"
+                                                        className="px-3 py-2 rounded-xl border border-stone-200 bg-white label text-stone-600 hover:border-[var(--color-brand)]/30 hover:text-[var(--color-brand)] transition-colors"
                                                         aria-label="Download all recipes as JSON"
                                                     >
                                                         ⬇️ Export as JSON
@@ -1162,7 +1162,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <button
                                                         type="button"
                                                         onClick={handleExportCSV}
-                                                        className="px-3 py-2 rounded-xl border border-stone-200 bg-white text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-[var(--color-brand)]/30 hover:text-[var(--color-brand)] transition-colors"
+                                                        className="px-3 py-2 rounded-xl border border-stone-200 bg-white label text-stone-600 hover:border-[var(--color-brand)]/30 hover:text-[var(--color-brand)] transition-colors"
                                                         aria-label="Download all recipes as CSV"
                                                     >
                                                         ⬇️ Export as CSV
@@ -1317,7 +1317,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             <section className="p-5 bg-white rounded-[2rem] border border-stone-100 shadow-sm" aria-labelledby="image-replacement-dashboard-title">
                                                 <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
                                                     <div>
-                                                        <h4 id="image-replacement-dashboard-title" className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)]">Creator actual-photo workflow</h4>
+                                                        <h4 id="image-replacement-dashboard-title" className="label text-[var(--color-brand)]">Creator actual-photo workflow</h4>
                                                         <p className="text-sm text-stone-600 mt-1">Track temporary generated photos and replace them with creator-supplied actuals as they arrive.</p>
                                                     </div>
                                                     <div className="text-right">
@@ -1334,7 +1334,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 </div>
                                                 <div className="rounded-2xl bg-stone-50 border border-stone-100 p-4">
                                                     <div className="flex items-center justify-between gap-3 mb-3">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Needs creator actual ({imageStatusSummary.needsCreatorActual})</p>
+                                                        <p className="label text-stone-500">Needs creator actual ({imageStatusSummary.needsCreatorActual})</p>
                                                         <p className="text-[10px] text-stone-500">Upload an actual photo while editing a recipe to approve it.</p>
                                                     </div>
                                                     {recipesNeedingActualPhotos.length === 0 ? (
@@ -1360,7 +1360,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                             {/* Recipe images progress */}
                                             <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Recipe images</h4>
+                                                <h4 className="label text-stone-500 mb-2">Recipe images</h4>
                                                 <p className="text-sm text-stone-700">
                                                     <span className="font-bold">{recipes.filter(r => r.image?.trim()).length}</span> of <span className="font-bold">{recipes.length}</span> recipes have images
                                                     {recipes.length - recipes.filter(r => r.image?.trim()).length > 0 && (
@@ -1370,10 +1370,10 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <p className="text-xs text-stone-500 mt-1">Use Fill Missing below or run <code className="bg-white px-1 rounded">npm run images:batch</code> locally for quota-safe batches.</p>
                                             </div>
                                             <div className="flex gap-4 flex-wrap">
-                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
+                                                <button onClick={() => handleBulkVisualSourcing(false)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-[#A0522D]/10 text-[#A0522D] rounded-full label border border-[#A0522D]/20 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Imagen (${bulkProgress.current}/${bulkProgress.total})` : '🖼️ Fill Missing (Imagen)'}
                                                 </button>
-                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200 shadow-sm disabled:opacity-50">
+                                                <button onClick={() => handleBulkVisualSourcing(true)} disabled={isBulkSourcing || isAICooldownActive} className="flex-1 min-w-[140px] py-4 bg-red-50 text-red-600 rounded-full label border border-red-200 shadow-sm disabled:opacity-50">
                                                     {isBulkSourcing ? `Generating...` : '🔄 Regenerate All (Imagen)'}
                                                 </button>
                                             </div>
@@ -1383,7 +1383,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {/* Magic Import & URL Import */}
                                     {!editingRecipe && (
                                         <div className="space-y-4 pt-6 border-t border-stone-100">
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] flex items-center gap-2">
+                                            <h4 className="label text-[var(--color-brand)] flex items-center gap-2">
                                                 <span>✨</span> Magic Import
                                             </h4>
                                             <div className="space-y-3">
@@ -1400,7 +1400,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         type="button"
                                                         onClick={handleMagicImport}
                                                         disabled={!rawText.trim() || isMagicLoading || isAICooldownActive}
-                                                        className="px-4 py-2 bg-[var(--color-brand)] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50 self-end"
+                                                        className="px-4 py-2 bg-[var(--color-brand)] text-white rounded-2xl label shadow-md disabled:opacity-50 self-end"
                                                     >
                                                         {isMagicLoading ? 'Parsing…' : 'Import Text'}
                                                     </button>
@@ -1419,7 +1419,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         type="button"
                                                         onClick={handleUrlImport}
                                                         disabled={!importUrl.trim() || isUrlImporting || isAICooldownActive}
-                                                        className="px-4 py-2 bg-[#A0522D] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md disabled:opacity-50 whitespace-nowrap"
+                                                        className="px-4 py-2 bg-[#A0522D] text-white rounded-2xl label shadow-md disabled:opacity-50 whitespace-nowrap"
                                                     >
                                                         {isUrlImporting ? 'Importing…' : 'Import from URL'}
                                                     </button>
@@ -1431,7 +1431,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {editingRecipe && (
                                     <form noValidate onSubmit={handleRecipeSubmit} className="space-y-6 pt-8 border-t border-stone-50">
                                         <div className="space-y-2">
-                                            <label htmlFor="admin-recipe-image-upload" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Archival Image</label>
+                                            <label htmlFor="admin-recipe-image-upload" className="label text-stone-400 ml-2">Archival Image</label>
                                             <div className="mt-2 mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-100 text-sm text-amber-900">
                                                 <p className="font-bold">{getRecipeImageStatus(recipeForm as Recipe).label}</p>
                                                 <p className="text-xs mt-1">{getRecipeImageStatus(recipeForm as Recipe).needsCreatorActual ? 'Upload a creator-supplied actual photo here to replace the temporary generated image and mark it approved.' : 'This recipe already has an approved actual photo; uploading another image will record the replacement as the current approved actual.'}</p>
@@ -1449,13 +1449,13 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         }}
                                                     />
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-white">Current Heritage Photo</p>
+                                                        <p className="label text-white">Current Heritage Photo</p>
                                                     </div>
                                                 </div>
                                             )}
                                             {!previewUrl && (
                                                 <div className="w-full h-48 rounded-[2rem] mb-4 border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Recipe image to be added</p>
+                                                    <p className="label text-stone-400">Recipe image to be added</p>
                                                 </div>
                                             )}
 
@@ -1464,29 +1464,29 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <input id="admin-recipe-image-upload" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] || null; setRecipeFile(f); setImageSourceForCurrent(f ? 'upload' : null); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Upload recipe image" />
                                                     <div className="w-full p-4 border-2 border-dashed border-stone-200 rounded-3xl flex items-center justify-center gap-3 text-stone-400 group-hover:border-[var(--color-brand)] transition-all bg-stone-50/30">
                                                         <span className="text-lg">📁</span>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest">
+                                                        <span className="label">
                                                             {recipeFile ? recipeFile.name : getRecipeImageStatus(recipeForm as Recipe).needsCreatorActual ? 'Upload Creator Actual Photo' : editingRecipe ? 'Change Heritage Photo' : 'Upload Heritage Photo'}
                                                         </span>
                                                     </div>
                                                 </label>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                                                <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title || isAICooldownActive} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-all disabled:opacity-50">
+                                                <button type="button" onClick={handleVisualSourcing} disabled={isGeneratingImage || !recipeForm.title || isAICooldownActive} className="w-full py-3 bg-[#A0522D]/10 text-[#A0522D] rounded-2xl label border border-[#A0522D]/20 hover:bg-[#A0522D]/20 transition-all disabled:opacity-50">
                                                     {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isGeneratingImage ? 'Generating with Imagen...' : '✨ Generate Photo (Imagen)'}
                                                 </button>
-                                                <button type="button" onClick={useDefaultImageForForm} className="w-full py-3 bg-stone-100 text-stone-700 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-stone-200 hover:bg-stone-200 transition-all">
+                                                <button type="button" onClick={useDefaultImageForForm} className="w-full py-3 bg-stone-100 text-stone-700 rounded-2xl label border border-stone-200 hover:bg-stone-200 transition-all">
                                                     🖼️ Use Default Image
                                                 </button>
                                             </div>
                                         </div>
                                         <div>
-                                            <label htmlFor="admin-recipe-title" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Recipe Title</label>
+                                            <label htmlFor="admin-recipe-title" className="label text-stone-400 ml-2 block mb-1">Recipe Title</label>
                                             <input id="admin-recipe-title" placeholder="Recipe Title" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.title} onChange={e => setRecipeForm({ ...recipeForm, title: e.target.value })} required />
                                         </div>
 
                                         {/* Contributor Selection */}
                                         <div className="space-y-2">
-                                            <label htmlFor="admin-recipe-contributor" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Contributed By</label>
+                                            <label htmlFor="admin-recipe-contributor" className="label text-stone-400 ml-2">Contributed By</label>
                                             <select
                                                 id="admin-recipe-contributor"
                                                 className="w-full p-4 border border-stone-200 rounded-2xl text-base bg-white focus:ring-2 focus:ring-[var(--color-brand)]/20"
@@ -1521,17 +1521,17 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label htmlFor="admin-recipe-ingredients" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Ingredients (one per line)</label>
+                                            <label htmlFor="admin-recipe-ingredients" className="label text-stone-400 ml-2 block mb-1">Ingredients (one per line)</label>
                                             <textarea id="admin-recipe-ingredients" placeholder="Ingredients (one per line)" className="w-full h-32 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.ingredients?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, ingredients: e.target.value.split('\n') })} required />
                                         </div>
                                         <div>
-                                            <label htmlFor="admin-recipe-instructions" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Instructions (one per line)</label>
+                                            <label htmlFor="admin-recipe-instructions" className="label text-stone-400 ml-2 block mb-1">Instructions (one per line)</label>
                                             <textarea id="admin-recipe-instructions" placeholder="Instructions (one per line)" className="w-full h-48 p-4 border border-stone-200 rounded-2xl text-base bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20" value={recipeForm.instructions?.join('\n')} onChange={e => setRecipeForm({ ...recipeForm, instructions: e.target.value.split('\n') })} required />
                                         </div>
 
                                         {/* Heirloom Notes */}
                                         <div className="space-y-2">
-                                            <label htmlFor="admin-recipe-notes" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Heirloom Notes (optional)</label>
+                                            <label htmlFor="admin-recipe-notes" className="label text-stone-400 ml-2">Heirloom Notes (optional)</label>
                                             <textarea
                                                 id="admin-recipe-notes"
                                                 placeholder="Add any special memories, tips, or history about this recipe..."
@@ -1543,7 +1543,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                         {/* Tags */}
                                         <div className="space-y-2">
-                                            <label htmlFor="admin-recipe-tag-input" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2">Tags (optional)</label>
+                                            <label htmlFor="admin-recipe-tag-input" className="label text-stone-400 ml-2">Tags (optional)</label>
                                             <div className="flex gap-2">
                                                 <input
                                                     id="admin-recipe-tag-input"
@@ -1588,7 +1588,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                         {/* Featured toggle — surfaces the recipe in the Featured strip on the Recipes tab */}
                                         <div className="space-y-2">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block">Visibility</p>
+                                            <p className="label text-stone-400 ml-2 block">Visibility</p>
                                             <label
                                                 htmlFor="admin-recipe-featured"
                                                 className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-amber-200 bg-amber-50/60 cursor-pointer hover:bg-amber-50 transition-colors min-h-[44px] dark:border-amber-900/40 dark:bg-amber-900/10"
@@ -1632,7 +1632,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex items-start gap-4 mb-4">
                                         <span className="text-2xl mt-1">📱</span>
                                         <div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Archive by Text</h4>
+                                            <h4 className="label text-emerald-800">Archive by Text</h4>
                                             <p className="text-xs text-emerald-700 font-serif italic mt-1 leading-relaxed">
                                                 Family members can text photos or videos to the archive. Text to: <br />
                                                 <span className="font-bold not-italic">{dbStats.archivePhone || 'Not Configured'}</span>
@@ -1641,7 +1641,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     </div>
 
                                     <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-200 mb-8">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Twilio Configuration</h4>
+                                        <h4 className="label text-stone-500 mb-2">Twilio Configuration</h4>
                                         <p className="text-xs text-stone-500 mb-4">Enter your Twilio number (E.164, e.g. +15551234567) so family members can text photos and videos to the gallery. The number appears in the Gallery tab once set.</p>
                                         <div className="flex flex-col sm:flex-row gap-3">
                                             <label htmlFor="admin-archive-phone" className="sr-only">Archive phone number (E.164)</label>
@@ -1676,7 +1676,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 <input id="admin-gallery-file" type="file" accept="image/*,video/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" aria-label="Choose family photo or video to upload" />
                                                 <div className="w-full h-32 border-2 border-dashed border-stone-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-stone-300 group-hover:border-[#A0522D] group-hover:text-[#A0522D] transition-all">
                                                     <span className="text-3xl" aria-hidden="true">🏞️</span>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">{galleryFile ? galleryFile.name : 'Choose Family Memory'}</span>
+                                                    <span className="label">{galleryFile ? galleryFile.name : 'Choose Family Memory'}</span>
                                                 </div>
                                             </label>
                                         </div>
@@ -1691,7 +1691,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
 
                                     {/* Bulk Upload Section */}
                                     <div className="mt-8 pt-8 border-t border-stone-200">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] mb-4 flex items-center gap-2">
+                                        <h4 className="label text-[var(--color-brand)] mb-4 flex items-center gap-2">
                                             <span>📚</span> Bulk Image Upload
                                         </h4>
                                         <div className="p-6 bg-[var(--color-brand)]/5 rounded-3xl border border-[var(--color-brand)]/10">
@@ -1766,7 +1766,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     <button
                                                         onClick={handleBulkGalleryUpload}
                                                         disabled={isSubmitting || uploadProgress.total > 0}
-                                                        className="w-full py-3 bg-[var(--color-brand)] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="w-full py-3 bg-[var(--color-brand)] text-white rounded-xl label shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         {isSubmitting && uploadProgress.total > 0
                                                             ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...`
@@ -1791,7 +1791,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {/* Pending moderation queue */}
                                     {gallery.some(isGalleryItemPending) && onUpdateGalleryItem && (
                                         <div className="mt-8 p-6 bg-sky-50 rounded-3xl border border-sky-100">
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-sky-900 mb-4 flex items-center gap-2">
+                                            <h4 className="label text-sky-900 mb-4 flex items-center gap-2">
                                                 <span>⏳</span> Pending approval ({gallery.filter(isGalleryItemPending).length})
                                             </h4>
                                             <ul className="space-y-3" aria-label="Gallery items awaiting approval">
@@ -1835,7 +1835,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {/* Existing Gallery Items - Edit / Delete */}
                                     {gallery.length > 0 && (onUpdateGalleryItem || onDeleteGalleryItem) && (
                                         <div className="mt-8 pt-8 border-t border-stone-200">
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] mb-4 flex items-center gap-2">
+                                            <h4 className="label text-[var(--color-brand)] mb-4 flex items-center gap-2">
                                                 <span>🗂️</span> Manage Gallery ({gallery.length})
                                             </h4>
                                             <ul className="space-y-3" aria-label="Existing gallery items">
@@ -1898,7 +1898,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setEditingGalleryItem(item)}
-                                                                        className="px-4 py-2 min-h-[2.75rem] rounded-xl bg-[var(--color-brand)] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1e301f] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
+                                                                        className="px-4 py-2 min-h-[2.75rem] rounded-xl bg-[var(--color-brand)] text-white label hover:bg-[#1e301f] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                                                                         aria-label={`Edit "${item.caption || 'gallery item'}"`}
                                                                     >
                                                                         Edit
@@ -1908,7 +1908,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleDeleteGalleryItemClick(item)}
-                                                                        className="px-4 py-2 min-h-[2.75rem] rounded-xl bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+                                                                        className="px-4 py-2 min-h-[2.75rem] rounded-xl bg-red-50 text-red-600 label hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
                                                                         aria-label={`Delete "${item.caption || 'gallery item'}"`}
                                                                     >
                                                                         Delete
@@ -1951,7 +1951,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     </button>
                                                 </div>
                                                 <div>
-                                                    <label htmlFor="gallery-edit-caption" className="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Caption</label>
+                                                    <label htmlFor="gallery-edit-caption" className="block label text-stone-500 mb-2">Caption</label>
                                                     <input
                                                         id="gallery-edit-caption"
                                                         type="text"
@@ -1963,7 +1963,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label htmlFor="gallery-edit-date" className="block text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Date</label>
+                                                    <label htmlFor="gallery-edit-date" className="block label text-stone-500 mb-2">Date</label>
                                                     <input
                                                         id="gallery-edit-date"
                                                         type="date"
@@ -1978,7 +1978,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         type="button"
                                                         onClick={() => setEditingGalleryItem(null)}
                                                         disabled={isSavingGalleryEdit}
-                                                        className="flex-1 py-3 rounded-full bg-stone-100 text-stone-700 text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
+                                                        className="flex-1 py-3 rounded-full bg-stone-100 text-stone-700 label hover:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
                                                     >
                                                         Cancel
                                                     </button>
@@ -1987,7 +1987,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                         onClick={handleSaveGalleryEdit}
                                                         disabled={isSavingGalleryEdit}
                                                         aria-busy={isSavingGalleryEdit}
-                                                        className="flex-1 py-3 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
+                                                        className="flex-1 py-3 rounded-full bg-[var(--color-brand)] text-white label shadow-lg disabled:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                                                     >
                                                         {isSavingGalleryEdit ? 'Saving...' : 'Save'}
                                                     </button>
@@ -2024,11 +2024,11 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         } finally { setIsTriviaSubmitting(false); }
                                     }} className="space-y-4">
                                         <div>
-                                            <label htmlFor="admin-trivia-question" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Question</label>
+                                            <label htmlFor="admin-trivia-question" className="label text-stone-400 ml-2 block mb-1">Question</label>
                                             <input id="admin-trivia-question" placeholder="e.g. Who grew up on the Schafer farm?" className="w-full p-4 border border-stone-200 rounded-2xl text-base outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20" value={triviaForm.question} onChange={e => setTriviaForm({ ...triviaForm, question: e.target.value })} aria-required="true" />
                                         </div>
                                         <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-2">Options (2–4)</span>
+                                            <span className="label text-stone-400 ml-2 block mb-2">Options (2–4)</span>
                                             <div className="grid grid-cols-2 gap-3">
                                             {triviaForm.options?.map((opt, i) => (
                                                 <div key={i}>
@@ -2039,7 +2039,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label htmlFor="admin-trivia-answer" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Correct Answer</label>
+                                            <label htmlFor="admin-trivia-answer" className="label text-stone-400 ml-2 block mb-1">Correct Answer</label>
                                             <input id="admin-trivia-answer" placeholder="Correct Answer" className="w-full p-4 border border-stone-200 rounded-2xl text-base font-bold bg-stone-50 focus:ring-2 focus:ring-[var(--color-brand)]/20 outline-none" value={triviaForm.answer} onChange={e => setTriviaForm({ ...triviaForm, answer: e.target.value })} />
                                         </div>
                                         <div className="flex gap-4">
@@ -2103,7 +2103,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                             {/* Merge Contributors Tool */}
                             {isSuperAdmin && (
                                 <div className="mb-10 p-6 bg-orange-50/50 rounded-[2rem] border border-orange-200">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D] mb-4 flex items-center gap-2">
+                                    <h4 className="label text-[#A0522D] mb-4 flex items-center gap-2">
                                         <span>🔀</span> Merge Contributors
                                     </h4>
                                     <p className="text-xs text-stone-500 mb-4">Combine two contributor accounts by moving all recipes from one contributor to another.</p>
@@ -2135,7 +2135,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             onClick={handleMergeContributors}
                                             disabled={isMerging || !mergeFrom.trim() || !mergeTo.trim()}
                                             aria-busy={isMerging}
-                                            className="px-6 py-3 bg-[#A0522D] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                            className="px-6 py-3 bg-[#A0522D] text-white rounded-2xl label shadow-md hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             {isMerging ? 'Merging...' : '🔀 Merge'}
                                         </button>
@@ -2253,7 +2253,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 <button
                                     type="button"
                                     onClick={handleRevertStoryToPublished}
-                                    className="px-4 py-2 bg-white border border-sky-200 text-sky-800 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-sky-100"
+                                    className="px-4 py-2 bg-white border border-sky-200 text-sky-800 rounded-full label hover:bg-sky-100"
                                 >
                                     Revert to published
                                 </button>
@@ -2269,14 +2269,14 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     <button
                                         type="button"
                                         onClick={handleRestoreStoryDraft}
-                                        className="px-4 py-2 bg-amber-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-700"
+                                        className="px-4 py-2 bg-amber-600 text-white rounded-full label hover:bg-amber-700"
                                     >
                                         Restore draft
                                     </button>
                                     <button
                                         type="button"
                                         onClick={handleDiscardStoryDraft}
-                                        className="px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-100"
+                                        className="px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-full label hover:bg-amber-100"
                                     >
                                         Discard
                                     </button>
@@ -2292,7 +2292,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         data-testid="story-edit-toggle"
                                         onClick={() => setStoryPreview(false)}
                                         aria-pressed={!storyPreview}
-                                        className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${!storyPreview ? 'bg-[var(--color-brand)] text-white' : 'text-stone-500 hover:text-stone-700'}`}
+                                        className={`px-4 py-2 rounded-full label transition-colors ${!storyPreview ? 'bg-[var(--color-brand)] text-white' : 'text-stone-500 hover:text-stone-700'}`}
                                     >
                                         Edit
                                     </button>
@@ -2301,7 +2301,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                         data-testid="story-preview-toggle"
                                         onClick={() => setStoryPreview(true)}
                                         aria-pressed={storyPreview}
-                                        className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${storyPreview ? 'bg-[var(--color-brand)] text-white' : 'text-stone-500 hover:text-stone-700'}`}
+                                        className={`px-4 py-2 rounded-full label transition-colors ${storyPreview ? 'bg-[var(--color-brand)] text-white' : 'text-stone-500 hover:text-stone-700'}`}
                                     >
                                         Preview
                                     </button>
@@ -2340,7 +2340,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             type="button"
                                             data-testid="story-insert-starter"
                                             onClick={handleInsertStoryStarter}
-                                            className="px-4 py-2 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23]"
+                                            className="px-4 py-2 bg-[var(--color-brand)] text-white rounded-full label hover:bg-[#1e2f23]"
                                         >
                                             Insert starter sections
                                         </button>
@@ -2350,7 +2350,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                 {storySections.map((section, idx) => (
                                     <div key={section.id} className="p-6 bg-stone-50 rounded-[2rem] border border-stone-200 space-y-4">
                                         <div className="flex items-center justify-between gap-4">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Section {idx + 1}</span>
+                                            <span className="label text-stone-400">Section {idx + 1}</span>
                                             <div className="flex gap-2">
                                                 <button
                                                     type="button"
@@ -2427,7 +2427,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                             order: storySections.length
                                         }]);
                                     }}
-                                    className="w-full py-4 border-2 border-dashed border-[var(--color-brand)]/30 rounded-[2rem] text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] hover:bg-[var(--color-brand)]/5 transition-all"
+                                    className="w-full py-4 border-2 border-dashed border-[var(--color-brand)]/30 rounded-[2rem] label text-[var(--color-brand)] hover:bg-[var(--color-brand)]/5 transition-all"
                                 >
                                     + Add Section
                                 </button>
@@ -2452,7 +2452,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                 setIsSavingStory(false);
                                             }
                                         }}
-                                        className="flex-1 py-4 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className="flex-1 py-4 bg-[var(--color-brand)] text-white rounded-full label shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {isSavingStory ? 'Publishing…' : 'Publish to family'}
                                     </button>
@@ -2517,25 +2517,25 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                     {/* Summary stats row */}
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                         <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-100 space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Cook Mode (7 days)</p>
+                                            <p className="label text-stone-400">Cook Mode (7 days)</p>
                                             <p className="text-4xl font-serif font-bold text-[var(--color-brand)]">{cookModeCount}</p>
                                         </div>
                                         <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-100 space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Trivia Completions</p>
+                                            <p className="label text-stone-400">Trivia Completions</p>
                                             <p className="text-4xl font-serif font-bold text-[var(--color-brand)]">{triviaCount}</p>
                                             {triviaCount > 0 && (
                                                 <p className="text-xs text-stone-500">Avg score <strong>{avgScore}%</strong></p>
                                             )}
                                         </div>
                                         <div className="p-6 bg-stone-50 rounded-[2rem] border border-stone-100 space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Shares</p>
+                                            <p className="label text-stone-400">Total Shares</p>
                                             <p className="text-4xl font-serif font-bold text-[var(--color-brand)]">{shareCount}</p>
                                         </div>
                                     </div>
 
                                     {/* Top 5 recipes */}
                                     <div className="space-y-4">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">Top 5 Most-Viewed Recipes</h3>
+                                        <h3 className="label text-[#A0522D]">Top 5 Most-Viewed Recipes</h3>
                                         {topRecipes.length === 0 ? (
                                             <p className="text-stone-400 text-sm italic">No recipe view events recorded yet.</p>
                                         ) : (
@@ -2648,7 +2648,7 @@ export const AdminView: React.FC<AdminViewProps> = (props) => {
                                                     toast(`Restored version from ${new Date(v.savedAt).toLocaleDateString()} — review and save to commit.`, 'info');
                                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                                 }}
-                                                className="px-4 py-2 bg-[var(--color-brand)] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1e2f23] whitespace-nowrap"
+                                                className="px-4 py-2 bg-[var(--color-brand)] text-white rounded-xl label hover:bg-[#1e2f23] whitespace-nowrap"
                                             >
                                                 Restore
                                             </button>

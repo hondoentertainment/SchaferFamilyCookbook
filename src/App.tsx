@@ -1493,7 +1493,7 @@ const App: React.FC = () => {
                         setIsGuestBrowse(false);
                         setCurrentUser(null);
                     }}
-                    className="min-h-10 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                    className="min-h-10 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 label text-white"
                 >
                     Sign in
                 </button>
@@ -1550,7 +1550,7 @@ const App: React.FC = () => {
                                     }
                                     setGalleryUploadBannerDismissed(true);
                                 }}
-                                className="min-h-10 shrink-0 rounded-full border border-amber-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-amber-800 hover:bg-amber-100/80"
+                                className="min-h-10 shrink-0 rounded-full border border-amber-200 bg-white px-4 py-2 label text-amber-800 hover:bg-amber-100/80"
                             >
                                 Dismiss
                             </button>
@@ -1573,7 +1573,7 @@ const App: React.FC = () => {
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-gallery instructions">
                                 <span className="text-3xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">{siteConfig.galleryCopy?.textPromptTitle}</h4>
+                                    <h4 className="label text-emerald-800 leading-none mb-1">{siteConfig.galleryCopy?.textPromptTitle}</h4>
                                     <p className="text-sm text-emerald-700 font-serif italic">
                                         {siteConfig.galleryCopy?.textPromptHint}{' '}
                                         <a
@@ -1596,7 +1596,7 @@ const App: React.FC = () => {
                                                 toast('Could not copy — long-press the number instead', 'info');
                                             }
                                         }}
-                                        className="mt-3 min-h-10 rounded-full border border-emerald-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-800 hover:bg-emerald-100/80 transition-colors"
+                                        className="mt-3 min-h-10 rounded-full border border-emerald-200 bg-white px-4 py-2 label text-emerald-800 hover:bg-emerald-100/80 transition-colors"
                                     >
                                         Copy number
                                     </button>
@@ -1606,7 +1606,7 @@ const App: React.FC = () => {
                             <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6" role="region" aria-label="Alternative ways to add photos">
                                 <span className="text-2xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Prefer texting?</h4>
+                                    <h4 className="label text-stone-500 leading-none mb-1">Prefer texting?</h4>
                                     <p className="text-sm text-stone-500 font-serif italic">{siteConfig.galleryCopy?.noPhoneHint}</p>
                                 </div>
                             </div>
@@ -1626,14 +1626,14 @@ const App: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => handleSetTab('Contributors')}
-                                    className="min-h-11 rounded-full bg-[var(--color-brand)] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white"
+                                    className="min-h-11 rounded-full bg-[var(--color-brand)] px-6 py-3 label text-white"
                                 >
                                     Meet contributors
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleSetTab('Family Story')}
-                                    className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600"
+                                    className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 label text-stone-600"
                                 >
                                     Read the story
                                 </button>
@@ -1653,7 +1653,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setGalleryContributorFilter('All')}
-                                        className="min-h-10 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                                        className="min-h-10 rounded-full border border-stone-200 bg-white px-4 py-2 label text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
                                     >
                                         Clear
                                     </button>
@@ -1736,12 +1736,12 @@ const App: React.FC = () => {
                                                 <div className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:hover:opacity-100 focus-within:opacity-100 transition-opacity bg-black/30 pointer-events-none">
                                                     <span className="bg-white/90 text-stone-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">▶ Fullscreen</span>
                                                 </div>
-                                                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/70 text-white text-[10px] font-black uppercase tracking-widest pointer-events-none">
+                                                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/70 text-white label pointer-events-none">
                                                     Video
                                                 </div>
                                             </button>
                                             {isGalleryItemPending(item) && (
-                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 label text-white shadow-sm">
                                                     Pending review
                                                 </span>
                                             )}
@@ -1754,7 +1754,7 @@ const App: React.FC = () => {
                                                 onClick={() => setSelectedGalleryItem(item)}
                                             />
                                             {isGalleryItemPending(item) && (
-                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 label text-white shadow-sm">
                                                     Pending review
                                                 </span>
                                             )}
@@ -1762,7 +1762,7 @@ const App: React.FC = () => {
                                         )}
                                         <p className="font-serif italic text-stone-800 dark:text-stone-200 text-lg px-2 line-clamp-3">{item.caption}</p>
                                         {isGalleryItemPending(item) && (
-                                            <p className="px-2 mt-1 text-[10px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
+                                            <p className="px-2 mt-1 label text-sky-700 dark:text-sky-300">
                                                 {contributorMatchKey(item.contributor) === contributorMatchKey(currentUser?.name) ? 'Your upload · Pending review' : 'Awaiting approval'}
                                             </p>
                                         )}
@@ -2217,7 +2217,7 @@ const App: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowMobileFilters(v => !v)}
-                                    className={`min-h-11 min-w-11 rounded-full border px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                                    className={`min-h-11 min-w-11 rounded-full border px-3 py-3 label transition-colors ${
                                         showMobileFilters || activeFilterCount > 0
                                             ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)]'
                                             : 'border-[#E8DCCB] bg-white/90 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
@@ -2367,13 +2367,13 @@ const App: React.FC = () => {
                                 </select>
                             </div>
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                <p className="label text-stone-500">
                                     {activeFilterCount > 0 ? `${activeFilterCount} filters active` : 'Browsing everything'}
                                 </p>
                                 <button
                                     type="button"
                                     onClick={clearRecipeFilters}
-                                    className="rounded-full border border-[#E8DCCB] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-700 dark:border-stone-700 dark:text-stone-200"
+                                    className="rounded-full border border-[#E8DCCB] px-4 py-2 label text-stone-700 dark:border-stone-700 dark:text-stone-200"
                                 >
                                     Reset
                                 </button>
@@ -2403,7 +2403,7 @@ const App: React.FC = () => {
                                                         handleSetTab('Recipes');
                                                         setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
                                                 }}
-                                                className="hidden min-h-10 items-center rounded-full border border-[#E8DCCB] bg-white/80 px-4 text-[10px] font-black uppercase tracking-widest text-stone-700 hover:bg-white sm:inline-flex dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                                className="hidden min-h-10 items-center rounded-full border border-[#E8DCCB] bg-white/80 px-4 label text-stone-700 hover:bg-white sm:inline-flex dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                             >
                                                 View all
                                             </button>

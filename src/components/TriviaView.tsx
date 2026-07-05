@@ -47,7 +47,7 @@ function FamilyLeaderboard({
                 aria-controls="family-leaderboard-panel"
                 className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left hover:bg-stone-50/80 dark:hover:bg-stone-800/60 transition-colors"
             >
-                <span id={headerId} className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-stone-300">
+                <span id={headerId} className="label text-stone-500 dark:text-stone-300">
                     🏆 Family Leaderboard
                 </span>
                 <span aria-hidden="true" className="text-stone-400 dark:text-stone-500 text-xs">
@@ -97,7 +97,7 @@ function FamilyLeaderboard({
                             <button
                                 type="button"
                                 onClick={onRefresh}
-                                className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand)] dark:text-[#A0C4A0] hover:underline"
+                                className="label text-[var(--color-brand)] dark:text-[#A0C4A0] hover:underline"
                             >
                                 Try again
                             </button>
@@ -165,7 +165,7 @@ function Scoreboard({ scores, highlightId }: { scores: TriviaScore[]; highlightI
     if (scores.length === 0) return null;
     return (
         <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 shadow-lg">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4">🏆 Legacy Scoreboard</h4>
+            <h4 className="label text-stone-400 dark:text-stone-500 mb-4">🏆 Legacy Scoreboard</h4>
             <ol className="space-y-2 max-h-48 overflow-y-auto">
                 {scores.map((s, i) => (
                     <li
@@ -441,11 +441,11 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 <div className="flex justify-between items-center">
                     <button
                         onClick={goBackToResults}
-                        className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-[var(--color-brand)] transition-colors"
+                        className="label text-stone-400 hover:text-[var(--color-brand)] transition-colors"
                     >
                         ← Back to results
                     </button>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#A0522D]">
+                    <span className="label text-[#A0522D]">
                         Review {reviewIndex + 1} of {questions.length}
                     </span>
                 </div>
@@ -455,13 +455,13 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     {log && (
                         <div className="space-y-4">
                             <div className={log.isCorrect ? 'p-4 rounded-2xl bg-[var(--color-brand)]/10 dark:bg-[var(--color-brand)]/20 border border-[var(--color-brand)]/30' : 'p-4 rounded-2xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700'}>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Your answer</p>
+                                <p className="label text-stone-400 dark:text-stone-500 mb-1">Your answer</p>
                                 <p className="font-serif text-stone-700 dark:text-stone-200">{log.selectedOption}</p>
                                 {log.isCorrect ? <p className="text-sm text-[var(--color-brand)] font-medium mt-2">✓ Correct</p> : null}
                             </div>
                             {!log.isCorrect && (
                                 <div className="p-4 rounded-2xl bg-[var(--color-brand)]/5 dark:bg-[var(--color-brand)]/20 border border-[var(--color-brand)]/20">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Correct answer</p>
+                                    <p className="label text-stone-400 dark:text-stone-500 mb-1">Correct answer</p>
                                     <p className="font-serif text-[var(--color-brand)] dark:text-emerald-300 font-medium">{q.answer}</p>
                                 </div>
                             )}
@@ -478,14 +478,14 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <button
                         onClick={() => setReviewIndex(i => Math.max(0, i - 1))}
                         disabled={reviewIndex === 0}
-                        className="px-6 py-3 bg-stone-100 text-stone-600 rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-200 transition-all"
+                        className="px-6 py-3 bg-stone-100 text-stone-600 rounded-full label disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-200 transition-all"
                     >
                         Previous
                     </button>
                     <button
                         onClick={() => setReviewIndex(i => Math.min(questions.length - 1, i + 1))}
                         disabled={reviewIndex === questions.length - 1}
-                        className="px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#3d5745] transition-all"
+                        className="px-6 py-3 bg-[var(--color-brand)] text-white rounded-full label disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#3d5745] transition-all"
                     >
                         Next
                     </button>
@@ -509,7 +509,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                 <div className="space-y-6">
                     <div className="w-32 h-32 bg-[var(--color-brand)] text-white rounded-full mx-auto flex flex-col items-center justify-center shadow-2xl ring-8 ring-[#F4A460]/20 animate-in zoom-in duration-500" role="img" aria-label={`Score: ${score} out of ${questions.length}, ${percentage} percent`}>
                         <span className="text-4xl font-black tabular-nums">{percentage}%</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">{score}/{questions.length}</span>
+                        <span className="label opacity-80 mt-1">{score}/{questions.length}</span>
                     </div>
                     <h2 className="text-5xl font-serif italic text-[var(--color-brand)] animate-in fade-in slide-in-from-bottom-2 duration-500">Legacy Challenge Complete</h2>
                     <p className="text-stone-500 font-serif italic text-xl">
@@ -522,7 +522,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
 
                 {answerLog.length > 0 && (
                     <div className="bg-white dark:bg-[var(--card-bg)] rounded-[3rem] p-6 md:p-8 border border-stone-100 dark:border-stone-800 shadow-xl text-left">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4">Score breakdown</h4>
+                        <h4 className="label text-stone-400 dark:text-stone-500 mb-4">Score breakdown</h4>
                         <ul className="flex flex-wrap gap-2 list-none p-0 m-0" aria-label="Question results">
                             {answerLog.map((log, i) => (
                                 <li
@@ -559,13 +559,13 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                     <div className="flex flex-wrap justify-center gap-4">
                         <button
                             onClick={startQuiz}
-                            className="px-10 py-4 bg-stone-100 text-[var(--color-brand)] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-brand)] hover:text-white transition-all shadow-md"
+                            className="px-10 py-4 bg-stone-100 text-[var(--color-brand)] rounded-full label hover:bg-[var(--color-brand)] hover:text-white transition-all shadow-md"
                         >
                             Try Again
                         </button>
                         <button
                             onClick={() => setReviewMode(true)}
-                            className="px-10 py-4 bg-white dark:bg-[var(--card-bg)] border-2 border-[var(--color-brand)] text-[var(--color-brand)] dark:text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-brand)] hover:text-white transition-all shadow-md"
+                            className="px-10 py-4 bg-white dark:bg-[var(--card-bg)] border-2 border-[var(--color-brand)] text-[var(--color-brand)] dark:text-emerald-300 rounded-full label hover:bg-[var(--color-brand)] hover:text-white transition-all shadow-md"
                         >
                             Review answers
                         </button>
@@ -669,13 +669,13 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                                 aria-label={`${String.fromCharCode(65 + i)}: ${opt}${isAnswered ? (isCorrect ? ' (Correct answer)' : isSelected ? ' (Your answer - incorrect)' : '') : ''}`}
                             >
                                 <span className="relative z-10 flex items-center gap-3">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 shrink-0 w-6">
+                                    <span className="label text-stone-400 dark:text-stone-500 shrink-0 w-6">
                                         {i + 1}.
                                     </span>
                                     {opt}
                                 </span>
-                                {isAnswered && isCorrect && <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Correct</span>}
-                                {isAnswered && isSelected && !isCorrect && <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Incorrect</span>}
+                                {isAnswered && isCorrect && <span className="label bg-white/20 px-3 py-1 rounded-full">Correct</span>}
+                                {isAnswered && isSelected && !isCorrect && <span className="label bg-white/20 px-3 py-1 rounded-full">Incorrect</span>}
                             </button>
                         );
                     })}
@@ -702,7 +702,7 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
                         )}
                         <button
                             onClick={nextQuestion}
-                            className="px-12 py-4 bg-[var(--color-brand)] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-brand)]"
+                            className="px-12 py-4 bg-[var(--color-brand)] text-white rounded-full label shadow-xl hover:scale-105 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-brand)]"
                         >
                             {currentQuestionIndex === questions.length - 1 ? "Finish Archive Challenge" : "Next Archival Record"}
                         </button>

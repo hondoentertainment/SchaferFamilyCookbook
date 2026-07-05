@@ -127,7 +127,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
                                     t.action?.onClick();
                                     setToasts(prev => prev.filter(x => x.id !== t.id));
                                 }}
-                                className="min-h-10 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
+                                className="min-h-10 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 label text-white shadow-sm hover:bg-[#1e2f23] transition-colors"
                             >
                                 {t.action.label}
                             </button>
@@ -161,13 +161,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
                         <div className="flex gap-4 justify-end">
                             <button
                                 onClick={handleCancel}
-                                className="min-h-11 min-w-11 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-stone-200 text-stone-500 hover:bg-stone-50 transition-all touch-manipulation"
+                                className="min-h-11 min-w-11 px-6 py-3 rounded-full label border border-stone-200 text-stone-500 hover:bg-stone-50 transition-all touch-manipulation"
                             >
                                 {confirmState.options.cancelLabel || 'Cancel'}
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className={`min-h-11 min-w-11 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all touch-manipulation ${
+                                className={`min-h-11 min-w-11 px-6 py-3 rounded-full label transition-all touch-manipulation ${
                                     confirmState.options.variant === 'danger'
                                         ? 'bg-red-600 text-white hover:bg-red-700'
                                         : 'bg-[var(--color-brand)] text-white hover:bg-[#1e2f23]'
