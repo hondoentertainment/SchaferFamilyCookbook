@@ -1,62 +1,63 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-04 (batch 15 — ops run complete)_
+_Last updated: 2026-07-04 (batch 16 — productionize + API fix)_
 
-## Recently shipped (July 2026 — batch 15)
+## Productionize (one command)
 
-### Next-steps automation — ✅ shipped
+```bash
+npm run productionize              # audit all + smoke
+npm run productionize -- --apply   # push local env vars to Vercel (when set in .env.local)
+npm run productionize -- --deploy  # redeploy Vercel production
+npm run productionize -- --all     # apply + migrate dry-run + deploy + lighthouse
+npm run productionize -- --migrate --yes   # live Firestore contributor migration (needs FIREBASE_SERVICE_ACCOUNT)
+```
 
-- **`npm run next-steps`** — ops verify, notify/Sentry audit, contributor dry-run, smoke:prod
-- **`npm run next-steps -- --apply`** — also applies notify secrets (and Sentry DSN if in `.env.local`)
-- **`npm run configure:sentry`** — audit + optional `--apply` for `VITE_SENTRY_DSN`
-- **`configure:notify --apply`** — auto-set matching `NOTIFY_SECRET` + `VITE_NOTIFY_SECRET` on Vercel
-- **E2E** — gallery upload→approve flow (`e2e/gallery-flow.spec.ts`), recipe card photo visibility, returning login
-- **E2E fix** — `goToAdminTools()` expands the Profile admin collapsible before interacting with subtabs
+## Recently shipped (July 2026 — batch 16)
 
-### Recipe card photos — ✅ shipped (batch 15)
+### API route fix — ✅ shipped
 
-- Cached images no longer stuck at `opacity-0`
-- Grid cards show actual photos (not category-only fallback for handwritten scans)
+- **`/api/notify`**, **`/api/webhook`**, **`/api/gemini`** were crashing on Vercel cold start (`FUNCTION_INVOCATION_FAILED`) due to ESM import paths without `.js` extensions and an out-of-tree `shared/` import for Gemini prompts.
+- Fixed relative imports; added `api/lib/recipeImagePrompts.ts` re-export for serverless bundling.
+- Production smoke: **9/9 passing** including `/api/notify` (401 without secret).
 
-## Recently shipped (June 2026 — batch 14)
+### Productionize tooling — ✅ shipped
 
-### Recipe page UX — ✅ shipped
+- **`npm run productionize`** — full audit: ops, notify, Sentry, FCM, App Check, text-to-gallery, smoke
+- **`configure:fcm`** / **`configure:app-check`** — audit + `--apply` to Vercel
+- **Smoke** — `/api/notify` route check (405 GET / 401 POST without secret)
+- **`scripts/lib/vercel-env.mjs`** — shared Vercel env apply helpers
 
-- **Prev/next recipe navigation** — desktop chevrons + mobile Previous/Next row
-- **Cook tab** — step checkboxes, progress bar, step-by-step CTA, auto-scroll to instructions
-- **Mobile jump links** — Jump to ingredients / Jump to steps (Read + Cook modes)
-- **Ingredient & step checkoffs** — clear buttons; session persistence per recipe
-- **Contributor browse** — tap byline to filter Recipes by contributor
-- **Total time** — prep + cook combined in header meta when parseable
-- **Tab keyboard nav** — arrow keys on Read/Cook/Share tabs
+### Batch 15 (prior)
+
+- **`npm run next-steps`**, gallery E2E approve flow, recipe card photo fix, notify secrets
 
 ## Ops status
 
-- [x] Firestore rules (gallery create + moderation)
-- [x] **Firebase Storage** — enabled; rules deploy via `npm run verify:storage`
-- [x] **Vercel `VITE_GALLERY_UPLOADS_ENABLED=true`** — set; smoke confirms upload bundle
-- [x] **Gallery upload E2E** — upload → pending → admin approve → public (`e2e/gallery-flow.spec.ts`)
-- [ ] **Live upload test on production** — manual once against Firebase-backed prod (not local-only E2E)
-- [ ] **Firestore contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` (Vercel pull omits encrypted values)
-- [x] **Push notify secrets** — applied via `npm run configure:notify -- --apply` (redeploy to activate)
-- [ ] **Sentry** — add DSN to `.env.local`, then `npm run configure:sentry -- --apply`
-- [ ] **FCM (optional)** — messaging sender ID, app ID, VAPID key
-- [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY`
-- [ ] **Lighthouse review** — `npm run next-steps -- --lighthouse` or CI artifact
-
-Run `npm run next-steps` after Vercel or Firebase console changes.
+- [x] Firestore rules + Firebase Storage
+- [x] Gallery uploads enabled on Vercel
+- [x] Gallery upload E2E (local provider)
+- [x] Push notify secrets on Vercel
+- [x] `/api/notify` smoke check (401 without secret)
+- [x] `/api/gemini` and `/api/webhook` routes load on Vercel
+- [ ] **Sentry** — `VITE_SENTRY_DSN` in `.env.local` → `npm run configure:sentry -- --apply`
+- [ ] **FCM** — sender ID, app ID, VAPID in `.env.local` → `npm run configure:fcm -- --apply`
+- [ ] **App Check** — site key in `.env.local` → `npm run configure:app-check -- --apply`
+- [ ] **Firestore contributor migration** — `FIREBASE_SERVICE_ACCOUNT` → `productionize --migrate --yes`
+- [ ] **Live prod gallery upload** — manual once (Firebase-backed, not local E2E)
+- [ ] **Lighthouse** — `npm run productionize -- --lighthouse`
 
 ### Ops scripts
 
 | Script | Purpose |
 |--------|---------|
-| `npm run next-steps` | Full checklist (verify, audits, smoke) |
-| `npm run next-steps -- --apply` | Above + apply notify (+ Sentry if DSN in env) |
-| `npm run verify:ops` | Vercel env audit + Storage check |
-| `npm run configure:notify` | Audit/generate/apply notify secrets |
-| `npm run configure:sentry` | Audit/apply Sentry DSN |
-| `npm run normalize:contributors:dry-run` | Preview Firestore name merges |
-| `npm run smoke:prod` | Post-deploy health + gallery bundle smoke |
+| `npm run productionize` | Full production readiness pass |
+| `npm run next-steps` | Lighter checklist (verify, audits, smoke) |
+| `npm run configure:sentry` | Sentry DSN audit/apply |
+| `npm run configure:fcm` | FCM client vars audit/apply |
+| `npm run configure:app-check` | App Check site key audit/apply |
+| `npm run configure:notify` | Notify secrets audit/apply |
+| `npm run configure:text-to-gallery` | Twilio + archive phone audit |
+| `npm run smoke:prod` | Post-deploy health checks |
 
 ## Explicitly deferred
 
