@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
-import { getClientIp, slidingWindowAllow, GEMINI_RATE_LIMIT } from './lib/rateLimit';
+import { getClientIp, slidingWindowAllow, GEMINI_RATE_LIMIT } from './lib/rateLimit.js';
 import {
     buildLLMPromptText,
     normalizeDescription,
@@ -8,7 +8,7 @@ import {
     extractGeneratedImage,
     TEXT_MODEL,
     RECIPE_IMAGE_MODEL,
-} from '../shared/recipeImagePrompts.mjs';
+} from './lib/recipeImagePrompts.js';
 
 const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 

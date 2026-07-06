@@ -46,13 +46,18 @@ console.log('Next steps checklist\n');
 run('Ops verify', 'verify-ops.mjs');
 run('Notify audit', 'configure-notify.mjs', [], { allowFail: true });
 run('Sentry audit', 'configure-sentry.mjs', [], { allowFail: true });
+run('FCM audit', 'configure-fcm.mjs', [], { allowFail: true });
+run('App Check audit', 'configure-app-check.mjs', [], { allowFail: true });
+run('Text-to-gallery audit', 'configure-text-to-gallery.mjs', [], { allowFail: true });
 run('Contributor migration dry-run', 'normalize-contributor-names-firestore.mjs', ['--dry-run'], {
     allowFail: true,
 });
 
 if (apply) {
-    run('Apply notify secrets', 'configure-notify.mjs', ['--apply']);
+    run('Apply notify secrets', 'configure-notify.mjs', ['--apply'], { allowFail: true });
     run('Apply Sentry DSN (if in .env.local)', 'configure-sentry.mjs', ['--apply'], { allowFail: true });
+    run('Apply FCM vars (if in .env.local)', 'configure-fcm.mjs', ['--apply'], { allowFail: true });
+    run('Apply App Check (if in .env.local)', 'configure-app-check.mjs', ['--apply'], { allowFail: true });
 }
 
 npmRun('Production smoke test', 'smoke:prod');
@@ -62,4 +67,5 @@ if (lighthouse) {
 }
 
 console.log('\n✔ Next-steps run complete.');
-console.log('  Manual: live gallery test on prod, FCM vars, App Check, FIREBASE_SERVICE_ACCOUNT migration');
+console.log('  Full pass: npm run productionize -- --all');
+console.log('  Manual: live gallery test on prod, credentials in .env.local for Sentry/FCM/App Check/migration');

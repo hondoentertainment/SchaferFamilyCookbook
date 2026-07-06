@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import twilio from 'twilio';
 import admin from 'firebase-admin';
-import { getClientIp, TWILIO_WEBHOOK_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
+import { getClientIp, TWILIO_WEBHOOK_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {

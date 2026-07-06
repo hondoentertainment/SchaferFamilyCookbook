@@ -155,6 +155,28 @@ async function smokeVercelGalleryBundle(vercelBase) {
   }
 }
 
+/** Notify API should reject unauthenticated POST (proves route is deployed). */
+async function smokeVercelNotifyRoute(vercelBase) {
+  const name = 'Vercel /api/notify route';
+  const url = `${vercelBase.replace(/\/$/, '')}/api/notify`;
+  try {
+    const postRes = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'smoke', body: 'test' }),
+    });
+    if (postRes.status !== 401) {
+      console.error(`❌ ${name}: expected HTTP 401 without secret, got ${postRes.status}`);
+      return 1;
+    }
+    console.log(`✅ ${name}`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${name}: ${err.message}`);
+    return 1;
+  }
+}
+
 async function smoke() {
   let failed = 0;
   const vercel = URLS.find((u) => u.name === 'Vercel');
@@ -184,6 +206,7 @@ async function smoke() {
     failed += await smokeVercelPing(vercel.url);
     failed += await smokeVercelShareRoutes(vercel.url);
     failed += await smokeVercelGalleryBundle(vercel.url);
+    failed += await smokeVercelNotifyRoute(vercel.url);
   }
 
   process.exit(failed > 0 ? 1 : 0);

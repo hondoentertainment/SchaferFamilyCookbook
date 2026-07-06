@@ -74,16 +74,16 @@ if (onVercel) {
 
 if (apply) {
     if (!dsn) {
-        console.error('\n✖ --apply requires VITE_SENTRY_DSN in environment or .env.local');
-        process.exit(1);
+        console.log('\nℹ️  Skipping --apply (VITE_SENTRY_DSN not in .env.local)');
+    } else {
+        console.log('\nApplying VITE_SENTRY_DSN to Vercel production…');
+        const add = setVercelEnv('VITE_SENTRY_DSN', dsn);
+        if (add.status !== 0) {
+            console.error('Failed:', add.stderr || add.stdout);
+            process.exit(1);
+        }
+        console.log('✅ VITE_SENTRY_DSN set. Redeploy: npx vercel deploy --prod --yes');
     }
-    console.log('\nApplying VITE_SENTRY_DSN to Vercel production…');
-    const add = setVercelEnv('VITE_SENTRY_DSN', dsn);
-    if (add.status !== 0) {
-        console.error('Failed:', add.stderr || add.stdout);
-        process.exit(add.status);
-    }
-    console.log('✅ VITE_SENTRY_DSN set. Redeploy: npx vercel deploy --prod --yes');
 }
 
 process.exit(dsn ? 0 : 1);
