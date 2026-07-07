@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getNotesForRecipe, addNote, deleteNote } from '../utils/ratings';
+import { FAMILY_PREFS_UPDATED_EVENT } from '../utils/familyPrefsCache';
 import { addActivity } from '../utils/activityFeed';
 import { formatTimeAgo } from '../utils/activityFeed';
 import { hapticLight } from '../utils/haptics';
@@ -12,22 +13,30 @@ interface RecipeNotesProps {
 }
 
 export const RecipeNotes: React.FC<RecipeNotesProps> = ({ recipeId, recipeTitle, currentUserName }) => {
-  const [notes, setNotes] = useState<RecipeNote[]>(() => getNotesForRecipe(recipeId));
+  const [notes, setNotes] = useState<RecipeNote[]>(() => getNotesForRecipe(recipeId, currentUserName));
   const [newNote, setNewNote] = useState('');
+
+  // Re-read when a fresh family aggregate arrives (other members' notes).
+  useEffect(() => {
+    setNotes(getNotesForRecipe(recipeId, currentUserName));
+    const onFamilyUpdate = () => setNotes(getNotesForRecipe(recipeId, currentUserName));
+    window.addEventListener(FAMILY_PREFS_UPDATED_EVENT, onFamilyUpdate);
+    return () => window.removeEventListener(FAMILY_PREFS_UPDATED_EVENT, onFamilyUpdate);
+  }, [recipeId, currentUserName]);
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
     hapticLight();
     addNote(recipeId, currentUserName, newNote);
     addActivity('note_added', currentUserName, `commented on "${recipeTitle}"`);
-    setNotes(getNotesForRecipe(recipeId));
+    setNotes(getNotesForRecipe(recipeId, currentUserName));
     setNewNote('');
   };
 
   const handleDelete = (noteId: string) => {
     hapticLight();
     deleteNote(noteId);
-    setNotes(getNotesForRecipe(recipeId));
+    setNotes(getNotesForRecipe(recipeId, currentUserName));
   };
 
   return (

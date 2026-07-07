@@ -8,12 +8,12 @@ import {
     type UserPrefsPayload,
 } from './userPrefsSync';
 import { getFavoriteIds } from '../utils/favorites';
-import { getAllRatings } from '../utils/ratings';
+import { getAllRatings, getAllNotes, getDeletedNoteIds, recordDeletedNoteIds } from '../utils/ratings';
 import { getAllCollections } from '../utils/collections';
 import { getMealPlan } from '../utils/mealPlan';
 import { applyGroceryItemsFromSync, getItems as getGroceryItems } from '../utils/groceryList';
 import { STORAGE_KEYS } from '../constants/storage';
-import type { RecipeRating } from '../types';
+import type { RecipeRating, RecipeNote } from '../types';
 import { CloudArchive } from './db';
 
 /**
@@ -32,7 +32,9 @@ function readLocalPrefs(userName: string): UserPrefsPayload {
     const collections = getAllCollections();
     const mealPlan = getMealPlan();
     const groceryList = getGroceryItems();
-    return { favorites, ratings, collections, mealPlan, groceryList };
+    const notes = getAllNotes().filter((n) => n.userName === userName);
+    const deletedNoteIds = getDeletedNoteIds();
+    return { favorites, ratings, collections, mealPlan, groceryList, notes, deletedNoteIds, displayName: userName };
 }
 
 /**
@@ -67,6 +69,24 @@ function applyMergedPrefsToLocal(userName: string, merged: UserPrefsPayload): vo
     localStorage.setItem(STORAGE_KEYS.collections, JSON.stringify(merged.collections));
     localStorage.setItem(STORAGE_KEYS.mealPlan, JSON.stringify(merged.mealPlan));
     applyGroceryItemsFromSync(merged.groceryList ?? []);
+
+    // Notes: replace THIS user's notes with the merged set; other users' local notes untouched.
+    const existingNotes: RecipeNote[] = (() => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEYS.notes);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? (parsed as RecipeNote[]) : [];
+        } catch {
+            return [];
+        }
+    })();
+    const otherNotes = existingNotes.filter((n) => n.userName !== userName);
+    localStorage.setItem(
+        STORAGE_KEYS.notes,
+        JSON.stringify([...otherNotes, ...(merged.notes ?? [])])
+    );
+    recordDeletedNoteIds(merged.deletedNoteIds ?? []);
 }
 
 export interface UseUserPrefsSyncOptions {
@@ -132,7 +152,8 @@ export function useUserPrefsSync(
                         Object.keys(local.ratings).length > 0 ||
                         local.collections.length > 0 ||
                         (local.mealPlan?.length ?? 0) > 0 ||
-                        (local.groceryList?.length ?? 0) > 0
+                        (local.groceryList?.length ?? 0) > 0 ||
+                        (local.notes?.length ?? 0) > 0
                     ) {
                         writerRef.current?.schedule(userId, local);
                     }
@@ -173,7 +194,15 @@ export function useUserPrefsSync(
                         const remoteItem = remoteGrocery.find((r) => r.id === item.id);
                         return remoteItem && item.checked && !remoteItem.checked;
                     });
-                if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery) {
+                const remoteNotes = remote.notes ?? [];
+                const mergedNotes = merged.notes ?? [];
+                const remoteNoteIds = new Set(remoteNotes.map((n) => n.id));
+                const mergedAddedNotes = mergedNotes.some((n) => !remoteNoteIds.has(n.id));
+                const remoteDeletedIds = new Set(remote.deletedNoteIds ?? []);
+                const mergedAddedTombstones = (merged.deletedNoteIds ?? []).some(
+                    (id) => !remoteDeletedIds.has(id)
+                );
+                if (mergedAddedFavs || mergedAddedRatings || mergedAddedCollections || mergedAddedMealPlan || mergedAddedGrocery || mergedAddedNotes || mergedAddedTombstones) {
                     writerRef.current?.schedule(userId, merged);
                 }
             } catch {

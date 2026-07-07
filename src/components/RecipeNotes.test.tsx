@@ -10,6 +10,15 @@ vi.mock('../utils/haptics', () => ({
 
 vi.mock('../services/userPrefsSync', () => ({
     notifyPrefsChanged: vi.fn(),
+    deriveUserId: (displayName?: string | null) => {
+        if (!displayName) return null;
+        const slug = displayName
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        return slug || null;
+    },
 }));
 
 const defaultProps = {

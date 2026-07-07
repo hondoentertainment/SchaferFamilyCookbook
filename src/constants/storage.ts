@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
   triviaScores: 'schafer_trivia_scores',
   ratings: 'schafer_ratings',
   notes: 'schafer_notes',
+  deletedNotes: 'schafer_deleted_notes',
   collections: 'schafer_collections',
   mealPlan: 'schafer_meal_plan',
   theme: 'schafer_theme',

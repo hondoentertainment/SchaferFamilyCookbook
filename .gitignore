@@ -46,3 +46,6 @@ images_audit.csv
 .claude/
 .env*.local
 .env.vercel.audit.tmp
+
+# Local Playwright override (container-specific browser paths)
+playwright.local.config.ts

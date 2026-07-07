@@ -25,6 +25,7 @@ const CookModeView = lazy(() => import('./components/CookModeView').then(m => ({
 import { BottomNav } from './components/BottomNav';
 import { getFavoriteIds, toggleFavorite } from './utils/favorites';
 import { useUserPrefsSync, type UserPrefsSyncStatus } from './services/useUserPrefsSync';
+import { refreshFamilyPrefs } from './services/familyPrefs';
 import { useOfflineRecipeIds } from './hooks/useOfflineRecipeIds';
 import { recordRecipeView, getRecentRecipeIds, getRecentlyViewedEntries } from './utils/recentlyViewed';
 import { useFocusTrap } from './utils/focusTrap';
@@ -87,6 +88,7 @@ const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({
 const InstallPrompt = lazy(() => import('./components/InstallPrompt').then(m => ({ default: m.InstallPrompt })));
 const HelpView = lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })));
 const FeaturedStrip = lazy(() => import('./components/FeaturedStrip').then(m => ({ default: m.FeaturedStrip })));
+const CookbookPrintView = lazy(() => import('./components/CookbookPrintView').then(m => ({ default: m.CookbookPrintView })));
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { SectionSubNav } from './components/SectionSubNav';
 import { FamilySubNavHint } from './components/FamilySubNavHint';
@@ -758,11 +760,20 @@ const App: React.FC = () => {
         onSyncStatus: setPrefsSyncStatus,
     });
 
+    // Fetch the family-wide ratings/notes aggregate on login so social proof
+    // (averages, Family Approved, notes) reflects the whole family, not just
+    // this device. Readers listen for FAMILY_PREFS_UPDATED_EVENT.
+    useEffect(() => {
+        if (!currentUser?.name) return;
+        void refreshFamilyPrefs();
+    }, [currentUser?.name]);
+
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [cookModeFromOfflineCache, setCookModeFromOfflineCache] = useState(false);
     const [groceryHighlightTitle, setGroceryHighlightTitle] = useState<string | null>(null);
 
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [showCookbookPrint, setShowCookbookPrint] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [spotlightContributor, setSpotlightContributor] = useState<ContributorProfile | null>(null);
     const [galleryUploadBannerDismissed, setGalleryUploadBannerDismissed] = useState(() => {
@@ -895,14 +906,14 @@ const App: React.FC = () => {
         const provider = CloudArchive.getProvider();
         if (provider !== 'firebase' || !CloudArchive.getFirebase()) {
             refreshLocalState().then(() => { setIsDataLoading(false); setIsInitialLoad(false); });
-            // Auto-seed trivia if empty in local mode
+            // Auto-seed trivia only when the local archive is pristine (empty).
+            // Topping up missing ids on every boot would resurrect questions an
+            // admin deliberately deleted (and stomp E2E test seeds).
             if (provider === 'local') {
                 CloudArchive.getTrivia()
                     .then(current => {
-                        const existingIds = new Set(current.map((t) => t.id));
-                        const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
-                        if (missing.length === 0) return;
-                        return Promise.all(missing.map(t => CloudArchive.upsertTrivia(t as Trivia)))
+                        if (current.length > 0) return;
+                        return Promise.all(TRIVIA_SEED.map(t => CloudArchive.upsertTrivia(t as Trivia)))
                             .then(refreshLocalState);
                     })
                     .catch(() => toast(CLOUD_ERROR_MSG, 'error'));
@@ -921,14 +932,10 @@ const App: React.FC = () => {
         const unsubH = CloudArchive.subscribeHistory(setHistory);
         const unsubPhone = CloudArchive.subscribeArchivePhone(setArchivePhone);
 
-        void CloudArchive.getTrivia()
-            .then((current) => {
-                const existingIds = new Set(current.map((t) => t.id));
-                const missing = TRIVIA_SEED.filter((t) => !existingIds.has(t.id));
-                if (missing.length === 0) return;
-                return Promise.all(missing.map((t) => CloudArchive.upsertTrivia(t as Trivia)));
-            })
-            .catch(() => { /* non-fatal — live subscription still applies */ });
+        // Note: no trivia auto-seed in firebase mode. getTrivia() reads local
+        // storage, so the old seed loop saw every built-in question as missing
+        // and issued 32 anonymous setDocs on EVERY boot — all denied by rules
+        // (trivia writes require admin). Cloud trivia is managed via Admin.
 
         return () => { unsubR(); unsubT(); unsubG(); unsubC(); unsubH(); unsubPhone(); };
     }, []);
@@ -2016,6 +2023,12 @@ const App: React.FC = () => {
                 </Suspense>
             )}
 
+            {showCookbookPrint && (
+                <Suspense fallback={null}>
+                    <CookbookPrintView recipes={recipes} onClose={() => setShowCookbookPrint(false)} />
+                </Suspense>
+            )}
+
             {tab === 'Home' && (
                 <Suspense fallback={<TabFallback />}>
                     <HomeView
@@ -2103,6 +2116,18 @@ const App: React.FC = () => {
                                 >
                                     ← Back to home
                                 </button>
+                                <button
+                                    type="button"
+                                    data-testid="open-cookbook-print-mobile"
+                                    onClick={() => {
+                                        hapticLight();
+                                        trackEvent('cookbook_print_opened', { recipeCount: recipes.length });
+                                        setShowCookbookPrint(true);
+                                    }}
+                                    className="mt-2 ml-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100/85 underline-offset-2 hover:underline"
+                                >
+                                    🖨 Print cookbook
+                                </button>
                             </section>
 
                             <section className="relative hidden overflow-hidden rounded-[2.75rem] bg-[#2D4635] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:block">
@@ -2127,6 +2152,18 @@ const App: React.FC = () => {
                                         <p className="max-w-xl font-serif text-lg italic leading-relaxed text-emerald-50/85">
                                             Search {dbStats.recipeCount} family recipes by dish, ingredient, person, season, or occasion.
                                         </p>
+                                        <button
+                                            type="button"
+                                            data-testid="open-cookbook-print"
+                                            onClick={() => {
+                                                hapticLight();
+                                                trackEvent('cookbook_print_opened', { recipeCount: recipes.length });
+                                                setShowCookbookPrint(true);
+                                            }}
+                                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-emerald-100/40 px-5 py-2 text-xs font-black uppercase tracking-widest text-emerald-50 transition-colors hover:bg-white/10"
+                                        >
+                                            <span aria-hidden>🖨</span> Print the family cookbook
+                                        </button>
                                     </div>
                                 </div>
                             </section>

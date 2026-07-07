@@ -49,7 +49,9 @@ test.describe('Profile', () => {
   test('shows user recipes section', async ({ page }) => {
     await page.getByTestId('nav-profile').click();
 
-    await expect(page.getByRole('heading', { name: /My Shared Recipes/i })).toBeVisible({ timeout: 3000 });
+    // Shared recipes now live behind the "My recipes" shelf tab in Activity.
+    await page.getByRole('tab', { name: /My recipes/i }).click();
+    await expect(page.locator('[aria-label="My shared recipes"]')).toBeVisible({ timeout: 3000 });
   });
 
   test('shows favorited recipe in My Favorites after favoriting from browse', async ({ page }) => {
@@ -78,6 +80,8 @@ test.describe('Profile', () => {
 
     await page.getByTestId('nav-profile').click();
 
+    // Recently viewed lives behind the "Recent" shelf tab in Activity.
+    await page.getByRole('tab', { name: /^Recent\b/ }).click();
     const recentSection = page.locator('[aria-label="Recently viewed"]');
     await expect(recentSection.getByText(title!.trim(), { exact: true })).toBeVisible({ timeout: 5000 });
   });

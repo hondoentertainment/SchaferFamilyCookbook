@@ -10,7 +10,10 @@ test.describe('Recipes tab', () => {
   });
 
   test('displays hero section and recipe count', async ({ page }) => {
-    await expect(page.getByText(/Find something worth cooking tonight/i)).toBeVisible();
+    // The headline exists in both the mobile and desktop hero sections; use
+    // getByRole so the CSS-hidden variant (absent from the a11y tree) is
+    // excluded and only the visible heading matches.
+    await expect(page.getByRole('heading', { name: /Find something worth cooking tonight/i })).toBeVisible();
     await expect(page.getByText(/The Schafer Cookbook/i)).toBeVisible();
     await expect(page.getByText(/Search \d+ family recipes by dish, ingredient, person, season, or occasion/i)).toBeVisible();
   });

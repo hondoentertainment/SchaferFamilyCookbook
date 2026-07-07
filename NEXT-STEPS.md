@@ -1,6 +1,29 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-04 (batch 16 — productionize + API fix)_
+_Last updated: 2026-07-04 (batch 16 — productionize + API fix; PR #64 in review)_
+
+## In review (July 2026 — PR #64)
+
+### Shared family ratings & notes — code complete, needs rules deploy
+
+- **Family-wide aggregate** — every client fetches all `userPrefs` docs (already world-readable by design) into a local cache (`familyPrefs:v1`); recipe averages, "Family Approved", "Cooked by N", and Family Notes now reflect the *whole family*, not just this device
+- **Notes + displayName sync** — `userPrefs` docs now carry `notes` (RecipeNote list), `deletedNoteIds` tombstones, and `displayName`; merged on login like other prefs
+- **⚠️ Owner action — deploy updated Firestore rules** (`firebase deploy --only firestore:rules`), ideally before or immediately after merge. Until the new rules are live, clients whose full write is rejected automatically retry with the legacy payload shape (favorites/ratings/collections/meal plan/grocery keep syncing; notes/displayName wait for the rules)
+
+### Printable heirloom cookbook — shipped in PR
+
+- **Print the family cookbook** button (Recipes hero, desktop + mobile) → cover, table of contents, category chapters, one-recipe-per-block print layout; browser print dialog does PDF export
+
+### Recipe Cook tab (earlier commits on PR #64)
+
+- **Step timers** — "Start N-min timer" chips on instruction cards with countdown + toast
+- **Wake lock** — screen stays awake in Cook tab; re-acquired after tab switches
+- **Scaled-servings indicator** — "Quantities scaled for N — original serves M" + Reset
+
+### CI / e2e (PR #64 + issue #65)
+
+- **trivia.spec repaired** (6/6), e2e sharded per browser, live line reporter
+- **e2e suite repaired and blocking again** (#65 closed) — green on both browsers (~5 min each)
 
 ## Productionize (one command)
 
