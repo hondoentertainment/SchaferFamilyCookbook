@@ -60,13 +60,14 @@ export function buildRecipeSchema(recipe: Recipe): Record<string, unknown> {
   return schema;
 }
 
-/** Parse "30 min", "1 hr", "45 minutes" etc. to ISO 8601 duration minutes */
+/** Parse "30 min", "1 hr", "1.5 hr", "1 hr 15 min", "45 minutes" etc. to ISO 8601 duration minutes */
 function parseDurationToISO(input: string): string {
   const s = input.toLowerCase().replace(/\s/g, '');
-  const hourMatch = s.match(/(\d+)\s*h(?:ou?rs?)?/);
-  const minMatch = s.match(/(\d+)\s*m(?:in(?:utes?)?)?/);
+  // Decimal-aware so "1.5hr" reads as 90 minutes, not a stray "5h" match.
+  const hourMatch = s.match(/(\d+(?:\.\d+)?)h(?:ou?rs?|rs?)?/);
+  const minMatch = s.match(/(\d+)m(?:in(?:utes?)?s?)?/);
   let totalMins = 0;
-  if (hourMatch) totalMins += parseInt(hourMatch[1], 10) * 60;
+  if (hourMatch) totalMins += Math.round(parseFloat(hourMatch[1]) * 60);
   if (minMatch) totalMins += parseInt(minMatch[1], 10);
   if (!hourMatch && !minMatch) {
     const num = parseInt(input.replace(/\D/g, ''), 10);

@@ -30,6 +30,7 @@
     "images:generate:local": "node scripts/generate-recipe-derived-local-images.mjs",
     "images:apply:realistic-temp": "node scripts/apply-realistic-temporary-images.mjs && node scripts/sync-recipes-for-api.mjs",
     "images:verify": "node scripts/verify-recipe-images.mjs",
+    "images:responsive": "node scripts/generate-responsive-images.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",
     "verify:storage": "node scripts/verify-storage.mjs",
@@ -64,7 +65,8 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "sharp": "^0.34.5",
-    "twilio": "^5.12.0"
+    "twilio": "^5.12.0",
+    "web-vitals": "^5.3.0"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
@@ -78,6 +80,8 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.14.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
     "@vercel/node": "^5.5.27",

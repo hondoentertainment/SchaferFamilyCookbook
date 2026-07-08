@@ -33,14 +33,14 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             {titleLevel === 1 ? (
                 <h1
                     id={id}
-                    className="text-2xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
+                    className="text-2xl md:text-4xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 leading-tight"
                 >
                     {title}
                 </h1>
             ) : (
                 <h2
                     id={id}
-                    className="text-2xl md:text-4xl font-serif italic text-[#2D4635] dark:text-emerald-300 leading-tight"
+                    className="text-2xl md:text-4xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 leading-tight"
                 >
                     {title}
                 </h2>

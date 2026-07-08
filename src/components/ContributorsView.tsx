@@ -154,7 +154,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                         placeholder="Search contributors…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full max-w-md px-6 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base text-stone-700 dark:text-stone-200 placeholder:text-stone-500 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-[#2D4635]/20 focus:border-[#2D4635] transition-colors"
+                        className="w-full max-w-md px-6 py-4 bg-white/80 dark:bg-[var(--input-bg)] backdrop-blur border border-stone-200 dark:border-stone-700 rounded-full shadow-sm outline-none text-base text-stone-700 dark:text-stone-200 placeholder:text-stone-500 dark:placeholder:text-stone-500 focus:ring-2 focus:ring-[var(--color-brand)]/20 focus:border-[var(--color-brand)] transition-colors"
                         aria-describedby={search ? "search-results" : undefined}
                     />
                     {search && (
@@ -219,7 +219,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                         />
                                         {admin && (
                                             <span
-                                                className="absolute bottom-0 right-0 w-8 h-8 md:w-9 md:h-9 bg-[#2D4635] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg"
+                                                className="absolute bottom-0 right-0 w-8 h-8 md:w-9 md:h-9 bg-[var(--color-brand)] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg"
                                                 title={`${stat.name} is an administrator`}
                                                 aria-label={`${stat.name} is an administrator`}
                                             >
@@ -227,7 +227,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                             </span>
                                         )}
                                     </div>
-                                    <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-300">{stat.name}</h3>
+                                    <h3 className="text-2xl md:text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300">{stat.name}</h3>
                                     <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500 mt-1 mb-4">
                                         Archive Contributor
                                     </p>

@@ -30,7 +30,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ maxItems = 15 }) => 
           <span className="text-lg mt-0.5 shrink-0">{getActivityIcon(event.type)}</span>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-stone-700 dark:text-stone-300">
-              <span className="font-bold text-[#2D4635] dark:text-emerald-400">{event.userName}</span>{' '}
+              <span className="font-bold text-[var(--color-brand)] dark:text-emerald-400">{event.userName}</span>{' '}
               {event.detail}
             </p>
             <time className="text-[10px] text-stone-400">{formatTimeAgo(event.timestamp)}</time>

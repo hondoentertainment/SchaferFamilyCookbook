@@ -48,7 +48,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 id="shortcuts-modal-title" className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">
+                        <h2 id="shortcuts-modal-title" className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">
                             Keyboard shortcuts
                         </h2>
                         <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
@@ -59,7 +59,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
                         ref={closeBtnRef}
                         type="button"
                         onClick={onClose}
-                        className="min-h-11 min-w-11 shrink-0 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-[var(--bg-tertiary)] dark:text-stone-300 dark:hover:bg-stone-600 transition-colors focus-visible:ring-2 focus-visible:ring-[#2D4635] motion-reduce:transition-none"
+                        className="min-h-11 min-w-11 shrink-0 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-[var(--bg-tertiary)] dark:text-stone-300 dark:hover:bg-stone-600 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] motion-reduce:transition-none"
                         aria-label="Close shortcuts"
                     >
                         ✕

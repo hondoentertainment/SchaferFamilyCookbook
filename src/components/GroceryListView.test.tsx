@@ -137,7 +137,7 @@ describe('GroceryListView', () => {
         fireEvent.click(pageClearAllAgain);
         const reopenedDialog = await screen.findByRole('dialog');
         const dialogConfirm = reopenedDialog.querySelector(
-            'button.bg-red-600, button.bg-\\[\\#2D4635\\]',
+            'button.bg-red-600, button.bg-\\[var\\(--color-brand\\)\\]',
         ) as HTMLButtonElement | null;
         // Fall back: grab the "Clear all" button that's inside the dialog
         const confirmBtn =

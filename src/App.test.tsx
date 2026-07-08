@@ -208,7 +208,11 @@ describe('Featured recipes on Recipes tab', () => {
         localStorage.clear();
     });
 
-    it('does not render the Featured strip when no recipes are featured', async () => {
+    // The bundled seed now curates six featured recipes, and the app merges
+    // bundled defaults with the local DB, so the strip renders even when the
+    // local DB itself has no featured entries. The strip-hides-when-empty
+    // behavior stays covered by FeaturedStrip.test.tsx and featured.test.ts.
+    it('renders the Featured strip from bundled seed data even when local recipes are unfeatured', async () => {
         const recipes = [createMockRecipe({ id: 'plain', title: 'Plain Toast' })];
         localStorage.setItem('schafer_db_recipes', JSON.stringify(recipes));
         renderWithProviders(<App />);
@@ -218,7 +222,7 @@ describe('Featured recipes on Recipes tab', () => {
         fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
         await screen.findAllByText('Plain Toast', {}, { timeout: 3000 });
 
-        expect(screen.queryByTestId('featured-strip')).not.toBeInTheDocument();
+        expect(screen.getByTestId('featured-strip')).toBeInTheDocument();
     });
 
     it('renders the Featured strip on the Recipes tab when at least one recipe is featured', async () => {

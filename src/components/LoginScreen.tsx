@@ -113,7 +113,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] p-4 dark:bg-stone-950 sm:p-6">
                 <a
                     href="#main-content-login"
-                    className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[#2D4635] focus:outline-none focus:ring-2 focus:ring-[#2D4635]"
+                    className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
                 >
                     Skip to main content
                 </a>
@@ -129,7 +129,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             <p className="text-xs font-black uppercase tracking-[0.3em] text-[#7A3F22] dark:text-orange-200">
                                 {siteConfig.tagline ?? 'The Schafer Cookbook'}
                             </p>
-                            <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[#2D4635] dark:text-emerald-100">
+                            <h1 className="mt-3 font-serif text-4xl italic leading-tight text-[var(--color-brand)] dark:text-emerald-100">
                                 {chooserTitle}
                             </h1>
                             <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-stone-700 dark:text-stone-300">
@@ -155,7 +155,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                                 <span className="text-lg" aria-hidden="true">
                                     👋
                                 </span>
-                                <span className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100">
+                                <span className="font-serif text-xl italic text-[var(--color-brand)] dark:text-emerald-100">
                                     I have recipes here
                                 </span>
                                 <span className="text-sm text-stone-600 dark:text-stone-400">
@@ -175,7 +175,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                                 <span className="text-lg" aria-hidden="true">
                                     ✨
                                 </span>
-                                <span className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100">
+                                <span className="font-serif text-xl italic text-[var(--color-brand)] dark:text-emerald-100">
                                     I&apos;m new here
                                 </span>
                                 <span className="text-sm text-stone-600 dark:text-stone-400">
@@ -191,7 +191,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                                 hapticLight();
                                 onBrowseGuest();
                             }}
-                            className="mt-6 w-full min-h-12 rounded-2xl border border-dashed border-stone-300 bg-transparent px-4 py-3 text-sm font-bold text-stone-600 transition-colors hover:border-[#A0522D]/40 hover:text-[#2D4635] dark:border-stone-600 dark:text-stone-300 dark:hover:text-emerald-100"
+                            className="mt-6 w-full min-h-12 rounded-2xl border border-dashed border-stone-300 bg-transparent px-4 py-3 text-sm font-bold text-stone-600 transition-colors hover:border-[#A0522D]/40 hover:text-[var(--color-brand)] dark:border-stone-600 dark:text-stone-300 dark:hover:text-emerald-100"
                         >
                             Browse recipes without signing in
                         </button>
@@ -225,7 +225,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         <div className="cookbook-paper min-h-screen overflow-hidden bg-[#FDFBF7] p-4 dark:bg-stone-950 sm:p-6">
             <a
                 href="#main-content-login"
-                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[#2D4635] focus:outline-none focus:ring-2 focus:ring-[#2D4635]"
+                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
             >
                 Skip to main content
             </a>
@@ -245,13 +245,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             setLoginName('');
                             setFamilySearch('');
                         }}
-                        className="mb-4 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 transition-colors hover:text-[#2D4635] dark:hover:text-emerald-200"
+                        className="mb-4 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 transition-colors hover:text-[var(--color-brand)] dark:hover:text-emerald-200"
                     >
                         ← Back
                     </button>
 
                     <div className="mb-6 text-center">
-                        <h1 className="font-serif text-3xl italic leading-tight text-[#2D4635] dark:text-emerald-100 sm:text-4xl">
+                        <h1 className="font-serif text-3xl italic leading-tight text-[var(--color-brand)] dark:text-emerald-100 sm:text-4xl">
                             {title}
                         </h1>
                         <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-stone-700 dark:text-stone-300">
@@ -419,7 +419,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         <button
                             type="submit"
                             disabled={!trimmedName}
-                            className="w-full min-h-14 rounded-2xl bg-[#2D4635] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
+                            className="w-full min-h-14 rounded-2xl bg-[var(--color-brand)] px-6 py-4 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_14px_30px_rgba(45,70,53,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1B2C22] hover:shadow-[0_18px_36px_rgba(45,70,53,0.34)] active:scale-[0.99] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
                         >
                             {hasAffiliation && isReturning
                                 ? `Continue as ${firstName(affiliation.canonicalName)}`
@@ -430,7 +430,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             {loginHelp}{' '}
                             <a
                                 href="mailto:?subject=Schafer%20Family%20Cookbook%20Access%20Request"
-                                className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[#2D4635] dark:text-orange-200 dark:hover:text-emerald-100"
+                                className="font-bold text-[#7A3F22] underline decoration-[#A0522D]/40 underline-offset-4 hover:text-[var(--color-brand)] dark:text-orange-200 dark:hover:text-emerald-100"
                             >
                                 Email an admin.
                             </a>

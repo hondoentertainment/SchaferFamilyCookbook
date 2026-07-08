@@ -112,9 +112,9 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
     const letterButtonClass = (active: boolean, inView: boolean) =>
         `text-[11px] font-black rounded-full flex items-center justify-center transition-all shrink-0 min-w-[2.75rem] min-h-[2.75rem] ${
             inView
-                ? 'bg-[#2D4635] text-white shadow-md scale-110'
+                ? 'bg-[var(--color-brand)] text-white shadow-md scale-110'
                 : active
-                    ? 'text-[#2D4635] hover:bg-[#2D4635] hover:text-white'
+                    ? 'text-[var(--color-brand)] hover:bg-[var(--color-brand)] hover:text-white'
                     : 'text-stone-200'
         }`;
 
@@ -123,8 +123,8 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
             {/* Mobile: compact horizontal scrollable letter strip */}
             <div className="md:hidden -mx-6 mb-4 sticky top-[var(--header-offset,4rem)] z-10 bg-white/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2 border-b border-stone-100 dark:border-stone-800">
                 <div className="px-4 pt-3 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Jump by letter</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Scroll for more →</p>
+                    <p className="label text-stone-500">Jump by letter</p>
+                    <p className="label text-stone-500">Scroll for more →</p>
                 </div>
                 <div className="overflow-x-auto overflow-y-hidden scroll-smooth no-scrollbar px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex flex-nowrap gap-1.5 justify-start py-2 min-w-max">
@@ -163,7 +163,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
             </div>
 
             <div className="flex-1 space-y-20">
-                <h2 className="text-4xl font-serif italic text-[#2D4635] mb-12">Archival Index</h2>
+                <h2 className="text-4xl font-serif italic text-[var(--color-brand)] mb-12">Archival Index</h2>
                 {activeLetters.length === 0 && (
                     <div className="text-center py-32 bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[3rem] border border-stone-100 dark:border-stone-800 space-y-2" role="status">
                         <p className="text-stone-500 font-serif">Index is empty.</p>
@@ -172,7 +172,7 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                             <button
                                 type="button"
                                 onClick={onGoToRecipes}
-                                className="mt-6 px-6 py-3 bg-[#2D4635] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                className="mt-6 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                             >
                                 Browse recipes
                             </button>
@@ -187,10 +187,10 @@ export const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ recipes, o
                             {grouped[l].map(r => (
                                 <button key={r.id} onClick={() => onSelect(r)} className="group flex items-center justify-between p-6 bg-white dark:bg-[var(--card-bg)] rounded-[2rem] border border-stone-100 dark:border-stone-800 hover:shadow-xl transition-all text-left">
                                     <div className="overflow-hidden">
-                                        <p className="text-xl font-serif italic text-[#2D4635] dark:text-emerald-300 mb-1 truncate">{r.title}</p>
+                                        <p className="text-xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 mb-1 truncate">{r.title}</p>
                                         <p className="text-[9px] uppercase tracking-widest text-stone-500 dark:text-stone-400">By {r.contributor} • {r.category}</p>
                                     </div>
-                                    <span className="text-[9px] font-black uppercase text-stone-300 dark:text-stone-600 group-hover:text-[#2D4635] dark:group-hover:text-emerald-300 ml-4 shrink-0 transition-all">Open →</span>
+                                    <span className="text-[9px] font-black uppercase text-stone-300 dark:text-stone-600 group-hover:text-[var(--color-brand)] dark:group-hover:text-emerald-300 ml-4 shrink-0 transition-all">Open →</span>
                                 </button>
                             ))}
                         </div>

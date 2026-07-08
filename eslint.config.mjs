@@ -47,7 +47,7 @@ export default defineConfig([
       "react/prop-types": "off",
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "prefer-const": "error",
       "no-var": "error",
       ...jsxA11Y.configs.recommended.rules,

@@ -39,6 +39,7 @@ export default defineConfig({
                 'scripts/run-next-steps.mjs',
                 'scripts/lib/**',
                 'scripts/set-admin-claim.mjs',
+                'scripts/extract-recipe-metadata.mjs',
                 'scripts/sync-firebase-sw-config.test.mjs',
                 '**/*.test.{ts,tsx,mjs}',
                 '**/*.spec.{ts,tsx,mjs}',

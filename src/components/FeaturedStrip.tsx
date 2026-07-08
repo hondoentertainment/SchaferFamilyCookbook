@@ -54,7 +54,7 @@ export const FeaturedStrip: React.FC<FeaturedStripProps> = ({ recipes, onSelect 
                                 </span>
                             </div>
                             <div className="flex flex-col gap-1 p-4">
-                                <span className="line-clamp-2 font-serif text-base font-bold leading-tight text-[#2D4635] dark:text-emerald-100">
+                                <span className="line-clamp-2 font-serif text-base font-bold leading-tight text-[var(--color-brand)] dark:text-emerald-100">
                                     {recipe.title}
                                 </span>
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400">

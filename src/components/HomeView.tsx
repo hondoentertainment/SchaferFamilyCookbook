@@ -91,7 +91,7 @@ const RecipeMiniCard: React.FC<{
                     </div>
                     <div className="space-y-1.5 p-4 pb-3">
                         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
-                        <h3 className="text-sm font-serif italic text-[#2D4635] dark:text-emerald-100 line-clamp-2 leading-snug">{recipe.title}</h3>
+                        <h3 className="text-sm font-serif italic text-[var(--color-brand)] dark:text-emerald-100 line-clamp-2 leading-snug">{recipe.title}</h3>
                         <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
                             By {recipe.contributor}
                             {rating > 0 && <span className="text-amber-600 ml-1">· ★ {rating.toFixed(1)}{ratingCount > 0 ? ` (${ratingCount})` : ''}</span>}
@@ -216,7 +216,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <p className="text-xs font-semibold uppercase tracking-wider text-[#7A3F22] dark:text-orange-200">
                             <span aria-hidden>{season.emoji}</span> {season.label}
                         </p>
-                        <h1 className="font-serif text-4xl italic leading-[1.02] text-[#2D4635] dark:text-emerald-100 sm:text-5xl md:text-6xl">
+                        <h1 className="font-serif text-4xl italic leading-[1.02] text-[var(--color-brand)] dark:text-emerald-100 sm:text-5xl md:text-6xl">
                             {greeting}, <span className="text-[#A0522D]">{currentUser.name.split(' ')[0]}</span>.
                         </h1>
                         <p className="max-w-2xl font-serif text-lg italic leading-relaxed text-stone-700 dark:text-stone-300">
@@ -225,15 +225,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
-                            <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{recipes.length}</p>
+                            <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">{recipes.length}</p>
                             <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Recipes</p>
                         </div>
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
-                            <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{favoriteRecipes.length}</p>
+                            <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">{favoriteRecipes.length}</p>
                             <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Saved</p>
                         </div>
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
-                            <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">{contributors.length}</p>
+                            <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">{contributors.length}</p>
                             <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Cooks</p>
                         </div>
                     </div>
@@ -293,7 +293,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     onClick={() => { hapticLight(); onSelectRecipe(recipe); }}
                                     className="min-w-0 flex-1 text-left"
                                 >
-                                    <p className="font-serif italic text-[#2D4635] dark:text-emerald-100 truncate">{recipe.title}</p>
+                                    <p className="font-serif italic text-[var(--color-brand)] dark:text-emerald-100 truncate">{recipe.title}</p>
                                     <p className="text-xs text-stone-500 dark:text-stone-400">{recipe.category} · By {recipe.contributor}</p>
                                 </button>
                                 <div className="flex flex-wrap gap-2 shrink-0">
@@ -327,7 +327,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <h2 id="home-trivia-teaser-heading" className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                             Family Heritage Quiz
                         </h2>
-                        <p className="font-serif text-lg italic text-[#2D4635] dark:text-emerald-100">
+                        <p className="font-serif text-lg italic text-[var(--color-brand)] dark:text-emerald-100">
                             {triviaQuestionCount} question{triviaQuestionCount !== 1 ? 's' : ''} waiting — test what you know about the family.
                         </p>
                     </div>
@@ -378,7 +378,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">★ Family Approved</span>
                                     )}
                                 </div>
-                                <h3 className="text-2xl md:text-3xl font-serif italic text-[#2D4635] dark:text-emerald-100 leading-tight">
+                                <h3 className="text-2xl md:text-3xl font-serif italic text-[var(--color-brand)] dark:text-emerald-100 leading-tight">
                                     {recipeOfWeek.title}
                                 </h3>
                                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-stone-500 dark:text-stone-400">
@@ -410,7 +410,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     <button
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); hapticLight(); onStartCook(recipeOfWeek); }}
-                                        className="min-h-11 rounded-full bg-[#2D4635] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#1B2C22]"
+                                        className="min-h-11 rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#1B2C22]"
                                     >
                                         Cook now
                                     </button>
@@ -439,7 +439,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     onClick={() => { hapticLight(); setShelfTab('recent'); }}
                                     className={`min-h-11 rounded-full px-4 py-2 text-sm font-serif italic transition-colors ${
                                         shelfTab === 'recent'
-                                            ? 'bg-[#2D4635] text-white'
+                                            ? 'bg-[var(--color-brand)] text-white'
                                             : 'text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
                                     }`}
                                 >
@@ -452,7 +452,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     onClick={() => { hapticLight(); setShelfTab('favorites'); }}
                                     className={`min-h-11 rounded-full px-4 py-2 text-sm font-serif italic transition-colors ${
                                         shelfTab === 'favorites'
-                                            ? 'bg-[#2D4635] text-white'
+                                            ? 'bg-[var(--color-brand)] text-white'
                                             : 'text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
                                     }`}
                                 >
@@ -561,7 +561,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             <button
                                 type="button"
                                 onClick={() => { hapticLight(); openRecipes(); }}
-                                className="min-h-11 rounded-full bg-[#2D4635] px-5 py-2 text-sm font-bold text-white"
+                                className="min-h-11 rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-bold text-white"
                             >
                                 Browse recipes
                             </button>

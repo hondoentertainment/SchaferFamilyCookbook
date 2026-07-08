@@ -317,7 +317,7 @@ export const CloudArchive = {
         if (provider === 'firebase') {
             const fb = this.getFirebase();
             if (!fb) return;
-            await updateDoc(doc(fb.db, 'gallery', id), payload);
+            await updateDoc(doc(fb.db, 'gallery', id), payload as Record<string, string>);
         } else {
             const current = safeParseArray<GalleryItem>(localStorage.getItem('schafer_db_gallery'));
             const index = current.findIndex((g) => g.id === id);
