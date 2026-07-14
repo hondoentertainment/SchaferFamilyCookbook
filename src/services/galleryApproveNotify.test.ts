@@ -35,7 +35,7 @@ describe('notifyGalleryApproved', () => {
         await notifyGalleryApproved(sampleItem);
 
         expect(mockFetch).toHaveBeenCalledOnce();
-        const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+        const [url, init] = mockFetch.mock.calls[0] as [string, { method?: string; headers?: Record<string, string>; body?: string }];
         expect(url).toBe('/api/notify');
         expect(init.method).toBe('POST');
         expect(init.headers).toMatchObject({
