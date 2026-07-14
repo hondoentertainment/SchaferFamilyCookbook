@@ -106,6 +106,13 @@ export const HelpView: React.FC = () => {
                 </p>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
                     <li>
+                        <strong className="font-bold">Launch finalize</strong> — run{' '}
+                        <code className="text-xs">npm run finalize</code> for ops audit, smoke test, and CI coverage
+                        check. With credentials in <code className="text-xs">.env.local</code>, add{' '}
+                        <code className="text-xs">--apply --deploy</code> (and <code className="text-xs">--migrate --yes</code>{' '}
+                        when <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code> is set).
+                    </li>
+                    <li>
                         <strong className="font-bold">Text-to-gallery (Twilio MMS)</strong> — set{' '}
                         <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code>,{' '}
                         <code className="text-xs">TWILIO_AUTH_TOKEN</code>, and{' '}
