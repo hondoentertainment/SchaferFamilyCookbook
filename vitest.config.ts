@@ -36,9 +36,13 @@ export default defineConfig({
                 // testable in CI — same class as deploy-*/verify-* above.
                 'scripts/configure-*.mjs',
                 'scripts/productionize.mjs',
+                'scripts/finalize-launch.mjs',
                 'scripts/run-next-steps.mjs',
+                'scripts/load-local-env.mjs',
+                'scripts/set-archive-phone.mjs',
                 'scripts/lib/**',
                 'scripts/set-admin-claim.mjs',
+                'api/lib/recipeImagePrompts.ts',
                 'scripts/sync-firebase-sw-config.test.mjs',
                 '**/*.test.{ts,tsx,mjs}',
                 '**/*.spec.{ts,tsx,mjs}',

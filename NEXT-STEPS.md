@@ -1,6 +1,16 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-08 (batch 15 merged + deployed; batch 16 — productionize + API fix)_
+_Last updated: 2026-07-14 (batch 17 — finalize launch; batch 15 merged + deployed)_
+
+## Finalize (recommended before family launch)
+
+```bash
+npm run finalize                    # CI coverage + ops audit + smoke
+npm run finalize -- --apply         # push .env.local vars to Vercel
+npm run finalize -- --deploy        # Vercel production deploy
+npm run finalize -- --all           # apply + migrate dry-run + deploy + lighthouse
+npm run finalize -- --migrate --yes # live contributor migration (needs FIREBASE_SERVICE_ACCOUNT)
+```
 
 ## Shipped (July 2026 — PR #64, merged 2026-07-07)
 
@@ -37,9 +47,15 @@ npm run productionize -- --all     # apply + migrate dry-run + deploy + lighthou
 npm run productionize -- --migrate --yes   # live Firestore contributor migration (needs FIREBASE_SERVICE_ACCOUNT)
 ```
 
-## Recently shipped (July 2026 — batch 16)
+## Recently shipped (July 2026 — batch 17)
 
-### API route fix — ✅ shipped
+### Finalize launch tooling — ✅ shipped
+
+- **`npm run finalize`** — CI coverage self-check, full ops audit, smoke, manual walkthrough prompts
+- **Lighthouse** — block Firestore long-polling URLs to avoid CI/local timeouts
+- **Tests** — `galleryApproveNotify`, `recipeImagePrompts` re-export coverage
+
+### Batch 16 (prior)
 
 - **`/api/notify`**, **`/api/webhook`**, **`/api/gemini`** were crashing on Vercel cold start (`FUNCTION_INVOCATION_FAILED`) due to ESM import paths without `.js` extensions and an out-of-tree `shared/` import for Gemini prompts.
 - Fixed relative imports; added `api/lib/recipeImagePrompts.ts` re-export for serverless bundling.
@@ -75,6 +91,7 @@ npm run productionize -- --migrate --yes   # live Firestore contributor migratio
 
 | Script | Purpose |
 |--------|---------|
+| `npm run finalize` | Pre-launch: CI coverage + ops + smoke + walkthrough |
 | `npm run productionize` | Full production readiness pass |
 | `npm run next-steps` | Lighter checklist (verify, audits, smoke) |
 | `npm run configure:sentry` | Sentry DSN audit/apply |

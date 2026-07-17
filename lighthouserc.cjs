@@ -10,8 +10,24 @@ module.exports = {
       url: [url],
       numberOfRuns: 2,
       settings: [
-        { preset: 'desktop' },
-        { preset: 'mobile' },
+        {
+          preset: 'desktop',
+          blockedUrlPatterns: [
+            'firestore.googleapis.com',
+            'firebaseio.com',
+            'fcm.googleapis.com',
+          ],
+          maxWaitForLoad: 45000,
+        },
+        {
+          preset: 'mobile',
+          blockedUrlPatterns: [
+            'firestore.googleapis.com',
+            'firebaseio.com',
+            'fcm.googleapis.com',
+          ],
+          maxWaitForLoad: 45000,
+        },
       ],
     },
     assert: {
