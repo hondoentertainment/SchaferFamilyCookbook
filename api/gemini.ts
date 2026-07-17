@@ -19,6 +19,27 @@ type RecipeInput = {
     instructions?: string[];
 };
 
+const RECIPE_EXTRACTION_INSTRUCTION =
+    'Analyze this recipe and extract structured JSON data. Fields: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime, calories (number - estimated total).';
+
+const RECIPE_EXTRACTION_SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+        title: { type: 'STRING' },
+        category: { type: 'STRING' },
+        ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
+        instructions: { type: 'ARRAY', items: { type: 'STRING' } },
+        prepTime: { type: 'STRING' },
+        cookTime: { type: 'STRING' },
+        calories: { type: 'NUMBER' }
+    }
+};
+
+const IMPORT_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
+// 8 MB of raw image data, measured against its base64 encoding (4/3 overhead).
+const IMPORT_PHOTO_MAX_BASE64_CHARS = 11_000_000;
+
 function getErrorMessage(err: unknown): string {
     if (err instanceof Error) return err.message;
     return String(err ?? '');
@@ -126,20 +147,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 model: TEXT_MODEL,
                 contents: [{ role: 'user', parts: [{ text: `Recipe text: ${rawText}` }] }],
                 config: {
-                    systemInstruction: 'Analyze this recipe and extract structured JSON data. Fields: title, category (Breakfast|Main|Dessert|Side|Appetizer|Bread|Dip/Sauce|Snack), ingredients (list), instructions (list), prepTime, cookTime, calories (number - estimated total).',
+                    systemInstruction: RECIPE_EXTRACTION_INSTRUCTION,
                     responseMimeType: 'application/json',
-                    responseSchema: {
-                        type: 'OBJECT',
-                        properties: {
-                            title: { type: 'STRING' },
-                            category: { type: 'STRING' },
-                            ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
-                            instructions: { type: 'ARRAY', items: { type: 'STRING' } },
-                            prepTime: { type: 'STRING' },
-                            cookTime: { type: 'STRING' },
-                            calories: { type: 'NUMBER' }
-                        }
-                    }
+                    responseSchema: RECIPE_EXTRACTION_SCHEMA
+                }
+            });
+            const result = typeof response.text === 'string' ? response.text : '{}';
+            return res.status(200).json({ json: result });
+        }
+
+        if (action === 'importPhoto') {
+            const imageBase64 = typeof body.imageBase64 === 'string' ? body.imageBase64 : '';
+            const mimeType = typeof body.mimeType === 'string' ? body.mimeType : '';
+            if (!imageBase64) return res.status(400).json({ error: 'Missing imageBase64' });
+            if (!IMPORT_PHOTO_MIME_TYPES.includes(mimeType)) {
+                return res.status(400).json({ error: 'Unsupported image type. Use a JPEG, PNG, WebP, or HEIC photo.' });
+            }
+            if (imageBase64.length > IMPORT_PHOTO_MAX_BASE64_CHARS) {
+                return res.status(400).json({ error: 'Photo exceeds the 8 MB limit' });
+            }
+            const response = await ai.models.generateContent({
+                model: TEXT_MODEL,
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { inlineData: { data: imageBase64, mimeType } },
+                        { text: 'Transcribe the recipe shown in this photo (it may be a handwritten card, a cookbook page, or a printout). Preserve the original wording of ingredients and steps.' }
+                    ]
+                }],
+                config: {
+                    systemInstruction: RECIPE_EXTRACTION_INSTRUCTION,
+                    responseMimeType: 'application/json',
+                    responseSchema: RECIPE_EXTRACTION_SCHEMA
                 }
             });
             const result = typeof response.text === 'string' ? response.text : '{}';
