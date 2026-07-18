@@ -60,7 +60,13 @@ export const HelpView: React.FC = () => {
                         Use the <strong className="font-bold">Read / Cook / Share</strong> modes at the top of a recipe to focus on story, cooking, or sending a link.
                     </li>
                     <li>
-                        <strong className="font-bold">Cook mode</strong> keeps your screen awake. Steps and ingredients work offline once you&apos;ve opened the recipe while online. Recipe cards show an <strong className="font-bold">Offline</strong> badge after they&apos;re saved locally. Tap the <strong className="font-bold">🔊 Listen</strong> button to read the current step aloud (Safari on iOS may require tapping Listen each step; speech does not auto-advance).
+                        <strong className="font-bold">Cook mode</strong> keeps your screen awake. Steps and ingredients work offline once you&apos;ve opened the recipe while online. Recipe cards show an <strong className="font-bold">Offline</strong> badge after they&apos;re saved locally. Tap the <strong className="font-bold">🔊 Listen</strong> button to read the current step aloud (Safari on iOS may require tapping Listen each step; speech does not auto-advance). On timed steps, use <strong className="font-bold">Start N-min timer</strong> for a countdown toast.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Print the family cookbook</strong> from the Recipes hero opens a printable cover, table of contents, and category chapters — use your browser&apos;s print dialog for PDF.
+                    </li>
+                    <li>
+                        <strong className="font-bold">Family notes &amp; ratings</strong> on a recipe reflect everyone who has synced prefs — not just this device. Sign in with your name so notes attribute correctly.
                     </li>
                     <li>
                         <strong className="font-bold">Collections</strong> under Groceries let you group recipes — start from a template or build your own shelf.
@@ -111,6 +117,13 @@ export const HelpView: React.FC = () => {
                         check. With credentials in <code className="text-xs">.env.local</code>, add{' '}
                         <code className="text-xs">--apply --deploy</code> (and <code className="text-xs">--migrate --yes</code>{' '}
                         when <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code> is set).
+                    </li>
+                    <li>
+                        <strong className="font-bold">Firestore rules (family notes)</strong> — after changing{' '}
+                        <code className="text-xs">firebase/firestore.rules</code>, run{' '}
+                        <code className="text-xs">npm run deploy:firebase-rules</code> so{' '}
+                        <code className="text-xs">notes</code> / <code className="text-xs">displayName</code> sync.
+                        Verify: family member adds a note → second browser sees it under Family Notes.
                     </li>
                     <li>
                         <strong className="font-bold">Text-to-gallery (Twilio MMS)</strong> — set{' '}

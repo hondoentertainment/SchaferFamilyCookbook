@@ -15,7 +15,6 @@ import { fileURLToPath } from 'node:url';
 import { loadLocalOpsEnv } from './load-local-env.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-loadLocalOpsEnv(root);
 
 const args = new Set(process.argv.slice(2));
 const all = args.has('--all');
@@ -25,9 +24,24 @@ const migrate = all || args.has('--migrate');
 const migrateLive = args.has('--yes');
 const lighthouse = all || args.has('--lighthouse');
 const skipCi = args.has('--skip-ci');
+const pullEnv = args.has('--pull-env') || all;
 
 const blocked = [];
 const manual = [];
+
+if (pullEnv) {
+    console.log('\n━━━ Pull Vercel production env (non-secret values) ━━━');
+    const pull = spawnSync(
+        'npx',
+        ['vercel', 'env', 'pull', '.env.vercel.local', '--environment=production', '--yes'],
+        { stdio: 'inherit', shell: true, cwd: root },
+    );
+    if ((pull.status ?? 1) !== 0) {
+        console.warn('⚠️  vercel env pull failed — continuing with existing local env files');
+    }
+}
+
+loadLocalOpsEnv(root);
 
 function run(label, script, scriptArgs = [], { allowFail = false } = {}) {
     console.log(`\n━━━ ${label} ━━━`);

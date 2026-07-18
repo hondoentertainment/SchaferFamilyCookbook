@@ -39,11 +39,13 @@ A strategic roadmap for the next phases of development, informed by the current 
 ## Immediate Next Steps (1–2 weeks)
 
 ### 1. Product (next sprint)
-- [ ] **Enable Firebase Storage** — console enable, then `npm run deploy:firebase-rules` (Storage rules blocked until then)
+- [x] **Enable Firebase Storage** — enabled; rules deploy via `npm run deploy:firebase-rules`
+- [x] **Firestore rules for family notes** — `notes` / `displayName` on `userPrefs` (deployed 2026-07-17)
 - [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` (+ optional source-map upload vars)
 - [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
 - [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY` after registering reCAPTCHA v3 in Firebase Console
 - [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
+- [ ] **Live prod gallery walkthrough** — family upload → custodian approve on production Firebase
 
 ### 2. Done (recent — June 2026 batch 11)
 - [x] **Gallery decline** — custodian reject pending submissions

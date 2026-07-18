@@ -155,6 +155,51 @@ async function smokeVercelGalleryBundle(vercelBase) {
   }
 }
 
+/** PR #64 launch features should be present across production JS chunks. */
+async function smokeVercelLaunchBundle(vercelBase) {
+  const name = 'Vercel launch feature bundle';
+  const indexUrl = `${vercelBase.replace(/\/$/, '')}/`;
+
+  try {
+    const indexRes = await fetch(indexUrl, { redirect: 'follow' });
+    if (!indexRes.ok) {
+      console.error(`❌ ${name}: index HTTP ${indexRes.status}`);
+      return 1;
+    }
+    const html = await indexRes.text();
+    const scriptPaths = [...html.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
+    if (scriptPaths.length === 0) {
+      console.warn(`⚠️  ${name}: could not find JS bundles in index.html (skipping)`);
+      return 0;
+    }
+    const chunks = await Promise.all(
+      scriptPaths.map(async (src) => {
+        const jsUrl = new URL(src, indexUrl).toString();
+        const jsRes = await fetch(jsUrl, { redirect: 'follow' });
+        if (!jsRes.ok) return '';
+        return jsRes.text();
+      }),
+    );
+    const js = chunks.join('\n');
+    const markers = [
+      'Print the family cookbook',
+      'open-cookbook-print',
+      'recipe-step-timer-start',
+      'Family Notes',
+    ];
+    const missing = markers.filter((m) => !js.includes(m));
+    if (missing.length > 0) {
+      console.error(`❌ ${name}: bundle missing ${missing.join(', ')} (deploy may still be propagating)`);
+      return 1;
+    }
+    console.log(`✅ ${name}`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${name}: ${err.message}`);
+    return 1;
+  }
+}
+
 /** Notify API should reject unauthenticated POST (proves route is deployed). */
 async function smokeVercelNotifyRoute(vercelBase) {
   const name = 'Vercel /api/notify route';
@@ -206,6 +251,7 @@ async function smoke() {
     failed += await smokeVercelPing(vercel.url);
     failed += await smokeVercelShareRoutes(vercel.url);
     failed += await smokeVercelGalleryBundle(vercel.url);
+    failed += await smokeVercelLaunchBundle(vercel.url);
     failed += await smokeVercelNotifyRoute(vercel.url);
   }
 

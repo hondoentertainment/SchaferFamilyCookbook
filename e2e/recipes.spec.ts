@@ -39,4 +39,12 @@ test.describe('Recipes tab', () => {
     await page.getByRole('textbox', { name: /Search recipes, ingredients/i }).fill('xyznonexistent123');
     await expect(page.getByText(/No recipes match your search or filters/i)).toBeVisible({ timeout: 3000 });
   });
+
+  test('opens printable family cookbook overlay', async ({ page }) => {
+    const printBtn = page.getByTestId('open-cookbook-print').or(page.getByTestId('open-cookbook-print-mobile'));
+    await expect(printBtn.first()).toBeVisible({ timeout: 5000 });
+    await printBtn.first().click();
+    await expect(page.getByTestId('cookbook-print-button')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.cookbook-print-overlay')).toBeVisible();
+  });
 });
