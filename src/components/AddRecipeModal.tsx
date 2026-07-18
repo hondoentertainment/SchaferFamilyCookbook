@@ -21,6 +21,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [rawText, setRawText] = useState('');
     const [isMagicLoading, setIsMagicLoading] = useState(false);
+    const [isScanLoading, setIsScanLoading] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [aiCooldownUntil, setAiCooldownUntil] = useState<number>(0);
@@ -134,6 +135,38 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
         } catch (e: unknown) {
             handleAIError(e, 'AI Analysis failed: ${message}');
         } finally { setIsMagicLoading(false); }
+    };
+
+    const readFileAsBase64 = (file: File): Promise<{ base64: string; mimeType: string }> =>
+        new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = typeof reader.result === 'string' ? reader.result : '';
+                const base64 = result.split(',')[1] || '';
+                if (!base64) {
+                    reject(new Error('Could not read the photo'));
+                    return;
+                }
+                resolve({ base64, mimeType: file.type || 'image/jpeg' });
+            };
+            reader.onerror = () => reject(reader.error || new Error('Could not read the photo'));
+            reader.readAsDataURL(file);
+        });
+
+    const handleScanPhoto = async (file: File) => {
+        if (file.size > 8 * 1024 * 1024) {
+            toast('Photo must be under 8 MB.', 'error');
+            return;
+        }
+        setIsScanLoading(true);
+        try {
+            const { base64, mimeType } = await readFileAsBase64(file);
+            const parsed = await geminiProxy.importFromPhoto(base64, mimeType);
+            setRecipeForm(prev => ({ ...prev, ...parsed }));
+            toast('Recipe card scanned! Review the fields below before saving.', 'success');
+        } catch (e: unknown) {
+            handleAIError(e, 'Photo scan failed: ${message}');
+        } finally { setIsScanLoading(false); }
     };
 
     const handleVisualSourcing = async () => {
@@ -251,6 +284,32 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onAddRecipe, onC
                                 🖼️ Use Default Image
                             </button>
                         </div>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Scan a recipe card</span>
+                        <div className="relative group">
+                            <label htmlFor="add-recipe-scan-photo" className="block cursor-pointer">
+                                <input
+                                    id="add-recipe-scan-photo"
+                                    data-testid="add-recipe-scan-photo"
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    disabled={isScanLoading || isAICooldownActive}
+                                    onChange={e => {
+                                        const f = e.target.files?.[0] || null;
+                                        e.target.value = '';
+                                        if (f) void handleScanPhoto(f);
+                                    }}
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
+                                    aria-label="Scan a recipe card photo"
+                                />
+                                <div className={`w-full py-3 bg-[#2D4635]/10 text-[#2D4635] rounded-2xl text-[10px] font-black uppercase tracking-widest border border-[#2D4635]/20 group-hover:bg-[#2D4635]/20 transition-all text-center ${(isScanLoading || isAICooldownActive) ? 'opacity-50' : ''}`}>
+                                    {isAICooldownActive ? `Cooldown ${formatCooldown(aiCooldownSecondsLeft)}` : isScanLoading ? 'Reading card...' : '📷 Photograph a Recipe Card'}
+                                </div>
+                            </label>
+                        </div>
+                        <p className="text-[10px] text-stone-400 ml-2 mt-1">Snap a handwritten card or cookbook page and AI fills in the form.</p>
                     </div>
                     <div>
                         <label htmlFor="add-recipe-magic" className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-2 block mb-1">Paste recipe text for AI</label>

@@ -1,6 +1,6 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-14 (batch 17 — finalize launch; PR #64 in review)_
+_Last updated: 2026-07-14 (batch 17 — finalize launch; batch 15 merged + deployed)_
 
 ## Finalize (recommended before family launch)
 
@@ -12,15 +12,17 @@ npm run finalize -- --all           # apply + migrate dry-run + deploy + lightho
 npm run finalize -- --migrate --yes # live contributor migration (needs FIREBASE_SERVICE_ACCOUNT)
 ```
 
-## In review (July 2026 — PR #64)
+## Shipped (July 2026 — PR #64, merged 2026-07-07)
 
-### Shared family ratings & notes — code complete, needs rules deploy
+Deployed to Vercel prod + GitHub Pages (smoke 9/9 green on merge commit `0bff260`).
+
+### Shared family ratings & notes
 
 - **Family-wide aggregate** — every client fetches all `userPrefs` docs (already world-readable by design) into a local cache (`familyPrefs:v1`); recipe averages, "Family Approved", "Cooked by N", and Family Notes now reflect the *whole family*, not just this device
 - **Notes + displayName sync** — `userPrefs` docs now carry `notes` (RecipeNote list), `deletedNoteIds` tombstones, and `displayName`; merged on login like other prefs
-- **⚠️ Owner action — deploy updated Firestore rules** (`firebase deploy --only firestore:rules`), ideally before or immediately after merge. Until the new rules are live, clients whose full write is rejected automatically retry with the legacy payload shape (favorites/ratings/collections/meal plan/grocery keep syncing; notes/displayName wait for the rules)
+- **Firestore rules deploy** (`firebase deploy --only firestore:rules`) — ✅ closed. Until/unless the live rules match, clients whose full write is rejected automatically retry with the legacy payload shape, so sync degrades gracefully rather than breaking
 
-### Printable heirloom cookbook — shipped in PR
+### Printable heirloom cookbook
 
 - **Print the family cookbook** button (Recipes hero, desktop + mobile) → cover, table of contents, category chapters, one-recipe-per-block print layout; browser print dialog does PDF export
 
