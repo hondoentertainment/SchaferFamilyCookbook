@@ -2705,6 +2705,16 @@ const App: React.FC = () => {
                             trivia={trivia}
                             contributors={contributorsForDisplay}
                             onSelectContributor={(c) => { setContributor(c); setTab('Recipes'); window.scrollTo(0, 0); }}
+                            onOpenSpotlight={(name) => {
+                                const key = contributorMatchKey(name);
+                                const profile = contributorsForDisplay.find((c) => contributorMatchKey(c.name) === key);
+                                setSpotlightContributor(profile ?? {
+                                    id: `seed-${key}`,
+                                    name: normalizeContributorName(name),
+                                    avatar: contributorAvatarUrlForName(name),
+                                    role: 'user',
+                                });
+                            }}
                             onViewGallery={(c) => { setGalleryContributorFilter(c); handleSetTab('Gallery'); window.scrollTo(0, 0); }}
                             onGoToRecipes={() => { handleSetTab('Recipes'); window.scrollTo(0, 0); }}
                         />

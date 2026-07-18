@@ -6,6 +6,7 @@ import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
 import { getEntriesForDate, toDateKey } from '../utils/mealPlan';
+import { recipeOfTheWeek } from '../utils/recipeOfTheWeek';
 import { RecipeImage } from './RecipeImage';
 import { CollapsiblePanel } from './CollapsiblePanel';
 
@@ -45,15 +46,6 @@ const SEASON_TAGS_BY_MONTH: Record<number, { label: string; keywords: string[]; 
     10: { label: 'Thanksgiving', keywords: ['turkey', 'stuffing', 'cranberry', 'sweet potato', 'pie', 'pumpkin'], emoji: '🦃' },
     11: { label: 'Holiday baking', keywords: ['cookie', 'cake', 'gingerbread', 'peppermint', 'eggnog', 'pie', 'roast'], emoji: '🎄' },
 };
-
-function pickRecipeOfWeek(recipes: Recipe[]): Recipe | null {
-    if (recipes.length === 0) return null;
-    const now = new Date();
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    const weekOfYear = Math.floor((now.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24 * 7));
-    const sorted = [...recipes].sort((a, b) => a.id.localeCompare(b.id));
-    return sorted[weekOfYear % sorted.length] ?? sorted[0];
-}
 
 function findSeasonalRecipes(recipes: Recipe[], keywords: string[], limit = 6): Recipe[] {
     const matched = recipes.filter((r) => {
@@ -146,7 +138,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
     const month = new Date().getMonth();
     const season = SEASON_TAGS_BY_MONTH[month] ?? SEASON_TAGS_BY_MONTH[6];
-    const recipeOfWeek = useMemo(() => pickRecipeOfWeek(recipes), [recipes]);
+    const recipeOfWeek = useMemo(() => recipeOfTheWeek(recipes), [recipes]);
     const seasonalRecipes = useMemo(() => findSeasonalRecipes(recipes, season.keywords), [recipes, season]);
     const activityEvents = useMemo(() => getActivityFeed().slice(0, 6), [recipes, favoriteRecipes]);
 

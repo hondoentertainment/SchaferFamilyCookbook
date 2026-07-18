@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { avatarOnError } from '../utils/avatarFallback';
-import { getAverageRating } from '../utils/ratings';
-import type { Recipe, ContributorProfile } from '../types';
+import { getAverageRating, getNotesForRecipe } from '../utils/ratings';
+import { recipesForContributor } from '../utils/loginMatch';
+import type { Recipe, RecipeNote, ContributorProfile } from '../types';
 
 interface ContributorSpotlightProps {
   contributor: ContributorProfile;
@@ -10,15 +11,18 @@ interface ContributorSpotlightProps {
   onClose: () => void;
 }
 
+interface MemoryEntry {
+  note: RecipeNote;
+  recipe: Recipe;
+}
+
 export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
   contributor,
   recipes,
   onViewRecipe,
   onClose,
 }) => {
-  const contributorRecipes = recipes.filter(
-    (r) => r.contributor.toLowerCase() === contributor.name.toLowerCase(),
-  );
+  const contributorRecipes = recipesForContributor(contributor.name, recipes);
 
   const categories = Array.from(new Set(contributorRecipes.map((r) => r.category)));
   const topRated = [...contributorRecipes]
@@ -27,12 +31,26 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 3);
 
+  // What the family has written on this contributor's recipes — the "memories".
+  const memories = useMemo<MemoryEntry[]>(() => {
+    const entries: MemoryEntry[] = [];
+    for (const recipe of contributorRecipes) {
+      for (const note of getNotesForRecipe(recipe.id)) {
+        entries.push({ note, recipe });
+      }
+    }
+    return entries
+      .sort((a, b) => (b.note.timestamp || '').localeCompare(a.note.timestamp || ''))
+      .slice(0, 4);
+  }, [contributorRecipes]);
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300"
       role="dialog"
       aria-modal="true"
       aria-label={`${contributor.name}'s recipe spotlight`}
+      data-testid="contributor-spotlight"
     >
       <button
         type="button"
@@ -96,6 +114,32 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
                     {recipe.title}
                   </span>
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{avg.toFixed(1)}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Family memories: notes the family has left on this contributor's recipes */}
+        {memories.length > 0 && (
+          <section className="mb-8" data-testid="contributor-spotlight-memories">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-3">
+              Family Memories
+            </h3>
+            <div className="space-y-2">
+              {memories.map(({ note, recipe }) => (
+                <button
+                  key={note.id}
+                  type="button"
+                  onClick={() => onViewRecipe(recipe)}
+                  className="w-full p-3 rounded-2xl bg-[#2D4635]/5 dark:bg-emerald-900/20 hover:bg-[#2D4635]/10 dark:hover:bg-emerald-900/30 transition-colors text-left space-y-1"
+                >
+                  <p className="font-serif italic text-sm text-stone-700 dark:text-stone-300">
+                    &ldquo;{note.text}&rdquo;
+                  </p>
+                  <p className="text-[10px] text-stone-500 uppercase tracking-widest">
+                    {note.userName} · on {recipe.title}
+                  </p>
                 </button>
               ))}
             </div>

@@ -41,7 +41,13 @@ test.describe('Recipes tab', () => {
   });
 
   test('opens printable family cookbook overlay', async ({ page }) => {
-    const printBtn = page.getByTestId('open-cookbook-print').or(page.getByTestId('open-cookbook-print-mobile'));
+    // Desktop and mobile variants both exist in the DOM; the mobile one comes
+    // first and is CSS-hidden at desktop viewport, so filter to the visible one
+    // instead of taking DOM order.
+    const printBtn = page
+      .getByTestId('open-cookbook-print')
+      .or(page.getByTestId('open-cookbook-print-mobile'))
+      .filter({ visible: true });
     await expect(printBtn.first()).toBeVisible({ timeout: 5000 });
     await printBtn.first().click();
     await expect(page.getByTestId('cookbook-print-button')).toBeVisible({ timeout: 5000 });
