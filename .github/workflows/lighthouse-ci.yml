@@ -24,9 +24,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: Run Lighthouse
         env:
           LHCI_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.url || 'https://schafer-family-cookbook.vercel.app/' }}
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npx --yes @lhci/cli@0.14.0 autorun
 
       - uses: actions/upload-artifact@v4

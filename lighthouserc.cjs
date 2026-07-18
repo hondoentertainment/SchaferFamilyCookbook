@@ -4,28 +4,29 @@
  */
 const url = (process.env.LHCI_URL || 'https://schafer-family-cookbook.vercel.app/').trim();
 
+const chromeFlags = '--headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage';
+const blockedUrlPatterns = [
+  'firestore.googleapis.com',
+  'firebaseio.com',
+  'fcm.googleapis.com',
+];
+
 module.exports = {
   ci: {
     collect: {
       url: [url],
-      numberOfRuns: 2,
+      numberOfRuns: 1,
       settings: [
         {
           preset: 'desktop',
-          blockedUrlPatterns: [
-            'firestore.googleapis.com',
-            'firebaseio.com',
-            'fcm.googleapis.com',
-          ],
+          chromeFlags,
+          blockedUrlPatterns,
           maxWaitForLoad: 45000,
         },
         {
           preset: 'mobile',
-          blockedUrlPatterns: [
-            'firestore.googleapis.com',
-            'firebaseio.com',
-            'fcm.googleapis.com',
-          ],
+          chromeFlags,
+          blockedUrlPatterns,
           maxWaitForLoad: 45000,
         },
       ],
@@ -42,6 +43,5 @@ module.exports = {
       target: 'filesystem',
       outputDir: './.lighthouseci',
     },
-    // Reports land in `.lighthouseci/` — attach as a CI artifact for trend review.
   },
 };

@@ -37,6 +37,8 @@ export default defineConfig({
                 'scripts/configure-*.mjs',
                 'scripts/productionize.mjs',
                 'scripts/finalize-launch.mjs',
+                'scripts/bootstrap-credentials.mjs',
+                'scripts/custodian-runbook.mjs',
                 'scripts/run-next-steps.mjs',
                 'scripts/load-local-env.mjs',
                 'scripts/set-archive-phone.mjs',

@@ -21,6 +21,28 @@ function isRecognizedImageContentType(contentType) {
   return /image\/(avif|gif|jpeg|jpg|png|webp)/i.test(contentType ?? '');
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** GitHub Pages often returns 502/503 while a deploy is propagating. */
+async function fetchWithRetry(url, { attempts = 5, baseDelayMs = 2000 } = {}) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, { redirect: 'follow' });
+      if (res.ok || (res.status !== 502 && res.status !== 503 && res.status !== 429)) {
+        return res;
+      }
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastErr = err;
+    }
+    if (i < attempts - 1) await sleep(baseDelayMs * (i + 1));
+  }
+  throw lastErr ?? new Error('fetch failed');
+}
+
 async function smokeRecipeImageAsset(siteBase, siteName) {
   if (!sampleRecipe?.image || !sampleRecipe.image.startsWith('/')) {
     console.error(`❌ ${siteName} recipe image: sample recipe has no site-relative image path`);
@@ -28,8 +50,11 @@ async function smokeRecipeImageAsset(siteBase, siteName) {
   }
 
   const imageUrl = new URL(sampleRecipe.image.replace(/^\//, ''), `${siteBase.replace(/\/$/, '')}/`).toString();
+  const isPages = /github\.io/i.test(siteBase);
   try {
-    const res = await fetch(imageUrl, { redirect: 'follow' });
+    const res = isPages
+      ? await fetchWithRetry(imageUrl, { attempts: 6, baseDelayMs: 3000 })
+      : await fetch(imageUrl, { redirect: 'follow' });
     if (!res.ok) {
       console.error(`❌ ${siteName} recipe image (${imageUrl}): HTTP ${res.status}`);
       return 1;
