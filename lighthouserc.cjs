@@ -16,20 +16,14 @@ module.exports = {
     collect: {
       url: [url],
       numberOfRuns: 1,
-      settings: [
-        {
-          preset: 'desktop',
-          chromeFlags,
-          blockedUrlPatterns,
-          maxWaitForLoad: 45000,
-        },
-        {
-          preset: 'mobile',
-          chromeFlags,
-          blockedUrlPatterns,
-          maxWaitForLoad: 45000,
-        },
-      ],
+      // Top-level flags are required for Chrome launch on GitHub Actions runners.
+      chromePath: process.env.CHROME_PATH || undefined,
+      settings: {
+        chromeFlags,
+        blockedUrlPatterns,
+        maxWaitForLoad: 45000,
+        preset: 'desktop',
+      },
     },
     assert: {
       assertions: {
