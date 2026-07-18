@@ -41,6 +41,31 @@ describe('ContributorsView', () => {
         expect(mockOnSelect).toHaveBeenCalledWith('Carol');
     });
 
+    it('shows a Spotlight button when onOpenSpotlight is provided and fires it with the name', () => {
+        const onOpenSpotlight = vi.fn();
+        const recipes = [createMockRecipe({ contributor: 'Carol' })];
+        renderWithProviders(
+            <ContributorsView
+                recipes={recipes}
+                gallery={[]}
+                trivia={[]}
+                contributors={[]}
+                onSelectContributor={mockOnSelect}
+                onOpenSpotlight={onOpenSpotlight}
+            />
+        );
+        fireEvent.click(screen.getByTestId('open-contributor-spotlight'));
+        expect(onOpenSpotlight).toHaveBeenCalledWith('Carol');
+    });
+
+    it('hides the Spotlight button when onOpenSpotlight is not provided', () => {
+        const recipes = [createMockRecipe({ contributor: 'Carol' })];
+        renderWithProviders(
+            <ContributorsView recipes={recipes} gallery={[]} trivia={[]} contributors={[]} onSelectContributor={mockOnSelect} />
+        );
+        expect(screen.queryByTestId('open-contributor-spotlight')).not.toBeInTheDocument();
+    });
+
     it('should include gallery and trivia contributions in totals', () => {
         const recipes = [createMockRecipe({ contributor: 'Alice' })];
         const gallery = [{ id: 'g1', type: 'image' as const, url: 'x', caption: 'x', contributor: 'Alice' }];
