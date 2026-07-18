@@ -1,13 +1,13 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-18 (batch 20 — Firebase web config on Vercel)_
+_Last updated: 2026-07-18 (batch 20 — Firebase web + runbook Windows fix)_
 
 ## Finalize (recommended before family launch)
 
 ```bash
 npm run bootstrap:credentials
-npm run configure:firebase-web -- --apply   # SDK config → Vercel (done on batch 20)
-npm run custodian:runbook
+npm run configure:firebase-web -- --apply   # SDK config → Vercel (done)
+npm run custodian:runbook                   # ops + smoke + printed walkthrough
 npm run finalize -- --apply --deploy       # after adding remaining secrets to .env.local
 ```
 
@@ -19,6 +19,7 @@ npm run finalize -- --apply --deploy       # after adding remaining secrets to .
 - Applied to Vercel Production: `VITE_FIREBASE_API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID`, `APP_ID`
 - **`npm run configure:firebase-web`** — re-fetch sdkconfig + optional `--apply`
 - Auth E2E fix — returning login matches `Continue as …` CTA / name chips
+- Custodian runbook — Windows `Program Files` path fix; credential checklist is informational
 
 ### Batch 19 (prior)
 
@@ -35,7 +36,7 @@ npm run finalize -- --apply --deploy       # after adding remaining secrets to .
 - [ ] **Sentry** — `VITE_SENTRY_DSN` → `configure:sentry -- --apply`
 - [ ] **App Check** — reCAPTCHA v3 site key → `configure:app-check -- --apply`
 - [ ] **Contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` → `finalize --migrate --yes`
-- [ ] **Live prod gallery upload** — `custodian:runbook` walkthrough
+- [ ] **Live prod gallery upload** — `custodian:runbook` walkthrough (human)
 - [ ] **Text-to-gallery** — `TWILIO_ACCOUNT_SID` + `VITE_ARCHIVE_PHONE`
 
 ## Explicitly deferred

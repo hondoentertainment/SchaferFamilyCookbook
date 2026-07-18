@@ -14,21 +14,25 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const checkOnly = process.argv.includes('--check');
 const failed = [];
 
-function run(label, cmd, args) {
+function run(label, cmd, args, { shell = false, allowFail = false } = {}) {
     console.log(`\n━━━ ${label} ━━━`);
-    const r = spawnSync(cmd, args, { stdio: 'inherit', shell: true, cwd: root });
-    if ((r.status ?? 1) !== 0) failed.push(label);
+    // shell:false required on Windows — process.execPath often has spaces (Program Files).
+    const r = spawnSync(cmd, args, { stdio: 'inherit', shell, cwd: root });
+    if ((r.status ?? 1) !== 0 && !allowFail) failed.push(label);
 }
 
 console.log('Custodian runbook\n');
 
 run('Ops verify', process.execPath, [join(root, 'scripts', 'verify-ops.mjs')]);
 run('Notify audit', process.execPath, [join(root, 'scripts', 'configure-notify.mjs')]);
-run('Credential bootstrap', process.execPath, [join(root, 'scripts', 'bootstrap-credentials.mjs')]);
-run('Production smoke', 'npm', ['run', 'smoke:prod']);
+// Checklist prints missing secrets; do not fail the runbook on incomplete .env.local.
+run('Credential bootstrap', process.execPath, [join(root, 'scripts', 'bootstrap-credentials.mjs')], {
+    allowFail: true,
+});
+run('Production smoke', 'npm', ['run', 'smoke:prod'], { shell: true });
 
 if (!checkOnly) {
-    run('Firebase rules unit tests', 'npm', ['run', 'test:rules']);
+    run('Firebase rules unit tests', 'npm', ['run', 'test:rules'], { shell: true });
 }
 
 console.log('\n━━━ Family launch walkthrough ━━━');

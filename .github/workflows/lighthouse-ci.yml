@@ -34,9 +34,27 @@ jobs:
           CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npx --yes @lhci/cli@0.14.0 autorun
 
+      # upload-artifact@v4 respects .gitignore; .lighthouseci/ is ignored, so stage a copy.
+      - name: Stage Lighthouse reports
+        if: always()
+        run: |
+          mkdir -p lhci-artifact
+          if [ -d .lighthouseci ]; then cp -r .lighthouseci/. lhci-artifact/; fi
+          ls -la lhci-artifact
+          node -e "
+            const fs=require('fs');
+            const files=fs.readdirSync('lhci-artifact').filter(f=>f.endsWith('.json')&&!f.includes('manifest'));
+            for (const f of files) {
+              const r=JSON.parse(fs.readFileSync('lhci-artifact/'+f,'utf8'));
+              const c=r.categories||{};
+              console.log('Scores:', Object.fromEntries(Object.entries(c).map(([k,v])=>[k, Math.round((v.score||0)*100)])));
+            }
+          "
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: lighthouse-results-${{ github.run_number }}
-          path: .lighthouseci
+          path: lhci-artifact
           retention-days: 14
+          if-no-files-found: warn
