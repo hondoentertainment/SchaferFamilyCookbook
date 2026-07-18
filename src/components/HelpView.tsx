@@ -116,7 +116,9 @@ export const HelpView: React.FC = () => {
                         <code className="text-xs">npm run finalize</code> for ops audit, smoke test, and CI coverage
                         check. With credentials in <code className="text-xs">.env.local</code>, add{' '}
                         <code className="text-xs">--apply --deploy</code> (and <code className="text-xs">--migrate --yes</code>{' '}
-                        when <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code> is set).
+                        when <code className="text-xs">FIREBASE_SERVICE_ACCOUNT</code> is set). Use{' '}
+                        <code className="text-xs">npm run bootstrap:credentials</code> for a guided secret checklist, or{' '}
+                        <code className="text-xs">npm run custodian:runbook</code> for the full launch walkthrough.
                     </li>
                     <li>
                         <strong className="font-bold">Firestore rules (family notes)</strong> — after changing{' '}

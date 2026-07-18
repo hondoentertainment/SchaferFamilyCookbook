@@ -134,6 +134,16 @@ test.describe('Recipe modal', () => {
     await expect(recipeDetailsDialog(page).getByRole('progressbar')).toBeVisible();
   });
 
+  test('shows Family Notes section on the Read tab', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    await expect(recipeDetailsDialog(page)).toBeVisible();
+    // Notes live inside a collapsed <details> on the Read tab.
+    await recipeDetailsDialog(page).getByText(/Notes, ratings, and sharing/i).click();
+    await expect(recipeDetailsDialog(page).getByRole('region', { name: /Family notes/i })).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
   test('browse contributor closes modal and filters recipes', async ({ page }) => {
     await openFirstRecipeCardInMainGrid(page);
     await expect(recipeDetailsDialog(page)).toBeVisible();
