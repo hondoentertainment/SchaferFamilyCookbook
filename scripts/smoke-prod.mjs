@@ -155,10 +155,11 @@ async function smokeVercelGalleryBundle(vercelBase) {
   }
 }
 
-/** PR #64 launch features should be present across production JS chunks. */
+/** PR #64 launch features should be present across production JS chunks (incl. lazy). */
 async function smokeVercelLaunchBundle(vercelBase) {
   const name = 'Vercel launch feature bundle';
   const indexUrl = `${vercelBase.replace(/\/$/, '')}/`;
+  const siteBase = vercelBase.replace(/\/$/, '');
 
   try {
     const indexRes = await fetch(indexUrl, { redirect: 'follow' });
@@ -167,20 +168,40 @@ async function smokeVercelLaunchBundle(vercelBase) {
       return 1;
     }
     const html = await indexRes.text();
-    const scriptPaths = [...html.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
-    if (scriptPaths.length === 0) {
+    const entryPaths = [...html.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
+    if (entryPaths.length === 0) {
       console.warn(`⚠️  ${name}: could not find JS bundles in index.html (skipping)`);
       return 0;
     }
-    const chunks = await Promise.all(
-      scriptPaths.map(async (src) => {
-        const jsUrl = new URL(src, indexUrl).toString();
-        const jsRes = await fetch(jsUrl, { redirect: 'follow' });
-        if (!jsRes.ok) return '';
-        return jsRes.text();
-      }),
-    );
-    const js = chunks.join('\n');
+
+    const seen = new Set();
+    const queue = [...entryPaths];
+    const texts = [];
+
+    while (queue.length > 0 && seen.size < 40) {
+      const src = queue.shift();
+      if (!src || seen.has(src)) continue;
+      seen.add(src);
+      const jsUrl = src.startsWith('http') ? src : `${siteBase}${src.startsWith('/') ? '' : '/'}${src}`;
+      const jsRes = await fetch(jsUrl, { redirect: 'follow' });
+      if (!jsRes.ok) continue;
+      const body = await jsRes.text();
+      texts.push(body);
+      for (const match of body.matchAll(/\/assets\/[A-Za-z0-9_.-]+\.js/g)) {
+        if (!seen.has(match[0])) queue.push(match[0]);
+      }
+      for (const match of body.matchAll(/assets\/([A-Za-z0-9_.-]+\.js)/g)) {
+        const path = `/assets/${match[1]}`;
+        if (!seen.has(path)) queue.push(path);
+      }
+      // Vite dynamic imports often reference bare hashed filenames (no /assets/).
+      for (const match of body.matchAll(/([A-Za-z][A-Za-z0-9_-]*-[A-Za-z0-9_-]+\.js)/g)) {
+        const path = `/assets/${match[1]}`;
+        if (!seen.has(path)) queue.push(path);
+      }
+    }
+
+    const js = texts.join('\n');
     const markers = [
       'Print the family cookbook',
       'open-cookbook-print',
