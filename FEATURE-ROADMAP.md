@@ -44,8 +44,9 @@ A strategic roadmap for the next phases of development, informed by the current 
 - [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` (+ optional source-map upload vars)
 - [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
 - [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY` after registering reCAPTCHA v3 in Firebase Console
-- [ ] **Lighthouse baseline** — review monthly CI artifact; tune `lighthouserc.cjs` if needed
-- [ ] **Live prod gallery walkthrough** — family upload → custodian approve on production Firebase
+- [ ] **Lighthouse baseline** — `gh workflow run "Lighthouse CI"` or monthly schedule; headless Chrome configured
+- [ ] **Live prod gallery walkthrough** — `npm run custodian:runbook` then family upload → approve on production
+- [ ] **Credentials apply** — `npm run bootstrap:credentials` then `npm run finalize -- --apply --deploy`
 
 ### 2. Done (recent — June 2026 batch 11)
 - [x] **Gallery decline** — custodian reject pending submissions
