@@ -1,57 +1,42 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-18 (batch 19 — credentials bootstrap + smoke hardening)_
+_Last updated: 2026-07-18 (batch 20 — Firebase web config on Vercel)_
 
 ## Finalize (recommended before family launch)
 
 ```bash
-npm run bootstrap:credentials       # guided secret checklist
-npm run custodian:runbook           # ops + smoke + printed walkthrough
-npm run finalize                    # CI coverage + ops audit + smoke
-npm run finalize -- --apply --deploy   # after filling .env.local
-npm run finalize -- --migrate --yes    # needs FIREBASE_SERVICE_ACCOUNT in .env.local
+npm run bootstrap:credentials
+npm run configure:firebase-web -- --apply   # SDK config → Vercel (done on batch 20)
+npm run custodian:runbook
+npm run finalize -- --apply --deploy       # after adding remaining secrets to .env.local
 ```
 
-## Shipped (July 2026 — batch 19)
+## Shipped (July 2026 — batch 20)
 
-### Launch tooling — ✅ shipped
+### Firebase web client config — ✅ applied to Vercel
 
-- **`npm run bootstrap:credentials`** — validates local secrets + shows where to get each one
-- **`npm run custodian:runbook`** — ops/smoke + family launch walkthrough checklist
-- **Smoke hardening** — GitHub Pages image retries on 502/503; CI smoke waits 45s for Pages propagation
-- **Lighthouse** — workflow dispatchable; Firestore URLs blocked in `lighthouserc.cjs`
+- Created Firebase WEB app **Schafer Family Cookbook**
+- Applied to Vercel Production: `VITE_FIREBASE_API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID`, `APP_ID`
+- **`npm run configure:firebase-web`** — re-fetch sdkconfig + optional `--apply`
+- Auth E2E fix — returning login matches `Continue as …` CTA / name chips
 
-### Batch 18 (prior)
+### Batch 19 (prior)
 
-- Critical npm audit clear, PR #66 photo import, Firestore rules for notes deployed, print/timer E2E
+- `bootstrap:credentials`, `custodian:runbook`, smoke Pages retries, Lighthouse headless Chrome
 
 ## Ops status
 
 - [x] Firestore rules + Firebase Storage (incl. `notes` / `displayName`)
-- [x] Gallery uploads enabled on Vercel
-- [x] Gallery upload E2E (local provider)
-- [x] Push notify secrets on Vercel
-- [x] `/api/notify` / `/api/gemini` / `/api/webhook` routes load
-- [x] Critical dependency audit clear
-- [x] Scan recipe card photo import
-- [x] GitHub Pages deploy + local smoke 10/10
-- [ ] **Sentry** — `VITE_SENTRY_DSN` → `npm run configure:sentry -- --apply`
-- [ ] **FCM** — sender ID, app ID, VAPID → `npm run configure:fcm -- --apply`
-- [ ] **App Check** — site key → `npm run configure:app-check -- --apply`
-- [ ] **Contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` → `npm run finalize -- --migrate --yes`
-- [ ] **Live prod gallery upload** — manual once
+- [x] Gallery uploads + E2E
+- [x] Notify secrets + `/api/notify` route
+- [x] Firebase web client vars on Vercel (incl. FCM sender ID + app ID)
+- [x] Lighthouse CI runnable (headless)
+- [ ] **`VITE_FCM_VAPID_KEY`** — Firebase Console → Cloud Messaging → Web Push certificates → `configure:fcm -- --apply`
+- [ ] **Sentry** — `VITE_SENTRY_DSN` → `configure:sentry -- --apply`
+- [ ] **App Check** — reCAPTCHA v3 site key → `configure:app-check -- --apply`
+- [ ] **Contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` → `finalize --migrate --yes`
+- [ ] **Live prod gallery upload** — `custodian:runbook` walkthrough
 - [ ] **Text-to-gallery** — `TWILIO_ACCOUNT_SID` + `VITE_ARCHIVE_PHONE`
-- [ ] **Lighthouse review** — download artifact from Actions → Lighthouse CI
-
-### Ops scripts
-
-| Script | Purpose |
-|--------|---------|
-| `npm run bootstrap:credentials` | Guided secret checklist |
-| `npm run custodian:runbook` | Checks + family launch walkthrough |
-| `npm run finalize` | Full pre-launch automation |
-| `npm run smoke:prod` | Post-deploy health checks |
-| `npm run deploy:firebase-rules` | Deploy Firestore + Storage rules |
 
 ## Explicitly deferred
 

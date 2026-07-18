@@ -23,7 +23,7 @@ test.describe('Login', () => {
 
     await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('Grandma Joan');
-    await page.getByRole('button', { name: /^continue$/i }).click();
+    await page.getByRole('button', { name: /^continue/i }).click();
     await confirmCookbookLogin(page);
 
     await waitForHomeMainHeading(page);
@@ -40,7 +40,7 @@ test.describe('Login', () => {
 
     await openLoginNameEntry(page, 'new');
     await page.getByPlaceholder(/your name/i).fill('Robin');
-    await page.getByRole('button', { name: /^continue$/i }).click();
+    await page.getByRole('button', { name: /^continue/i }).click();
     await confirmCookbookLogin(page);
     await waitForHomeMainHeading(page);
 
@@ -49,8 +49,14 @@ test.describe('Login', () => {
 
     await expect(page.getByRole('heading', { name: /who's cooking/i })).toBeVisible();
     await openLoginNameEntry(page, 'returning');
-    await page.getByPlaceholder(/your name/i).fill('Robin');
-    await page.getByRole('button', { name: /^continue$/i }).click();
+    // Prefer the contributor chip when present; returning CTA may be "Continue as Robin".
+    const robinChip = page.getByRole('button', { name: /Sign in as Robin/i });
+    if (await robinChip.isVisible().catch(() => false)) {
+      await robinChip.click();
+    } else {
+      await page.getByPlaceholder(/your name/i).fill('Robin');
+      await page.getByRole('button', { name: /^continue/i }).click();
+    }
     await confirmCookbookLogin(page);
     await waitForHomeMainHeading(page);
   });

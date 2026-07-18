@@ -26,15 +26,15 @@ const ITEMS = [
     {
         key: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
         title: 'FCM messaging sender ID',
-        where: 'Firebase Console → Project settings → Your apps → npm config → messagingSenderId',
-        apply: 'npm run configure:fcm -- --apply',
+        where: 'npm run configure:firebase-web (or Firebase Console → Your apps → messagingSenderId)',
+        apply: 'npm run configure:firebase-web -- --apply',
         required: false,
     },
     {
         key: 'VITE_FIREBASE_APP_ID',
         title: 'FCM / Firebase app ID',
-        where: 'Same Firebase npm config → appId',
-        apply: 'npm run configure:fcm -- --apply',
+        where: 'npm run configure:firebase-web (or Firebase Console → Your apps → appId)',
+        apply: 'npm run configure:firebase-web -- --apply',
         required: false,
     },
     {

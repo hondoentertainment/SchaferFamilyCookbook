@@ -46,6 +46,7 @@
     "configure:notify": "node scripts/configure-notify.mjs",
     "configure:sentry": "node scripts/configure-sentry.mjs",
     "configure:fcm": "node scripts/configure-fcm.mjs",
+    "configure:firebase-web": "node scripts/configure-firebase-web.mjs",
     "configure:app-check": "node scripts/configure-app-check.mjs",
     "next-steps": "node scripts/run-next-steps.mjs",
     "productionize": "node scripts/productionize.mjs",
