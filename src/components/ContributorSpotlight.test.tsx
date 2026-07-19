@@ -71,7 +71,13 @@ describe('ContributorSpotlight', () => {
         );
 
         renderWithProviders(
-            <ContributorSpotlight contributor={contributor} recipes={recipes} onViewRecipe={onViewRecipe} onClose={onClose} />
+            <ContributorSpotlight
+                contributor={contributor}
+                recipes={recipes}
+                currentUserName="Harriet"
+                onViewRecipe={onViewRecipe}
+                onClose={onClose}
+            />
         );
         const memories = screen.getByTestId('contributor-spotlight-memories');
         expect(memories).toHaveTextContent('Family Memories');
@@ -79,6 +85,8 @@ describe('ContributorSpotlight', () => {
         // 5 notes exist; the oldest is dropped by the cap of 4.
         expect(memories).not.toHaveTextContent('Old memory');
         expect(memories).toHaveTextContent('Alice · on Sunday Rolls');
+        expect(ratings.getNotesForRecipe).toHaveBeenCalledWith('r1', 'Harriet');
+        expect(ratings.getNotesForRecipe).toHaveBeenCalledWith('r2', 'Harriet');
     });
 
     it('hides the memories section when there are no notes', () => {

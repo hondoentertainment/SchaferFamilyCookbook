@@ -2943,6 +2943,7 @@ const App: React.FC = () => {
                     <ContributorSpotlight
                         contributor={spotlightContributor}
                         recipes={recipes}
+                        currentUserName={currentUser?.name}
                         onViewRecipe={(r) => {
                             setSpotlightContributor(null);
                             handleSelectRecipe(r);
