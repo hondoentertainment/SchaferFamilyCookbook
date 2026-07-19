@@ -7,6 +7,8 @@ import type { Recipe, RecipeNote, ContributorProfile } from '../types';
 interface ContributorSpotlightProps {
   contributor: ContributorProfile;
   recipes: Recipe[];
+  /** Needed so deleted notes for this user stay suppressed from the family cache. */
+  currentUserName?: string;
   onViewRecipe: (recipe: Recipe) => void;
   onClose: () => void;
 }
@@ -19,6 +21,7 @@ interface MemoryEntry {
 export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
   contributor,
   recipes,
+  currentUserName,
   onViewRecipe,
   onClose,
 }) => {
@@ -35,14 +38,14 @@ export const ContributorSpotlight: React.FC<ContributorSpotlightProps> = ({
   const memories = useMemo<MemoryEntry[]>(() => {
     const entries: MemoryEntry[] = [];
     for (const recipe of contributorRecipes) {
-      for (const note of getNotesForRecipe(recipe.id)) {
+      for (const note of getNotesForRecipe(recipe.id, currentUserName)) {
         entries.push({ note, recipe });
       }
     }
     return entries
       .sort((a, b) => (b.note.timestamp || '').localeCompare(a.note.timestamp || ''))
       .slice(0, 4);
-  }, [contributorRecipes]);
+  }, [contributorRecipes, currentUserName]);
 
   return (
     <div
