@@ -1,6 +1,16 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-18 (batch 20 — Firebase web + runbook Windows fix)_
+_Last updated: 2026-07-19 (batch 21 — Recipe of the Week weekly push)_
+
+## Shipped (July 2026 — batch 21)
+
+### Recipe of the Week push — ✅ built, dormant until FCM VAPID key
+
+- **`/api/recipe-of-the-week`** — Vercel Cron (Sun 15:00 UTC, see `vercel.json` `crons`) picks the same deterministic ISO-week recipe HomeView features and fans it out to all `fcm_tokens` (chunked at 500/multicast)
+- Auth: `Authorization: Bearer $CRON_SECRET` (Vercel Cron) or `x-notify-secret` for manual runs; `?dryRun=1&date=YYYY-MM-DD` previews a week's pick without sending
+- Pick logic unified in `shared/recipeOfTheWeek.mjs` (HomeView + cron use one implementation)
+- `firebase-messaging-sw.js` — notification click now deep-links to the recipe share page
+- **To activate**: set `CRON_SECRET` on Vercel + apply `VITE_FCM_VAPID_KEY` (`configure:fcm -- --apply`)
 
 ## Finalize (recommended before family launch)
 
@@ -33,6 +43,7 @@ npm run finalize -- --apply --deploy       # after adding remaining secrets to .
 - [x] Firebase web client vars on Vercel (incl. FCM sender ID + app ID)
 - [x] Lighthouse CI runnable (headless)
 - [ ] **`VITE_FCM_VAPID_KEY`** — Firebase Console → Cloud Messaging → Web Push certificates → `configure:fcm -- --apply`
+- [ ] **`CRON_SECRET`** — any long random string on Vercel (activates weekly Recipe of the Week push)
 - [ ] **Sentry** — `VITE_SENTRY_DSN` → `configure:sentry -- --apply`
 - [ ] **App Check** — reCAPTCHA v3 site key → `configure:app-check -- --apply`
 - [ ] **Contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` → `finalize --migrate --yes`
