@@ -46,6 +46,25 @@ if (isUnconfigured) {
       body: body ?? 'A new recipe has been added to the Schafer Family Cookbook.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
+      data: { url: payload.data?.url ?? '/' },
     });
   });
 }
+
+// Open the notification's target (e.g. the Recipe of the Week share page),
+// focusing an existing app window when one is open.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
