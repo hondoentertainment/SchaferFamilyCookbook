@@ -242,14 +242,19 @@ export default defineConfig(({ mode }) => {
     ],
     build: {
       target: 'es2022',
-      minify: 'esbuild',
+      // Vite 8 minifies with Oxc (Rolldown). `esbuild` is no longer bundled.
+      minify: 'oxc',
       sourcemap: sentryAuthOk ? 'hidden' : false,
-      rollupOptions: {
+      rolldownOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/storage'],
-            'vendor-firebase-auth': ['firebase/auth'],
+          // Object-form `manualChunks` is removed in Rolldown; keep the same
+          // vendor splits so cache invalidation and per-file budgets still hold.
+          codeSplitting: {
+            groups: [
+              { name: 'vendor-react', test: /[\\/]node_modules[\\/](?:react-dom|react)[\\/]/ },
+              { name: 'vendor-firebase-auth', test: /[\\/]node_modules[\\/](?:@firebase[\\/]auth|firebase[\\/]auth)(?:[\\/]|$)/ },
+              { name: 'vendor-firebase', test: /[\\/]node_modules[\\/](?:@firebase|firebase)[\\/]/ },
+            ],
           },
         },
       },
