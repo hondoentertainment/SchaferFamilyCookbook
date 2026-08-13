@@ -11,11 +11,30 @@ import {
     getNotesForRecipe,
     addNote,
     deleteNote,
+    getDeletedNoteIds,
 } from './ratings';
 
 vi.mock('../services/userPrefsSync', () => ({
     notifyPrefsChanged: vi.fn(),
+    deriveUserId: (displayName?: string | null) => {
+        if (!displayName) return null;
+        const slug = displayName
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        return slug || null;
+    },
 }));
+
+const FAMILY_CACHE_KEY = 'familyPrefs:v1';
+
+function seedFamilyCache(members: unknown[]) {
+    localStorage.setItem(
+        FAMILY_CACHE_KEY,
+        JSON.stringify({ fetchedAt: '2026-07-01T00:00:00.000Z', members })
+    );
+}
 
 const RATINGS_KEY = 'schafer_ratings';
 const NOTES_KEY = 'schafer_notes';
@@ -135,6 +154,111 @@ describe('ratings utility', () => {
             setRating('recipe-1', 'Alice', 4);
             setRating('recipe-2', 'Bob', 5);
             expect(getRatingCount('recipe-1')).toBe(1);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    describe('family aggregate merging', () => {
+        it('includes cached family ratings in getRatingsForRecipe', () => {
+            seedFamilyCache([
+                { userId: 'dawn', displayName: 'Dawn', ratings: { 'recipe-1': 5 }, notes: [] },
+                { userId: 'wren', ratings: { 'recipe-1': 4, 'recipe-2': 2 }, notes: [] },
+            ]);
+            const ratings = getRatingsForRecipe('recipe-1');
+            expect(ratings).toHaveLength(2);
+            expect(ratings.map((r) => r.userName).sort()).toEqual(['Dawn', 'Wren']);
+            expect(getAverageRating('recipe-1')).toBe(4.5);
+            expect(getRatingCount('recipe-1')).toBe(2);
+        });
+
+        it('local rating wins over the cached family entry for the same user', () => {
+            seedFamilyCache([
+                { userId: 'dawn', displayName: 'Dawn', ratings: { 'recipe-1': 2 }, notes: [] },
+            ]);
+            setRating('recipe-1', 'Dawn', 5);
+            const ratings = getRatingsForRecipe('recipe-1');
+            expect(ratings).toHaveLength(1);
+            expect(ratings[0].rating).toBe(5);
+        });
+
+        it('family ratings count toward isFamilyApproved', () => {
+            seedFamilyCache([
+                { userId: 'dawn', ratings: { 'recipe-1': 5 }, notes: [] },
+                { userId: 'wren', ratings: { 'recipe-1': 4 }, notes: [] },
+            ]);
+            expect(isFamilyApproved('recipe-1')).toBe(false);
+            setRating('recipe-1', 'Harriet', 5);
+            expect(isFamilyApproved('recipe-1')).toBe(true);
+        });
+
+        it('merges family notes into getNotesForRecipe, deduped by id', () => {
+            seedFamilyCache([
+                {
+                    userId: 'dawn',
+                    displayName: 'Dawn',
+                    ratings: {},
+                    notes: [
+                        {
+                            id: 'n-remote',
+                            recipeId: 'recipe-1',
+                            userName: 'Dawn',
+                            text: 'Family tip',
+                            timestamp: '2026-06-01T00:00:00.000Z',
+                        },
+                    ],
+                },
+            ]);
+            addNote('recipe-1', 'Harriet', 'Local tip');
+            const notes = getNotesForRecipe('recipe-1');
+            expect(notes).toHaveLength(2);
+            expect(notes.map((n) => n.text).sort()).toEqual(['Family tip', 'Local tip']);
+        });
+
+        it("falls back to the family cache for the user's own rating", () => {
+            seedFamilyCache([
+                { userId: 'dawn', displayName: 'Dawn', ratings: { 'recipe-1': 4 }, notes: [] },
+            ]);
+            expect(getUserRating('recipe-1', 'Dawn')).toBe(4);
+            // A local rating still wins over the cached value.
+            setRating('recipe-1', 'Dawn', 2);
+            expect(getUserRating('recipe-1', 'Dawn')).toBe(2);
+        });
+
+        it('ignores malformed family cache members instead of crashing', () => {
+            seedFamilyCache([
+                { userId: 'broken' },
+                { userId: 'dawn', ratings: { 'recipe-1': 5 }, notes: [] },
+            ]);
+            expect(getRatingCount('recipe-1')).toBe(1);
+            expect(getNotesForRecipe('recipe-1')).toEqual([]);
+        });
+
+        it('records a tombstone when a note is deleted', () => {
+            const notes = addNote('recipe-1', 'Harriet', 'Soon deleted');
+            deleteNote(notes[0]!.id);
+            expect(getDeletedNoteIds()).toEqual([notes[0]!.id]);
+            expect(getNotesForRecipe('recipe-1')).toHaveLength(0);
+        });
+
+        it("excludes the current user's cached family notes so local deletes stick", () => {
+            seedFamilyCache([
+                {
+                    userId: 'harriet',
+                    displayName: 'Harriet',
+                    ratings: {},
+                    notes: [
+                        {
+                            id: 'n-deleted',
+                            recipeId: 'recipe-1',
+                            userName: 'Harriet',
+                            text: 'Deleted on this device',
+                            timestamp: '2026-06-01T00:00:00.000Z',
+                        },
+                    ],
+                },
+            ]);
+            expect(getNotesForRecipe('recipe-1', 'Harriet')).toHaveLength(0);
+            expect(getNotesForRecipe('recipe-1')).toHaveLength(1);
         });
     });
 

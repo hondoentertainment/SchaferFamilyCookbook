@@ -10,6 +10,8 @@ import { trackEvent } from '../services/analytics';
 import { subscribeToPushNotifications } from '../services/pushNotifications';
 import { STORAGE_KEYS } from '../constants/storage';
 import { getRememberedServings, setRememberedServings } from '../utils/recipeServingsMemory';
+import { getStepMinutes, formatTimer } from '../utils/stepDuration';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 const SWIPE_HINT_KEY = 'cookMode.swipeHintSeen';
 const NOTIFY_NUDGE_DISMISSED_KEY = 'cook-notify-nudge-dismissed-v1';
@@ -37,20 +39,6 @@ function getCurrentUserName(): string {
 function isMobileDevice(): boolean {
     if (typeof navigator === 'undefined') return false;
     return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
-}
-
-function getStepMinutes(step: string | null): number | null {
-    if (!step) return null;
-    const match = /(\d+)\s*(?:-|to)?\s*(?:\d+)?\s*(?:minutes?|mins?)/i.exec(step);
-    if (!match) return null;
-    const minutes = parseInt(match[1], 10);
-    return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
-}
-
-function formatTimer(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 function speechSupported(): boolean {
@@ -257,22 +245,7 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
     }, [timerSeconds, toast]);
 
     // Wake lock: keep screen on during cook mode
-    useEffect(() => {
-        let wakeLock: WakeLockSentinel | null = null;
-        const requestWakeLock = async () => {
-            try {
-                if (navigator.wakeLock) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch {
-                toast('Could not keep screen awake. Your device may lock during cooking.', 'info');
-            }
-        };
-        requestWakeLock();
-        return () => {
-            wakeLock?.release?.();
-        };
-    }, [toast]);
+    useWakeLock(true, () => toast('Could not keep screen awake. Your device may lock during cooking.', 'info'));
 
     // On mount: check cache status and auto-cache the image
     useEffect(() => {

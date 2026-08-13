@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
-import { getClientIp, NOTIFY_PUSH_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit';
-import { contributorNameMatches, normalizeContributorKey } from './lib/contributorAliases';
+import { getClientIp, NOTIFY_PUSH_RATE_LIMIT, slidingWindowAllow } from './lib/rateLimit.js';
+import { contributorNameMatches, normalizeContributorKey } from './lib/contributorAliases.js';
 
 // Initialize Firebase Admin SDK once
 if (!admin.apps.length) {

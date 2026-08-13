@@ -1,72 +1,54 @@
 # Recommended Next Steps
 
-_Last updated: 2026-07-03 (batch 14 deployed + ops)_
+_Last updated: 2026-07-19 (batch 21 — Recipe of the Week weekly push)_
 
-## Recently shipped (June 2026 — batch 14)
+## Shipped (July 2026 — batch 21)
 
-### Recipe page UX — ✅ shipped
+### Recipe of the Week push — ✅ built, dormant until FCM VAPID key
 
-- **Prev/next recipe navigation** — desktop chevrons + mobile Previous/Next row
-- **Cook tab** — step checkboxes, progress bar, step-by-step CTA, auto-scroll to instructions
-- **Mobile jump links** — Jump to ingredients / Jump to steps (Read + Cook modes)
-- **Ingredient & step checkoffs** — clear buttons; session persistence per recipe
-- **Contributor browse** — tap byline to filter Recipes by contributor
-- **Total time** — prep + cook combined in header meta when parseable
-- **Tab keyboard nav** — arrow keys on Read/Cook/Share tabs (does not conflict with recipe prev/next)
+- **`/api/recipe-of-the-week`** — Vercel Cron (Sun 15:00 UTC, see `vercel.json` `crons`) picks the same deterministic ISO-week recipe HomeView features and fans it out to all `fcm_tokens` (chunked at 500/multicast)
+- Auth: `Authorization: Bearer $CRON_SECRET` (Vercel Cron) or `x-notify-secret` for manual runs; `?dryRun=1&date=YYYY-MM-DD` previews a week's pick without sending
+- Pick logic unified in `shared/recipeOfTheWeek.mjs` (HomeView + cron use one implementation)
+- `firebase-messaging-sw.js` — notification click now deep-links to the recipe share page
+- **To activate**: set `CRON_SECRET` on Vercel + apply `VITE_FCM_VAPID_KEY` (`configure:fcm -- --apply`)
 
-## Recently shipped (June 2026 — batch 12)
+## Finalize (recommended before family launch)
 
-### UX polish — ✅ shipped
+```bash
+npm run bootstrap:credentials
+npm run configure:firebase-web -- --apply   # SDK config → Vercel (done)
+npm run custodian:runbook                   # ops + smoke + printed walkthrough
+npm run finalize -- --apply --deploy       # after adding remaining secrets to .env.local
+```
 
-- **Gallery filter chip** — sticky “Showing X’s photos · Clear” when filtered
-- **Upload-unavailable banner** — until `VITE_GALLERY_UPLOADS_ENABLED=true`
-- **Recipe card CTA hierarchy** — Start Cooking primary; View secondary
-- **Admin pending toast** — once per session when gallery items await approval
-- **Mobile 5-tab nav** — A–Z under Recipes sub-nav
-- **Family sub-nav hint** — dismissible first-visit banner
-- **Handwritten-card grid fallback** — category art in grid; full card in modal
-- **Profile sync copy** — plain-language cloud sync message
+## Shipped (July 2026 — batch 20)
 
-### Contributor normalization — ✅ shipped
+### Firebase web client config — ✅ applied to Vercel
 
-- **Canonical names** — Dawn, Harriet, Wren (merged aliases)
-- **Gallery filter dedupe** — one entry per contributor in dropdown
-- **Firestore migration script** — `npm run normalize:contributors:dry-run` then `npm run normalize:contributors`
+- Created Firebase WEB app **Schafer Family Cookbook**
+- Applied to Vercel Production: `VITE_FIREBASE_API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID`, `APP_ID`
+- **`npm run configure:firebase-web`** — re-fetch sdkconfig + optional `--apply`
+- Auth E2E fix — returning login matches `Continue as …` CTA / name chips
+- Custodian runbook — Windows `Program Files` path fix; credential checklist is informational
 
-### Gallery approve push — ✅ shipped (when FCM configured)
+### Batch 19 (prior)
 
-- **Targeted notify** — `/api/notify` accepts `userName`; admin approve triggers push to uploader
-- Requires `NOTIFY_SECRET`, `VITE_NOTIFY_SECRET`, and FCM tokens in `fcm_tokens`
-
-### Batch 11 (prior)
-
-- Gallery decline, contributor filter, pending admin badge, ops scripts
+- `bootstrap:credentials`, `custodian:runbook`, smoke Pages retries, Lighthouse headless Chrome
 
 ## Ops status
 
-- [x] Firestore rules (gallery create + moderation)
-- [x] **Firebase Storage** — enabled; rules deploy via `npm run verify:storage`
-- [x] **Vercel `VITE_GALLERY_UPLOADS_ENABLED=true`** — set on Vercel; production redeployed 2026-07-03 (`npm run smoke:prod` confirms upload bundle)
-- [ ] **Live upload test** — family upload → pending → custodian approve → public (+ optional push)
-- [ ] **Firestore contributor migration** — `npm run normalize:contributors:dry-run` then live (needs `FIREBASE_SERVICE_ACCOUNT` locally — not in `vercel env pull`)
-- [ ] **Sentry** — `VITE_SENTRY_DSN` on Vercel (+ optional source-map vars)
-- [ ] **Push notify secrets** — `NOTIFY_SECRET` + `VITE_NOTIFY_SECRET` (`npm run configure:notify -- --generate`)
-- [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY`
-- [ ] **FCM (optional)** — `VITE_FCM_VAPID_KEY`, messaging sender ID, app ID
-- [ ] **Lighthouse review** — CI artifact in `.lighthouseci/` (2 runs per preset)
-
-Run `npm run verify:ops` after Vercel or Firebase console changes.
-
-### Ops scripts (batch 14)
-
-| Script | Purpose |
-|--------|---------|
-| `npm run verify:ops` | Vercel env audit + Storage check |
-| `npm run verify:vercel-env` | Deep check incl. gallery uploads flag |
-| `npm run fix:gallery-uploads-env` | Re-set `VITE_GALLERY_UPLOADS_ENABLED=true` on production |
-| `npm run configure:notify` | Audit/generate notify + FCM secrets |
-| `npm run normalize:contributors:dry-run` | Preview Firestore name merges (admin SDK) |
-| `npm run smoke:prod` | Post-deploy health + gallery bundle smoke |
+- [x] Firestore rules + Firebase Storage (incl. `notes` / `displayName`)
+- [x] Gallery uploads + E2E
+- [x] Notify secrets + `/api/notify` route
+- [x] Firebase web client vars on Vercel (incl. FCM sender ID + app ID)
+- [x] Lighthouse CI runnable (headless)
+- [ ] **`VITE_FCM_VAPID_KEY`** — Firebase Console → Cloud Messaging → Web Push certificates → `configure:fcm -- --apply`
+- [ ] **`CRON_SECRET`** — any long random string on Vercel (activates weekly Recipe of the Week push)
+- [ ] **Sentry** — `VITE_SENTRY_DSN` → `configure:sentry -- --apply`
+- [ ] **App Check** — reCAPTCHA v3 site key → `configure:app-check -- --apply`
+- [ ] **Contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` → `finalize --migrate --yes`
+- [ ] **Live prod gallery upload** — `custodian:runbook` walkthrough (human)
+- [ ] **Text-to-gallery** — `TWILIO_ACCOUNT_SID` + `VITE_ARCHIVE_PHONE`
 
 ## Explicitly deferred
 

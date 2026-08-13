@@ -31,8 +31,21 @@ export default defineConfig({
                 'scripts/normalize-*.mjs',
                 'scripts/bulk-*.mjs',
                 'scripts/deploy-*.mjs',
+                // Manual, credential-gated ops CLIs (Vercel/Firebase env
+                // configuration): exercised against live services, not
+                // testable in CI — same class as deploy-*/verify-* above.
+                'scripts/configure-*.mjs',
+                'scripts/productionize.mjs',
+                'scripts/finalize-launch.mjs',
+                'scripts/bootstrap-credentials.mjs',
+                'scripts/custodian-runbook.mjs',
+                'scripts/run-next-steps.mjs',
+                'scripts/load-local-env.mjs',
+                'scripts/set-archive-phone.mjs',
+                'scripts/lib/**',
                 'scripts/set-admin-claim.mjs',
                 'scripts/extract-recipe-metadata.mjs',
+                'api/lib/recipeImagePrompts.ts',
                 'scripts/sync-firebase-sw-config.test.mjs',
                 '**/*.test.{ts,tsx,mjs}',
                 '**/*.spec.{ts,tsx,mjs}',
@@ -45,10 +58,10 @@ export default defineConfig({
             // regression fails CI but day-to-day churn does not. Bump these
             // upward as coverage improves; never lower them silently.
             thresholds: {
-                lines: 60,
-                statements: 58,
-                branches: 52,
-                functions: 55,
+                lines: 61,
+                statements: 59,
+                branches: 55,
+                functions: 58,
             },
         },
         include: [

@@ -13,6 +13,8 @@ interface ContributorsViewProps {
     trivia?: Trivia[];
     contributors: ContributorProfile[];
     onSelectContributor: (name: string) => void;
+    /** Open the contributor's spotlight (tribute) overlay */
+    onOpenSpotlight?: (name: string) => void;
     /** Jump to Gallery tab filtered to this contributor's approved photos */
     onViewGallery?: (name: string) => void;
     /** Optional: called when user taps "Browse recipes" in empty state */
@@ -59,6 +61,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
     trivia = [],
     contributors,
     onSelectContributor,
+    onOpenSpotlight,
     onViewGallery,
     onGoToRecipes,
     isDataLoading
@@ -245,6 +248,17 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
                                         {contributionSummary(stat)}
                                     </p>
                                     <div className="mt-auto w-full space-y-2">
+                                        {onOpenSpotlight && (
+                                            <button
+                                                type="button"
+                                                data-testid="open-contributor-spotlight"
+                                                onClick={() => onOpenSpotlight(stat.name)}
+                                                className="btn btn-primary w-full"
+                                                aria-label={`Open ${stat.name}'s spotlight with their recipes and family memories`}
+                                            >
+                                                🕯 Spotlight &amp; Memories
+                                            </button>
+                                        )}
                                         <button
                                             type="button"
                                             onClick={() => onSelectContributor(stat.name)}

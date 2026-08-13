@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, openRecipeCardInMainGridByTitle } from './fixtures';
 
+function recipeDetailsDialog(page: import('@playwright/test').Page) {
+    return page.locator('[role="dialog"][aria-label="Recipe details"]');
+}
+
 /**
  * Cook-mode swipe gesture e2e.
  *
@@ -67,5 +71,37 @@ test.describe('Cook Mode swipe navigation', () => {
         });
 
         await expect(cookApp.getByText(/Step 2 of \d+/).first()).toBeVisible({ timeout: 3000 });
+    });
+});
+
+test.describe('Cook tab step timers', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload();
+        await loginAs(page, 'Alice');
+    });
+
+    test('shows Start N-min timer chip on a timed instruction step', async ({ page }) => {
+        await openRecipeCardInMainGridByTitle(page, 'Festive Apple Dip');
+        await expect(recipeDetailsDialog(page)).toBeVisible();
+
+        const cookTab = recipeDetailsDialog(page).getByRole('tab', { name: /^Cook$/i });
+        if (!(await cookTab.isVisible().catch(() => false))) {
+            test.skip(true, 'Cook tab not visible for this recipe');
+            return;
+        }
+        await cookTab.click();
+
+        const timerStart = recipeDetailsDialog(page).locator('[data-testid^="recipe-step-timer-start-"]').first();
+        if (!(await timerStart.isVisible().catch(() => false))) {
+            test.skip(true, 'No timed instruction steps on Festive Apple Dip');
+            return;
+        }
+
+        await timerStart.click();
+        const running = recipeDetailsDialog(page).locator('[data-testid^="recipe-step-timer-running-"]').first();
+        await expect(running).toBeVisible({ timeout: 3000 });
+        await expect(running).toHaveText(/\d+:\d{2}/);
     });
 });

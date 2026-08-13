@@ -23,5 +23,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      # GitHub Pages deploy runs in parallel after CI; large assets can 503 briefly.
+      - name: Wait for Pages propagation
+        run: sleep 45
       - name: Production smoke URLs
         run: npm run smoke:prod

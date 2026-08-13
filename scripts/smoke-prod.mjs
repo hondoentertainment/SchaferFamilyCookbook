@@ -21,6 +21,28 @@ function isRecognizedImageContentType(contentType) {
   return /image\/(avif|gif|jpeg|jpg|png|webp)/i.test(contentType ?? '');
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** GitHub Pages often returns 502/503 while a deploy is propagating. */
+async function fetchWithRetry(url, { attempts = 5, baseDelayMs = 2000 } = {}) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, { redirect: 'follow' });
+      if (res.ok || (res.status !== 502 && res.status !== 503 && res.status !== 429)) {
+        return res;
+      }
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastErr = err;
+    }
+    if (i < attempts - 1) await sleep(baseDelayMs * (i + 1));
+  }
+  throw lastErr ?? new Error('fetch failed');
+}
+
 async function smokeRecipeImageAsset(siteBase, siteName) {
   if (!sampleRecipe?.image || !sampleRecipe.image.startsWith('/')) {
     console.error(`❌ ${siteName} recipe image: sample recipe has no site-relative image path`);
@@ -28,8 +50,11 @@ async function smokeRecipeImageAsset(siteBase, siteName) {
   }
 
   const imageUrl = new URL(sampleRecipe.image.replace(/^\//, ''), `${siteBase.replace(/\/$/, '')}/`).toString();
+  const isPages = /github\.io/i.test(siteBase);
   try {
-    const res = await fetch(imageUrl, { redirect: 'follow' });
+    const res = isPages
+      ? await fetchWithRetry(imageUrl, { attempts: 6, baseDelayMs: 3000 })
+      : await fetch(imageUrl, { redirect: 'follow' });
     if (!res.ok) {
       console.error(`❌ ${siteName} recipe image (${imageUrl}): HTTP ${res.status}`);
       return 1;
@@ -155,6 +180,94 @@ async function smokeVercelGalleryBundle(vercelBase) {
   }
 }
 
+/** PR #64 launch features should be present across production JS chunks (incl. lazy). */
+async function smokeVercelLaunchBundle(vercelBase) {
+  const name = 'Vercel launch feature bundle';
+  const indexUrl = `${vercelBase.replace(/\/$/, '')}/`;
+  const siteBase = vercelBase.replace(/\/$/, '');
+
+  try {
+    const indexRes = await fetch(indexUrl, { redirect: 'follow' });
+    if (!indexRes.ok) {
+      console.error(`❌ ${name}: index HTTP ${indexRes.status}`);
+      return 1;
+    }
+    const html = await indexRes.text();
+    const entryPaths = [...html.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
+    if (entryPaths.length === 0) {
+      console.warn(`⚠️  ${name}: could not find JS bundles in index.html (skipping)`);
+      return 0;
+    }
+
+    const seen = new Set();
+    const queue = [...entryPaths];
+    const texts = [];
+
+    while (queue.length > 0 && seen.size < 40) {
+      const src = queue.shift();
+      if (!src || seen.has(src)) continue;
+      seen.add(src);
+      const jsUrl = src.startsWith('http') ? src : `${siteBase}${src.startsWith('/') ? '' : '/'}${src}`;
+      const jsRes = await fetch(jsUrl, { redirect: 'follow' });
+      if (!jsRes.ok) continue;
+      const body = await jsRes.text();
+      texts.push(body);
+      for (const match of body.matchAll(/\/assets\/[A-Za-z0-9_.-]+\.js/g)) {
+        if (!seen.has(match[0])) queue.push(match[0]);
+      }
+      for (const match of body.matchAll(/assets\/([A-Za-z0-9_.-]+\.js)/g)) {
+        const path = `/assets/${match[1]}`;
+        if (!seen.has(path)) queue.push(path);
+      }
+      // Vite dynamic imports often reference bare hashed filenames (no /assets/).
+      for (const match of body.matchAll(/([A-Za-z][A-Za-z0-9_-]*-[A-Za-z0-9_-]+\.js)/g)) {
+        const path = `/assets/${match[1]}`;
+        if (!seen.has(path)) queue.push(path);
+      }
+    }
+
+    const js = texts.join('\n');
+    const markers = [
+      'Print the family cookbook',
+      'open-cookbook-print',
+      'recipe-step-timer-start',
+      'Family Notes',
+    ];
+    const missing = markers.filter((m) => !js.includes(m));
+    if (missing.length > 0) {
+      console.error(`❌ ${name}: bundle missing ${missing.join(', ')} (deploy may still be propagating)`);
+      return 1;
+    }
+    console.log(`✅ ${name}`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${name}: ${err.message}`);
+    return 1;
+  }
+}
+
+/** Notify API should reject unauthenticated POST (proves route is deployed). */
+async function smokeVercelNotifyRoute(vercelBase) {
+  const name = 'Vercel /api/notify route';
+  const url = `${vercelBase.replace(/\/$/, '')}/api/notify`;
+  try {
+    const postRes = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'smoke', body: 'test' }),
+    });
+    if (postRes.status !== 401) {
+      console.error(`❌ ${name}: expected HTTP 401 without secret, got ${postRes.status}`);
+      return 1;
+    }
+    console.log(`✅ ${name}`);
+    return 0;
+  } catch (err) {
+    console.error(`❌ ${name}: ${err.message}`);
+    return 1;
+  }
+}
+
 async function smoke() {
   let failed = 0;
   const vercel = URLS.find((u) => u.name === 'Vercel');
@@ -184,6 +297,8 @@ async function smoke() {
     failed += await smokeVercelPing(vercel.url);
     failed += await smokeVercelShareRoutes(vercel.url);
     failed += await smokeVercelGalleryBundle(vercel.url);
+    failed += await smokeVercelLaunchBundle(vercel.url);
+    failed += await smokeVercelNotifyRoute(vercel.url);
   }
 
   process.exit(failed > 0 ? 1 : 0);

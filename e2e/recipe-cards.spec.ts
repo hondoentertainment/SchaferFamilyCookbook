@@ -33,6 +33,23 @@ test.describe('Recipe cards', () => {
       .toBeGreaterThan(0);
   });
 
+  test('main grid photos are visible (not stuck at opacity 0)', async ({ page }) => {
+    const firstOpen = recipeCardOpenInMainGrid(page).first();
+    await firstOpen.scrollIntoViewIfNeeded();
+    const img = firstOpen.locator('img').first();
+    await expect(img).toBeVisible();
+    await expect
+      .poll(
+        async () =>
+          img.evaluate((el: HTMLImageElement) => {
+            if (!el.complete || el.naturalWidth <= 0) return 0;
+            return parseFloat(window.getComputedStyle(el).opacity);
+          }),
+        { timeout: 15_000 },
+      )
+      .toBeGreaterThan(0.9);
+  });
+
   test('favorite toggle on grid card does not open modal', async ({ page }) => {
     const article = page.getByTestId('recipe-card-grid').locator('article').first();
     const title = await article.getByTestId('recipe-card-open').locator('img').first().getAttribute('alt');

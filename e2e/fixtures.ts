@@ -92,6 +92,11 @@ export async function loginAs(
   await page.evaluate(() => {
     localStorage.setItem('schafer_onboarding_done', 'true');
   });
+  // Hermetic local mode: production builds bootstrap Firebase from env, which
+  // (a) ignores localStorage seeds the specs rely on and (b) leaks state
+  // between tests through shared emulator docs (e.g. userPrefs). Cloud-sync
+  // behavior is covered explicitly by loginAsWithFirebaseEmulator specs.
+  await seedLocalOnlyMode(page);
   await page.reload();
 
   await openLoginNameEntry(page, 'new');
@@ -125,6 +130,8 @@ export async function loginAsHome(
   await page.evaluate(() => {
     localStorage.setItem('schafer_onboarding_done', 'true');
   });
+  // Hermetic local mode (see loginAs).
+  await seedLocalOnlyMode(page);
   await page.reload();
 
   await openLoginNameEntry(page, 'new');
@@ -177,6 +184,29 @@ export async function loginAsAdmin(
   page: import('@playwright/test').Page
 ): Promise<void> {
   await loginAs(page, 'Kyle');
+}
+
+/** Profile → Admin Tools (custodian UI). Expands the admin collapsible if needed. */
+export async function goToAdminTools(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('[data-testid="nav-profile"]').click();
+  // Generous timeout: right after a reload the app may still be loading data
+  // (slow network / emulator warm-up) before the admin entry renders.
+  await page.getByRole('button', { name: /Open Admin Tools/i }).waitFor({ state: 'visible', timeout: 20000 });
+  await page.getByRole('button', { name: /Open Admin Tools/i }).click();
+
+  const adminPanel = page.getByRole('button', { name: /Admin — archive control room/i });
+  await adminPanel.waitFor({ state: 'visible', timeout: 5000 });
+  if ((await adminPanel.getAttribute('aria-expanded')) === 'false') {
+    await adminPanel.click();
+  }
+  await page.getByRole('heading', { name: /Manage Recipes/i }).first().waitFor({ state: 'visible', timeout: 15000 });
+}
+
+/** Log out from Profile (returns to welcome screen). */
+export async function logoutFromProfile(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('[data-testid="nav-profile"]').click();
+  await page.getByRole('button', { name: /Log out/i }).click();
+  await page.getByRole('heading', { name: /who's cooking/i }).waitFor({ state: 'visible', timeout: 10000 });
 }
 
 /**

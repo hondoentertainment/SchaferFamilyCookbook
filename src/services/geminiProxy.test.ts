@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { generateContent, generateImage, magicImport } from './geminiProxy';
+import { generateContent, generateImage, magicImport, importFromPhoto } from './geminiProxy';
 
 // ---------------------------------------------------------------------------
 // fetch is stubbed globally for every test in this file.
@@ -152,6 +152,50 @@ describe('magicImport', () => {
     it('surfaces a 429 rate-limiting error from the import endpoint', async () => {
         mockFetch.mockReturnValueOnce(makeErrorResponse(429, { error: 'Too many requests' }));
         await expect(magicImport('text')).rejects.toThrow('Too many requests');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// importFromPhoto (recipe import from a photographed card/page)
+// ---------------------------------------------------------------------------
+
+describe('importFromPhoto', () => {
+    it('returns the parsed recipe object on a well-formed response', async () => {
+        const recipe = { title: "Grandma's Rolls", ingredients: ['flour', 'yeast'], instructions: ['knead', 'rise', 'bake'] };
+        mockFetch.mockReturnValueOnce(makeOkResponse({ json: JSON.stringify(recipe) }));
+
+        const result = await importFromPhoto('aGVsbG8=', 'image/jpeg');
+        expect(result).toEqual(recipe);
+    });
+
+    it('sends a POST with action=importPhoto, imageBase64, and mimeType', async () => {
+        mockFetch.mockReturnValueOnce(makeOkResponse({ json: '{"title":"Test"}' }));
+        await importFromPhoto('c29tZWJhc2U2NA==', 'image/png');
+
+        const [url, options] = mockFetch.mock.calls[0] as [string, { method: string; body: string }];
+        expect(url).toBe('/api/gemini');
+        const body = JSON.parse(options.body as string);
+        expect(body).toEqual({ action: 'importPhoto', imageBase64: 'c29tZWJhc2U2NA==', mimeType: 'image/png' });
+    });
+
+    it('throws a descriptive error when the server returns malformed JSON in the json field', async () => {
+        mockFetch.mockReturnValueOnce(makeOkResponse({ json: '{ nope' }));
+        await expect(importFromPhoto('abc', 'image/jpeg')).rejects.toThrow('Failed to parse recipe JSON');
+    });
+
+    it('throws when the parsed value is not an object', async () => {
+        mockFetch.mockReturnValueOnce(makeOkResponse({ json: '["a"]' }));
+        await expect(importFromPhoto('abc', 'image/jpeg')).rejects.toThrow('Unexpected response shape');
+    });
+
+    it('surfaces API validation errors (unsupported type)', async () => {
+        mockFetch.mockReturnValueOnce(makeErrorResponse(400, { error: 'Unsupported image type. Use a JPEG, PNG, WebP, or HEIC photo.' }));
+        await expect(importFromPhoto('abc', 'image/gif')).rejects.toThrow('Unsupported image type');
+    });
+
+    it('surfaces a 429 rate-limit error', async () => {
+        mockFetch.mockReturnValueOnce(makeErrorResponse(429, { error: 'Too many requests' }));
+        await expect(importFromPhoto('abc', 'image/jpeg')).rejects.toThrow('Too many requests');
     });
 });
 

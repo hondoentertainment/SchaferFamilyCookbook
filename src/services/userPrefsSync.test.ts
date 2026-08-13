@@ -5,10 +5,13 @@ import {
     mergeCollections,
     mergeMealPlan,
     mergeGroceryList,
+    mergeNotes,
+    parseNotes,
     fetchRemotePrefs,
     writeRemotePrefs,
     createDebouncedWriter,
 } from './userPrefsSync';
+import type { RecipeNote } from '../types';
 import type { RecipeCollection } from '../types';
 import type { MealPlanEntry } from '../utils/mealPlan';
 import type { GroceryItem } from '../utils/groceryList';
@@ -319,6 +322,9 @@ describe('userPrefsSync', () => {
                 collections: [],
                 mealPlan: [{ id: 'mp1', date: '2026-06-21', recipeId: 'r1', addedAt: 100 }],
                 groceryList: [],
+                notes: [],
+                deletedNoteIds: [],
+                displayName: undefined,
             });
         });
 
@@ -470,6 +476,222 @@ describe('userPrefsSync', () => {
 
             expect(setDocSpy).toHaveBeenCalledTimes(1);
             expect(ok).toBe(true);
+        });
+    });
+
+    describe('parseNotes', () => {
+        it('keeps well-formed notes and drops malformed entries', () => {
+            const parsed = parseNotes([
+                {
+                    id: 'n1',
+                    recipeId: 'r1',
+                    userName: 'Dawn',
+                    text: 'Use browned butter.',
+                    timestamp: '2026-06-01T00:00:00.000Z',
+                },
+                { id: 'n2', recipeId: 'r1', userName: 'Dawn', text: '   ', timestamp: 'x' },
+                { id: '', recipeId: 'r1', userName: 'Dawn', text: 'no id', timestamp: 'x' },
+                'not an object',
+                null,
+            ]);
+            expect(parsed).toHaveLength(1);
+            expect(parsed[0]?.id).toBe('n1');
+        });
+
+        it('returns an empty list for non-array input', () => {
+            expect(parseNotes({ n1: {} })).toEqual([]);
+            expect(parseNotes(undefined)).toEqual([]);
+        });
+    });
+
+    describe('mergeNotes', () => {
+        const note = (id: string, timestamp: string, text = 'tip'): RecipeNote => ({
+            id,
+            recipeId: 'r1',
+            userName: 'Dawn',
+            text,
+            timestamp,
+        });
+
+        it('unions notes from both sides by id', () => {
+            const merged = mergeNotes(
+                [note('a', '2026-06-01T00:00:00.000Z')],
+                [note('b', '2026-06-02T00:00:00.000Z')]
+            );
+            expect(merged.map((n) => n.id)).toEqual(['a', 'b']);
+        });
+
+        it('prefers the newer version on id collision', () => {
+            const merged = mergeNotes(
+                [note('a', '2026-06-01T00:00:00.000Z', 'old')],
+                [note('a', '2026-06-05T00:00:00.000Z', 'new')]
+            );
+            expect(merged).toHaveLength(1);
+            expect(merged[0]?.text).toBe('new');
+        });
+
+        it('sorts merged notes oldest-first', () => {
+            const merged = mergeNotes(
+                [note('later', '2026-06-09T00:00:00.000Z')],
+                [note('earlier', '2026-06-01T00:00:00.000Z')]
+            );
+            expect(merged.map((n) => n.id)).toEqual(['earlier', 'later']);
+        });
+
+        it('excludes tombstoned ids so deletions are not resurrected', () => {
+            const merged = mergeNotes(
+                [note('kept', '2026-06-01T00:00:00.000Z')],
+                [note('deleted-elsewhere', '2026-06-02T00:00:00.000Z')],
+                new Set(['deleted-elsewhere'])
+            );
+            expect(merged.map((n) => n.id)).toEqual(['kept']);
+        });
+    });
+
+    describe('deleted-note tombstones in mergePrefs', () => {
+        it('unions tombstones from both sides and filters merged notes', () => {
+            const base = {
+                favorites: [],
+                ratings: {},
+                collections: [],
+            };
+            const merged = mergePrefs(
+                {
+                    ...base,
+                    notes: [],
+                    deletedNoteIds: ['n1'],
+                },
+                {
+                    ...base,
+                    notes: [
+                        {
+                            id: 'n1',
+                            recipeId: 'r1',
+                            userName: 'Dawn',
+                            text: 'stale copy of a deleted note',
+                            timestamp: '2026-06-01T00:00:00.000Z',
+                        },
+                    ],
+                    deletedNoteIds: ['n2'],
+                }
+            );
+            expect(merged.deletedNoteIds?.sort()).toEqual(['n1', 'n2']);
+            expect(merged.notes).toEqual([]);
+        });
+    });
+
+    describe('writeRemotePrefs legacy fallback', () => {
+        function activateFirebase() {
+            localStorage.setItem('schafer_active_provider', 'firebase');
+            localStorage.setItem(
+                'schafer_firebase_config',
+                JSON.stringify({ apiKey: 'test', projectId: 'test' })
+            );
+        }
+
+        it('retries without new fields when rules reject the write', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            const denied = Object.assign(new Error('Missing or insufficient permissions.'), {
+                code: 'permission-denied',
+            });
+            setDocSpy.mockRejectedValueOnce(denied).mockResolvedValueOnce(undefined);
+
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: ['r1'],
+                ratings: {},
+                collections: [],
+                notes: [
+                    {
+                        id: 'n1',
+                        recipeId: 'r1',
+                        userName: 'Grandma Joan',
+                        text: 'tip',
+                        timestamp: '2026-07-01T00:00:00.000Z',
+                    },
+                ],
+                deletedNoteIds: ['n0'],
+                displayName: 'Grandma Joan',
+            });
+
+            expect(ok).toBe(true);
+            expect(setDocSpy).toHaveBeenCalledTimes(2);
+            const firstPayload = setDocSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+            const retryPayload = setDocSpy.mock.calls[1]?.[1] as Record<string, unknown>;
+            expect(firstPayload).toHaveProperty('notes');
+            expect(retryPayload).not.toHaveProperty('notes');
+            expect(retryPayload).not.toHaveProperty('deletedNoteIds');
+            expect(retryPayload).not.toHaveProperty('displayName');
+            expect(retryPayload).toHaveProperty('favorites', ['r1']);
+        });
+
+        it('strips explicit undefined fields so Firestore accepts the write', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockResolvedValueOnce(undefined);
+
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: [],
+                ratings: {},
+                collections: [
+                    {
+                        id: 'col1',
+                        name: 'Holiday',
+                        description: undefined,
+                        recipeIds: [],
+                        createdBy: 'joan',
+                        icon: '🎄',
+                        timestamp: '2026-07-01T00:00:00.000Z',
+                    },
+                ],
+                groceryList: [
+                    {
+                        id: 'g1',
+                        text: 'Manual item',
+                        recipeId: undefined,
+                        recipeTitle: undefined,
+                        checked: false,
+                        addedAt: 100,
+                    },
+                ],
+            });
+
+            expect(ok).toBe(true);
+            const written = setDocSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+            const hasUndefinedDeep = (v: unknown): boolean => {
+                if (v === undefined) return true;
+                if (Array.isArray(v)) return v.some(hasUndefinedDeep);
+                if (v && typeof v === 'object') {
+                    return Object.values(v as Record<string, unknown>).some(hasUndefinedDeep);
+                }
+                return false;
+            };
+            expect(hasUndefinedDeep(written.groceryList)).toBe(false);
+            expect(hasUndefinedDeep(written.collections)).toBe(false);
+            expect(
+                Object.prototype.hasOwnProperty.call(
+                    (written.groceryList as Record<string, unknown>[])[0]!,
+                    'recipeId'
+                )
+            ).toBe(false);
+        });
+
+        it('does not retry on non-permission errors', async () => {
+            activateFirebase();
+            const firestore = await import('firebase/firestore');
+            const setDocSpy = vi.mocked(firestore.setDoc);
+            setDocSpy.mockRejectedValueOnce(new Error('network down'));
+
+            const ok = await writeRemotePrefs('grandma-joan', {
+                favorites: [],
+                ratings: {},
+                collections: [],
+            });
+
+            expect(ok).toBe(false);
+            expect(setDocSpy).toHaveBeenCalledTimes(1);
         });
     });
 });

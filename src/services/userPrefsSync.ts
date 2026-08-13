@@ -2,7 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { CloudArchive } from './db';
 import { Sentry } from '../monitoring/sentry';
-import type { RecipeCollection } from '../types';
+import type { RecipeCollection, RecipeNote } from '../types';
 import type { MealPlanEntry } from '../utils/mealPlan';
 import type { GroceryItem } from '../utils/groceryList';
 
@@ -42,8 +42,14 @@ export function notifyPrefsChanged(): void {
  *     collections: RecipeCollection[],
  *     mealPlan: MealPlanEntry[],
  *     groceryList: GroceryItem[],
+ *     notes: RecipeNote[],
+ *     displayName: string,
  *     updatedAt: Timestamp
  *   }
+ *
+ * `ratings`, `notes`, and `displayName` are world-readable and feed the
+ * family-wide aggregate (see services/familyPrefs.ts) so everyone sees
+ * everyone's ratings and recipe notes.
  *
  * Local utilities in `src/utils/favorites.ts`, `src/utils/ratings.ts`, and
  * `src/utils/collections.ts` remain the source of truth for component state;
@@ -59,6 +65,77 @@ export interface UserPrefsPayload {
     collections: RecipeCollection[];
     mealPlan?: MealPlanEntry[];
     groceryList?: GroceryItem[];
+    notes?: RecipeNote[];
+    /** Tombstones: ids of deleted notes, so removals survive cross-device merges. */
+    deletedNoteIds?: string[];
+    displayName?: string;
+}
+
+/** Keep the tombstone list bounded; notes are rare, so this is years of headroom. */
+const MAX_DELETED_NOTE_IDS = 500;
+
+export function parseDeletedNoteIds(raw: unknown): string[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.filter((x): x is string => typeof x === 'string' && x.length > 0);
+}
+
+/** Union tombstones from both sides, newest kept when the cap is exceeded. */
+export function mergeDeletedNoteIds(local: string[], remote: string[]): string[] {
+    return [...new Set([...remote, ...local])].slice(-MAX_DELETED_NOTE_IDS);
+}
+
+export function parseNoteEntry(raw: unknown): RecipeNote | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const o = raw as Record<string, unknown>;
+    if (typeof o.id !== 'string' || !o.id) return null;
+    if (typeof o.recipeId !== 'string' || !o.recipeId) return null;
+    if (typeof o.userName !== 'string') return null;
+    if (typeof o.text !== 'string' || !o.text.trim()) return null;
+    if (typeof o.timestamp !== 'string') return null;
+    return {
+        id: o.id,
+        recipeId: o.recipeId,
+        userName: o.userName,
+        text: o.text,
+        timestamp: o.timestamp,
+    };
+}
+
+export function parseNotes(raw: unknown): RecipeNote[] {
+    if (!Array.isArray(raw)) return [];
+    const out: RecipeNote[] = [];
+    for (const item of raw) {
+        const note = parseNoteEntry(item);
+        if (note) out.push(note);
+    }
+    return out;
+}
+
+/**
+ * Union notes by id; on id collision prefer the newer timestamp. Notes whose
+ * id appears in `deletedNoteIds` are excluded, so a deletion on one device is
+ * not resurrected by a stale copy from another.
+ */
+export function mergeNotes(
+    local: RecipeNote[],
+    remote: RecipeNote[],
+    deletedNoteIds: ReadonlySet<string> = new Set()
+): RecipeNote[] {
+    const byId = new Map<string, RecipeNote>();
+    for (const note of [...local, ...remote]) {
+        if (deletedNoteIds.has(note.id)) continue;
+        const existing = byId.get(note.id);
+        if (!existing) {
+            byId.set(note.id, note);
+            continue;
+        }
+        const noteTime = Date.parse(note.timestamp) || 0;
+        const existingTime = Date.parse(existing.timestamp) || 0;
+        if (noteTime > existingTime) byId.set(note.id, note);
+    }
+    return [...byId.values()].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 }
 
 function parseMealPlanEntry(raw: unknown): MealPlanEntry | null {
@@ -330,7 +407,13 @@ export async function fetchRemotePrefs(userId: string): Promise<UserPrefsPayload
         const collections = parseCollections(data?.collections);
         const mealPlan = parseMealPlan(data?.mealPlan);
         const groceryList = parseGroceryList(data?.groceryList);
-        return { favorites, ratings, collections, mealPlan, groceryList };
+        const notes = parseNotes(data?.notes);
+        const deletedNoteIds = parseDeletedNoteIds(data?.deletedNoteIds);
+        const displayName =
+            typeof data?.displayName === 'string' && data.displayName.trim()
+                ? data.displayName.trim()
+                : undefined;
+        return { favorites, ratings, collections, mealPlan, groceryList, notes, deletedNoteIds, displayName };
     } catch (err) {
         logSyncError('fetchRemotePrefs', err);
         return null;
@@ -347,22 +430,44 @@ export async function writeRemotePrefs(
 ): Promise<boolean> {
     const db = getDb();
     if (!db || !userId) return false;
+    const ref = doc(db, 'userPrefs', userId);
+    // Firestore rejects the ENTIRE write when any nested field is an explicit
+    // `undefined` (e.g. a manual grocery item's recipeId, or a collection
+    // without a description). JSON round-trip drops those keys.
+    const stripUndefined = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+    const legacyPayload: Record<string, unknown> = {
+        favorites: [...new Set(payload.favorites)],
+        ratings: stripUndefined(payload.ratings),
+        collections: stripUndefined(payload.collections),
+        mealPlan: stripUndefined(payload.mealPlan ?? []),
+        groceryList: stripUndefined(payload.groceryList ?? []),
+        updatedAt: serverTimestamp(),
+    };
+    const docPayload: Record<string, unknown> = {
+        ...legacyPayload,
+        notes: stripUndefined(payload.notes ?? []),
+        deletedNoteIds: payload.deletedNoteIds ?? [],
+    };
+    if (payload.displayName?.trim()) docPayload.displayName = payload.displayName.trim();
     try {
-        const ref = doc(db, 'userPrefs', userId);
-        await setDoc(
-            ref,
-            {
-                favorites: [...new Set(payload.favorites)],
-                ratings: payload.ratings,
-                collections: payload.collections,
-                mealPlan: payload.mealPlan ?? [],
-                groceryList: payload.groceryList ?? [],
-                updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-        );
+        await setDoc(ref, docPayload, { merge: true });
         return true;
     } catch (err) {
+        // Deployed rules may predate the notes/displayName fields, in which
+        // case the whole write is rejected. Retry with the legacy shape so
+        // favorites/ratings/collections sync keeps working until the new
+        // rules are deployed.
+        const code = (err as { code?: string } | null)?.code;
+        if (code === 'permission-denied') {
+            try {
+                await setDoc(ref, legacyPayload, { merge: true });
+                logSyncError('writeRemotePrefs.legacyFallback', err);
+                return true;
+            } catch (legacyErr) {
+                logSyncError('writeRemotePrefs', legacyErr);
+                return false;
+            }
+        }
         logSyncError('writeRemotePrefs', err);
         return false;
     }
@@ -389,12 +494,19 @@ export function mergePrefs(
     for (const [recipeId, rating] of Object.entries(remote.ratings)) {
         ratings[recipeId] = rating;
     }
+    const deletedNoteIds = mergeDeletedNoteIds(
+        local.deletedNoteIds ?? [],
+        remote.deletedNoteIds ?? []
+    );
     return {
         favorites: [...favSet],
         ratings,
         collections: mergeCollections(local.collections, remote.collections),
         mealPlan: mergeMealPlan(local.mealPlan ?? [], remote.mealPlan ?? []),
         groceryList: mergeGroceryList(local.groceryList ?? [], remote.groceryList ?? []),
+        notes: mergeNotes(local.notes ?? [], remote.notes ?? [], new Set(deletedNoteIds)),
+        deletedNoteIds,
+        displayName: local.displayName ?? remote.displayName,
     };
 }
 

@@ -50,7 +50,9 @@ test.describe('Tab navigation', () => {
   test('can log out', async ({ page }) => {
     await page.getByRole('button', { name: /Log out/i }).click();
     await expect(page.getByRole('heading', { name: /who's cooking/i })).toBeVisible({ timeout: 3000 });
-    await expect(page.getByPlaceholder(/your name/i)).toBeVisible();
+    // Two-step welcome screen: the name field appears after choosing a path.
+    await expect(page.getByTestId('login-intent-new')).toBeVisible();
+    await expect(page.getByTestId('login-intent-returning')).toBeVisible();
   });
 
   test('logo link returns to Home', async ({ page }) => {

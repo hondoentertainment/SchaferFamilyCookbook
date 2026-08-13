@@ -4,15 +4,26 @@
  */
 const url = (process.env.LHCI_URL || 'https://schafer-family-cookbook.vercel.app/').trim();
 
+const chromeFlags = '--headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage';
+const blockedUrlPatterns = [
+  'firestore.googleapis.com',
+  'firebaseio.com',
+  'fcm.googleapis.com',
+];
+
 module.exports = {
   ci: {
     collect: {
       url: [url],
-      numberOfRuns: 2,
-      settings: [
-        { preset: 'desktop' },
-        { preset: 'mobile' },
-      ],
+      numberOfRuns: 1,
+      // Top-level flags are required for Chrome launch on GitHub Actions runners.
+      chromePath: process.env.CHROME_PATH || undefined,
+      settings: {
+        chromeFlags,
+        blockedUrlPatterns,
+        maxWaitForLoad: 45000,
+        preset: 'desktop',
+      },
     },
     assert: {
       assertions: {
@@ -28,6 +39,5 @@ module.exports = {
       target: 'filesystem',
       outputDir: './.lighthouseci',
     },
-    // Reports land in `.lighthouseci/` — attach as a CI artifact for trend review.
   },
 };

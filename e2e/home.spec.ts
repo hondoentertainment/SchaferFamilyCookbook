@@ -41,9 +41,9 @@ test.describe('Home dashboard', () => {
     const triviaCard = page.getByTestId('home-open-trivia');
     if (await triviaCard.isVisible().catch(() => false)) {
       await triviaCard.click();
-      await expect(page.getByRole('heading', { name: /Family Heritage Quiz|Trivia/i }).first()).toBeVisible({
-        timeout: 5000,
-      });
+      await expect(
+        page.getByRole('heading', { name: /Test your legacy knowledge|The Quiz Archive is Empty|Trivia/i }).first()
+      ).toBeVisible({ timeout: 5000 });
     }
   });
 
@@ -84,9 +84,9 @@ test.describe('Section sub-navigation', () => {
     await expect(page.getByRole('heading', { name: 'Family Gallery' })).toBeVisible();
     const familySubNav = page.getByRole('region', { name: /Family hub navigation/i });
     await familySubNav.getByRole('button', { name: /^Trivia\b/ }).click();
-    await expect(page.getByRole('heading', { name: /Family Heritage Quiz|Trivia/i }).first()).toBeVisible({
-      timeout: 5000,
-    });
+    await expect(
+      page.getByRole('heading', { name: /Test your legacy knowledge|The Quiz Archive is Empty|Trivia/i }).first()
+    ).toBeVisible({ timeout: 5000 });
   });
 
   test('Cook sub-nav switches between Grocery List and Meal Plan', async ({ page }) => {

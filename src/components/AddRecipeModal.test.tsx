@@ -8,6 +8,7 @@ vi.mock('../services/geminiProxy', () => ({
     magicImport: vi.fn(),
     generateImage: vi.fn(),
     generateContent: vi.fn(),
+    importFromPhoto: vi.fn(),
 }));
 
 import * as geminiProxy from '../services/geminiProxy';
@@ -279,6 +280,86 @@ describe('AddRecipeModal', () => {
             expect(cooldownBtns.length).toBeGreaterThanOrEqual(1);
             cooldownBtns.forEach((btn) => expect(btn).toBeDisabled());
         });
+    });
+
+    // --- Scan a recipe card (photo import) ---
+
+    const makePhotoFile = (name = 'card.jpg', type = 'image/jpeg', bytes = 64) =>
+        new File([new Uint8Array(bytes)], name, { type });
+
+    it('renders the scan-a-recipe-card input', () => {
+        renderWithProviders(<AddRecipeModal {...defaultProps} />);
+        expect(screen.getByTestId('add-recipe-scan-photo')).toBeInTheDocument();
+        expect(screen.getByLabelText(/scan a recipe card photo/i)).toBeInTheDocument();
+    });
+
+    it('populates form fields after a successful photo scan', async () => {
+        (geminiProxy.importFromPhoto as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            title: "Grandma's Rolls",
+            ingredients: ['flour', 'yeast'],
+            instructions: ['Knead', 'Rise', 'Bake'],
+        });
+
+        renderWithProviders(<AddRecipeModal {...defaultProps} />);
+        fireEvent.change(screen.getByTestId('add-recipe-scan-photo'), {
+            target: { files: [makePhotoFile()] },
+        });
+
+        await waitFor(() => {
+            const titleInput = screen.getByLabelText(/recipe title/i) as HTMLInputElement;
+            expect(titleInput.value).toBe("Grandma's Rolls");
+        });
+        const [base64Arg, mimeArg] = (geminiProxy.importFromPhoto as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(typeof base64Arg).toBe('string');
+        expect(base64Arg.length).toBeGreaterThan(0);
+        expect(mimeArg).toBe('image/jpeg');
+    });
+
+    it('rejects photos over 8 MB without calling the API', async () => {
+        renderWithProviders(<AddRecipeModal {...defaultProps} />);
+        const bigFile = makePhotoFile('big.jpg', 'image/jpeg', 8 * 1024 * 1024 + 1);
+        fireEvent.change(screen.getByTestId('add-recipe-scan-photo'), {
+            target: { files: [bigFile] },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('toast-stack')).toBeInTheDocument();
+        });
+        expect(geminiProxy.importFromPhoto).not.toHaveBeenCalled();
+    });
+
+    it('shows an error toast when the photo scan fails', async () => {
+        (geminiProxy.importFromPhoto as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+            new Error('fetch failed: network error')
+        );
+
+        renderWithProviders(<AddRecipeModal {...defaultProps} />);
+        fireEvent.change(screen.getByTestId('add-recipe-scan-photo'), {
+            target: { files: [makePhotoFile()] },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('toast-stack')).toBeInTheDocument();
+        });
+        const titleInput = screen.getByLabelText(/recipe title/i) as HTMLInputElement;
+        expect(titleInput.value).toBe('');
+    });
+
+    it('starts the AI cooldown when the photo scan hits a quota error', async () => {
+        (geminiProxy.importFromPhoto as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+            new Error('429 quota exceeded')
+        );
+
+        renderWithProviders(<AddRecipeModal {...defaultProps} />);
+        fireEvent.change(screen.getByTestId('add-recipe-scan-photo'), {
+            target: { files: [makePhotoFile()] },
+        });
+
+        await waitFor(() => {
+            const cooldownBtns = screen.getAllByRole('button', { name: /cooldown/i });
+            expect(cooldownBtns.length).toBeGreaterThanOrEqual(1);
+        });
+        expect(screen.getByTestId('add-recipe-scan-photo')).toBeDisabled();
     });
 
     // --- Accessibility ---

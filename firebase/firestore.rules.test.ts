@@ -137,6 +137,96 @@ describe('firestore.rules (emulator)', () => {
         );
     });
 
+    it('anonymous can write userPrefs with notes and displayName shape', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'userPrefs/scout'), {
+                favorites: [],
+                ratings: { r1: 4 },
+                displayName: 'Scout',
+                notes: [
+                    {
+                        id: 'n1',
+                        recipeId: 'r1',
+                        userName: 'Scout',
+                        text: 'Add extra butter — trust me.',
+                        timestamp: '2026-07-01T00:00:00.000Z',
+                    },
+                ],
+                updatedAt: serverTimestamp(),
+            }),
+        );
+    });
+
+    it('anonymous cannot write userPrefs with a non-string displayName', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'userPrefs/bad'), {
+                favorites: [],
+                displayName: 42,
+            }),
+        );
+    });
+
+    it('anonymous cannot write userPrefs with an overlong displayName', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'userPrefs/bad'), {
+                favorites: [],
+                displayName: 'x'.repeat(81),
+            }),
+        );
+    });
+
+    it('anonymous cannot write userPrefs with non-list notes', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'userPrefs/bad'), {
+                favorites: [],
+                notes: { n1: 'not a list' },
+            }),
+        );
+    });
+
+    it('anonymous can write userPrefs with deletedNoteIds tombstones', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertSucceeds(
+            setDoc(doc(anon, 'userPrefs/scout'), {
+                favorites: [],
+                notes: [],
+                deletedNoteIds: ['n1', 'n2'],
+                updatedAt: serverTimestamp(),
+            }),
+        );
+    });
+
+    it('anonymous cannot write userPrefs with non-list deletedNoteIds', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        await assertFails(
+            setDoc(doc(anon, 'userPrefs/bad'), {
+                favorites: [],
+                deletedNoteIds: 'n1',
+            }),
+        );
+    });
+
+    it('anonymous cannot write userPrefs with an oversized notes list', async () => {
+        const anon = env.unauthenticatedContext().firestore();
+        const notes = Array.from({ length: 501 }, (_, i) => ({
+            id: `n${i}`,
+            recipeId: 'r1',
+            userName: 'Scout',
+            text: 'x',
+            timestamp: '2026-07-01T00:00:00.000Z',
+        }));
+        await assertFails(
+            setDoc(doc(anon, 'userPrefs/bad'), {
+                favorites: [],
+                notes,
+            }),
+        );
+    });
+
     it('anonymous cannot add unexpected keys to userPrefs', async () => {
         const anon = env.unauthenticatedContext().firestore();
         await assertFails(

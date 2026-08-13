@@ -10,7 +10,10 @@ test.describe('Recipes tab', () => {
   });
 
   test('displays hero section and recipe count', async ({ page }) => {
-    await expect(page.getByText(/Find something worth cooking tonight/i)).toBeVisible();
+    // The headline exists in both the mobile and desktop hero sections; use
+    // getByRole so the CSS-hidden variant (absent from the a11y tree) is
+    // excluded and only the visible heading matches.
+    await expect(page.getByRole('heading', { name: /Find something worth cooking tonight/i })).toBeVisible();
     await expect(page.getByText(/The Schafer Cookbook/i)).toBeVisible();
     await expect(page.getByText(/Search \d+ family recipes by dish, ingredient, person, season, or occasion/i)).toBeVisible();
   });
@@ -35,5 +38,16 @@ test.describe('Recipes tab', () => {
   test('empty filter shows empty message', async ({ page }) => {
     await page.getByRole('textbox', { name: /Search recipes, ingredients/i }).fill('xyznonexistent123');
     await expect(page.getByText(/No recipes match your search or filters/i)).toBeVisible({ timeout: 3000 });
+  });
+
+  test('opens printable family cookbook overlay', async ({ page }) => {
+    // Desktop hero uses open-cookbook-print; mobile uses *-mobile (often CSS-hidden on chromium).
+    const printBtn = page.locator(
+      '[data-testid="open-cookbook-print"], [data-testid="open-cookbook-print-mobile"]',
+    ).locator('visible=true').first();
+    await expect(printBtn).toBeVisible({ timeout: 5000 });
+    await printBtn.click();
+    await expect(page.getByTestId('cookbook-print-button')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.cookbook-print-overlay')).toBeVisible();
   });
 });

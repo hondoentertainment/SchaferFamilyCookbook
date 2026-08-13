@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsWithFirebaseEmulator, seedFirebaseEmulatorConfig } from './fixtures';
+import { loginAsWithFirebaseEmulator, openLoginNameEntry, seedFirebaseEmulatorConfig } from './fixtures';
 
 const useEmulator = process.env.VITE_FIREBASE_USE_EMULATOR === 'true';
 
@@ -29,6 +29,7 @@ test.describe('Grocery cloud sync (Firestore emulator)', () => {
     await pageB.evaluate(() => localStorage.setItem('schafer_onboarding_done', 'true'));
     await pageB.reload();
 
+    await openLoginNameEntry(pageB, 'new');
     await pageB.getByPlaceholder(/your name/i).fill('GrocerySyncUser');
     await pageB.getByRole('button', { name: /^continue$/i }).click();
 
