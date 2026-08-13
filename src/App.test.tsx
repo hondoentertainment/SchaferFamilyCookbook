@@ -222,7 +222,12 @@ describe('Featured recipes on Recipes tab', () => {
         fireEvent.click(screen.getAllByRole('button', { name: /^Recipes$/i })[0]);
         await screen.findAllByText('Plain Toast', {}, { timeout: 3000 });
 
-        expect(screen.getByTestId('featured-strip')).toBeInTheDocument();
+        // FeaturedStrip is lazy-loaded (Suspense fallback is null). Wait for the
+        // chunk; Vite 8 + coverage makes the first dynamic import slower than the
+        // recipe list, so a sync getByTestId races and misses the strip.
+        const strip = await screen.findByTestId('featured-strip', {}, { timeout: 3000 });
+        expect(strip).toBeInTheDocument();
+        expect(within(strip).getByRole('button', { name: /Open featured recipe: Festive Apple Dip/i })).toBeInTheDocument();
     });
 
     it('renders the Featured strip on the Recipes tab when at least one recipe is featured', async () => {
