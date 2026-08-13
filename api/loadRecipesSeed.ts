@@ -23,6 +23,6 @@ export function loadRecipesSeed(): RecipeSeedLike[] {
         return cachedSeed;
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        throw new Error(`Failed to load recipe seed for API routes: ${message}`);
+        throw new Error(`Failed to load recipe seed for API routes: ${message}`, { cause: err });
     }
 }
