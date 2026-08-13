@@ -2809,10 +2809,11 @@ const App: React.FC = () => {
                             } catch (e) {
                                 if (e instanceof FirebaseError && e.code === 'permission-denied') {
                                     throw new Error(
-                                        'The shared family directory is managed by custodians. Sign in with Google under Profile → Admin tools (if you are one), or ask a custodian to update your profile.'
+                                        'The shared family directory is managed by custodians. Sign in with Google under Profile → Admin tools (if you are one), or ask a custodian to update your profile.',
+                                        { cause: e },
                                     );
                                 }
-                                throw new Error(CLOUD_ERROR_MSG);
+                                throw new Error(CLOUD_ERROR_MSG, { cause: e });
                             }
                         }}
                         onEditRecipe={(recipe) => {
