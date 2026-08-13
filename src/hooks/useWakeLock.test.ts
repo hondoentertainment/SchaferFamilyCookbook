@@ -17,7 +17,7 @@ describe('useWakeLock', () => {
     });
 
     afterEach(() => {
-        delete (navigator as WakeLockNavigator).wakeLock;
+        delete (navigator as { wakeLock?: unknown }).wakeLock;
     });
 
     it('requests a screen wake lock when active', async () => {
