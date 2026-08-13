@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Recipe } from '../types';
 import { siteConfig } from '../config/site';
-import { CATEGORY_META } from '../constants/taxonomy';
+import { CATEGORY_META, type RecipeCategory } from '../constants/taxonomy';
+
+function categoryMeta(category: string) {
+    return CATEGORY_META[category as RecipeCategory];
+}
 import { useFocusTrap } from '../utils/focusTrap';
 import { hapticLight } from '../utils/haptics';
 
@@ -122,7 +126,7 @@ export const CookbookPrintView: React.FC<CookbookPrintViewProps> = ({ recipes, o
                         {chapters.map(({ category, recipes: chapterRecipes }) => (
                             <div key={category}>
                                 <h3 className="text-xs font-black uppercase tracking-widest text-[#A0522D] mb-2">
-                                    {CATEGORY_META[category]?.icon ? `${CATEGORY_META[category]!.icon} ` : ''}
+                                    {categoryMeta(category)?.icon ? `${categoryMeta(category)!.icon} ` : ''}
                                     {category}
                                 </h3>
                                 <ul className="space-y-1">
@@ -144,7 +148,7 @@ export const CookbookPrintView: React.FC<CookbookPrintViewProps> = ({ recipes, o
                     <section key={category} aria-label={`${category} chapter`} className="print-page-break">
                         <div className="px-10 pt-16 pb-8 text-center border-b border-stone-100">
                             <p className="text-4xl mb-3" aria-hidden>
-                                {CATEGORY_META[category]?.icon || CATEGORY_META.Generic.icon}
+                                {categoryMeta(category)?.icon || CATEGORY_META.Generic.icon}
                             </p>
                             <h2 className="font-serif italic text-4xl text-[#2D4635]">{category}</h2>
                         </div>

@@ -65,12 +65,12 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
             <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl border border-stone-100 overflow-hidden animate-in zoom-in-95 duration-300 motion-reduce:animate-none">
                 <div className="p-8 border-b border-stone-50 flex justify-between items-center">
                     <div>
-                        <h3 id="avatar-picker-title" className="text-2xl font-serif italic text-[#2D4635]">Heritage Identity Library</h3>
+                        <h3 id="avatar-picker-title" className="text-2xl font-serif italic text-[var(--color-brand)]">Heritage Identity Library</h3>
                         <p className="text-xs text-stone-500 mt-1 uppercase tracking-widest font-black">Select a legacy representative</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-50 text-stone-500 flex items-center justify-center hover:bg-stone-100 transition-colors font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                        className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full bg-stone-50 text-stone-500 flex items-center justify-center hover:bg-stone-100 transition-colors font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                         aria-label="Close avatar picker"
                     >
                         ✕
@@ -88,7 +88,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                                 aria-controls="avatar-grid"
                                 id={`avatar-tab-${i}`}
                                 onClick={() => setActiveSetIndex(i)}
-                                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${activeSetIndex === i ? 'bg-[#2D4635] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
+                                className={`px-4 py-2 rounded-full label transition-colors ${activeSetIndex === i ? 'bg-[var(--color-brand)] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
                             >
                                 {set.label}
                             </button>
@@ -107,13 +107,13 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                             key={`${activeSetIndex}-${url}`}
                             type="button"
                             onClick={() => setSelectedUrl(url)}
-                            className={`relative group rounded-2xl overflow-hidden transition-colors p-2 motion-reduce:transition-none ${!prefersReducedMotion ? 'hover:scale-110 active:scale-95 transition-transform' : ''} ${selectedUrl === url ? 'bg-emerald-50 ring-2 ring-[#2D4635]' : 'bg-stone-50 hover:bg-white'}`}
+                            className={`relative group rounded-2xl overflow-hidden transition-colors p-2 motion-reduce:transition-none ${!prefersReducedMotion ? 'hover:scale-110 active:scale-95 transition-transform' : ''} ${selectedUrl === url ? 'bg-emerald-50 ring-2 ring-[var(--color-brand)]' : 'bg-stone-50 hover:bg-white'}`}
                             aria-label={`Select avatar ${i + 1} from ${currentSet.label}`}
                             aria-pressed={selectedUrl === url}
                         >
                             <img src={url} className="w-full aspect-square object-cover rounded-xl" alt="" loading="lazy" decoding="async" />
                             {selectedUrl === url && (
-                                <div className="absolute top-1 right-1 w-4 h-4 bg-[#2D4635] text-white rounded-full flex items-center justify-center text-[8px]">
+                                <div className="absolute top-1 right-1 w-4 h-4 bg-[var(--color-brand)] text-white rounded-full flex items-center justify-center text-[8px]">
                                     ✓
                                 </div>
                             )}
@@ -124,7 +124,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                             <button
                                 type="button"
                                 onClick={() => setVisibleCount((c) => Math.min(c + AVATAR_PAGE_SIZE, urls.length))}
-                                className="px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest bg-stone-100 text-[#2D4635] border border-stone-200 hover:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                                className="px-6 py-3 rounded-full label bg-stone-100 text-[var(--color-brand)] border border-stone-200 hover:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                                 aria-label={`Load more ${currentSet.label} avatars`}
                             >
                                 Load more ({urls.length - visibleCount} remaining)
@@ -136,7 +136,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                 <div className="p-8 bg-stone-50 flex justify-between items-center gap-4">
                     <button
                         onClick={onClose}
-                        className="px-8 py-3 bg-white border border-stone-200 text-stone-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-stone-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2"
+                        className="px-8 py-3 bg-white border border-stone-200 text-stone-500 rounded-full label hover:bg-stone-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
                     >
                         Cancel
                     </button>
@@ -147,7 +147,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({ currentAvatar, onSel
                                 onSelect(selectedUrl);
                                 onClose();
                             }}
-                            className="px-8 py-3 bg-[#2D4635] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+                            className="px-8 py-3 bg-[var(--color-brand)] text-white rounded-full label shadow-lg hover:bg-[#1e2f23] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
                             aria-label="Save selected avatar"
                         >
                             Save Identity

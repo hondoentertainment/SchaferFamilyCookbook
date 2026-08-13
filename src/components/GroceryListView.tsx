@@ -237,7 +237,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                     value={manualText}
                     onChange={(e) => setManualText(e.target.value)}
                     placeholder="Add an item (e.g. 2 lemons)"
-                    className="flex-1 min-h-11 px-5 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-serif italic placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-800 dark:text-stone-100 outline-none focus:ring-2 focus:ring-[#2D4635]/20"
+                    className="flex-1 min-h-11 px-5 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-serif italic placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-800 dark:text-stone-100 outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20"
                 />
                 <button
                     type="submit"
@@ -324,7 +324,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                                 checked={item.checked}
                                                 onChange={() => handleToggle(item.id)}
                                                 aria-label={`Mark "${item.text}" as ${item.checked ? 'not bought' : 'bought'}`}
-                                                className="w-5 h-5 rounded accent-[#2D4635] shrink-0"
+                                                className="w-5 h-5 rounded accent-[var(--color-brand)] shrink-0"
                                             />
                                             <span className="text-sm md:text-base flex-1 min-w-0 break-words text-stone-800 dark:text-stone-100">
                                                 {item.text}
@@ -366,7 +366,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                                                 checked
                                                 onChange={() => handleToggle(item.id)}
                                                 aria-label={`Mark "${item.text}" as not bought`}
-                                                className="w-5 h-5 rounded accent-[#2D4635] shrink-0"
+                                                className="w-5 h-5 rounded accent-[var(--color-brand)] shrink-0"
                                             />
                                             <span className="text-sm line-through text-stone-400 dark:text-stone-500 flex-1 min-w-0 break-words">
                                                 {item.text}

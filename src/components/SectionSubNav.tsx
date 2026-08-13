@@ -40,7 +40,7 @@ export const SectionSubNav: React.FC<SectionSubNavProps> = ({
                         aria-current={active ? 'page' : undefined}
                         className={`min-h-11 shrink-0 snap-start flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] ${
                             active
-                                ? 'bg-[#2D4635] text-white shadow-sm'
+                                ? 'bg-[var(--color-brand)] text-white shadow-sm'
                                 : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-700'
                         }`}
                     >

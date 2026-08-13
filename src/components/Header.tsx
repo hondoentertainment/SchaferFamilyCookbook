@@ -8,6 +8,9 @@ import { getStoredTheme, setStoredTheme } from '../utils/theme';
 import type { ThemeMode } from '../types';
 import { ThemeIcon } from './ThemeIcon';
 
+// Data-URI SVGs rendered via <img> are isolated documents: CSS custom
+// properties from the page do NOT resolve inside them, so the brand color
+// must stay a literal hex here (mirror of --color-brand in src/index.css).
 const FALLBACK_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#2D4635"/><text x="50" y="62" font-family="serif" font-size="44" fill="white" text-anchor="middle" font-style="italic">S</text></svg>'
 )}`;
@@ -55,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             onError={() => setLogoFailed(true)}
                         />
                         <span
-                            className="hidden max-w-[11rem] truncate font-serif text-base italic text-[#2D4635] sm:block sm:text-lg md:text-xl lg:max-w-[14rem] dark:text-emerald-100/90"
+                            className="hidden max-w-[11rem] truncate font-serif text-base italic text-[var(--color-brand)] sm:block sm:text-lg md:text-xl lg:max-w-[14rem] dark:text-emerald-100/90"
                             title={siteConfig.siteName}
                         >
                             {brandLabel}
@@ -85,8 +88,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 aria-current={isNavGroupActive(activeTab, tab.id) ? 'page' : undefined}
                                 className={`min-h-[2.75rem] whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all motion-reduce:transition-none ${
                                     isNavGroupActive(activeTab, tab.id)
-                                        ? 'bg-[#2D4635] text-white shadow-[0_10px_24px_rgba(45,70,53,0.22)]'
-                                        : 'text-stone-700 hover:bg-white/75 hover:text-[#2D4635] dark:text-stone-300 dark:hover:bg-stone-800'
+                                        ? 'bg-[var(--color-brand)] text-white shadow-[0_10px_24px_rgba(45,70,53,0.22)]'
+                                        : 'text-stone-700 hover:bg-white/75 hover:text-[var(--color-brand)] dark:text-stone-300 dark:hover:bg-stone-800'
                                 }`}
                             >
                                 {tab.label}
@@ -119,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             <button
                                 type="button"
                                 onClick={onLogout}
-                                className="flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-3 text-xs font-bold uppercase tracking-wider text-stone-700 transition-colors hover:bg-white/75 hover:text-[#2D4635] sm:px-4 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 motion-reduce:transition-none"
+                                className="flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-3 text-xs font-bold uppercase tracking-wider text-stone-700 transition-colors hover:bg-white/75 hover:text-[var(--color-brand)] sm:px-4 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 motion-reduce:transition-none"
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >

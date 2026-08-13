@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Recipe } from '../types';
 import { CATEGORY_META } from '../constants/taxonomy';
-import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard } from '../utils/recipeImage';
+import { isValidRecipeImageUrl, isCookbookCoverImage, isHandwrittenRecipeCard, buildRecipeImageSrcSet } from '../utils/recipeImage';
 
 interface RecipeImageFallbackProps {
     category: Recipe['category'];
@@ -18,9 +18,9 @@ export const RecipeImageFallback: React.FC<RecipeImageFallbackProps> = ({
     label = 'Image unavailable',
     compact = false,
 }) => (
-    <div className="absolute inset-0 overflow-hidden bg-[#2D4635]">
+    <div className="absolute inset-0 overflow-hidden bg-[var(--color-brand)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(244,164,96,0.35),transparent_32%),radial-gradient(circle_at_75%_80%,rgba(16,185,129,0.22),transparent_36%)]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2D4635]/95 via-[#2D4635]/78 to-[#A0522D]/82" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-brand)]/95 via-[var(--color-brand)]/78 to-[#A0522D]/82" />
         <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(135deg,#fff_0_1px,transparent_1px_18px)]" aria-hidden="true" />
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
             <span className={`${compact ? 'text-3xl' : 'text-5xl md:text-6xl'} mb-3 drop-shadow-lg`} aria-hidden="true">
@@ -121,6 +121,7 @@ export const RecipeImage: React.FC<RecipeImageProps> = ({
             <img
                 ref={imgRef}
                 src={recipe.image}
+                srcSet={buildRecipeImageSrcSet(recipe.image)}
                 width={800}
                 height={600}
                 sizes={sizes}

@@ -5,6 +5,7 @@ import {
     addRecipeIngredientsToGrocery,
     applyGroceryItemsFromSync,
     buildGroceryRowsFromRecipes,
+    formatGroceryListExport,
     clearAll,
     clearChecked,
     getItems,
@@ -243,5 +244,26 @@ describe('groceryList utility', () => {
             expect(getItems()).toHaveLength(1);
             expect(getItems()[0].text).toBe('milk');
         });
+    });
+});
+
+describe('formatGroceryListExport', () => {
+    it('returns an empty string for an empty list', () => {
+        expect(formatGroceryListExport([])).toBe('');
+    });
+
+    it('groups by recipe with Other last and marks checked items', () => {
+        const items = [
+            { id: '1', text: '2 lemons', checked: false, addedAt: 1 },
+            { id: '2', text: '1 cup flour', recipeId: 'r1', recipeTitle: 'Pie', checked: true, addedAt: 2 },
+            { id: '3', text: '2 apples', recipeId: 'r1', recipeTitle: 'Pie', checked: false, addedAt: 3 },
+        ];
+        const out = formatGroceryListExport(items);
+        expect(out).toContain('Schafer Family Cookbook — Grocery List');
+        expect(out).toContain('Pie');
+        expect(out).toContain('☑ 1 cup flour');
+        expect(out).toContain('☐ 2 apples');
+        // "Other" group (the manual lemons) renders after the recipe group
+        expect(out.indexOf('Pie')).toBeLessThan(out.indexOf('Other'));
     });
 });

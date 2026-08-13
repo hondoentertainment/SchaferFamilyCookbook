@@ -71,7 +71,7 @@ describe('Header', () => {
         renderWithProviders(<Header {...defaultProps} activeTab="Gallery" />);
 
         const galleryButton = screen.getByRole('button', { name: /^Family$/ });
-        expect(galleryButton).toHaveClass('bg-[#2D4635]');
+        expect(galleryButton).toHaveClass('bg-[var(--color-brand)]');
         expect(galleryButton).toHaveClass('text-white');
     });
 

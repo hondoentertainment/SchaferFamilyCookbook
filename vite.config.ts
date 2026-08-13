@@ -138,7 +138,11 @@ export default defineConfig(({ mode }) => {
       }),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'recipe-images/*'],
+        // Recipe images are explicitly NOT precached — they are served via the
+        // recipe-images-cache runtime cache below. Precaching ~26 MB of food
+        // photos at install time was bloating PWA install on cellular and
+        // invalidating user caches on every recipe-data change.
+        includeAssets: ['favicon.ico'],
         manifest: {
           name: 'Schafer Family Cookbook',
           short_name: 'Schafer Cookbook',
@@ -163,12 +167,18 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}'],
+          // App shell only. Recipe-image formats (webp/jpg/jpeg) intentionally
+          // omitted — they're served via the runtime cache rule below.
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          globIgnores: [
+            'firebase-messaging-sw.js',
+            'firebase-messaging-sw.js.map',
+            'recipe-images/**',
+          ],
           // The FCM service worker is owned by Firebase and registered
           // separately. Excluding it from precache also prevents a hash
           // mismatch when our post writeBundle hook rewrites it after the PWA
           // plugin has already produced its precache manifest.
-          globIgnores: ['firebase-messaging-sw.js', 'firebase-messaging-sw.js.map'],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

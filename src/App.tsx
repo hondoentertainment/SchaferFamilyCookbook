@@ -289,7 +289,7 @@ const GalleryImage: React.FC<{ url: string; caption: string; onClick?: () => voi
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onClick(); }}
-                className="w-full text-left rounded-2xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                className="w-full text-left rounded-2xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 aria-label={`View full size: ${caption || 'Gallery photo'}`}
             >
                 {imgEl}
@@ -329,7 +329,7 @@ const GalleryDeleteConfirmDialog: React.FC<{ item: GalleryItem; onClose: () => v
                 ref={containerRef}
                 className="relative bg-white dark:bg-[var(--card-bg)] rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 fade-in duration-200"
             >
-                <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[#2D4635] dark:text-emerald-300 mb-2">Remove from gallery?</h3>
+                <h3 id="gallery-delete-title" className="text-xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 mb-2">Remove from gallery?</h3>
                 <p id="gallery-delete-desc" className="text-stone-500 dark:text-stone-400 mb-6">
                     &quot;{item.caption}&quot; will be permanently removed. This cannot be undone.
                 </p>
@@ -429,7 +429,7 @@ import defaultRecipes from './data/recipes.json';
 
 const OfflineRecipeBadge: React.FC<{ position?: 'left' | 'right' }> = ({ position = 'right' }) => (
     <span
-        className={`absolute top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[#2D4635]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${
+        className={`absolute top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand)]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${
             position === 'left' ? 'left-2' : 'right-2'
         }`}
         title="Saved for offline cook mode"
@@ -492,7 +492,7 @@ const HeroRecipeImage: React.FC<{ recipe: Recipe }> = ({ recipe }) => {
                 decoding="async"
                 onError={() => setBroken(true)}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#2D4635] via-[#2D4635]/90 to-[#2D4635]/58" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand)]/90 to-[var(--color-brand)]/58" />
         </>
     );
 };
@@ -622,11 +622,11 @@ const RecipeShelfCard: React.FC<{
                 <div className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
                     <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-xs font-semibold text-[#A0522D]">{recipe.category}</p>
-                        <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-xs font-semibold text-[#2D4635] dark:bg-stone-800 dark:text-emerald-100">
+                        <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-xs font-semibold text-[var(--color-brand)] dark:bg-stone-800 dark:text-emerald-100">
                             {effortLabel}
                         </span>
                     </div>
-                    <h3 className="line-clamp-2 min-h-[2.75rem] font-serif text-lg italic leading-tight text-[#2D4635] dark:text-emerald-100">{recipe.title}</h3>
+                    <h3 className="line-clamp-2 min-h-[2.75rem] font-serif text-lg italic leading-tight text-[var(--color-brand)] dark:text-emerald-100">{recipe.title}</h3>
                     <p className="line-clamp-1 text-xs text-stone-500 dark:text-stone-400">
                         {getRecipeCardMicrocopy(recipe, ratingCount, isFavorite, wasViewed)}
                     </p>
@@ -1010,14 +1010,14 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (!currentUser || currentUser.role !== 'admin') return;
-        if (dbStats.galleryPendingCount <= 0) return;
+        const count = dbStats.galleryPendingCount ?? 0;
+        if (count <= 0) return;
         try {
             if (sessionStorage.getItem(SESSION_KEYS.adminPendingGalleryToastShown)) return;
             sessionStorage.setItem(SESSION_KEYS.adminPendingGalleryToastShown, '1');
         } catch {
             return;
         }
-        const count = dbStats.galleryPendingCount;
         toast(
             `${count} gallery photo${count !== 1 ? 's' : ''} awaiting your approval — open Family → Gallery to review.`,
             'info',
@@ -1483,7 +1483,7 @@ const App: React.FC = () => {
         <div
             role="status"
             data-testid="guest-sign-in-banner"
-            className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-[#A0522D]/20 bg-[#FFF8EC] px-4 py-3 text-sm text-[#2D4635] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100"
+            className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-[#A0522D]/20 bg-[#FFF8EC] px-4 py-3 text-sm text-[var(--color-brand)] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100"
         >
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
                 <p>
@@ -1500,7 +1500,7 @@ const App: React.FC = () => {
                         setIsGuestBrowse(false);
                         setCurrentUser(null);
                     }}
-                    className="min-h-10 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                    className="min-h-10 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 label text-white"
                 >
                     Sign in
                 </button>
@@ -1512,7 +1512,7 @@ const App: React.FC = () => {
     if (tab === 'Gallery') {
         return (
             <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
-                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                     Skip to main content
                 </a>
                 <OfflineBanner />
@@ -1557,7 +1557,7 @@ const App: React.FC = () => {
                                     }
                                     setGalleryUploadBannerDismissed(true);
                                 }}
-                                className="min-h-10 shrink-0 rounded-full border border-amber-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-amber-800 hover:bg-amber-100/80"
+                                className="min-h-10 shrink-0 rounded-full border border-amber-200 bg-white px-4 py-2 label text-amber-800 hover:bg-amber-100/80"
                             >
                                 Dismiss
                             </button>
@@ -1580,9 +1580,9 @@ const App: React.FC = () => {
                             <div className="bg-emerald-50 rounded-[2rem] p-6 border border-emerald-100 flex items-center gap-6 animate-in slide-in-from-right-8 duration-700" role="region" aria-label="Text-to-gallery instructions">
                                 <span className="text-3xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 leading-none mb-1">{siteConfig.galleryCopy.textPromptTitle}</h4>
+                                    <h4 className="label text-emerald-800 leading-none mb-1">{siteConfig.galleryCopy?.textPromptTitle}</h4>
                                     <p className="text-sm text-emerald-700 font-serif italic">
-                                        {siteConfig.galleryCopy.textPromptHint}{' '}
+                                        {siteConfig.galleryCopy?.textPromptHint}{' '}
                                         <a
                                             href={`sms:${archivePhone.replace(/\s/g, '')}`}
                                             className="font-bold not-italic underline decoration-emerald-600/50 hover:decoration-emerald-700 underline-offset-2 hover:text-emerald-800 transition-colors"
@@ -1603,7 +1603,7 @@ const App: React.FC = () => {
                                                 toast('Could not copy — long-press the number instead', 'info');
                                             }
                                         }}
-                                        className="mt-3 min-h-10 rounded-full border border-emerald-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-800 hover:bg-emerald-100/80 transition-colors"
+                                        className="mt-3 min-h-10 rounded-full border border-emerald-200 bg-white px-4 py-2 label text-emerald-800 hover:bg-emerald-100/80 transition-colors"
                                     >
                                         Copy number
                                     </button>
@@ -1613,8 +1613,8 @@ const App: React.FC = () => {
                             <div className="bg-stone-50 dark:bg-[var(--bg-tertiary)] rounded-[2rem] p-6 border border-stone-100 dark:border-stone-800 flex items-center gap-6" role="region" aria-label="Alternative ways to add photos">
                                 <span className="text-2xl" aria-hidden="true">📱</span>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 leading-none mb-1">Prefer texting?</h4>
-                                    <p className="text-sm text-stone-500 font-serif italic">{siteConfig.galleryCopy.noPhoneHint}</p>
+                                    <h4 className="label text-stone-500 leading-none mb-1">Prefer texting?</h4>
+                                    <p className="text-sm text-stone-500 font-serif italic">{siteConfig.galleryCopy?.noPhoneHint}</p>
                                 </div>
                             </div>
                         )}
@@ -1626,21 +1626,21 @@ const App: React.FC = () => {
                         <div className="py-24 text-center space-y-8 animate-in fade-in duration-500" role="status">
                             <div className="w-32 h-32 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-5xl border-2 border-dashed border-stone-200">🖼️</div>
                             <div className="space-y-3">
-                                <h3 className="text-2xl font-serif italic text-[#2D4635]">The gallery awaits your memories</h3>
+                                <h3 className="text-2xl font-serif italic text-[var(--color-brand)]">The gallery awaits your memories</h3>
                                 <p className="text-stone-500 font-serif italic max-w-md mx-auto">Upload a photo above, text the archive number if enabled, or ask a family custodian for help.</p>
                             </div>
                             <div className="flex flex-wrap justify-center gap-3">
                                 <button
                                     type="button"
                                     onClick={() => handleSetTab('Contributors')}
-                                    className="min-h-11 rounded-full bg-[#2D4635] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white"
+                                    className="min-h-11 rounded-full bg-[var(--color-brand)] px-6 py-3 label text-white"
                                 >
                                     Meet contributors
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleSetTab('Family Story')}
-                                    className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600"
+                                    className="min-h-11 rounded-full border border-stone-200 bg-white px-6 py-3 label text-stone-600"
                                 >
                                     Read the story
                                 </button>
@@ -1660,7 +1660,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setGalleryContributorFilter('All')}
-                                        className="min-h-10 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                                        className="min-h-10 rounded-full border border-stone-200 bg-white px-4 py-2 label text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
                                     >
                                         Clear
                                     </button>
@@ -1707,7 +1707,7 @@ const App: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setSelectedGalleryItem(item)}
-                                                className="w-full text-left rounded-2xl overflow-hidden mb-0 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
+                                                className="w-full text-left rounded-2xl overflow-hidden mb-0 bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white relative"
                                                 aria-label={`View full size: ${item.caption || 'Family video'}`}
                                                 onFocus={e => {
                                                     const vid = e.currentTarget.querySelector('video');
@@ -1743,12 +1743,12 @@ const App: React.FC = () => {
                                                 <div className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:hover:opacity-100 focus-within:opacity-100 transition-opacity bg-black/30 pointer-events-none">
                                                     <span className="bg-white/90 text-stone-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">▶ Fullscreen</span>
                                                 </div>
-                                                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/70 text-white text-[10px] font-black uppercase tracking-widest pointer-events-none">
+                                                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/70 text-white label pointer-events-none">
                                                     Video
                                                 </div>
                                             </button>
                                             {isGalleryItemPending(item) && (
-                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 label text-white shadow-sm">
                                                     Pending review
                                                 </span>
                                             )}
@@ -1761,7 +1761,7 @@ const App: React.FC = () => {
                                                 onClick={() => setSelectedGalleryItem(item)}
                                             />
                                             {isGalleryItemPending(item) && (
-                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                                                <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-sky-600/95 px-3 py-1 label text-white shadow-sm">
                                                     Pending review
                                                 </span>
                                             )}
@@ -1769,7 +1769,7 @@ const App: React.FC = () => {
                                         )}
                                         <p className="font-serif italic text-stone-800 dark:text-stone-200 text-lg px-2 line-clamp-3">{item.caption}</p>
                                         {isGalleryItemPending(item) && (
-                                            <p className="px-2 mt-1 text-[10px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
+                                            <p className="px-2 mt-1 label text-sky-700 dark:text-sky-300">
                                                 {contributorMatchKey(item.contributor) === contributorMatchKey(currentUser?.name) ? 'Your upload · Pending review' : 'Awaiting approval'}
                                             </p>
                                         )}
@@ -1789,7 +1789,7 @@ const App: React.FC = () => {
                                             {currentUser?.role === 'admin' && (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setGalleryDeleteConfirm(item); }}
-                                                    className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4635] rounded-full transition-opacity"
+                                                    className="w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] flex items-center justify-center text-stone-300 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] rounded-full transition-opacity"
                                                     aria-label={`Remove "${item.caption}" from gallery`}
                                                     title="Remove from gallery"
                                                 >
@@ -1852,7 +1852,7 @@ const App: React.FC = () => {
                     </Suspense>
                 )}
                 {cookModeRecipe && (
-                    <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
+                    <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[var(--color-brand)] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
                             servedFromOfflineCache={cookModeFromOfflineCache}
@@ -1871,7 +1871,7 @@ const App: React.FC = () => {
     if (tab === 'Trivia') {
         return (
             <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
-                <a href="#main-content-trivia" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+                <a href="#main-content-trivia" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                     Skip to main content
                 </a>
                 <OfflineBanner />
@@ -1926,7 +1926,7 @@ const App: React.FC = () => {
                     </Suspense>
                 )}
                 {cookModeRecipe && (
-                    <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
+                    <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[var(--color-brand)] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                         <CookModeView
                             recipe={cookModeRecipe}
                             servedFromOfflineCache={cookModeFromOfflineCache}
@@ -1943,7 +1943,7 @@ const App: React.FC = () => {
 
     return (
         <div className="cookbook-paper min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[#2D4635] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[#2D4635]">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                 Skip to main content
             </a>
             <OfflineBanner />
@@ -2014,7 +2014,7 @@ const App: React.FC = () => {
             )}
 
             {cookModeRecipe && (
-                <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[#2D4635] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
+                <Suspense fallback={<div className="fixed inset-0 z-[150] bg-[var(--color-brand)] flex items-center justify-center" aria-label="Loading cook mode"><span className="animate-pulse text-white">Loading…</span></div>}>
                     <CookModeView
                         recipe={cookModeRecipe}
                         servedFromOfflineCache={cookModeFromOfflineCache}
@@ -2066,7 +2066,7 @@ const App: React.FC = () => {
                                 className="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-stone-700 shadow shrink-0"
                             />
                             <div className="flex-1 min-w-0">
-                                <h2 className="font-serif text-xl italic text-[#2D4635] dark:text-emerald-100 truncate">
+                                <h2 className="font-serif text-xl italic text-[var(--color-brand)] dark:text-emerald-100 truncate">
                                     From {contributor}&apos;s kitchen
                                 </h2>
                                 <p className="text-sm text-stone-500 dark:text-stone-400">
@@ -2107,7 +2107,7 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <>
-                            <section className="md:hidden rounded-2xl bg-[#2D4635] text-white px-5 py-4 shadow-sm">
+                            <section className="md:hidden rounded-2xl bg-[var(--color-brand)] text-white px-5 py-4 shadow-sm">
                                 <h1 className="font-serif text-xl italic leading-snug">Find something worth cooking tonight.</h1>
                                 <button
                                     type="button"
@@ -2130,7 +2130,7 @@ const App: React.FC = () => {
                                 </button>
                             </section>
 
-                            <section className="relative hidden overflow-hidden rounded-[2.75rem] bg-[#2D4635] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:block">
+                            <section className="relative hidden overflow-hidden rounded-[2.75rem] bg-[var(--color-brand)] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:block">
                                 {(() => {
                                     const featured = sortedRecipes.find(r => r.image && isValidRecipeImageUrl(r.image));
                                     return featured ? (
@@ -2179,7 +2179,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={resetBrowse}
-                                        className="min-h-11 shrink-0 rounded-full bg-[#2D4635] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]"
+                                        className="min-h-11 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]"
                                     >
                                         All
                                     </button>
@@ -2205,7 +2205,7 @@ const App: React.FC = () => {
                                             onClick={() => { resetBrowse(); setCategory(name); }}
                                             className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                                                 category === name
-                                                    ? 'bg-[#2D4635] text-white border-[#2D4635] shadow-sm'
+                                                    ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)] shadow-sm'
                                                     : 'border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
                                             }`}
                                         >
@@ -2254,9 +2254,9 @@ const App: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowMobileFilters(v => !v)}
-                                    className={`min-h-11 min-w-11 rounded-full border px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                                    className={`min-h-11 min-w-11 rounded-full border px-3 py-3 label transition-colors ${
                                         showMobileFilters || activeFilterCount > 0
-                                            ? 'bg-[#2D4635] text-white border-[#2D4635]'
+                                            ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)]'
                                             : 'border-[#E8DCCB] bg-white/90 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
                                     }`}
                                     aria-expanded={showMobileFilters}
@@ -2404,13 +2404,13 @@ const App: React.FC = () => {
                                 </select>
                             </div>
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                                <p className="label text-stone-500">
                                     {activeFilterCount > 0 ? `${activeFilterCount} filters active` : 'Browsing everything'}
                                 </p>
                                 <button
                                     type="button"
                                     onClick={clearRecipeFilters}
-                                    className="rounded-full border border-[#E8DCCB] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-700 dark:border-stone-700 dark:text-stone-200"
+                                    className="rounded-full border border-[#E8DCCB] px-4 py-2 label text-stone-700 dark:border-stone-700 dark:text-stone-200"
                                 >
                                     Reset
                                 </button>
@@ -2424,7 +2424,7 @@ const App: React.FC = () => {
                                 <section key={shelf.id} aria-label={shelf.label} className="space-y-3">
                                     <div className="flex items-end justify-between gap-3">
                                         <div>
-                                            <h2 className="font-serif text-2xl italic leading-none text-[#2D4635] dark:text-emerald-100">{shelf.label}</h2>
+                                            <h2 className="font-serif text-2xl italic leading-none text-[var(--color-brand)] dark:text-emerald-100">{shelf.label}</h2>
                                             <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{shelf.detail}</p>
                                         </div>
                                         {shelf.action && (
@@ -2440,7 +2440,7 @@ const App: React.FC = () => {
                                                         handleSetTab('Recipes');
                                                         setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
                                                 }}
-                                                className="hidden min-h-10 items-center rounded-full border border-[#E8DCCB] bg-white/80 px-4 text-[10px] font-black uppercase tracking-widest text-stone-700 hover:bg-white sm:inline-flex dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                                                className="hidden min-h-10 items-center rounded-full border border-[#E8DCCB] bg-white/80 px-4 label text-stone-700 hover:bg-white sm:inline-flex dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                                             >
                                                 View all
                                             </button>
@@ -2523,7 +2523,7 @@ const App: React.FC = () => {
                                                 >
                                                     {recipe.category}
                                                 </button>
-                                                <span className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#2D4635] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100">
+                                                <span className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[var(--color-brand)] dark:border-stone-700 dark:bg-stone-900 dark:text-emerald-100">
                                                     {effortLabel}
                                                 </span>
                                             </div>
@@ -2534,7 +2534,7 @@ const App: React.FC = () => {
                                                 aria-label={getRecipeCardAriaLabel(recipe, rating, ratingCount, effortLabel, isFav, wasViewed, isOffline)}
                                                 className="mt-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A0522D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFBF7] rounded-2xl dark:focus-visible:ring-offset-stone-950"
                                             >
-                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[#2D4635] dark:text-emerald-100 line-clamp-2 min-h-[2.75rem] sm:min-h-[3rem] md:min-h-[3.25rem]">
+                                                <h3 className="text-base sm:text-lg md:text-xl font-serif italic leading-snug text-[var(--color-brand)] dark:text-emerald-100 line-clamp-2 min-h-[2.75rem] sm:min-h-[3rem] md:min-h-[3.25rem]">
                                                     {recipe.title}
                                                 </h3>
                                                 <p className="mt-1 hidden line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-stone-500 dark:text-stone-400 sm:block">
@@ -2637,7 +2637,7 @@ const App: React.FC = () => {
                         <div className="py-20 text-center space-y-6">
                             <span className="text-5xl" aria-hidden="true">🍂</span>
                             <div className="mx-auto max-w-xl space-y-2 rounded-[2rem] border border-[#E8DCCB] bg-white/75 p-8 shadow-sm dark:border-stone-800 dark:bg-stone-900/75">
-                                <p className="font-serif text-2xl italic text-[#2D4635] dark:text-emerald-100">
+                                <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">
                                     {recipes.length === 0
                                         ? 'The recipe archive is ready for its first card.'
                                         : 'No recipes match your search or filters.'}
@@ -2652,7 +2652,7 @@ const App: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={clearRecipeFilters}
-                                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-[#1B2C22]"
+                                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-[#1B2C22]"
                                         >
                                             Clear filters
                                         </button>
@@ -2668,7 +2668,7 @@ const App: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowAddRecipeModal(true)}
-                                        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#2D4635] px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-[#1B2C22]"
+                                        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-[#1B2C22]"
                                     >
                                         Add New Recipe
                                     </button>
@@ -2695,7 +2695,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<TabFallback />}>
                     {isDataLoading ? (
                         <div className="max-w-7xl mx-auto py-12 px-6">
-                            <h2 className="text-4xl font-serif italic text-[#2D4635] mb-12">The Contributors</h2>
+                            <h2 className="text-4xl font-serif italic text-[var(--color-brand)] mb-12">The Contributors</h2>
                             <ContributorsSkeleton />
                         </div>
                     ) : (

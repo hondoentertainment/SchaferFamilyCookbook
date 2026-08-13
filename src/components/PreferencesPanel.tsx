@@ -47,7 +47,7 @@ export const PreferencesPanel: React.FC = () => {
 
   return (
     <section className="space-y-6" aria-label="Display preferences">
-      <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+      <h3 className="label text-stone-500">
         Display Preferences
       </h3>
 
@@ -62,8 +62,8 @@ export const PreferencesPanel: React.FC = () => {
               onClick={() => handleTheme(opt.value)}
               className={`flex-1 px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
                 theme === opt.value
-                  ? 'bg-[#2D4635] text-white border-[#2D4635] shadow-md'
-                  : 'bg-white dark:bg-[var(--card-bg)] border-stone-200 dark:border-[var(--border-color)] text-stone-600 dark:text-stone-400 hover:border-[#2D4635]/30'
+                  ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)] shadow-md'
+                  : 'bg-white dark:bg-[var(--card-bg)] border-stone-200 dark:border-[var(--border-color)] text-stone-600 dark:text-stone-400 hover:border-[var(--color-brand)]/30'
               }`}
               aria-pressed={theme === opt.value}
             >
@@ -85,8 +85,8 @@ export const PreferencesPanel: React.FC = () => {
               onClick={() => handleFontSize(opt.value)}
               className={`flex-1 py-3 rounded-xl border font-serif transition-all ${
                 fontSize === opt.value
-                  ? 'bg-[#2D4635] text-white border-[#2D4635] shadow-md'
-                  : 'bg-white dark:bg-[var(--card-bg)] border-stone-200 dark:border-[var(--border-color)] text-stone-600 dark:text-stone-400 hover:border-[#2D4635]/30'
+                  ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)] shadow-md'
+                  : 'bg-white dark:bg-[var(--card-bg)] border-stone-200 dark:border-[var(--border-color)] text-stone-600 dark:text-stone-400 hover:border-[var(--color-brand)]/30'
               }`}
               style={{ fontSize: `${14 + i * 4}px` }}
               aria-pressed={fontSize === opt.value}
@@ -110,7 +110,7 @@ export const PreferencesPanel: React.FC = () => {
           aria-checked={highContrast}
           onClick={() => handleHighContrast(!highContrast)}
           className={`relative w-12 h-7 rounded-full transition-colors ${
-            highContrast ? 'bg-[#2D4635]' : 'bg-stone-300 dark:bg-stone-600'
+            highContrast ? 'bg-[var(--color-brand)]' : 'bg-stone-300 dark:bg-stone-600'
           }`}
         >
           <span

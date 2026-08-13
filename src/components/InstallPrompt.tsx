@@ -80,7 +80,7 @@ export const InstallPrompt: React.FC = () => {
             aria-label="Add to Home Screen"
             className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 md:bottom-4 md:left-auto md:right-4 md:max-w-sm"
         >
-            <div className="mx-3 md:mx-0 rounded-[1.5rem] bg-[#2D4635] text-white shadow-2xl px-5 py-4 flex items-center gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="mx-3 md:mx-0 rounded-[1.5rem] bg-[var(--color-brand)] text-white shadow-2xl px-5 py-4 flex items-center gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300">
                 <p className="flex-1 text-sm font-serif italic leading-snug">
                     Add the Schafer Cookbook to your home screen for the best experience
                 </p>
@@ -88,14 +88,14 @@ export const InstallPrompt: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleInstall}
-                        className="px-4 py-2 rounded-full bg-white text-[#2D4635] text-[10px] font-black uppercase tracking-widest hover:bg-stone-100 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                        className="px-4 py-2 rounded-full bg-white text-[var(--color-brand)] label hover:bg-stone-100 transition-colors min-h-[2.75rem] whitespace-nowrap"
                     >
                         Install
                     </button>
                     <button
                         type="button"
                         onClick={handleDismiss}
-                        className="px-4 py-2 rounded-full border border-white/30 text-white/80 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors min-h-[2.75rem] whitespace-nowrap"
+                        className="px-4 py-2 rounded-full border border-white/30 text-white/80 label hover:bg-white/10 transition-colors min-h-[2.75rem] whitespace-nowrap"
                     >
                         Not now
                     </button>

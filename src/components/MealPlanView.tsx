@@ -259,7 +259,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
               key={dateKey}
               className={`rounded-2xl border overflow-hidden ${
                 isToday
-                  ? 'border-[#2D4635]/50 dark:border-emerald-500/50'
+                  ? 'border-[var(--color-brand)]/50 dark:border-emerald-500/50'
                   : 'border-stone-100 dark:border-[var(--border-color)]'
               } bg-white dark:bg-[var(--card-bg)]`}
             >
@@ -276,7 +276,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     </span>
                     <span
                       className={`text-base font-serif leading-none ${
-                        isToday ? 'text-[#2D4635] dark:text-emerald-300 font-bold' : 'text-stone-600 dark:text-stone-300'
+                        isToday ? 'text-[var(--color-brand)] dark:text-emerald-300 font-bold' : 'text-stone-600 dark:text-stone-300'
                       }`}
                     >
                       {date.getDate()}
@@ -301,7 +301,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     setPickerDate(pickerOpen ? null : dateKey);
                   }}
                   aria-expanded={pickerOpen}
-                  className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline min-h-11 px-2"
+                  className="shrink-0 label text-[var(--color-brand)] dark:text-emerald-400 hover:underline min-h-11 px-2"
                 >
                   {pickerOpen ? 'Close' : '+ Add'}
                 </button>
@@ -321,7 +321,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => onViewRecipe(recipe)}
-                                className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[#2D4635] dark:hover:text-emerald-400 truncate min-h-11 py-1"
+                                className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[var(--color-brand)] dark:hover:text-emerald-400 truncate min-h-11 py-1"
                               >
                                 {recipe.title}
                               </button>
@@ -348,7 +348,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                       type="button"
                       data-testid="meal-plan-copy-day"
                       onClick={() => handleCopyDayForward(dateKey, i)}
-                      className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-[#2D4635] dark:hover:text-emerald-400 hover:underline min-h-11"
+                      className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-[var(--color-brand)] dark:hover:text-emerald-400 hover:underline min-h-11"
                       aria-label={`Copy ${date.toLocaleDateString(undefined, { weekday: 'long' })}'s recipes to the next day`}
                     >
                       Copy → next day
@@ -368,7 +368,7 @@ export const MealPlanView: React.FC<MealPlanViewProps> = ({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search by name, ingredient, or cook…"
-                    className="w-full px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
+                    className="w-full px-4 py-3 bg-stone-50 dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10"
                   />
                   <div className="max-h-56 overflow-y-auto space-y-0.5">
                     {pickerResults.length === 0 ? (

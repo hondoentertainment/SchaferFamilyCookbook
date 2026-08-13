@@ -44,6 +44,7 @@ export default defineConfig({
                 'scripts/set-archive-phone.mjs',
                 'scripts/lib/**',
                 'scripts/set-admin-claim.mjs',
+                'scripts/extract-recipe-metadata.mjs',
                 'api/lib/recipeImagePrompts.ts',
                 'scripts/sync-firebase-sw-config.test.mjs',
                 '**/*.test.{ts,tsx,mjs}',

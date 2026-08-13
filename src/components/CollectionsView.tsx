@@ -91,7 +91,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
       />
 
       <div className="section-heading-row">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+        <h3 className="label text-stone-500">
           Collections ({collections.length})
         </h3>
         <button
@@ -110,14 +110,14 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Collection name (e.g. Holiday Baking)"
-            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
+            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10"
           />
           <input
             type="text"
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Description (optional)"
-            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#2D4635]/10"
+            className="w-full px-4 py-3 bg-white dark:bg-[var(--input-bg)] border border-stone-200 dark:border-[var(--border-color)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand)]/10"
           />
           <button
             type="button"
@@ -142,10 +142,10 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                 key={template.name}
                 type="button"
                 onClick={() => handleCreateFromTemplate(template.name, template.description, template.icon)}
-                className="rounded-2xl border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--card-bg)] p-4 text-left hover:border-[#2D4635]/30 hover:shadow-sm transition-all"
+                className="rounded-2xl border border-stone-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--card-bg)] p-4 text-left hover:border-[var(--color-brand)]/30 hover:shadow-sm transition-all"
               >
                 <span className="text-2xl" aria-hidden>{template.icon}</span>
-                <p className="mt-2 text-sm font-bold text-[#2D4635] dark:text-emerald-100">{template.name}</p>
+                <p className="mt-2 text-sm font-bold text-[var(--color-brand)] dark:text-emerald-100">{template.name}</p>
                 <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{template.description}</p>
               </button>
             ))}
@@ -204,7 +204,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onViewRecipe(r)}
-                            className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[#2D4635] dark:hover:text-emerald-400 truncate"
+                            className="flex-1 text-left text-sm font-serif italic text-stone-700 dark:text-stone-300 hover:text-[var(--color-brand)] dark:hover:text-emerald-400 truncate"
                           >
                             {r.title}
                           </button>
@@ -224,7 +224,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAddCollectionToGrocery(colRecipes, col.name)}
-                          className="text-[10px] font-bold uppercase tracking-widest text-[#2D4635] dark:text-emerald-400 hover:underline min-h-11 px-1"
+                          className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-brand)] dark:text-emerald-400 hover:underline min-h-11 px-1"
                           data-testid={`collection-add-grocery-${col.id}`}
                         >
                           Add to grocery list
