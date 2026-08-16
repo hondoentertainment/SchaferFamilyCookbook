@@ -65,7 +65,7 @@
     "@sentry/react": "^10.68.0",
     "busboy": "^1.6.0",
     "firebase": "^12.13.0",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^14.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sharp": "^0.35.3",
