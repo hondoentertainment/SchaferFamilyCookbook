@@ -20,7 +20,7 @@ jobs:
       - name: Write timestamped copy of seed recipes
         run: node scripts/backup-recipes-json.mjs
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: recipes-seed-${{ github.run_number }}-${{ github.sha }}
           path: backups/
