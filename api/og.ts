@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+// sharp ships `export = sharp`, so the type namespace is not reachable through
+// the default import binding (`sharp.OverlayOptions`) — import the type by name.
 import sharp from 'sharp';
+import type { OverlayOptions } from 'sharp';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { loadRecipesSeed } from './loadRecipesSeed.js';
@@ -170,7 +173,7 @@ export async function renderOgPng(recipe: RecipeLike): Promise<Buffer> {
         },
     });
 
-    const composites: sharp.OverlayOptions[] = [];
+    const composites: OverlayOptions[] = [];
 
     if (imgBuf) {
         try {

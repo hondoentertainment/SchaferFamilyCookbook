@@ -18,9 +18,15 @@ export default defineConfig({
   // "cancelled". See issue #65.
   globalTimeout: process.env.CI ? 35 * 60 * 1000 : undefined,
   timeout: process.env.CI ? 90_000 : 60_000,
-  // line reporter in CI: without it the job log is silent for the whole run,
-  // which makes timeouts undiagnosable from the log alone.
-  reporter: process.env.CI ? [['line'], ['html']] : 'html',
+  // CI reporters:
+  //  - line:   per-test progress, so a timeout is not a silent 45-minute log.
+  //  - github: emits ::error:: annotations carrying the actual assertion
+  //            message + file/line. Without it the log ends at "1 failed"
+  //            with no reason, and the only copy of the error lives in the
+  //            HTML report — which the workflow did not upload, making E2E
+  //            failures undiagnosable from CI alone.
+  //  - html:   full report (uploaded as an artifact on failure).
+  reporter: process.env.CI ? [['line'], ['github'], ['html', { open: 'never' }]] : 'html',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || e2eBase,
     trace: 'on-first-retry',

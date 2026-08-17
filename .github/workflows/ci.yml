@@ -125,6 +125,19 @@ jobs:
           VITE_FIRESTORE_EMULATOR_HOST: "localhost:8080"
           VITE_STORAGE_EMULATOR_HOST: "localhost:9199"
 
+      # Without this the only copy of a failure's assertion message, screenshot
+      # and trace is inside the runner's playwright-report/, which is discarded
+      # when the job ends — leaving E2E failures undiagnosable after the fact.
+      - name: Upload Playwright report (${{ matrix.browser }})
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   firestore-rules:
     runs-on: ubuntu-latest
     needs: ci

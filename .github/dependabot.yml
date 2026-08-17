@@ -22,6 +22,21 @@ updates:
       sentry:
         patterns:
           - "@sentry/*"
+    ignore:
+      # TypeScript 7 is not adoptable yet: the latest released
+      # @typescript-eslint/* (8.x) declares peer `typescript >=4.8.4 <6.1.0`,
+      # so a TS 7 bump makes `npm ci` fail with ERESOLVE and takes every CI
+      # job down with it (this happened — see the TS 6->7 bump in #88).
+      # Drop this ignore once typescript-eslint ships TS 7 support.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
+      # firebase-admin 14 drops the namespaced default export
+      # (admin.apps / admin.credential / admin.firestore() / admin.messaging())
+      # that api/webhook.ts, api/notify.ts and api/recipe-of-the-week.ts use.
+      # Adopting it is a real migration to the modular entrypoints and needs
+      # to be validated against live Twilio/FCM endpoints — not an auto-merge.
+      - dependency-name: "firebase-admin"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
