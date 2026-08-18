@@ -39,7 +39,7 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-html
@@ -129,7 +129,7 @@ jobs:
       # and trace is inside the runner's playwright-report/, which is discarded
       # when the job ends — leaving E2E failures undiagnosable after the fact.
       - name: Upload Playwright report (${{ matrix.browser }})
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}
