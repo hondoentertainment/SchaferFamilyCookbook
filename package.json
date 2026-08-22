@@ -90,7 +90,7 @@
     "@typescript-eslint/parser": "^8.59.2",
     "@vercel/node": "^5.10.0",
     "@vitejs/plugin-react": "^6.0.5",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "@vitest/ui": "^4.1.10",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
