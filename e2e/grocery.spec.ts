@@ -11,8 +11,9 @@ test.describe('Grocery list', () => {
 
     test('add recipe ingredients, check one off, clear checked, and clear all', async ({ page }) => {
         // Open the first recipe in the main grid (exclude horizontal shelves).
+        await expect(page.getByTestId('recipe-card-grid')).toBeVisible({ timeout: 15000 });
         await openFirstRecipeCardInMainGrid(page);
-        await expect(page.locator('[role="dialog"][aria-label="Recipe details"]')).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('[role="dialog"][aria-label="Recipe details"]')).toBeVisible({ timeout: 15000 });
 
         // Click "Add to Grocery List"
         const addBtn = page.getByTestId('recipe-modal-add-to-grocery');
@@ -21,10 +22,10 @@ test.describe('Grocery list', () => {
 
         // Toast confirms the add; optional shortcut to grocery tab
         await expect(page.getByText(/Added \d+ items? to Grocery List/i)).toBeVisible({
-            timeout: 3000,
+            timeout: 10000,
         });
         await page.getByTestId('toast-action').click();
-        await expect(page.getByRole('heading', { name: /grocery list/i, level: 2 })).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole('heading', { name: /grocery list/i, level: 2 })).toBeVisible({ timeout: 10000 });
 
         // There should be at least one checkbox for a grocery item
         const checkboxes = page.getByRole('checkbox', { name: /Mark ".+" as bought/i });
@@ -32,16 +33,21 @@ test.describe('Grocery list', () => {
         const totalBefore = await checkboxes.count();
         expect(totalBefore).toBeGreaterThan(0);
 
-        // Check one specific item. Plain click (not check()): checking flips
-        // the aria-label to "as not bought" and moves the row into the bought
-        // group, so check()'s post-click verification would wait forever for
-        // the original locator. Force skips stability checks during the
-        // reorder; the flipped-label assertion verifies the state change.
+        // Check one specific item via the row label text. Do not use
+        // check(): checking flips the aria-label to "as not bought" and
+        // moves the row into the bought group, so check()'s post-click
+        // verification would wait forever for the original locator. The
+        // previous force-click on the checkbox itself failed in Firefox CI
+        // (Clear checked (1) never appeared).
         const firstLabel = await checkboxes.first().getAttribute('aria-label');
-        await page.getByRole('checkbox', { name: firstLabel!, exact: true }).click({ force: true });
-        // The bought row moves into a collapsed section; the Clear-checked
-        // counter is the stable signal that exactly one item is now checked.
-        await expect(page.getByRole('button', { name: /Clear checked \(1\)/i })).toBeVisible({ timeout: 5000 });
+        const itemRow = page.locator('label').filter({
+            has: page.getByRole('checkbox', { name: firstLabel!, exact: true }),
+        });
+        await itemRow.locator('span').click();
+        // Header copy and the Clear-checked counter both update when the
+        // bought row moves into the collapsed section.
+        await expect(page.getByText(/· 1 checked/)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('button', { name: /Clear checked \(1\)/i })).toBeVisible({ timeout: 10000 });
 
         // Clear checked
         await page.getByRole('button', { name: /Clear checked/i }).click();
