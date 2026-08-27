@@ -153,7 +153,10 @@ export function recipeCardOpenInMainGrid(page: import('@playwright/test').Page) 
 }
 
 export async function openFirstRecipeCardInMainGrid(page: import('@playwright/test').Page) {
-  await recipeCardOpenInMainGrid(page).first().click();
+  const card = recipeCardOpenInMainGrid(page).first();
+  await card.waitFor({ state: 'visible', timeout: 15000 });
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
 }
 
 /** Opens a visible grid card hero by exact image alt (recipe title). */
