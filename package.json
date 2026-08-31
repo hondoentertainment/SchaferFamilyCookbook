@@ -102,7 +102,7 @@
     "happy-dom": "^20.11.6",
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
-    "svgo": "^4.0.2",
+    "svgo": "^4.1.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",
     "vite": "^8.2.1",
