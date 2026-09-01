@@ -68,7 +68,7 @@
     "firebase-admin": "^13.10.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "twilio": "^6.0.2",
     "web-vitals": "^6.1.1"
   },
