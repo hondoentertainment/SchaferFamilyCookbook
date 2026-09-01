@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
-    "@sentry/react": "^10.68.0",
+    "@sentry/react": "^10.72.0",
     "busboy": "^1.6.0",
     "firebase": "^12.18.0",
     "firebase-admin": "^13.10.0",
