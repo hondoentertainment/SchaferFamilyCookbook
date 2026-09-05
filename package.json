@@ -61,7 +61,7 @@
     "admin:set-claim": "node scripts/set-admin-claim.mjs"
   },
   "dependencies": {
-    "@google/genai": "^2.19.0",
+    "@google/genai": "^2.21.0",
     "@sentry/react": "^10.72.0",
     "busboy": "^1.6.0",
     "firebase": "^12.18.0",
