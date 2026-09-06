@@ -56,7 +56,9 @@ run('Contributor migration dry-run', 'normalize-contributor-names-firestore.mjs'
 
 if (apply) {
     run('Apply notify secrets', 'configure-notify.mjs', ['--apply'], { allowFail: true });
-    run('Apply CRON_SECRET (generates if missing locally)', 'configure-cron.mjs', ['--apply'], {
+    run('Apply CRON_SECRET (creates on Vercel if missing; will not rotate)', 'configure-cron.mjs', [
+        '--apply',
+    ], {
         allowFail: true,
     });
     run('Apply Sentry DSN (if in .env.local)', 'configure-sentry.mjs', ['--apply'], { allowFail: true });

@@ -49,7 +49,7 @@ Code and CI for this sprint are **shipped**. Remaining boxes are Kyle secrets or
 - [x] **Meal plan / Story CMS / fuzzy search polish** — shipped (June 2026 batch 2; see Done below)
 - [ ] **Sentry on Vercel** — Kyle: add `VITE_SENTRY_DSN` via `npm run configure:sentry -- --apply` (+ optional source-map upload vars)
 - [ ] **FCM VAPID (optional push delivery)** — Kyle: `VITE_FCM_VAPID_KEY` from Firebase Cloud Messaging → Web Push certificates → `npm run configure:fcm -- --apply`
-- [ ] **CRON_SECRET (Recipe of the Week)** — Kyle: `npm run configure:cron -- --apply` (code + schedule already live)
+- [ ] **CRON_SECRET (Recipe of the Week)** — Kyle: `npm run configure:cron -- --apply` (creates on Vercel if missing; will not rotate). Code + schedule already live.
 - [ ] **App Check (optional)** — Kyle: `VITE_FIREBASE_APP_CHECK_SITE_KEY` after registering reCAPTCHA v3 → `npm run configure:app-check -- --apply`
 - [ ] **Live prod gallery walkthrough** — Kyle: `npm run custodian:runbook` then family upload → approve on production
 - [ ] **Credentials apply** — Kyle: `npm run bootstrap:credentials` then `npm run finalize -- --apply --deploy`

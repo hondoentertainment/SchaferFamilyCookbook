@@ -64,7 +64,7 @@ npm run finalize -- --apply --deploy       # after adding remaining secrets to .
 ### Still needs Kyle (secrets / human — do not invent values in git)
 
 - [ ] **`VITE_FCM_VAPID_KEY`** — Firebase Console → Cloud Messaging → Web Push certificates → paste into `.env.local` → `npm run configure:fcm -- --apply`
-- [ ] **`CRON_SECRET`** — `npm run configure:cron -- --apply` (generates a random string and sets Vercel production; activates weekly Recipe of the Week *auth*; FCM still needed to deliver)
+- [ ] **`CRON_SECRET`** — `npm run configure:cron -- --apply` (creates on Vercel if missing; will not rotate an existing value). Vercel-only is enough for weekly cron; keep a local copy only for manual dry-runs. FCM still needed to deliver.
 - [ ] **Sentry** — create a React project DSN → `.env.local` `VITE_SENTRY_DSN` → `npm run configure:sentry -- --apply`
 - [ ] **App Check** — Firebase Console → App Check → reCAPTCHA v3 site key → `npm run configure:app-check -- --apply`
 - [ ] **Contributor migration** — paste `FIREBASE_SERVICE_ACCOUNT` JSON into `.env.local` → `npm run finalize -- --migrate --yes`

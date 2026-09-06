@@ -3,6 +3,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { resolveCronApply } from './configure-cron.mjs';
+
 const script = join(dirname(fileURLToPath(import.meta.url)), 'configure-cron.mjs');
 
 describe('configure-cron', () => {
@@ -17,5 +19,12 @@ describe('configure-cron', () => {
         expect(secret).toBeTruthy();
         expect(r.stdout).toContain('do not commit');
         expect(r.stdout).not.toMatch(/sk_live|AIza|BEGIN PRIVATE KEY/);
+    });
+
+    it('keeps an existing Vercel-only secret unless --rotate or a local value is set', () => {
+        expect(resolveCronApply({ hasLocal: false, onVercel: true, rotate: false })).toBe('keep-remote');
+        expect(resolveCronApply({ hasLocal: false, onVercel: true, rotate: true })).toBe('generate-remote');
+        expect(resolveCronApply({ hasLocal: true, onVercel: true, rotate: false })).toBe('apply-local');
+        expect(resolveCronApply({ hasLocal: false, onVercel: false, rotate: false })).toBe('generate-remote');
     });
 });
