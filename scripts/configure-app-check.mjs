@@ -24,8 +24,12 @@ if (siteKey) {
     console.log('✅ VITE_FIREBASE_APP_CHECK_SITE_KEY present locally');
 } else {
     console.log('❌ VITE_FIREBASE_APP_CHECK_SITE_KEY missing');
-    console.log('   Firebase Console → App Check → register reCAPTCHA v3 for the web app');
-    console.log('   See docs/FIREBASE_SECURITY.md');
+    console.log('\n── Kyle: App Check ──');
+    console.log('   1. Firebase Console → App Check → Register the web app → reCAPTCHA v3');
+    console.log('   2. Paste the site key into .env.local as VITE_FIREBASE_APP_CHECK_SITE_KEY');
+    console.log('   3. npm run configure:app-check -- --apply');
+    console.log('   4. Redeploy production (App Check initializes only in production builds)');
+    console.log('   See docs/FIREBASE_SECURITY.md — do not invent a site key in git.');
 }
 
 const names = listVercelEnvNames();

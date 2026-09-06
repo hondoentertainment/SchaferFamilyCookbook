@@ -25,6 +25,9 @@ console.log('Custodian runbook\n');
 
 run('Ops verify', process.execPath, [join(root, 'scripts', 'verify-ops.mjs')]);
 run('Notify audit', process.execPath, [join(root, 'scripts', 'configure-notify.mjs')]);
+run('Cron secret audit', process.execPath, [join(root, 'scripts', 'configure-cron.mjs')], {
+    allowFail: true,
+});
 // Checklist prints missing secrets; do not fail the runbook on incomplete .env.local.
 run('Credential bootstrap', process.execPath, [join(root, 'scripts', 'bootstrap-credentials.mjs')], {
     allowFail: true,

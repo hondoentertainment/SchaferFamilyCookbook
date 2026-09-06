@@ -45,6 +45,13 @@ const ITEMS = [
         required: false,
     },
     {
+        key: 'CRON_SECRET',
+        title: 'Recipe of the Week cron secret',
+        where: 'Generate locally — npm run configure:cron -- --generate (any long random string; do not commit)',
+        apply: 'npm run configure:cron -- --apply',
+        required: false,
+    },
+    {
         key: 'VITE_FIREBASE_APP_CHECK_SITE_KEY',
         title: 'App Check reCAPTCHA v3 site key',
         where: 'Firebase Console → App Check → Register web app → reCAPTCHA v3',

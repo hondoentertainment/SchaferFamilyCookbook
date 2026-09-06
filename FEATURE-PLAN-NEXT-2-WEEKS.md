@@ -26,30 +26,33 @@
 
 ---
 
-## Next 2 weeks
+## Next 2 weeks — shipped (June 2026); ops leftovers 2026-09-06
 
-### 1. Meal plan polish
+Product slices below landed in FEATURE-ROADMAP “Done (June 2026 batch 2)”. Remaining launch work is Kyle secrets / walkthrough — see `NEXT-STEPS.md`.
+
+### 1. Meal plan polish — ✅ shipped
 
 - Add copy-week/copy-day actions
 - Improve picker search with ingredient/contributor matching
 - Clarify grocery-list de-dupe summaries after generating a week
 
-### 2. Family Story CMS polish
+### 2. Family Story CMS polish — ✅ shipped
 
 - Add preview before saving
 - Add autosave draft in localStorage
 - Add optional starter section templates for custodians
 
-### 3. Search polish
+### 3. Search polish — ✅ shipped
 
 - Add fuzzy matching for title, contributor, and ingredient typo tolerance
 - Improve empty-state copy based on whether the query matched ingredients, categories, or contributors
 
-### 4. Lighthouse baseline
+### 4. Lighthouse baseline — ✅ workflow shipped; optional Kyle dispatch
 
-- Run **`npm run lighthouse:ci`** against production (or preview) URL
-- Store artifact / scores in CI workflow output; note regressions in `ENHANCEMENTS.md`
+- **`npm run lighthouse:ci`** against production (or preview) URL
+- Monthly + manual **Lighthouse CI** workflow; artifacts under `.lighthouseci`
 - Target: no new a11y violations; LCP and CLS within green on mobile
+- Fresh score snapshot: `gh workflow run "Lighthouse CI"` (Kyle / anytime)
 
 ---
 
@@ -57,8 +60,8 @@
 
 | Week | Focus | Deliverables |
 |------|--------|--------------|
-| **1** | Meal plan + Story CMS polish | Copy actions, preview/draft UX, focused tests |
-| **2** | Search polish + Lighthouse | Fuzzy search helper, baseline CI run |
+| **1** | Meal plan + Story CMS polish | **Shipped** — copy actions, preview/draft UX, focused tests |
+| **2** | Search polish + Lighthouse | **Shipped** — fuzzy search helper + Lighthouse CI workflow |
 
 ---
 

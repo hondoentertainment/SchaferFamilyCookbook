@@ -35,6 +35,7 @@ Short reference for keeping the production app healthy. The codebase also docume
 | **OG / social cards** | `GET /api/og?recipeId=`; recipe image paths and `sharp` on the function; **`api/og` duration**. If 500 with seed errors → **Troubleshooting** table above. |
 | **Twilio MMS archive** | `TWILIO_*`, `FIREBASE_SERVICE_ACCOUNT`; webhook URL and **Twilio** delivery errors; **`POST /api/webhook`** rate limit. |
 | **Push (`/api/notify`)** | `NOTIFY_SECRET`, `FIREBASE_SERVICE_ACCOUNT`; FCM errors in function logs. |
+| **Recipe of the Week cron** | `CRON_SECRET` on Vercel (`npm run configure:cron -- --apply`); `VITE_FCM_VAPID_KEY` for delivery; dry-run `?dryRun=1`. |
 | **Firestore** | Rules tests (`npm run test:rules`); Console → Rules / Indexes; client `schafer_firebase_config`. |
 
 ## Troubleshooting: API seed loading
@@ -93,7 +94,7 @@ git commit -m "chore(api): refresh recipe seed for Vercel functions"
 ## Quality gates (CI)
 
 - **Quality gates (CI):** Lint, types, **`test:coverage`** with thresholds, build, **`images:verify`**, **`test:bundle-size`**. E2E (Chromium + Firefox) and Firestore rules run in parallel follow-up jobs. Smoke production (`/api/ping`, share, OG) after push to `main`.
-- **Lighthouse:** run **Lighthouse CI** workflow manually from GitHub Actions when you want a fresh Core Web Vitals / a11y snapshot (artifacts under `.lighthouseci`), or locally: `npm run lighthouse:ci` (override URL with `LHCI_URL=https://…/`).
+- **Lighthouse:** monthly **Lighthouse CI** workflow (1st of month, 12:00 UTC) plus on-demand (`gh workflow run "Lighthouse CI"`). Artifacts under `.lighthouseci`. Local: `npm run lighthouse:ci` (override URL with `LHCI_URL=https://…/`).
 
 ## PWA / offline
 

@@ -101,6 +101,7 @@ if (!skipCi) {
 
 run('Ops verify', 'verify-ops.mjs');
 run('Notify', 'configure-notify.mjs', [], { allowFail: true });
+run('Cron secret', 'configure-cron.mjs', [], { allowFail: true });
 run('Sentry', 'configure-sentry.mjs', [], { allowFail: true });
 run('FCM', 'configure-fcm.mjs', [], { allowFail: true });
 run('App Check', 'configure-app-check.mjs', [], { allowFail: true });
@@ -110,6 +111,7 @@ trackCredential('Sentry', 'VITE_SENTRY_DSN', 'sentry.io');
 trackCredential('FCM sender ID', 'VITE_FIREBASE_MESSAGING_SENDER_ID', 'Firebase Console');
 trackCredential('FCM app ID', 'VITE_FIREBASE_APP_ID', 'Firebase Console');
 trackCredential('FCM VAPID', 'VITE_FCM_VAPID_KEY', 'Firebase Console');
+trackCredential('Cron secret', 'CRON_SECRET', 'npm run configure:cron -- --generate');
 trackCredential('App Check', 'VITE_FIREBASE_APP_CHECK_SITE_KEY', 'Firebase App Check');
 trackCredential('Contributor migration', 'FIREBASE_SERVICE_ACCOUNT', 'Firebase service account JSON');
 trackCredential('Twilio SID', 'TWILIO_ACCOUNT_SID', 'Twilio console');
@@ -117,6 +119,7 @@ trackCredential('Archive phone', 'VITE_ARCHIVE_PHONE', 'E.164 gallery MMS number
 
 if (apply) {
     run('Apply notify secrets', 'configure-notify.mjs', ['--apply'], { allowFail: true });
+    run('Apply CRON_SECRET', 'configure-cron.mjs', ['--apply'], { allowFail: true });
     run('Apply Sentry DSN', 'configure-sentry.mjs', ['--apply'], { allowFail: true });
     run('Apply FCM vars', 'configure-fcm.mjs', ['--apply'], { allowFail: true });
     run('Apply App Check', 'configure-app-check.mjs', ['--apply'], { allowFail: true });

@@ -1,3 +1,8 @@
+# Production Core Web Vitals / a11y snapshot.
+# Monthly on the 1st (12:00 UTC) and on demand:
+#   gh workflow run "Lighthouse CI"
+#   gh workflow run "Lighthouse CI" -f url='https://schafer-family-cookbook.vercel.app/'
+# Local: npm run lighthouse:ci   (override with LHCI_URL=…)
 name: Lighthouse CI
 
 on:
@@ -7,7 +12,7 @@ on:
     inputs:
       url:
         description: 'Full URL to audit (include trailing slash if desired)'
-        required: true
+        required: false
         default: 'https://schafer-family-cookbook.vercel.app/'
         type: string
 
