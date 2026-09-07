@@ -439,13 +439,22 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
         isSuperAdmin(currentUser.email) || isSuperAdmin(currentUser.name);
     const showAdminSection = (isAdmin || isSuperAdminUser) && !!adminSectionProps;
     const galleryPendingCount = adminSectionProps?.dbStats.galleryPendingCount ?? 0;
+    const [adminOpen, setAdminOpen] = useState(!!adminSectionProps?.editingRecipe);
 
     const scrollToAdminSection = () => {
         document.getElementById('admin-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
+    const leaveAdminTools = () => {
+        hapticLight();
+        adminSectionProps?.clearEditing();
+        setAdminOpen(false);
+        document.getElementById('profile-identity-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
     React.useEffect(() => {
         if (!showAdminSection || !adminSectionProps?.editingRecipe) return;
+        setAdminOpen(true);
         const timer = window.setTimeout(scrollToAdminSection, 0);
         return () => window.clearTimeout(timer);
     }, [showAdminSection, adminSectionProps?.editingRecipe]);
@@ -893,7 +902,8 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     <CollapsiblePanel
                         id="profile-admin-panel"
                         title="Admin — archive control room"
-                        defaultOpen={!!adminSectionProps.editingRecipe}
+                        open={adminOpen}
+                        onOpenChange={setAdminOpen}
                         className="rounded-[2rem] md:rounded-[2.5rem] border-orange-100 dark:border-orange-700/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-950/30 dark:via-[var(--card-bg)] dark:to-amber-950/20 shadow-xl"
                         panelClassName="pt-2"
                     >
@@ -914,6 +924,14 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                                     Add and update recipes, manage gallery and trivia records, and keep contributor
                                     access current without leaving the profile page.
                                 </p>
+                                <button
+                                    type="button"
+                                    onClick={leaveAdminTools}
+                                    data-testid="leave-admin-tools"
+                                    className="btn btn-secondary btn-body w-fit"
+                                >
+                                    Leave admin tools
+                                </button>
                             </div>
                             {adminSectionProps.editingRecipe && (
                                 <div className="rounded-full border border-orange-200 dark:border-orange-700 bg-white/90 dark:bg-[var(--card-bg)]/90 px-5 py-3 label text-orange-600 dark:text-orange-300 shadow-sm">

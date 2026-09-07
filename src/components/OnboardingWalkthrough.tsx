@@ -13,7 +13,7 @@ const STEPS = [
     icon: '📖',
     title: 'Find recipes',
     description:
-      'Search and filter from Recipes, or jump to A–Z. Tap any card for ingredients, notes, and step-by-step cooking when you are ready.',
+      'Search and filter from Recipes, or open A–Z from the browse pills. Tap any card for ingredients, notes, and step-by-step cooking when you are ready.',
   },
   {
     icon: '🍳',

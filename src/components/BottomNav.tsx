@@ -78,7 +78,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                             key={id}
                             type="button"
                             data-testid={
-                                id === 'Profile' ? 'bottom-nav-profile' : undefined
+                                id === 'Home' ? 'bottom-nav-home'
+                                : id === 'Recipes' ? 'bottom-nav-recipes'
+                                : id === 'Gallery' ? 'bottom-nav-family'
+                                : id === 'Grocery List' ? 'bottom-nav-grocery'
+                                : id === 'Profile' ? 'bottom-nav-profile'
+                                : undefined
                             }
                             onClick={() => {
                                 hapticLight();

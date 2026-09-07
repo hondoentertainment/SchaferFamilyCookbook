@@ -456,11 +456,11 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
                             <button
                                 type="button"
                                 onClick={onClose}
-                                aria-label="Done"
+                                aria-label="Back to recipe"
                                 data-testid="cook-complete-done"
                                 className="min-h-[3rem] px-6 py-3 rounded-full text-ink-soft font-semibold text-sm uppercase tracking-widest underline-offset-4 hover:underline hover:text-brand transition-colors focus:outline-none focus:ring-2 focus:ring-brand/40 focus:ring-offset-2 focus:ring-offset-cream"
                             >
-                                Done
+                                Back to recipe
                             </button>
                         </div>
 
@@ -530,10 +530,12 @@ export const CookModeView: React.FC<CookModeViewProps> = ({ recipe, servedFromOf
             <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-white/10 shrink-0">
                 <button
                     onClick={onClose}
-                    className="w-12 h-12 min-w-[3rem] min-h-[3rem] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                    aria-label="Exit cook mode"
+                    data-testid="cook-mode-leave"
+                    className="min-h-12 min-w-12 px-3 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center gap-1 transition-colors text-xs font-bold uppercase tracking-widest"
+                    aria-label="Leave cook mode and return to recipe"
                 >
-                    ✕
+                    <span aria-hidden>←</span>
+                    Leave
                 </button>
                 <div className="flex-1 text-center min-w-0">
                     <h1 className="font-serif italic text-lg md:text-xl truncate">{recipe.title}</h1>

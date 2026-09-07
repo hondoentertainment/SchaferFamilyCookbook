@@ -9,15 +9,32 @@ test.describe('Tab navigation', () => {
     await loginAs(page, 'Alice');
   });
 
-  test('shows the six primary nav tabs and no More menu', async ({ page }) => {
+  test('shows the five primary nav tabs and no More menu', async ({ page }) => {
     const headerNav = page.getByRole('navigation', { name: 'Main navigation' });
     await expect(page.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
     await expect(headerNav.getByRole('button', { name: 'Recipes', exact: true })).toBeVisible();
-    await expect(headerNav.getByRole('button', { name: 'A–Z', exact: true })).toBeVisible();
+    await expect(headerNav.getByRole('button', { name: 'A–Z', exact: true })).toHaveCount(0);
     await expect(headerNav.getByRole('button', { name: 'Family', exact: true })).toBeVisible();
     await expect(headerNav.getByRole('button', { name: 'Groceries', exact: true })).toBeVisible();
     await expect(headerNav.getByRole('button', { name: 'Me', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'More sections' })).toHaveCount(0);
+  });
+
+  test('A–Z lives under Recipes and keeps Recipes current', async ({ page }) => {
+    const headerNav = page.getByRole('navigation', { name: 'Main navigation' });
+    await headerNav.getByRole('button', { name: 'Recipes', exact: true }).click();
+    const recipesSubNav = page.getByRole('region', { name: 'Recipe browsing navigation' });
+    await expect(recipesSubNav.getByTestId('section-subnav-hub')).toContainText('Browse');
+    await recipesSubNav.getByRole('button', { name: 'A–Z', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Archival Index/i })).toBeVisible({ timeout: 10000 });
+    await expect(headerNav.getByRole('button', { name: 'Recipes', exact: true })).toHaveAttribute('aria-current', 'page');
+  });
+
+  test('Family stays current when switching to Trivia', async ({ page }) => {
+    const headerNav = page.getByRole('navigation', { name: 'Main navigation' });
+    await headerNav.getByRole('button', { name: 'Family', exact: true }).click();
+    await page.getByRole('region', { name: 'Family hub navigation' }).getByRole('button', { name: /^Trivia\b/ }).click();
+    await expect(headerNav.getByRole('button', { name: 'Family', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('mobile bottom nav shows five tabs without A–Z', async ({ page }) => {
@@ -25,6 +42,11 @@ test.describe('Tab navigation', () => {
     await page.reload();
     await expect(page.getByTestId('bottom-nav-profile')).toBeVisible();
     await expect(page.getByTestId('bottom-nav-index')).toHaveCount(0);
+    await expect(page.getByTestId('header-location')).toBeVisible();
+    await expect(page.getByTestId('header-location')).toHaveTextContent('Home');
+    await page.getByTestId('bottom-nav-family').click();
+    await expect(page.getByTestId('header-location')).toHaveTextContent('Family · Gallery');
+    await expect(page.getByTestId('bottom-nav-family')).toHaveAttribute('aria-current', 'page');
   });
 
   test('Recipes tab still has its editorial masthead', async ({ page }) => {
@@ -53,6 +75,16 @@ test.describe('Tab navigation', () => {
     // Two-step welcome screen: the name field appears after choosing a path.
     await expect(page.getByTestId('login-intent-new')).toBeVisible();
     await expect(page.getByTestId('login-intent-returning')).toBeVisible();
+  });
+
+  test('Help wayfinding returns to Home', async ({ page }) => {
+    await page.getByTestId('nav-profile').click();
+    await page.getByRole('button', { name: /Open Help and shortcuts/i }).click();
+    await expect(page.getByTestId('help-wayfinding')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('help-wayfinding').getByRole('button', { name: /^Home\b/ }).click();
+    await expect(
+      page.locator('#main-content-home').getByRole('heading', { level: 1 }).filter({ hasText: /Good (morning|afternoon|evening)|Late night/i }),
+    ).toBeVisible();
   });
 
   test('logo link returns to Home', async ({ page }) => {

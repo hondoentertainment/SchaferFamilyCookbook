@@ -22,6 +22,12 @@ test.describe('Home dashboard', () => {
     await expect(page.getByRole('button', { name: 'Plan & shop' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Family hub' })).toBeVisible();
     await expect(page.getByText(/Recipes$/).first()).toBeVisible();
+    await expect(page.getByTestId('home-tonight-empty')).toBeVisible();
+  });
+
+  test('empty tonight card opens the meal plan', async ({ page }) => {
+    await page.getByTestId('home-tonight-empty').getByRole('button', { name: 'Plan this week' }).click();
+    await expect(page.getByRole('heading', { name: /Meal Plan/i }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('Browse all recipes shortcut opens Recipes tab', async ({ page }) => {

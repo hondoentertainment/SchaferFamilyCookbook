@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trivia, UserProfile } from '../types';
 import { getTriviaScores, addTriviaScore } from '../utils/triviaScoreboard';
-import { hapticSuccess, hapticError } from '../utils/haptics';
+import { hapticSuccess, hapticError, hapticLight } from '../utils/haptics';
 import type { TriviaScore } from '../types';
 import {
     submitScore,
@@ -11,6 +11,7 @@ import {
 } from '../services/leaderboard';
 import { trackEvent } from '../services/analytics';
 import { PageHeader } from './PageHeader';
+import { navigateToTab } from '../config/navConfig';
 
 const FEEDBACK_DELAY_MS = 1500;
 const LEADERBOARD_LIMIT = 10;
@@ -395,7 +396,25 @@ export const TriviaView: React.FC<TriviaViewProps> = ({ trivia, currentUser, isD
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
                 <span className="text-6xl">📖</span>
                 <h2 className="text-3xl font-serif italic text-[var(--color-brand)]">The Quiz Archive is Empty</h2>
-                <p className="text-stone-400 max-w-md italic">Please add some trivia questions via Profile → Admin Tools to begin your family legacy challenge.</p>
+                <p className="text-stone-400 max-w-md italic">
+                    No questions yet — browse family photos or the story while a custodian adds the next round.
+                </p>
+                <div className="empty-state-actions">
+                    <button
+                        type="button"
+                        onClick={() => { hapticLight(); navigateToTab('Gallery'); }}
+                        className="btn btn-primary btn-body"
+                    >
+                        Open the gallery
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { hapticLight(); navigateToTab('Family Story'); }}
+                        className="btn btn-secondary btn-body"
+                    >
+                        Read the story
+                    </button>
+                </div>
             </div>
         );
     }

@@ -255,6 +255,41 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
             </section>
 
+            {tonightRecipes.length === 0 && (
+                <section
+                    aria-labelledby="tonight-empty-heading"
+                    data-testid="home-tonight-empty"
+                    className="heirloom-card overflow-hidden rounded-[2rem] border border-dashed border-[#E8DCCB] bg-white/40 p-5 dark:border-stone-700 dark:bg-stone-900/40 sm:p-6"
+                >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h2 id="tonight-empty-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                                Nothing planned for tonight
+                            </h2>
+                            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                                Line up a recipe for this evening, or browse the archive for something new.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => { hapticLight(); onOpenMealPlan(); }}
+                                className="btn btn-primary btn-body"
+                            >
+                                Plan this week
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { hapticLight(); openRecipes(); }}
+                                className="btn btn-secondary btn-body"
+                            >
+                                Browse recipes
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {tonightRecipes.length > 0 && (
                 <section aria-labelledby="tonight-heading" className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7">
                     <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
