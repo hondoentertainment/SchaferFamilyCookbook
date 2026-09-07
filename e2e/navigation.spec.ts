@@ -43,9 +43,9 @@ test.describe('Tab navigation', () => {
     await expect(page.getByTestId('bottom-nav-profile')).toBeVisible();
     await expect(page.getByTestId('bottom-nav-index')).toHaveCount(0);
     await expect(page.getByTestId('header-location')).toBeVisible();
-    await expect(page.getByTestId('header-location')).toHaveTextContent('Home');
+    await expect(page.getByTestId('header-location')).toHaveText('Home');
     await page.getByTestId('bottom-nav-family').click();
-    await expect(page.getByTestId('header-location')).toHaveTextContent('Family · Gallery');
+    await expect(page.getByTestId('header-location')).toHaveText('Family · Gallery');
     await expect(page.getByTestId('bottom-nav-family')).toHaveAttribute('aria-current', 'page');
   });
 
