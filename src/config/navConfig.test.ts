@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
     PRIMARY_NAV_TABS,
     FAMILY_SECONDARY_NAV,
@@ -16,10 +16,6 @@ import {
 } from './navConfig';
 
 describe('navConfig', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
     it('marks grouped tabs as active for their primary nav item', () => {
         expect(isNavGroupActive('Trivia', 'Gallery')).toBe(true);
         expect(isNavGroupActive('Meal Plan', 'Grocery List')).toBe(true);
@@ -79,12 +75,14 @@ describe('navConfig', () => {
     });
 
     it('dispatches a navigate event for in-app wayfinding', () => {
-        const handler = vi.fn();
-        window.addEventListener('schafer:navigate', handler as EventListener);
+        const seen: string[] = [];
+        const handler = (event: Event) => {
+            seen.push((event as CustomEvent<string>).detail);
+        };
+        window.addEventListener('schafer:navigate', handler);
         navigateToTab('Recipes');
-        expect(handler).toHaveBeenCalledTimes(1);
-        expect((handler.mock.calls[0][0] as CustomEvent).detail).toBe('Recipes');
-        window.removeEventListener('schafer:navigate', handler as EventListener);
+        expect(seen).toEqual(['Recipes']);
+        window.removeEventListener('schafer:navigate', handler);
     });
 
     it('lists the five family-facing wayfinding destinations', () => {

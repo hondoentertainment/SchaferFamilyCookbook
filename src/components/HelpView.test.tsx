@@ -26,13 +26,15 @@ describe('HelpView', () => {
     });
 
     it('offers wayfinding destinations that dispatch in-app navigation', () => {
-        const handler = vi.fn();
-        window.addEventListener('schafer:navigate', handler as EventListener);
+        const seen: string[] = [];
+        const handler = (event: Event) => {
+            seen.push((event as CustomEvent<string>).detail);
+        };
+        window.addEventListener('schafer:navigate', handler);
         renderWithProviders(<HelpView />);
         expect(screen.getByTestId('help-wayfinding')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: /Home/i }));
-        expect(handler).toHaveBeenCalled();
-        expect((handler.mock.calls[0][0] as CustomEvent).detail).toBe('Home');
-        window.removeEventListener('schafer:navigate', handler as EventListener);
+        expect(seen).toEqual(['Home']);
+        window.removeEventListener('schafer:navigate', handler);
     });
 });

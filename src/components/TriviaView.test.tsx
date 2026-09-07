@@ -291,11 +291,14 @@ describe('TriviaView', () => {
         expect(screen.getByText('The Quiz Archive is Empty')).toBeInTheDocument();
         // Start button must NOT be present – quiz can't run without questions
         expect(screen.queryByText('Begin The Challenge')).not.toBeInTheDocument();
-        const handler = vi.fn();
-        window.addEventListener('schafer:navigate', handler as EventListener);
+        const seen: string[] = [];
+        const handler = (event: Event) => {
+            seen.push((event as CustomEvent<string>).detail);
+        };
+        window.addEventListener('schafer:navigate', handler);
         fireEvent.click(screen.getByRole('button', { name: /Open the gallery/i }));
-        expect((handler.mock.calls[0][0] as CustomEvent).detail).toBe('Gallery');
-        window.removeEventListener('schafer:navigate', handler as EventListener);
+        expect(seen).toEqual(['Gallery']);
+        window.removeEventListener('schafer:navigate', handler);
     });
 
     it('renders score breakdown with semantic ul/li list markup', () => {
