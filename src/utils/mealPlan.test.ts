@@ -10,6 +10,7 @@ import {
   getMealPlan,
   getWeekDates,
   getWeekStart,
+  MEAL_PLAN_UPDATED_EVENT,
   removeFromMealPlan,
   toDateKey,
 } from './mealPlan';
@@ -129,5 +130,17 @@ describe('mealPlan persistence', () => {
     expect(added).toBe(1); // r1 copied to to[0]; r2 skipped on to[1]
     expect(getEntriesForDate(to[0]).map((e) => e.recipeId)).toEqual(['r1']);
     expect(getEntriesForDate(to[1]).map((e) => e.recipeId)).toEqual(['r2']);
+  });
+
+  it('notifies mounted views after a meal-plan write', () => {
+    const seen: Event[] = [];
+    const handler = (event: Event) => {
+      seen.push(event);
+    };
+    window.addEventListener(MEAL_PLAN_UPDATED_EVENT, handler);
+    addToMealPlan('2026-05-11', 'r1');
+    expect(seen).toHaveLength(1);
+    expect(seen[0].type).toBe(MEAL_PLAN_UPDATED_EVENT);
+    window.removeEventListener(MEAL_PLAN_UPDATED_EVENT, handler);
   });
 });

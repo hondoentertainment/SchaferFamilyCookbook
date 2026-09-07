@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Recipe, ContributorProfile, UserProfile } from '../types';
 import { getAverageRating, getRatingCount, isFamilyApproved } from '../utils/ratings';
 import { getActivityFeed, formatTimeAgo, getActivityIcon } from '../utils/activityFeed';
 import { contributorAvatarUrlForName } from '../utils/contributorAvatar';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
-import { getEntriesForDate, toDateKey } from '../utils/mealPlan';
+import { getEntriesForDate, MEAL_PLAN_UPDATED_EVENT, toDateKey } from '../utils/mealPlan';
 import { recipeOfTheWeek } from '../utils/recipeOfTheWeek';
 import { RecipeImage } from './RecipeImage';
 import { CollapsiblePanel } from './CollapsiblePanel';
@@ -142,14 +142,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
     const seasonalRecipes = useMemo(() => findSeasonalRecipes(recipes, season.keywords), [recipes, season]);
     const activityEvents = useMemo(() => getActivityFeed().slice(0, 6), [recipes, favoriteRecipes]);
 
+    const [mealPlanRevision, setMealPlanRevision] = useState(0);
+    useEffect(() => {
+        const onUpdate = () => setMealPlanRevision((n) => n + 1);
+        window.addEventListener(MEAL_PLAN_UPDATED_EVENT, onUpdate);
+        return () => window.removeEventListener(MEAL_PLAN_UPDATED_EVENT, onUpdate);
+    }, []);
+
     const tonightRecipes = useMemo(() => {
         void mealPlanSyncVersion;
+        void mealPlanRevision;
         const todayKey = toDateKey(new Date());
         const entries = getEntriesForDate(todayKey);
         return entries
             .map((entry) => recipes.find((r) => r.id === entry.recipeId))
             .filter((recipe): recipe is Recipe => !!recipe);
-    }, [recipes, mealPlanSyncVersion]);
+    }, [recipes, mealPlanSyncVersion, mealPlanRevision]);
 
     const greeting = (() => {
         const hr = new Date().getHours();
@@ -291,7 +299,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
             )}
 
             {tonightRecipes.length > 0 && (
-                <section aria-labelledby="tonight-heading" className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7">
+                <section
+                    aria-labelledby="tonight-heading"
+                    data-testid="home-tonight-plan"
+                    className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7"
+                >
                     <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
                         <div>
                             <h2 id="tonight-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
