@@ -50,6 +50,9 @@ const OPTIONAL_APP_CHECK = ['VITE_FIREBASE_APP_CHECK_SITE_KEY'];
 
 const OPTIONAL_NOTIFY = ['VITE_NOTIFY_SECRET', 'NOTIFY_SECRET'];
 
+/** Authorizes Vercel Cron → /api/recipe-of-the-week (weekly Recipe of the Week push). */
+const OPTIONAL_CRON = ['CRON_SECRET'];
+
 function listVercelEnv() {
   const r = spawnSync('npx', ['vercel', 'env', 'ls'], { encoding: 'utf8', shell: true });
   if (r.status !== 0) {
@@ -148,6 +151,12 @@ const missingNotify = OPTIONAL_NOTIFY.filter((k) => !names.has(k));
 if (missingNotify.length > 0) {
   console.log('\nℹ️  Push notify (optional — gallery approve + admin broadcast):');
   for (const k of missingNotify) console.log(`   - ${k}`);
+}
+
+const missingCron = OPTIONAL_CRON.filter((k) => !names.has(k));
+if (missingCron.length > 0) {
+  console.log('\nℹ️  Recipe of the Week cron (optional — npm run configure:cron -- --apply):');
+  for (const k of missingCron) console.log(`   - ${k}`);
 }
 
 const misnamed = [...names].filter((n) => n.startsWith('AIza'));

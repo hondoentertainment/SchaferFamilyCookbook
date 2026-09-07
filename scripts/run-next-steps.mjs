@@ -45,6 +45,7 @@ console.log('Next steps checklist\n');
 
 run('Ops verify', 'verify-ops.mjs');
 run('Notify audit', 'configure-notify.mjs', [], { allowFail: true });
+run('Cron secret audit', 'configure-cron.mjs', [], { allowFail: true });
 run('Sentry audit', 'configure-sentry.mjs', [], { allowFail: true });
 run('FCM audit', 'configure-fcm.mjs', [], { allowFail: true });
 run('App Check audit', 'configure-app-check.mjs', [], { allowFail: true });
@@ -55,6 +56,11 @@ run('Contributor migration dry-run', 'normalize-contributor-names-firestore.mjs'
 
 if (apply) {
     run('Apply notify secrets', 'configure-notify.mjs', ['--apply'], { allowFail: true });
+    run('Apply CRON_SECRET (creates on Vercel if missing; will not rotate)', 'configure-cron.mjs', [
+        '--apply',
+    ], {
+        allowFail: true,
+    });
     run('Apply Sentry DSN (if in .env.local)', 'configure-sentry.mjs', ['--apply'], { allowFail: true });
     run('Apply FCM vars (if in .env.local)', 'configure-fcm.mjs', ['--apply'], { allowFail: true });
     run('Apply App Check (if in .env.local)', 'configure-app-check.mjs', ['--apply'], { allowFail: true });
@@ -67,5 +73,14 @@ if (lighthouse) {
 }
 
 console.log('\n✔ Next-steps run complete.');
-console.log('  Full pass: npm run productionize -- --all');
-console.log('  Manual: live gallery test on prod, credentials in .env.local for Sentry/FCM/App Check/migration');
+console.log('  Full pass: npm run finalize -- --apply --deploy');
+console.log('  Lighthouse: npm run next-steps -- --lighthouse   or   gh workflow run "Lighthouse CI"');
+console.log('\n── Still blocked on Kyle (do not invent these in git) ──');
+console.log('  VITE_FCM_VAPID_KEY     Firebase Console → Cloud Messaging → Web Push certificates');
+console.log('                         then: npm run configure:fcm -- --apply');
+console.log('  CRON_SECRET            npm run configure:cron -- --apply   (Recipe of the Week cron)');
+console.log('  VITE_SENTRY_DSN        sentry.io DSN → npm run configure:sentry -- --apply');
+console.log('  App Check site key     reCAPTCHA v3 → npm run configure:app-check -- --apply');
+console.log('  FIREBASE_SERVICE_ACCOUNT  paste JSON into .env.local → npm run finalize -- --migrate --yes');
+console.log('  Twilio MMS             TWILIO_ACCOUNT_SID + VITE_ARCHIVE_PHONE → configure:text-to-gallery');
+console.log('  Live gallery           npm run custodian:runbook  then family upload → approve on prod');

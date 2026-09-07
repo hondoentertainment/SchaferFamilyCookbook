@@ -54,7 +54,12 @@ if (dsn) {
     console.log('✅ VITE_SENTRY_DSN present locally');
 } else {
     console.log('❌ VITE_SENTRY_DSN missing — create a Sentry project and copy the DSN');
-    console.log('   See Help → Troubleshooting → Send test event after configuring');
+    console.log('\n── Kyle: VITE_SENTRY_DSN ──');
+    console.log('   1. sentry.io → Create project (React) → Client Keys (DSN)');
+    console.log('   2. Paste into .env.local:  VITE_SENTRY_DSN=https://…@….ingest.sentry.io/…');
+    console.log('   3. npm run configure:sentry -- --apply');
+    console.log('   4. Redeploy production, then Help → Troubleshooting → Send Sentry test event');
+    console.log('   Do not invent a DSN or commit one to git.');
 }
 
 if (optional.length === 0) {

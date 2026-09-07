@@ -81,7 +81,7 @@ npx firebase-tools emulators:exec --only firestore --project demo-schafer "npm r
 | Workflow | When | Purpose |
 | -------- | ---- | ------- |
 | **Backup recipes JSON** | Weekly + manual | Timestamped copy of `src/data/recipes.json` as an artifact (`scripts/backup-recipes-json.mjs`). |
-| **Lighthouse CI** | Manual | Core Web Vitals / quality report for a URL you choose (`lighthouserc.cjs`). |
+| **Lighthouse CI** | Monthly (1st, 12:00 UTC) + manual | Core Web Vitals / quality report (`lighthouserc.cjs`). Dispatch: `gh workflow run "Lighthouse CI"`. Local: `npm run lighthouse:ci`. |
 
 ## Finalize and Deploy
 
@@ -103,7 +103,8 @@ After push to `main`: **`ci`** runs (lint, type-check, Vitest `test:run`, build)
    - `FIREBASE_SERVICE_ACCOUNT` – JSON string for MMS webhook, Firebase Admin, and **`/api/notify`** (FCM multicast).
    - `TWILIO_AUTH_TOKEN` – for validating Twilio webhook requests (recommended in production).
    - **`NOTIFY_SECRET`** – shared secret for **`POST /api/notify`**; callers must send header **`x-notify-secret`** with this value (**Serverless API rate limits** describes throttling).
-   - `VITE_SENTRY_DSN` – optional client error reporting (production only).
+   - **`CRON_SECRET`** – authorizes Vercel Cron → **`GET /api/recipe-of-the-week`**. Generate and apply with **`npm run configure:cron -- --apply`** (do not commit the value).
+   - `VITE_SENTRY_DSN` – optional client error reporting (production only). Apply with **`npm run configure:sentry -- --apply`**.
    - **`VITE_FIREBASE_*`** (six vars) + optional **`VITE_FCM_VAPID_KEY`** – push notifications; injected into `dist/firebase-messaging-sw.js` at build. See **`docs/FIREBASE_PUSH_NOTIFICATIONS.md`**.
    - `VITE_SHARE_BASE` – optional canonical share base (no trailing slash). **`vite build`** loads **`.env.production`**, which defaults this to `https://schafer-family-cookbook.vercel.app`, so links like `${VITE_SHARE_BASE}/share/recipe/<id>` work without setting Vercel dashboard vars (override there if the domain changes). That route serves `/api/share` HTML with `og:image` → `/api/og?recipeId=<id>` plus a redirect to `/#recipe/<id>` for rich previews (iMessage, Slack, WhatsApp). Without this env (e.g. GitHub Pages), the UI falls back to hash-only URLs (no crawler card).
 3. Deploy.

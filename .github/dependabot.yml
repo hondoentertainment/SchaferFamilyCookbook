@@ -37,6 +37,15 @@ updates:
       # to be validated against live Twilio/FCM endpoints — not an auto-merge.
       - dependency-name: "firebase-admin"
         update-types: ["version-update:semver-major"]
+      # vitest 5 is a major: Node 22+ required, and Dependabot's testing group
+      # left @vitest/coverage-v8@4 / @vitest/ui@4 behind so `npm ci` ERESOLVE
+      # fails (see #131). Adopt as a dedicated migration, not an auto-group bump.
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/coverage-v8"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/ui"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"

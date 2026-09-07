@@ -83,9 +83,12 @@ if (storage.status === 0) {
     console.log((storage.stdout || storage.stderr || '').trim());
 }
 
-console.log('\n── Twilio webhook ──');
-console.log('   URL: https://schafer-family-cookbook.vercel.app/api/webhook (POST)');
-console.log('   See TWILIO_SETUP.md for console steps');
+console.log('\n── Kyle: Twilio (optional MMS → gallery) ──');
+console.log('   1. Twilio Console → Account Info → copy TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN');
+console.log('   2. Set both on Vercel production (plus FIREBASE_SERVICE_ACCOUNT for the upload)');
+console.log('   3. Set VITE_ARCHIVE_PHONE (E.164) and npm run set:archive-phone -- +1…');
+console.log('   4. Twilio webhook POST → https://schafer-family-cookbook.vercel.app/api/webhook');
+console.log('   See TWILIO_SETUP.md — do not invent SID/token values in git.');
 
 if (phoneArg && firebaseSa) {
     console.log('\n── Writing Firestore config/settings ──');

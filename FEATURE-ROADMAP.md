@@ -38,15 +38,23 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ## Immediate Next Steps (1–2 weeks)
 
-### 1. Product (next sprint)
+### 1. Product / ops (audit 2026-09-06)
+
+Code and CI for this sprint are **shipped**. Remaining boxes are Kyle secrets or a live walkthrough — see `NEXT-STEPS.md`.
+
 - [x] **Enable Firebase Storage** — enabled; rules deploy via `npm run deploy:firebase-rules`
 - [x] **Firestore rules for family notes** — `notes` / `displayName` on `userPrefs` (deployed 2026-07-17)
-- [ ] **Sentry on Vercel** — add `VITE_SENTRY_DSN` (+ optional source-map upload vars)
-- [ ] **Firebase push vars (optional)** — `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FCM_VAPID_KEY`
-- [ ] **App Check (optional)** — `VITE_FIREBASE_APP_CHECK_SITE_KEY` after registering reCAPTCHA v3 in Firebase Console
-- [ ] **Lighthouse baseline** — `gh workflow run "Lighthouse CI"` or monthly schedule; headless Chrome configured
-- [ ] **Live prod gallery walkthrough** — `npm run custodian:runbook` then family upload → approve on production
-- [ ] **Credentials apply** — `npm run bootstrap:credentials` then `npm run finalize -- --apply --deploy`
+- [x] **Firebase web + FCM client IDs** — `VITE_FIREBASE_MESSAGING_SENDER_ID` and `VITE_FIREBASE_APP_ID` applied with the other SDK vars (`configure:firebase-web`)
+- [x] **Lighthouse CI** — `.github/workflows/lighthouse-ci.yml` (monthly + `gh workflow run "Lighthouse CI"`); headless Chrome; `npm run lighthouse:ci`
+- [x] **Meal plan / Story CMS / fuzzy search polish** — shipped (June 2026 batch 2; see Done below)
+- [ ] **Sentry on Vercel** — Kyle: add `VITE_SENTRY_DSN` via `npm run configure:sentry -- --apply` (+ optional source-map upload vars)
+- [ ] **FCM VAPID (optional push delivery)** — Kyle: `VITE_FCM_VAPID_KEY` from Firebase Cloud Messaging → Web Push certificates → `npm run configure:fcm -- --apply`
+- [ ] **CRON_SECRET (Recipe of the Week)** — Kyle: `npm run configure:cron -- --apply` (creates on Vercel if missing; will not rotate). Code + schedule already live.
+- [ ] **App Check (optional)** — Kyle: `VITE_FIREBASE_APP_CHECK_SITE_KEY` after registering reCAPTCHA v3 → `npm run configure:app-check -- --apply`
+- [ ] **Live prod gallery walkthrough** — Kyle: `npm run custodian:runbook` then family upload → approve on production
+- [ ] **Credentials apply** — Kyle: `npm run bootstrap:credentials` then `npm run finalize -- --apply --deploy`
+- [ ] **Text-to-gallery / Twilio** — Kyle: `TWILIO_ACCOUNT_SID` + `VITE_ARCHIVE_PHONE` (see `configure:text-to-gallery`)
+- [ ] **Contributor migration** — Kyle: paste `FIREBASE_SERVICE_ACCOUNT` → `npm run finalize -- --migrate --yes`
 
 ### 2. Done (recent — June 2026 batch 11)
 - [x] **Gallery decline** — custodian reject pending submissions
@@ -145,7 +153,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 |---------|-------------|--------|-------|
 | **Family Story CMS** | Firestore-backed sections editable in Admin and rendered publicly | L | **Shipped** (June 2026) |
 | **Featured recipes** | Admin-curated on Recipes tab | S | **Shipped** (late May 2026) |
-| **Search** | By ingredient, fuzzy | M | Ingredient search shipped; fuzzy search still open |
+| **Search** | By ingredient, fuzzy | M | **Shipped** (ingredient + `fuzzyMatch` typo tolerance) |
 
 ---
 
@@ -181,8 +189,8 @@ A strategic roadmap for the next phases of development, informed by the current 
 1. **Done (baseline)** — Mobile polish (haptics, vibration, Cook swipe), Grocery, Profile sections, family trivia leaderboard + rules, Vercel OG/share, admin export + gallery edit, E2E port isolation, **Vercel API recipe seed bundling** (late May 2026 — see `RUNBOOK.md`)
 2. **Just shipped (multi-agent run, late May 2026)** — **Featured recipes**, **FCM SW build config**, **Profile favorites/recent**, **collections UI** (Profile + modal picker), **collections cloud sync**, **a11y batch**, **E2E fixes**, **mobile vibration**. See `ENHANCEMENTS.md` and `FEATURE-PLAN-NEXT-2-WEEKS.md`.
 3. **Just shipped (June 2026)** — **Meal Plan cloud sync**, **Family Story CMS rendering**, stale roadmap cleanup.
-4. **Next (2 weeks)** — **Lighthouse baseline**, production monitoring, content/image verification.
-5. **Next quarter** — optional stronger identity if cross-device personalization needs grow; gamification backlog.
+4. **Next (Kyle / ops)** — set remaining secrets (`VITE_FCM_VAPID_KEY`, `CRON_SECRET`, `VITE_SENTRY_DSN`, App Check, Twilio), run the live gallery walkthrough, optional Lighthouse dispatch for a fresh score snapshot. See `NEXT-STEPS.md`.
+5. **Next quarter** — optional stronger identity if cross-device personalization needs grow; gamification backlog. Leave vitest 5 and `@vercel/node` 12 for a dedicated migration.
 
 ---
 
@@ -195,4 +203,4 @@ A strategic roadmap for the next phases of development, informed by the current 
 
 ---
 
-*Last updated: 26 June 2026*
+*Last updated: 6 September 2026*

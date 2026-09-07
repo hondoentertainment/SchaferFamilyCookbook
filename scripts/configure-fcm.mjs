@@ -27,8 +27,16 @@ const missingLocal = FCM_VARS.filter((k) => !process.env[k]?.trim());
 if (missingLocal.length === 0) {
     console.log('✅ All FCM client vars present locally');
 } else {
-    console.log('❌ Missing locally (Firebase Console → Project settings → Cloud Messaging):');
+    console.log('❌ Missing locally:');
     for (const k of missingLocal) console.log(`   - ${k}`);
+    if (missingLocal.includes('VITE_FCM_VAPID_KEY')) {
+        console.log('\n── Kyle: VITE_FCM_VAPID_KEY ──');
+        console.log('   Firebase Console → Project settings → Cloud Messaging → Web Push certificates');
+        console.log('   Generate key pair (or copy the existing one). Paste into .env.local:');
+        console.log('     VITE_FCM_VAPID_KEY=<key>');
+        console.log('   Then: npm run configure:fcm -- --apply');
+        console.log('   Sender ID + App ID usually already exist (configure:firebase-web).');
+    }
     console.log('   See docs/FIREBASE_PUSH_NOTIFICATIONS.md');
 }
 
