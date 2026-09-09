@@ -1,6 +1,6 @@
 import React from 'react';
 import { KEYBOARD_SHORTCUT_ROWS } from '../constants/keyboardShortcuts';
-import { siteConfig } from '../config/site';
+import { WAYFINDING_DESTINATIONS, navigateToTab } from '../config/navConfig';
 import { hapticLight } from '../utils/haptics';
 import { PageHeader } from './PageHeader';
 import { CollapsiblePanel } from './CollapsiblePanel';
@@ -30,10 +30,32 @@ export const HelpView: React.FC = () => {
             <PageHeader
                 id="help-page-heading"
                 titleLevel={1}
-                eyebrow={siteConfig.siteName}
+                eyebrow="Me · Help"
                 title="Help & shortcuts"
                 description="Quick answers for navigating the cookbook and sharing recipes with family."
             />
+
+            <nav aria-label="Find your way" data-testid="help-wayfinding" className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+                    Find your way
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {WAYFINDING_DESTINATIONS.map((dest) => (
+                        <button
+                            key={dest.id}
+                            type="button"
+                            onClick={() => {
+                                hapticLight();
+                                navigateToTab(dest.id);
+                            }}
+                            className="min-h-11 rounded-2xl border border-[#E8DCCB] bg-white/80 px-4 py-3 text-left hover:bg-white dark:border-stone-700 dark:bg-stone-900/70 dark:hover:bg-stone-900"
+                        >
+                            <span className="block text-sm font-bold text-[var(--color-brand)] dark:text-emerald-200">{dest.label}</span>
+                            <span className="block text-xs text-stone-500 dark:text-stone-400 font-serif italic">{dest.hint}</span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
 
             <CollapsiblePanel id="help-shortcuts" title="Keyboard shortcuts" defaultOpen>
                 <ul className="space-y-2">
@@ -54,7 +76,7 @@ export const HelpView: React.FC = () => {
                         <strong className="font-bold">Home</strong> picks up favorites, tonight&apos;s meal plan, and seasonal ideas. Use <strong className="font-bold">Recipes</strong> to search the full archive.
                     </li>
                     <li>
-                        The pill bar under the header switches sub-sections — e.g. Groceries → Meal Plan or Collections without losing your place.
+                        The pill bar under the header switches sub-sections — e.g. Groceries → Meal Plan, or Recipes → Collections — without losing your place.
                     </li>
                     <li>
                         Use the <strong className="font-bold">Read / Cook / Share</strong> modes at the top of a recipe to focus on story, cooking, or sending a link.
@@ -69,7 +91,7 @@ export const HelpView: React.FC = () => {
                         <strong className="font-bold">Family notes &amp; ratings</strong> on a recipe reflect everyone who has synced prefs — not just this device. Sign in with your name so notes attribute correctly.
                     </li>
                     <li>
-                        <strong className="font-bold">Collections</strong> under Groceries let you group recipes — start from a template or build your own shelf.
+                        <strong className="font-bold">Collections</strong> under Recipes let you group recipes — start from a template or build your own shelf.
                     </li>
                     <li>Copy or share your grocery list from the list header when you head to the store.</li>
                     <li>Offline? Your edits may queue until you reconnect; check the banner at the top when something is pending.</li>

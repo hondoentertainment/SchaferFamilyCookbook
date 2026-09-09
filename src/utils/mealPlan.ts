@@ -7,6 +7,9 @@
 import { STORAGE_KEYS } from '../constants/storage';
 import { notifyPrefsChanged } from '../services/userPrefsSync';
 
+/** Fired after any local meal-plan write so mounted views (e.g. Home) can refresh. */
+export const MEAL_PLAN_UPDATED_EVENT = 'schafer:meal-plan-updated';
+
 export interface MealPlanEntry {
   id: string;
   /** Local calendar day, formatted YYYY-MM-DD. */
@@ -66,6 +69,9 @@ function save(entries: MealPlanEntry[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.mealPlan, JSON.stringify(entries));
     notifyPrefsChanged();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(MEAL_PLAN_UPDATED_EVENT));
+    }
   } catch {
     // ignore quota / disabled storage
   }

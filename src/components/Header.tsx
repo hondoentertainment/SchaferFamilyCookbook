@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, DBStats } from '../types';
 import { siteConfig } from '../config/site';
-import { PRIMARY_NAV_TABS, isNavGroupActive } from '../config/navConfig';
+import { PRIMARY_NAV_TABS, formatNavLocation, isNavGroupActive } from '../config/navConfig';
 import { avatarOnError } from '../utils/avatarFallback';
 import { hapticLight } from '../utils/haptics';
 import { getStoredTheme, setStoredTheme } from '../utils/theme';
@@ -64,6 +64,15 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                             {brandLabel}
                         </span>
                     </button>
+                    {currentUser && (
+                        <p
+                            className="md:hidden min-w-0 truncate text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400"
+                            data-testid="header-location"
+                            aria-live="polite"
+                        >
+                            {formatNavLocation(activeTab)}
+                        </p>
+                    )}
 
                     <nav className="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar py-1 scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }} aria-label="Main navigation">
                         {PRIMARY_NAV_TABS.map((tab) => (

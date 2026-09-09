@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SecondaryNavItem } from '../config/navConfig';
+import { getSecondaryNavHub, type SecondaryNavItem } from '../config/navConfig';
 
 interface SectionSubNavProps {
     ariaLabel: string;
@@ -15,11 +15,26 @@ export const SectionSubNav: React.FC<SectionSubNavProps> = ({
     activeTab,
     onSelect,
     getDetail,
-}) => (
+}) => {
+    const hub = getSecondaryNavHub(items);
+    return (
     <section
         aria-label={ariaLabel}
+        data-testid="section-subnav"
         className="max-w-[1400px] mx-auto px-3 md:px-6 pt-2 md:pt-4 pb-1"
     >
+        {hub && (
+            <p
+                className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400"
+                data-testid="section-subnav-hub"
+            >
+                {hub.label}
+                <span className="hidden sm:inline font-normal normal-case tracking-normal text-stone-400 dark:text-stone-500">
+                    {' '}
+                    · {hub.hint}
+                </span>
+            </p>
+        )}
         <div
             className="relative -mx-1 px-1"
         >
@@ -65,4 +80,5 @@ export const SectionSubNav: React.FC<SectionSubNavProps> = ({
             </div>
         </div>
     </section>
-);
+    );
+};

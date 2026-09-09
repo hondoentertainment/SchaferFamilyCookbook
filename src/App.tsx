@@ -98,6 +98,8 @@ import {
     FAMILY_SECONDARY_NAV,
     getFamilyNavDetail,
     getSecondaryNavForTab,
+    getSecondaryNavHub,
+    getTabPageLabel,
 } from './config/navConfig';
 
 const TabFallback = () => (
@@ -106,18 +108,8 @@ const TabFallback = () => (
     </div>
 );
 
-const SECONDARY_NAV_ARIA: Record<string, string> = {
-    family: 'Family hub navigation',
-    cook: 'Cooking tools navigation',
-    recipes: 'Recipe browsing navigation',
-    me: 'Account navigation',
-};
-
 function secondaryNavAriaLabel(items: typeof FAMILY_SECONDARY_NAV): string {
-    if (items === FAMILY_SECONDARY_NAV) return SECONDARY_NAV_ARIA.family;
-    if (items.some((i) => i.id === 'Grocery List')) return SECONDARY_NAV_ARIA.cook;
-    if (items.some((i) => i.id === 'Recipes')) return SECONDARY_NAV_ARIA.recipes;
-    return SECONDARY_NAV_ARIA.me;
+    return getSecondaryNavHub(items)?.ariaLabel ?? 'Section navigation';
 }
 
 const RecipeGridSkeleton: React.FC = () => (
@@ -828,6 +820,14 @@ const App: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
 
+    const openMealPlanFromRecipe = useCallback(() => {
+        setSelectedRecipe(null);
+        if (window.location.hash.match(/^#recipe\//)) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        handleSetTab('Meal Plan');
+    }, [handleSetTab]);
+
     const clearGroceryHighlight = useCallback(() => setGroceryHighlightTitle(null), []);
 
     const defaultRecipeIds = useMemo(
@@ -1522,6 +1522,7 @@ const App: React.FC = () => {
                 <main id="main-content" className="view-shell-wide view-stack max-w-7xl mx-auto" role="main" aria-label="Family Gallery" tabIndex={-1}>
                     <PageHeader
                         id="gallery-heading"
+                        eyebrow="Family · Gallery"
                         title="Family Gallery"
                         description="Captured moments across the generations."
                     />
@@ -1845,6 +1846,7 @@ const App: React.FC = () => {
                                 window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
                             }}
                             onOpenGroceryList={openGroceryFromRecipe}
+                            onOpenMealPlan={openMealPlanFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
                             onBrowseContributor={handleBrowseContributorFromRecipe}
@@ -1919,6 +1921,7 @@ const App: React.FC = () => {
                                 window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
                             }}
                             onOpenGroceryList={openGroceryFromRecipe}
+                            onOpenMealPlan={openMealPlanFromRecipe}
                             breadcrumbContext="Family"
                             currentUserName={currentUser?.name}
                             onBrowseContributor={handleBrowseContributorFromRecipe}
@@ -2006,7 +2009,8 @@ const App: React.FC = () => {
                             window.history.replaceState(null, '', `#recipe/${encodeURIComponent(selectedRecipe.id)}/cook`);
                         }}
                         onOpenGroceryList={openGroceryFromRecipe}
-                        breadcrumbContext={{ Home: 'Home', Recipes: 'Recipes', Index: 'A–Z', Gallery: 'Gallery', Trivia: 'Trivia', 'Family Story': 'Family Story', Contributors: 'Contributors', Profile: 'Profile', Privacy: 'Privacy', Help: 'Help', 'Grocery List': 'Groceries', Collections: 'Collections', 'Meal Plan': 'Meal Plan' }[tab] ?? 'Recipes'}
+                        onOpenMealPlan={openMealPlanFromRecipe}
+                        breadcrumbContext={getTabPageLabel(tab)}
                         currentUserName={currentUser?.name}
                         onBrowseContributor={handleBrowseContributorFromRecipe}
                     />

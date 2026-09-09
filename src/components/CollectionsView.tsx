@@ -85,7 +85,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({
   return (
     <section className="view-stack" aria-label="Recipe collections">
       <PageHeader
-        eyebrow="Cook · Plan · Shop"
+        eyebrow="Recipes · Collections"
         title="Collections"
         description="Group recipes into shelves — add to grocery lists or meal plans in one tap."
       />

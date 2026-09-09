@@ -48,6 +48,8 @@ interface RecipeModalProps {
     onStartCook?: () => void;
     /** Navigate to grocery list (e.g. from toast action after adding ingredients) */
     onOpenGroceryList?: (recipeTitle: string) => void;
+    /** Navigate to the meal plan after adding this recipe */
+    onOpenMealPlan?: () => void;
     /** Optional breadcrumb context (e.g. "Recipes", "A–Z") when opened from deep link or other section */
     breadcrumbContext?: string;
     /** Current user name for ratings/notes */
@@ -166,7 +168,7 @@ const OverflowCollectionPicker: React.FC<{ recipeId: string; onAdded?: () => voi
 };
 
 /** Inline meal-plan day picker used inside the overflow menu. */
-const OverflowMealPlanPicker: React.FC<{ recipeId: string; onAdded?: () => void }> = ({ recipeId, onAdded }) => {
+const OverflowMealPlanPicker: React.FC<{ recipeId: string; onAdded?: () => void; onOpenMealPlan?: () => void }> = ({ recipeId, onAdded, onOpenMealPlan }) => {
     const { toast } = useUI();
     const [entries, setEntries] = useState(() => getMealPlan());
     const [open, setOpen] = useState(false);
@@ -184,7 +186,14 @@ const OverflowMealPlanPicker: React.FC<{ recipeId: string; onAdded?: () => void 
     const handleAdd = (d: Date) => {
         addToMealPlan(toDateKey(d), recipeId);
         setEntries(getMealPlan());
-        toast('Added to meal plan', 'success');
+        toast('Added to meal plan', 'success', {
+            action: onOpenMealPlan
+                ? {
+                      label: 'View plan',
+                      onClick: onOpenMealPlan,
+                  }
+                : undefined,
+        });
         setOpen(false);
         onAdded?.();
     };
@@ -252,6 +261,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     onToggleFavorite,
     onStartCook,
     onOpenGroceryList,
+    onOpenMealPlan,
     breadcrumbContext = 'Recipes',
     currentUserName = '',
     onBrowseContributor,
@@ -580,6 +590,26 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     : undefined,
             });
         }
+    };
+
+    const handlePlanTonight = () => {
+        const today = toDateKey(new Date());
+        const already = getMealPlan().some((e) => e.date === today && e.recipeId === recipe.id);
+        hapticLight();
+        if (already) {
+            toast('Already on today\'s meal plan', 'info', {
+                action: onOpenMealPlan
+                    ? { label: 'View plan', onClick: onOpenMealPlan }
+                    : undefined,
+            });
+            return;
+        }
+        addToMealPlan(today, recipe.id);
+        toast('Added to today\'s meal plan', 'success', {
+            action: onOpenMealPlan
+                ? { label: 'View plan', onClick: onOpenMealPlan }
+                : undefined,
+        });
     };
 
     // Build the byline meta line (rating · prep · cook · servings · calories)
@@ -992,9 +1022,23 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                             <div className="flex min-h-0 flex-col justify-center px-6 pt-14 pb-6 md:p-8 lg:p-10">
                                 <nav aria-label="Breadcrumb" className="text-[10px] text-stone-500 dark:text-stone-400 tracking-widest mb-4 print:hidden">
-                                    <span>{breadcrumbContext}</span>
-                                    <span aria-hidden className="mx-1.5">›</span>
-                                    <span className="font-medium">{recipe.title}</span>
+                                    <ol className="flex flex-wrap items-center gap-x-1.5">
+                                        <li>
+                                            <button
+                                                type="button"
+                                                data-testid="recipe-breadcrumb-back"
+                                                onClick={() => { hapticLight(); onClose(); }}
+                                                className="font-bold uppercase tracking-widest hover:text-[var(--color-brand)] dark:hover:text-emerald-200 transition-colors"
+                                                aria-label={`Back to ${breadcrumbContext}`}
+                                            >
+                                                {breadcrumbContext}
+                                            </button>
+                                        </li>
+                                        <li aria-hidden className="text-stone-300">›</li>
+                                        <li aria-current="page" className="font-medium min-w-0 truncate">
+                                            {recipe.title}
+                                        </li>
+                                    </ol>
                                 </nav>
                                 <div className="flex flex-wrap items-center gap-2 mb-3">
                                     <span className="inline-block text-[10px] font-black uppercase text-[#A0522D] tracking-widest bg-[#A0522D]/10 px-3 py-1 rounded-full">{recipe.category}</span>
@@ -1057,6 +1101,42 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 </div>
                             </div>
                         </header>
+
+                        <nav
+                            aria-label="Related cookbook pages"
+                            data-testid="recipe-related-nav"
+                            className="print:hidden px-5 pt-3 md:px-8 lg:px-10 flex flex-wrap items-center gap-2"
+                        >
+                            <p className="sr-only">Continue from this recipe</p>
+                            <button
+                                type="button"
+                                onClick={handlePlanTonight}
+                                data-testid="recipe-related-meal-plan"
+                                className="min-h-10 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                            >
+                                Plan tonight
+                            </button>
+                            {onOpenGroceryList && (
+                                <button
+                                    type="button"
+                                    onClick={() => { hapticLight(); onOpenGroceryList(recipe.title); }}
+                                    data-testid="recipe-related-grocery"
+                                    className="min-h-10 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                                >
+                                    Grocery list
+                                </button>
+                            )}
+                            {onBrowseContributor && (
+                                <button
+                                    type="button"
+                                    onClick={() => { hapticLight(); onBrowseContributor(recipe.contributor); }}
+                                    data-testid="recipe-related-contributor"
+                                    className="min-h-10 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                                >
+                                    More by {recipe.contributor.split(' ')[0]}
+                                </button>
+                            )}
+                        </nav>
 
                         <div className="print:hidden px-5 pt-4 md:px-8 lg:px-10 flex justify-center sticky top-0 z-[5] bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2">
                             <div
@@ -1597,7 +1677,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                         </div>
                                         <div className="my-1 border-t border-stone-100 dark:border-[var(--border-color)]" />
                                         <OverflowCollectionPicker recipeId={recipe.id} onAdded={() => setOverflowOpen(false)} />
-                                        <OverflowMealPlanPicker recipeId={recipe.id} onAdded={() => setOverflowOpen(false)} />
+                                        <OverflowMealPlanPicker recipeId={recipe.id} onAdded={() => setOverflowOpen(false)} onOpenMealPlan={onOpenMealPlan} />
                                     </div>
                                 )}
                             </div>

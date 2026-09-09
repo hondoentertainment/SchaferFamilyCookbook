@@ -130,4 +130,10 @@ describe('CookModeView', () => {
             vi.unstubAllGlobals();
         }
     });
+
+    it('exits cook mode from the Leave control', () => {
+        renderWithProviders(<CookModeView {...defaultProps} />);
+        fireEvent.click(screen.getByTestId('cook-mode-leave'));
+        expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
 });

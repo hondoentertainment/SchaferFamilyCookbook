@@ -24,4 +24,17 @@ describe('HelpView', () => {
         }
         expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
     });
+
+    it('offers wayfinding destinations that dispatch in-app navigation', () => {
+        const seen: string[] = [];
+        const handler = (event: Event) => {
+            seen.push((event as CustomEvent<string>).detail);
+        };
+        window.addEventListener('schafer:navigate', handler);
+        renderWithProviders(<HelpView />);
+        expect(screen.getByTestId('help-wayfinding')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /Home/i }));
+        expect(seen).toEqual(['Home']);
+        window.removeEventListener('schafer:navigate', handler);
+    });
 });

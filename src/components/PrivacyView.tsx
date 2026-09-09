@@ -13,7 +13,7 @@ export const PrivacyView: React.FC = () => {
             role="main"
             aria-labelledby="privacy-heading"
         >
-            <PageHeader id="privacy-heading" title="Privacy & data" titleLevel={1} />
+            <PageHeader id="privacy-heading" eyebrow="Me · Privacy" title="Privacy & data" titleLevel={1} />
 
             <CollapsiblePanel id="privacy-what" title="What this site stores" defaultOpen>
                 <ul className="list-disc pl-6 space-y-2 text-base leading-relaxed">

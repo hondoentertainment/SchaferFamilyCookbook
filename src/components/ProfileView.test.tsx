@@ -217,4 +217,28 @@ describe('ProfileView', () => {
         expect(screen.getByRole('region', { name: /Recipe collections/i })).toBeInTheDocument();
         expect(screen.getByText(/Collections \(\d+\)/)).toBeInTheDocument();
     });
+
+    it('closes admin tools and returns to identity when Leave admin tools is clicked', () => {
+        const scrollIntoView = vi.fn();
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+            configurable: true,
+            value: scrollIntoView,
+        });
+        const adminProps = createAdminSectionProps();
+
+        renderWithProviders(
+            <ProfileView
+                {...defaultProps}
+                currentUser={{ ...defaultProps.currentUser, role: 'admin' }}
+                adminSectionProps={adminProps}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Admin — archive control room/i }));
+        expect(screen.getByTestId('leave-admin-tools')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('leave-admin-tools'));
+        expect(adminProps.clearEditing).toHaveBeenCalled();
+        expect(screen.queryByTestId('leave-admin-tools')).not.toBeInTheDocument();
+        expect(scrollIntoView).toHaveBeenCalled();
+    });
 });

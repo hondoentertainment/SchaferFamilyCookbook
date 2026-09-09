@@ -290,4 +290,29 @@ describe('RecipeModal', () => {
         const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
         expect(checkboxes[0]?.checked).toBe(true);
     });
+
+    it('closes from the clickable breadcrumb and offers related destinations', () => {
+        const onOpenGroceryList = vi.fn();
+        const onBrowseContributor = vi.fn();
+        renderWithProviders(
+            <RecipeModal
+                {...defaultProps}
+                breadcrumbContext="Home"
+                onOpenGroceryList={onOpenGroceryList}
+                onBrowseContributor={onBrowseContributor}
+            />,
+        );
+
+        fireEvent.click(screen.getByTestId('recipe-breadcrumb-back'));
+        expect(mockOnClose).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByTestId('recipe-related-grocery'));
+        expect(onOpenGroceryList).toHaveBeenCalledWith('Test Recipe');
+
+        fireEvent.click(screen.getByTestId('recipe-related-contributor'));
+        expect(onBrowseContributor).toHaveBeenCalledWith('Test User');
+
+        fireEvent.click(screen.getByTestId('recipe-related-meal-plan'));
+        expect(screen.getByTestId('toast-stack')).toHaveTextContent(/today/i);
+    });
 });

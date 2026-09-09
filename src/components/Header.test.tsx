@@ -35,14 +35,14 @@ describe('Header', () => {
         window.HTMLElement.prototype.scrollIntoView = vi.fn();
     });
 
-    it('should render logo and the six primary navigation tabs', () => {
+    it('should render logo and the five primary navigation tabs', () => {
         renderWithProviders(<Header {...defaultProps} />);
 
         expect(screen.getByRole('button', { name: `${siteConfig.siteName} \u2014 go to home` })).toBeInTheDocument();
         expect(screen.getByText('Schafer Cookbook')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Home$/ })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Recipes$/ })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /^A–Z$/ })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /^A–Z$/ })).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Family$/ })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Groceries$/ })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Me$/ })).toBeInTheDocument();
@@ -61,10 +61,10 @@ describe('Header', () => {
         expect(mockSetTab).toHaveBeenCalledWith('Gallery');
     });
 
-    it('should call setTab("Index") when A–Z is clicked', () => {
-        renderWithProviders(<Header {...defaultProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /^A–Z$/ }));
-        expect(mockSetTab).toHaveBeenCalledWith('Index');
+    it('should show a where-am-I location chip and mark Recipes current on A–Z', () => {
+        renderWithProviders(<Header {...defaultProps} activeTab="Index" />);
+        expect(screen.getByTestId('header-location')).toHaveTextContent('Recipes · A–Z');
+        expect(screen.getByRole('button', { name: /^Recipes$/ })).toHaveAttribute('aria-current', 'page');
     });
 
     it('should highlight the active tab', () => {

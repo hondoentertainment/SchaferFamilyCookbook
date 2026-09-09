@@ -139,6 +139,7 @@ export const ContributorsView: React.FC<ContributorsViewProps> = ({
         >
             <PageHeader
                 id="contributors-heading"
+                eyebrow="Family · People"
                 title="The Contributors"
                 description="The family members who have shared recipes, memories, and stories in this archive."
             />

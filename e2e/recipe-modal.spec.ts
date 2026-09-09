@@ -38,6 +38,16 @@ test.describe('Recipe modal', () => {
     await expect(recipeDetailsDialog(page)).not.toBeVisible({ timeout: 2000 });
   });
 
+  test('closes from the breadcrumb and shows related destinations', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    const dialog = recipeDetailsDialog(page);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByTestId('recipe-related-nav')).toBeVisible();
+    await expect(dialog.getByTestId('recipe-related-meal-plan')).toBeVisible();
+    await dialog.getByTestId('recipe-breadcrumb-back').click();
+    await expect(dialog).not.toBeVisible({ timeout: 2000 });
+  });
+
   test('closes on Escape key', async ({ page }) => {
     await openFirstRecipeCardInMainGrid(page);
     await expect(recipeDetailsDialog(page)).toBeVisible();
