@@ -43,3 +43,17 @@ export function buildFamilyInviteBody(recipe: Recipe, shareUrl: string): string 
 export function buildFamilyInviteSubject(recipe: Recipe): string {
   return `${recipe.title} — Schafer Family Cookbook`;
 }
+
+/**
+ * SMS compose URL. `?&body=` is the usual cross-platform form (Android `?body=`,
+ * older iOS `&body=`).
+ */
+export function buildFamilySmsHref(recipe: Recipe, shareUrl: string): string {
+  return `sms:?&body=${encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl))}`;
+}
+
+export function buildFamilyMailtoHref(recipe: Recipe, shareUrl: string): string {
+  const subject = encodeURIComponent(buildFamilyInviteSubject(recipe));
+  const body = encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl));
+  return `mailto:?subject=${subject}&body=${body}`;
+}

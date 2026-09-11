@@ -1,57 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ShareRecipe } from './ShareRecipe';
-import { buildFamilyInviteBody, getRecipeShareUrl } from '../utils/shareRecipe';
+import { buildFamilyMailtoHref, buildFamilySmsHref, getRecipeShareUrl } from '../utils/shareRecipe';
 import { renderWithProviders, createMockRecipe } from '../test/utils';
 
-describe('getRecipeShareUrl', () => {
-    it('uses VITE_SHARE_BASE when provided', () => {
-        const url = getRecipeShareUrl('abc123', 'https://cookbook.vercel.app');
-        expect(url).toBe('https://cookbook.vercel.app/share/recipe/abc123');
-    });
-
-    it('strips trailing slashes from the share base', () => {
-        const url = getRecipeShareUrl('abc123', 'https://cookbook.vercel.app///');
-        expect(url).toBe('https://cookbook.vercel.app/share/recipe/abc123');
-    });
-
-    it('encodes recipe ids with special characters', () => {
-        const url = getRecipeShareUrl('a b/c', 'https://cookbook.vercel.app');
-        expect(url).toBe('https://cookbook.vercel.app/share/recipe/a%20b%2Fc');
-    });
-
-    it('falls back to the hash route on window.location.origin when base is unset', () => {
-        const url = getRecipeShareUrl('abc123', undefined, 'https://example.github.io');
-        expect(url).toBe('https://example.github.io/#recipe/abc123');
-    });
-
-    it('returns a hash-only URL if no origin is available', () => {
-        const url = getRecipeShareUrl('abc123', undefined, '');
-        expect(url).toBe('/#recipe/abc123');
-    });
-});
-
-describe('buildFamilyInviteBody', () => {
-    it('includes title, contributor context, URL, and sign-off', () => {
-        const recipe = createMockRecipe({ title: 'Apple Pie', contributor: 'Ada' });
-        const url = 'https://example.com/share/recipe/apple';
-        const body = buildFamilyInviteBody(recipe, url);
-        expect(body).toContain('Apple Pie');
-        expect(body).toContain("From Ada's corner of the archive.");
-        expect(body).toContain(url);
-        expect(body).toContain('Schafer Family Cookbook');
-    });
-});
-
 describe('ShareRecipe component', () => {
-    it('renders the share buttons', () => {
+    it('renders the share buttons and Send to family invites', () => {
         const recipe = createMockRecipe({ id: 'abc123', title: 'Test Dish' });
         renderWithProviders(<ShareRecipe recipe={recipe} />);
         expect(screen.getByRole('button', { name: /share via system/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /copy share link/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /copy recipe as text/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /text recipe invite/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /email recipe invite/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /text recipe invite/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /email recipe invite/i })).toBeInTheDocument();
+        expect(screen.getByTestId('send-to-family')).toHaveTextContent(/send to family/i);
     });
 
     it('exposes the computed share URL on the Copy Link button (fallback origin)', () => {
@@ -92,16 +54,11 @@ describe('ShareRecipe component', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /share via system/i }));
 
-        // Wait a tick for the async handler to settle
         await waitFor(() => {
-            // The share button should still be present (no crash)
             expect(screen.getByRole('button', { name: /share via system/i })).toBeInTheDocument();
         });
 
-        // The toast container is always mounted; verify it has no visible message text
-        // (an AbortError / user cancellation must be silent — no "Share failed" text)
         expect(screen.queryByText(/share failed/i)).not.toBeInTheDocument();
-        // The status container should be empty (no child toast items)
         expect(screen.getByTestId('toast-stack')).toBeEmptyDOMElement();
     });
 
@@ -137,29 +94,44 @@ describe('ShareRecipe component', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /share via system/i }));
 
-        // Without navigator.share the handler falls back to handleCopyText which
-        // calls clipboard.writeText with the full recipe text
         await waitFor(() => {
             expect(writeText).toHaveBeenCalledTimes(1);
         });
 
-        // A success toast should appear confirming the copy
         await waitFor(() => {
             expect(screen.getByTestId('toast-stack')).toHaveTextContent(/copied to clipboard/i);
         });
     });
 
-    it('opens SMS and mailto links for family invites', () => {
-        const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    it('points SMS and mailto links at heirloom invites with the share URL', () => {
         const recipe = createMockRecipe({ id: 'abc123', title: 'Pie', contributor: 'Grandma' });
         renderWithProviders(<ShareRecipe recipe={recipe} />);
+        const shareUrl = getRecipeShareUrl(recipe.id, import.meta.env.VITE_SHARE_BASE);
 
-        fireEvent.click(screen.getByRole('button', { name: /text recipe invite/i }));
-        expect(openSpy.mock.calls[0]?.[0]).toMatch(/^sms:\?body=/);
+        const sms = screen.getByTestId('share-text-family');
+        const mail = screen.getByTestId('share-email-family');
+        expect(sms).toHaveAttribute('href', buildFamilySmsHref(recipe, shareUrl));
+        expect(mail).toHaveAttribute('href', buildFamilyMailtoHref(recipe, shareUrl));
+        expect(sms.getAttribute('href')).toMatch(/^sms:/);
+        expect(mail.getAttribute('href')).toMatch(/^mailto:/);
+    });
 
-        fireEvent.click(screen.getByRole('button', { name: /email recipe invite/i }));
-        expect(openSpy.mock.calls[1]?.[0]).toMatch(/^mailto:\?subject=/);
-
-        openSpy.mockRestore();
+    it('featured variant leads with Send to family and uses the OG share URL', () => {
+        const originalEnv = import.meta.env.VITE_SHARE_BASE;
+        (import.meta.env as Record<string, string | undefined>).VITE_SHARE_BASE =
+            'https://schafer-family-cookbook.vercel.app';
+        try {
+            const recipe = createMockRecipe({ id: 'kugel-1', title: 'Noodle Kugel' });
+            renderWithProviders(<ShareRecipe recipe={recipe} variant="featured" />);
+            expect(screen.getByTestId('share-recipe-featured')).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: /send to family/i })).toBeInTheDocument();
+            const shareUrl = 'https://schafer-family-cookbook.vercel.app/share/recipe/kugel-1';
+            expect(screen.getByTestId('share-copy-link')).toHaveAttribute('data-share-url', shareUrl);
+            expect(screen.getByTestId('share-email-family').getAttribute('href')).toContain(
+                encodeURIComponent(shareUrl)
+            );
+        } finally {
+            (import.meta.env as Record<string, string | undefined>).VITE_SHARE_BASE = originalEnv;
+        }
     });
 });

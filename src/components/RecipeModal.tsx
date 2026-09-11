@@ -16,6 +16,7 @@ import { RecipeImage } from './RecipeImage';
 import { StarRating } from './StarRating';
 import { RecipeNotes } from './RecipeNotes';
 import { ShareRecipe } from './ShareRecipe';
+import { getRecipeShareUrl } from '../utils/shareRecipe';
 import { ViewActionBar } from './ViewActionBar';
 import { getAverageRating, getRatingCount, getUserRating, setRating, isFamilyApproved } from '../utils/ratings';
 import { getAllCollections, addToCollection } from '../utils/collections';
@@ -496,7 +497,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
     if (!recipe) return null;
 
-    const shareUrl = `${siteConfig.baseUrl}/#recipe/${recipe.id}`;
+    const shareUrl = getRecipeShareUrl(recipe.id, import.meta.env.VITE_SHARE_BASE);
     const hasWebShare = typeof navigator !== 'undefined' && navigator.share;
 
     const buildEmailBody = () => {
@@ -1535,7 +1536,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     <div className="space-y-2">
                                         <h3 className="font-serif italic text-2xl text-[var(--color-brand)] dark:text-emerald-300">Share with family</h3>
                                         <p className="text-sm text-stone-600 dark:text-stone-400">
-                                            Copy the link or send an invite — ratings and personal notes stay below.
+                                            Send a text or email invite, or copy the link — ratings and personal notes stay below.
                                         </p>
                                     </div>
                                     <ShareRecipe recipe={recipe} variant="featured" />
@@ -1652,6 +1653,20 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                             >
                                                 <span aria-hidden className="text-lg w-5 text-center">⎘</span>
                                                 <span className="flex-1 text-left">Share recipe</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                role="menuitem"
+                                                onClick={() => {
+                                                    setOverflowOpen(false);
+                                                    setDetailMode('share');
+                                                }}
+                                                className={overflowItemClass}
+                                                aria-label="Send to family"
+                                                data-testid="recipe-send-to-family"
+                                            >
+                                                <span aria-hidden className="text-lg w-5 text-center">💌</span>
+                                                <span className="flex-1 text-left">Send to family</span>
                                             </button>
                                             {!hasWebShare && (
                                                 <a
