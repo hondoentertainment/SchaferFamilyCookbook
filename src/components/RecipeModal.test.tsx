@@ -315,4 +315,27 @@ describe('RecipeModal', () => {
         fireEvent.click(screen.getByTestId('recipe-related-meal-plan'));
         expect(screen.getByTestId('toast-stack')).toHaveTextContent(/today/i);
     });
+
+    it('Share tab leads with Send to family text and email invites', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Share' }));
+        expect(screen.getByRole('heading', { name: /share with family/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /send to family/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /text recipe invite/i })).toHaveAttribute(
+            'href',
+            expect.stringMatching(/^sms:/)
+        );
+        expect(screen.getByRole('link', { name: /email recipe invite/i })).toHaveAttribute(
+            'href',
+            expect.stringMatching(/^mailto:/)
+        );
+    });
+
+    it('More menu Send to family opens the Share tab', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
+        fireEvent.click(screen.getByRole('menuitem', { name: /send to family/i }));
+        expect(screen.getByRole('tab', { name: 'Share' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByTestId('send-to-family')).toBeInTheDocument();
+    });
 });

@@ -43,3 +43,25 @@ export function buildFamilyInviteBody(recipe: Recipe, shareUrl: string): string 
 export function buildFamilyInviteSubject(recipe: Recipe): string {
   return `${recipe.title} — Schafer Family Cookbook`;
 }
+
+/**
+ * SMS compose URL. Android and modern browsers want `sms:?body=`.
+ * Older iOS ignores `?` and needs `sms:&body=` — do not use `sms:?&body=`,
+ * which Chrome treats as a relative path (`/sms?...`) when no handler exists.
+ */
+export function buildFamilySmsHref(
+  recipe: Recipe,
+  shareUrl: string,
+  userAgent?: string
+): string {
+  const body = encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl));
+  const ua = userAgent ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '');
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  return isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
+}
+
+export function buildFamilyMailtoHref(recipe: Recipe, shareUrl: string): string {
+  const subject = encodeURIComponent(buildFamilyInviteSubject(recipe));
+  const body = encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl));
+  return `mailto:?subject=${subject}&body=${body}`;
+}

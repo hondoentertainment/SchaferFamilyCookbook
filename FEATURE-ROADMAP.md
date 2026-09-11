@@ -11,7 +11,7 @@ A strategic roadmap for the next phases of development, informed by the current 
 |------|------------|--------|
 | **Recipes** | Browse, search, filter (category/contributor), sort (A–Z, recently viewed), grid/list | Solid |
 | **Recipe Images** | Full local `public/recipe-images` coverage with recipe-specific WebP fallback assets and Imagen-ready generation tooling | Solid |
-| **Recipe Modal** | View details, scale ingredients, print, share link, prev/next navigation | Solid |
+| **Recipe Modal** | View details, scale ingredients, print, share link, **Send to family** (SMS + mailto), prev/next navigation | Solid |
 | **Cook Mode** | Step-by-step view, ingredient scaling, keyboard + **swipe** navigation on mobile | Solid |
 | **Favorites** | Heart recipes (local + cloud sync via `userPrefs` when Firebase configured) | Solid |
 | **Collections** | User-created lists (`CollectionsView`, modal picker + Profile sections; cloud sync via `userPrefs`) | Solid |
@@ -135,7 +135,7 @@ Code and CI for this sprint are **shipped**. Remaining boxes are Kyle secrets or
 | **Recipe share card (discoverability)** | Production builds default `VITE_SHARE_BASE` via `.env.production`; `/api/og` + `/api/share` unchanged | S | Override in Vercel env if the canonical domain changes |
 | **Collections cloud sync** | Extend `userPrefs` to mirror custom lists across devices | M | **Shipped** (late May 2026) |
 | **Cook Mode polish** | Read-aloud via Web Speech API (Listen / Stop); clears when changing steps | M | Tap-to-play only — no autoplay |
-| **”Send to family”** | SMS + mailto invites with heirloom copy (`ShareRecipe`) | S | Uses OG-rich share URL when base is set |
+| **”Send to family”** | SMS + mailto invites with heirloom copy (`ShareRecipe`) | S | **Shipped** — OG-rich `/share/recipe/<id>` when `VITE_SHARE_BASE` is set |
 
 ---
 

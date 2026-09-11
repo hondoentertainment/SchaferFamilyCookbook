@@ -136,6 +136,50 @@ test.describe('Recipe modal', () => {
     await expect(page.getByRole('menuitem', { name: /^Print recipe$/ })).toBeVisible({ timeout: 2000 });
   });
 
+  test('Share tab offers Send to family text and email invites', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    const dialog = recipeDetailsDialog(page);
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('tab', { name: 'Share' }).click();
+    await expect(dialog.getByRole('heading', { name: /share with family/i })).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: /send to family/i })).toBeVisible();
+
+    const textLink = dialog.getByRole('link', { name: /text recipe invite/i });
+    const emailLink = dialog.getByRole('link', { name: /email recipe invite/i });
+    await expect(textLink).toBeVisible();
+    await expect(emailLink).toBeVisible();
+
+    const smsHref = await textLink.getAttribute('href');
+    const mailHref = await emailLink.getAttribute('href');
+    expect(smsHref).toMatch(/^sms:/);
+    expect(mailHref).toMatch(/^mailto:/);
+
+    const smsBody = decodeURIComponent((smsHref ?? '').replace(/^sms:[&?]body=/, ''));
+    const mailBody = new URL(mailHref ?? 'mailto:').searchParams.get('body') ?? '';
+    expect(smsBody).toMatch(/heirloom recipe/i);
+    expect(mailBody).toMatch(/heirloom recipe/i);
+    expect(smsBody).toContain('/share/recipe/');
+    expect(mailBody).toContain('/share/recipe/');
+
+    const shareUrl = await dialog.getByTestId('share-copy-link').getAttribute('data-share-url');
+    expect(shareUrl).toContain('/share/recipe/');
+  });
+
+  test('More menu Send to family opens the Share tab invites', async ({ page }) => {
+    await openFirstRecipeCardInMainGrid(page);
+    const dialog = recipeDetailsDialog(page);
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: /^More actions$/i }).click();
+    await page.getByRole('menuitem', { name: /send to family/i }).click();
+
+    await expect(dialog.getByRole('tab', { name: 'Share' })).toHaveAttribute('aria-selected', 'true');
+    await expect(dialog.getByTestId('send-to-family')).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /text recipe invite/i })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /email recipe invite/i })).toBeVisible();
+  });
+
   test('Cook tab shows progress and step-by-step entry', async ({ page }) => {
     await openFirstRecipeCardInMainGrid(page);
     await expect(recipeDetailsDialog(page)).toBeVisible();
