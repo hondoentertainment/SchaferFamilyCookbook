@@ -65,12 +65,19 @@ describe('family invite hrefs', () => {
     const shareUrl = 'https://schafer-family-cookbook.vercel.app/share/recipe/pie-1';
 
     it('builds an SMS compose link with heirloom copy and the share URL', () => {
-        const href = buildFamilySmsHref(recipe, shareUrl);
-        expect(href).toMatch(/^sms:\?&body=/);
-        const body = decodeURIComponent(href.replace(/^sms:\?&body=/, ''));
+        const href = buildFamilySmsHref(recipe, shareUrl, 'Mozilla/5.0 (Linux; Android 14)');
+        expect(href).toMatch(/^sms:\?body=/);
+        expect(href.startsWith('sms:')).toBe(true);
+        const body = decodeURIComponent(href.replace(/^sms:\?body=/, ''));
         expect(body).toContain('heirloom recipe');
         expect(body).toContain(shareUrl);
         expect(body).toContain('From Grandma\'s corner of the archive.');
+    });
+
+    it('uses the iOS sms:&body= form so older iPhone composers receive the text', () => {
+        const href = buildFamilySmsHref(recipe, shareUrl, 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)');
+        expect(href).toMatch(/^sms:&body=/);
+        expect(href).not.toMatch(/^sms:\?&/);
     });
 
     it('builds a mailto invite with subject and OG-rich share URL', () => {

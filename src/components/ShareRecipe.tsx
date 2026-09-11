@@ -167,32 +167,27 @@ export const ShareRecipe: React.FC<ShareRecipeProps> = ({ recipe, variant = 'inl
   }
 
   return (
-    <div className="space-y-3" data-testid="share-recipe-inline">
-      <div className="flex gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          data-testid="share-copy-link"
-          data-share-url={shareUrl}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--color-brand)] hover:bg-[#24382b] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm transition-colors min-h-11 motion-reduce:transition-none"
-          aria-label="Copy share link"
-        >
-          <span aria-hidden>🔗</span>
-          Copy link
-        </button>
-        <button type="button" onClick={handleShare} className={secondaryBtn} aria-label="Share via system share sheet">
-          <span aria-hidden>📤</span>
-          Share
-        </button>
-        <button type="button" onClick={handleCopyText} className={secondaryBtn} aria-label="Copy recipe as text">
-          <span aria-hidden>📋</span>
-          Copy
-        </button>
-      </div>
-      <div data-testid="send-to-family" className="space-y-1.5">
-        <p className="label text-stone-500 px-1">Send to family</p>
-        <div className="flex gap-2 flex-wrap">{familyInviteLinks}</div>
-      </div>
+    <div className="flex gap-2 flex-wrap" data-testid="share-recipe-inline">
+      <button
+        type="button"
+        onClick={handleCopyLink}
+        data-testid="share-copy-link"
+        data-share-url={shareUrl}
+        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--color-brand)] hover:bg-[#24382b] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm transition-colors min-h-11 motion-reduce:transition-none"
+        aria-label="Copy share link"
+      >
+        <span aria-hidden>🔗</span>
+        Copy link
+      </button>
+      <button type="button" onClick={handleShare} className={secondaryBtn} aria-label="Share via system share sheet">
+        <span aria-hidden>📤</span>
+        Share
+      </button>
+      <button type="button" onClick={handleCopyText} className={secondaryBtn} aria-label="Copy recipe as text">
+        <span aria-hidden>📋</span>
+        Copy
+      </button>
+      {familyInviteLinks}
     </div>
   );
 };

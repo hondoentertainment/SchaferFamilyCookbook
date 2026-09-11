@@ -13,7 +13,6 @@ describe('ShareRecipe component', () => {
         expect(screen.getByRole('button', { name: /copy recipe as text/i })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: /text recipe invite/i })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: /email recipe invite/i })).toBeInTheDocument();
-        expect(screen.getByTestId('send-to-family')).toHaveTextContent(/send to family/i);
     });
 
     it('exposes the computed share URL on the Copy Link button (fallback origin)', () => {

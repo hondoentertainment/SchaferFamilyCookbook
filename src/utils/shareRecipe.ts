@@ -45,11 +45,19 @@ export function buildFamilyInviteSubject(recipe: Recipe): string {
 }
 
 /**
- * SMS compose URL. `?&body=` is the usual cross-platform form (Android `?body=`,
- * older iOS `&body=`).
+ * SMS compose URL. Android and modern browsers want `sms:?body=`.
+ * Older iOS ignores `?` and needs `sms:&body=` — do not use `sms:?&body=`,
+ * which Chrome treats as a relative path (`/sms?...`) when no handler exists.
  */
-export function buildFamilySmsHref(recipe: Recipe, shareUrl: string): string {
-  return `sms:?&body=${encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl))}`;
+export function buildFamilySmsHref(
+  recipe: Recipe,
+  shareUrl: string,
+  userAgent?: string
+): string {
+  const body = encodeURIComponent(buildFamilyInviteBody(recipe, shareUrl));
+  const ua = userAgent ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '');
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  return isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
 }
 
 export function buildFamilyMailtoHref(recipe: Recipe, shareUrl: string): string {

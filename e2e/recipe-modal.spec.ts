@@ -155,7 +155,7 @@ test.describe('Recipe modal', () => {
     expect(smsHref).toMatch(/^sms:/);
     expect(mailHref).toMatch(/^mailto:/);
 
-    const smsBody = decodeURIComponent((smsHref ?? '').replace(/^sms:\?&?body=/, ''));
+    const smsBody = decodeURIComponent((smsHref ?? '').replace(/^sms:[&?]body=/, ''));
     const mailBody = new URL(mailHref ?? 'mailto:').searchParams.get('body') ?? '';
     expect(smsBody).toMatch(/heirloom recipe/i);
     expect(mailBody).toMatch(/heirloom recipe/i);
