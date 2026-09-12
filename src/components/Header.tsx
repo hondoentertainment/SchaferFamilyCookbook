@@ -7,6 +7,8 @@ import { hapticLight } from '../utils/haptics';
 import { getStoredTheme, setStoredTheme } from '../utils/theme';
 import type { ThemeMode } from '../types';
 import { ThemeIcon } from './ThemeIcon';
+import { useSiteSearchOptional } from '../context/SearchContext';
+import { SiteSearch } from './SiteSearch';
 
 // Data-URI SVGs rendered via <img> are isolated documents: CSS custom
 // properties from the page do NOT resolve inside them, so the brand color
@@ -29,6 +31,7 @@ const THEME_LABELS: Record<ThemeMode, string> = { system: 'System theme', light:
 export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, dbStats: _dbStats, onLogout }) => {
     const [logoFailed, setLogoFailed] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
+    const siteSearch = useSiteSearchOptional();
 
     const brandLogoSrc = logoFailed ? FALLBACK_LOGO_SVG : siteConfig.logoUrl;
     const brandLabel = siteConfig.siteName.replace(/\s*Family Cookbook\s*$/i, ' Cookbook');
@@ -108,6 +111,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                 </div>
 
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+                    {currentUser && siteSearch && (
+                        <SiteSearch id="header-cookbook-search" variant="header" />
+                    )}
                     <button
                         type="button"
                         onClick={handleThemeToggle}

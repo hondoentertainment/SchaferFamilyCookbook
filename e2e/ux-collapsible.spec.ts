@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, loginAsHome, openFirstRecipeCardInMainGrid } from './fixtures';
+import { cookbookSearch, loginAs, loginAsHome, openFirstRecipeCardInMainGrid } from './fixtures';
 
 function recipeDetailsDialog(page: import('@playwright/test').Page) {
     return page.locator('[role="dialog"][aria-label="Recipe details"]');
@@ -15,7 +15,7 @@ test.describe('UX collapsible panels (batch 5)', () => {
 
     test('Browse all recipes focuses the search field', async ({ page }) => {
         await page.getByRole('button', { name: 'Browse all recipes' }).click();
-        const search = page.getByRole('textbox', { name: /Search recipes, ingredients/i });
+        const search = cookbookSearch(page);
         await expect(search).toBeVisible({ timeout: 10000 });
         await expect(search).toBeFocused({ timeout: 3000 });
     });

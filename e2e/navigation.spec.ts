@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './fixtures';
+import { cookbookSearch, loginAs } from './fixtures';
 
 test.describe('Tab navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Tab navigation', () => {
 
   test('Recipes tab still has its editorial masthead', async ({ page }) => {
     await expect(page.getByRole('heading', { name: /Find something worth cooking tonight/i })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: /Search recipes, ingredients/i })).toBeVisible();
+    await expect(cookbookSearch(page)).toBeVisible();
   });
 
   test('navigates to Gallery tab', async ({ page }) => {

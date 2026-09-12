@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsHome, openFirstRecipeCardInMainGrid } from './fixtures';
+import { cookbookSearch, loginAsHome, openFirstRecipeCardInMainGrid } from './fixtures';
 
 function recipeDetailsDialog(page: import('@playwright/test').Page) {
   return page.locator('[role="dialog"][aria-label="Recipe details"]');
@@ -32,7 +32,7 @@ test.describe('Home dashboard', () => {
 
   test('Browse all recipes shortcut opens Recipes tab', async ({ page }) => {
     await page.getByRole('button', { name: 'Browse all recipes' }).click();
-    await expect(page.getByRole('textbox', { name: /Search recipes, ingredients/i })).toBeVisible({
+    await expect(cookbookSearch(page)).toBeVisible({
       timeout: 10000,
     });
     await expect(page.getByTestId('recipe-card-grid')).toBeVisible({ timeout: 10000 });
