@@ -26,6 +26,7 @@
   /* Bottom tab bar is min-h-16 (4rem) + home-indicator padding. Sticky CTAs
      and install/toast chrome sit one rem above that so they never overlap. */
   --app-bottom-nav-clearance: calc(5rem + env(safe-area-inset-bottom, 0px));
+  --app-toast-clearance: var(--app-bottom-nav-clearance);
   --bg-primary: #FDFBF7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f5f5f4;
@@ -93,6 +94,18 @@
 html {
   background: var(--bg-primary);
   overflow-x: clip;
+}
+
+/* Recipe modal action bar + prev/next sit at the viewport bottom; lift toasts
+   so they do not cover Start cooking / grocery checkboxes. */
+body:has([role="dialog"][aria-modal="true"]) {
+  --app-toast-clearance: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  body:has([role="dialog"][aria-modal="true"]) {
+    --app-toast-clearance: 1.5rem;
+  }
 }
 
 body {
