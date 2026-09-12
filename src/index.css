@@ -23,6 +23,9 @@
 
 /* ===== Dark Mode ===== */
 :root {
+  /* Bottom tab bar is min-h-16 (4rem) + home-indicator padding. Sticky CTAs
+     and install/toast chrome sit one rem above that so they never overlap. */
+  --app-bottom-nav-clearance: calc(5rem + env(safe-area-inset-bottom, 0px));
   --bg-primary: #FDFBF7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f5f5f4;
@@ -89,10 +92,12 @@
 
 html {
   background: var(--bg-primary);
+  overflow-x: clip;
 }
 
 body {
   min-width: 320px;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(244, 164, 96, 0.2), transparent 34rem),
     radial-gradient(circle at 90% 12%, rgba(45, 70, 53, 0.12), transparent 28rem),
@@ -706,7 +711,7 @@ textarea:focus-visible,
 
 .view-action-bar--sticky {
   position: sticky;
-  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: var(--app-bottom-nav-clearance);
   z-index: 10;
 }
 

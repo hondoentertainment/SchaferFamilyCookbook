@@ -17,6 +17,7 @@ import { addActivity, getActivityFeed, formatTimeAgo } from '../utils/activityFe
 import { getFavoriteIds } from '../utils/favorites';
 import { getRecentlyViewedEntries } from '../utils/recentlyViewed';
 import { isSuperAdmin } from '../config/site';
+import { AddToHomeScreenCard } from './AddToHomeScreenCard';
 
 const PUSH_ENABLED_KEY = 'schafer_push_enabled';
 const SECTION_HEADING_CLASS =
@@ -870,6 +871,7 @@ export const ProfileView: React.FC<ProfileViewProps> = (props) => {
                     >
                         Open Help &amp; shortcuts →
                     </button>
+                    <AddToHomeScreenCard />
                 </div>
             </section>
 

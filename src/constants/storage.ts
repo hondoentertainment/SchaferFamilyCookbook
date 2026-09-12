@@ -25,6 +25,8 @@ export const STORAGE_KEYS = {
   storyDraft: 'schafer_story_draft',
   galleryUploadBannerDismissed: 'schafer_gallery_upload_banner_dismissed',
   familySubNavHintDismissed: 'schafer_family_subnav_hint_dismissed',
+  /** Permanently hides the Add to Home Screen banner (iOS instructions or Android prompt). */
+  installDismissed: 'schafer_install_dismissed',
 } as const;
 
 /** sessionStorage keys — cleared when the browser tab ends */

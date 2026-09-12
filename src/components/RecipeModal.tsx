@@ -943,11 +943,11 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         )}
                     </div>
                 )}
-                <div className="print-recipe-content bg-[#FDFBF7] dark:bg-[var(--bg-secondary)] w-full md:max-w-6xl h-full md:h-auto md:max-h-[92vh] md:rounded-[3rem] overflow-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col">
+                <div className="print-recipe-content bg-[#FDFBF7] dark:bg-[var(--bg-secondary)] w-full md:max-w-6xl h-full md:h-auto md:max-h-[92vh] md:rounded-[3rem] overflow-hidden overflow-x-hidden shadow-2xl relative animate-in fade-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 flex flex-col">
                     {/* Mobile-only "back to context" pill (top-left) */}
                     <button
                         onClick={onClose}
-                        className="absolute top-2 left-2 z-20 md:hidden max-w-[42vw] truncate px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl label text-stone-600 dark:text-stone-300 print:hidden"
+                        className="absolute top-2 left-2 z-20 md:hidden max-w-[42vw] truncate min-h-11 px-4 py-2 bg-white/95 dark:bg-[var(--card-bg)]/95 backdrop-blur-sm rounded-full shadow-xl label text-stone-600 dark:text-stone-300 print:hidden"
                         aria-label={`Back to ${breadcrumbContext}`}
                     >
                         ← {breadcrumbContext}
@@ -966,7 +966,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
                     <div
                         ref={scrollContainerRef}
-                        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-28"
+                        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pb-6"
                     >
                         <header className="grid md:grid-cols-[minmax(17rem,24rem)_1fr] bg-[#FDFBF7] dark:bg-[var(--bg-secondary)] border-b border-stone-200 dark:border-[var(--border-color)]">
                             {hasValidImage ? (
@@ -1113,7 +1113,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 type="button"
                                 onClick={handlePlanTonight}
                                 data-testid="recipe-related-meal-plan"
-                                className="min-h-10 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                                className="min-h-11 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
                             >
                                 Plan tonight
                             </button>
@@ -1122,7 +1122,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     type="button"
                                     onClick={() => { hapticLight(); onOpenGroceryList(recipe.title); }}
                                     data-testid="recipe-related-grocery"
-                                    className="min-h-10 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
                                 >
                                     Grocery list
                                 </button>
@@ -1132,69 +1132,73 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                     type="button"
                                     onClick={() => { hapticLight(); onBrowseContributor(recipe.contributor); }}
                                     data-testid="recipe-related-contributor"
-                                    className="min-h-10 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                                    className="min-h-11 rounded-full border border-[#E8DCCB] bg-white/80 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
                                 >
                                     More by {recipe.contributor.split(' ')[0]}
                                 </button>
                             )}
                         </nav>
 
-                        <div className="print:hidden px-5 pt-4 md:px-8 lg:px-10 flex justify-center sticky top-0 z-[5] bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2">
-                            <div
-                                role="tablist"
-                                aria-label="Recipe view mode"
-                                tabIndex={-1}
-                                onKeyDown={handleDetailTabKeyDown}
-                                className="inline-flex max-w-full flex-wrap gap-1 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)]/95 p-1 shadow-sm"
-                            >
-                                {(
-                                    [
-                                        { id: 'read' as const, label: 'Read' },
-                                        { id: 'cook' as const, label: 'Cook' },
-                                        { id: 'share' as const, label: 'Share' },
-                                    ]
-                                ).map(({ id, label }) => (
+                        <div
+                            data-testid="recipe-sticky-chrome"
+                            className="print:hidden px-5 pt-4 md:px-8 lg:px-10 sticky top-0 z-[5] bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2 space-y-2"
+                        >
+                            <div className="flex justify-center">
+                                <div
+                                    role="tablist"
+                                    aria-label="Recipe view mode"
+                                    tabIndex={-1}
+                                    onKeyDown={handleDetailTabKeyDown}
+                                    className="inline-flex max-w-full flex-wrap gap-1 rounded-full border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)]/95 p-1 shadow-sm"
+                                >
+                                    {(
+                                        [
+                                            { id: 'read' as const, label: 'Read' },
+                                            { id: 'cook' as const, label: 'Cook' },
+                                            { id: 'share' as const, label: 'Share' },
+                                        ]
+                                    ).map(({ id, label }) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={detailMode === id}
+                                            onClick={() => {
+                                                hapticLight();
+                                                setDetailMode(id);
+                                            }}
+                                            className={`min-h-11 min-w-11 rounded-full px-4 py-2 label transition-colors motion-reduce:transition-none ${
+                                                detailMode === id
+                                                    ? 'bg-[var(--color-brand)] text-white shadow-sm'
+                                                    : 'text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-[var(--bg-tertiary)]'
+                                            }`}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {detailMode !== 'share' && (
+                                <div className="lg:hidden flex flex-wrap gap-2 justify-center">
                                     <button
-                                        key={id}
                                         type="button"
-                                        role="tab"
-                                        aria-selected={detailMode === id}
-                                        onClick={() => {
-                                            hapticLight();
-                                            setDetailMode(id);
-                                        }}
-                                        className={`min-h-10 rounded-full px-4 py-2 label transition-colors motion-reduce:transition-none ${
-                                            detailMode === id
-                                                ? 'bg-[var(--color-brand)] text-white shadow-sm'
-                                                : 'text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-[var(--bg-tertiary)]'
-                                        }`}
+                                        onClick={jumpToIngredients}
+                                        aria-label="Jump to ingredients"
+                                        className="min-h-11 rounded-full px-4 py-2 label border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
                                     >
-                                        {label}
+                                        Jump to ingredients
                                     </button>
-                                ))}
-                            </div>
+                                    <button
+                                        type="button"
+                                        onClick={jumpToInstructions}
+                                        aria-label="Jump to steps"
+                                        className="min-h-11 rounded-full px-4 py-2 label border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
+                                    >
+                                        Jump to steps
+                                    </button>
+                                </div>
+                            )}
                         </div>
-
-                        {detailMode !== 'share' && (
-                            <div className="print:hidden lg:hidden px-5 md:px-8 flex gap-2 justify-center sticky top-[3.25rem] z-[5] bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-sm pb-2">
-                                <button
-                                    type="button"
-                                    onClick={jumpToIngredients}
-                                    aria-label="Jump to ingredients"
-                                    className="min-h-10 rounded-full px-4 py-2 label border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
-                                >
-                                    Jump to ingredients
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={jumpToInstructions}
-                                    aria-label="Jump to steps"
-                                    className="min-h-10 rounded-full px-4 py-2 label border border-stone-200 dark:border-[var(--border-color)] bg-white/90 dark:bg-[var(--card-bg)] text-stone-600 dark:text-stone-300"
-                                >
-                                    Jump to steps
-                                </button>
-                            </div>
-                        )}
 
                         <main className="p-5 md:p-8 lg:p-10 space-y-8">
                             {detailMode === 'cook' && onStartCook && (
@@ -1311,7 +1315,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 </aside>
 
                                 <div className="space-y-5 order-1 lg:order-none" id="recipe-instructions">
-                                    <div className="sticky top-0 z-10 -mx-1 px-1 py-2 bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-md print:static print:bg-transparent">
+                                    <div className="lg:sticky lg:top-6 z-10 -mx-1 px-1 py-2 bg-[#FDFBF7]/95 dark:bg-[var(--bg-secondary)]/95 backdrop-blur-md print:static print:bg-transparent">
                                         <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-stone-200 dark:border-[var(--border-color)]">
                                             <div>
                                                 <h3 className="text-2xl font-serif italic text-[var(--color-brand)] dark:text-emerald-300 flex items-center gap-2">
@@ -1330,7 +1334,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                                 const el = document.getElementById(`recipe-step-${i}`);
                                                                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                                             }}
-                                                            className="w-8 h-8 rounded-full bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-[var(--color-brand)] hover:text-white text-stone-600 dark:text-stone-300 text-xs font-bold transition-colors"
+                                                            className="min-w-11 min-h-11 w-11 h-11 rounded-full bg-stone-100 dark:bg-[var(--bg-tertiary)] hover:bg-[var(--color-brand)] hover:text-white text-stone-600 dark:text-stone-300 text-xs font-bold transition-colors"
                                                             aria-label={`Go to step ${i + 1}`}
                                                         >
                                                             {i + 1}
@@ -1368,7 +1372,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                                 />
                                                                 <span
                                                                     aria-hidden
-                                                                    className={`flex w-10 h-10 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-brand)] ${
+                                                                    className={`flex w-11 h-11 min-w-11 min-h-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-brand)] ${
                                                                         stepDone
                                                                             ? 'bg-[var(--color-brand)] border-[var(--color-brand)] text-white'
                                                                             : 'border-stone-300 dark:border-stone-600 text-stone-400'
@@ -1383,7 +1387,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                             </span>
                                                         )}
                                                         <div className="flex-1 space-y-4">
-                                                            <p className={`text-lg md:text-xl leading-relaxed ${
+                                                            <p className={`${detailMode === 'cook' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'} leading-relaxed ${
                                                                 stepDone && detailMode === 'cook'
                                                                     ? 'text-stone-400 line-through dark:text-stone-500'
                                                                     : 'text-stone-800 dark:text-stone-100'
@@ -1413,7 +1417,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                                         type="button"
                                                                         data-testid={`recipe-step-timer-start-${i}`}
                                                                         onClick={() => startStepTimer(i, stepMinutes)}
-                                                                        className="px-3 py-1 min-h-8 rounded-full border border-[#2D4635]/30 dark:border-emerald-700 text-[#2D4635] dark:text-emerald-300 font-bold uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-colors"
+                                                                        className="px-3 py-1 min-h-11 rounded-full border border-[#2D4635]/30 dark:border-emerald-700 text-[#2D4635] dark:text-emerald-300 font-bold uppercase tracking-widest hover:bg-[#2D4635] hover:text-white transition-colors"
                                                                         aria-label={`Start ${stepMinutes} minute timer for step ${i + 1}`}
                                                                     >
                                                                         <span aria-hidden>⏱</span> Start {stepMinutes}-min timer
@@ -1424,14 +1428,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                                         role="timer"
                                                                         data-testid={`recipe-step-timer-running-${i}`}
                                                                         aria-label={`Step ${i + 1} timer: ${formatTimer(activeTimer.remaining)} remaining`}
-                                                                        className="inline-flex items-center gap-2 px-3 py-1 min-h-8 rounded-full bg-[#2D4635] text-white font-bold tabular-nums"
+                                                                        className="inline-flex items-center gap-2 px-3 py-1 min-h-11 rounded-full bg-[#2D4635] text-white font-bold tabular-nums"
                                                                     >
                                                                         <span aria-hidden>⏱</span>
                                                                         {formatTimer(activeTimer.remaining)}
                                                                         <button
                                                                             type="button"
                                                                             onClick={cancelStepTimer}
-                                                                            className="ml-1 -mr-1 w-6 h-6 rounded-full hover:bg-white/20 transition-colors"
+                                                                            className="ml-1 -mr-1 w-11 h-11 min-w-11 min-h-11 rounded-full hover:bg-white/20 transition-colors"
                                                                             aria-label={`Cancel step ${i + 1} timer`}
                                                                         >
                                                                             ✕
@@ -1557,8 +1561,9 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     {showScrollToTop && (
                         <button
                             type="button"
+                            data-testid="recipe-scroll-to-top"
                             onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-                            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-4 py-2 bg-[var(--color-brand)] text-white text-sm font-medium rounded-full shadow-lg hover:bg-[var(--color-brand)]/90 transition-colors print:hidden"
+                            className="absolute right-3 z-20 flex min-h-11 items-center gap-2 px-4 py-2 bg-[var(--color-brand)] text-white text-sm font-medium rounded-full shadow-lg hover:bg-[var(--color-brand)]/90 transition-colors print:hidden bottom-[calc(8.75rem+env(safe-area-inset-bottom,0px))] md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:right-auto"
                             aria-label="Scroll to top"
                         >
                             ↑ Scroll to top
@@ -1600,7 +1605,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     )}
 
                     {/* Sticky bottom action bar */}
-                    <ViewActionBar sticky={false} className="rounded-none border-x-0 border-b-0">
+                    <ViewActionBar sticky={false} className="rounded-none border-x-0 border-b-0" data-testid="recipe-modal-action-bar">
                             {onStartCook ? (
                                 <button
                                     type="button"

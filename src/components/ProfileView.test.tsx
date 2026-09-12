@@ -199,6 +199,11 @@ describe('ProfileView', () => {
         expect(screen.getByRole('tab', { name: /favorites/i })).toBeInTheDocument();
     });
 
+    it('offers a persistent Add to Home Screen path under Help', () => {
+        renderWithProviders(<ProfileView {...defaultProps} />);
+        expect(screen.getByTestId('add-to-home-screen-card')).toHaveTextContent(/home screen/i);
+    });
+
     it('should render section headings (Identity, Activity, Preferences, Notifications, Privacy)', () => {
         renderWithProviders(<ProfileView {...defaultProps} />);
         expect(screen.getByRole('heading', { name: /^identity$/i })).toBeInTheDocument();

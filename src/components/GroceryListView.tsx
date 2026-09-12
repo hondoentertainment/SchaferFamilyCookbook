@@ -224,7 +224,8 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
 
             <form
                 onSubmit={handleAddManual}
-                className="flex flex-col sm:flex-row gap-3"
+                data-testid="grocery-add-form"
+                className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-10 -mx-1 flex flex-col gap-3 bg-[#FDFBF7]/95 px-1 py-3 backdrop-blur-sm dark:bg-[var(--bg-primary)]/95 sm:flex-row"
                 aria-label="Add item to grocery list"
             >
                 <label htmlFor="grocery-manual-add" className="sr-only">
@@ -234,10 +235,13 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                     id="grocery-manual-add"
                     ref={inputRef}
                     type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    enterKeyHint="done"
                     value={manualText}
                     onChange={(e) => setManualText(e.target.value)}
                     placeholder="Add an item (e.g. 2 lemons)"
-                    className="flex-1 min-h-11 px-5 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-sm font-serif italic placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-800 dark:text-stone-100 outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20"
+                    className="flex-1 min-h-11 px-5 py-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-full text-base font-serif italic placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-800 dark:text-stone-100 outline-none focus:ring-2 focus:ring-[var(--color-brand)]/20"
                 />
                 <button
                     type="submit"
@@ -317,14 +321,17 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             </header>
                             <ul className="divide-y divide-stone-100 dark:divide-stone-800">
                                 {group.items.map((item) => (
-                                    <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
-                                        <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none">
+                                    <li key={item.id} className="flex items-center gap-3 px-4 py-1.5">
+                                        <label
+                                            data-testid="grocery-item-row"
+                                            className="flex items-center gap-3 flex-1 min-h-11 min-w-0 cursor-pointer select-none"
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked={item.checked}
                                                 onChange={() => handleToggle(item.id)}
                                                 aria-label={`Mark "${item.text}" as ${item.checked ? 'not bought' : 'bought'}`}
-                                                className="w-5 h-5 rounded accent-[var(--color-brand)] shrink-0"
+                                                className="w-6 h-6 rounded accent-[var(--color-brand)] shrink-0"
                                             />
                                             <span className="text-sm md:text-base flex-1 min-w-0 break-words text-stone-800 dark:text-stone-100">
                                                 {item.text}
@@ -360,13 +367,16 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             <ul className="space-y-2">
                                 {checkedItems.map((item) => (
                                     <li key={item.id} className="flex items-center gap-3 py-1">
-                                        <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none">
+                                        <label
+                                            data-testid="grocery-item-row"
+                                            className="flex items-center gap-3 flex-1 min-h-11 min-w-0 cursor-pointer select-none"
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked
                                                 onChange={() => handleToggle(item.id)}
                                                 aria-label={`Mark "${item.text}" as not bought`}
-                                                className="w-5 h-5 rounded accent-[var(--color-brand)] shrink-0"
+                                                className="w-6 h-6 rounded accent-[var(--color-brand)] shrink-0"
                                             />
                                             <span className="text-sm line-through text-stone-400 dark:text-stone-500 flex-1 min-w-0 break-words">
                                                 {item.text}

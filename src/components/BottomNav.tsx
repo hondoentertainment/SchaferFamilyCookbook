@@ -66,6 +66,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
 
     return (
         <nav
+            data-testid="bottom-nav"
             className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E8DCCB]/90 bg-[#FFF8EC]/95 pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_34px_rgba(45,70,53,0.12)] backdrop-blur-xl md:hidden dark:border-stone-800 dark:bg-stone-950/95"
             role="navigation"
             aria-label="Main navigation"
@@ -90,7 +91,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setTab, current
                                 setTab(id);
                             }}
                             aria-current={isActive ? 'page' : undefined}
-                            className={`relative flex min-h-11 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center rounded-2xl px-0.5 py-1.5 transition-all active:scale-95 motion-reduce:transition-none ${
+                            className={`relative flex min-h-11 min-w-11 flex-1 touch-manipulation flex-col items-center justify-center rounded-2xl px-0.5 py-1.5 transition-all active:scale-95 motion-reduce:transition-none ${
                                 isActive ? 'bg-white/65 shadow-sm dark:bg-stone-900/70' : 'hover:bg-white/45 dark:hover:bg-stone-900/50'
                             }`}
                             aria-label={id === 'Profile' ? `${currentUser.name}, view profile` : label}

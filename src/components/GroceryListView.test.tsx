@@ -67,6 +67,17 @@ describe('GroceryListView', () => {
         expect(screen.getByText('salt').className).toMatch(/line-through/);
     });
 
+    it('uses 16px input type and 44px grocery rows for one-thumb taps', () => {
+        addItems([{ text: 'salt', recipeId: 'r1', recipeTitle: 'Soup' }]);
+        renderWithProviders(<GroceryListView />);
+
+        const input = screen.getByLabelText(/add an item to your grocery list/i);
+        expect(input.className).toMatch(/text-base/);
+        expect(screen.getByTestId('grocery-add-form').className).toMatch(/sticky/);
+        const row = screen.getByTestId('grocery-item-row');
+        expect(row.className).toMatch(/min-h-11/);
+    });
+
     it('adds a manual item through the input form', async () => {
         const user = userEvent.setup();
         renderWithProviders(<GroceryListView />);
