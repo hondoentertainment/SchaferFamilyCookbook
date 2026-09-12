@@ -53,7 +53,7 @@ test.describe('Phone-width cookbook usage', () => {
         expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
 
         await dialog.getByRole('tab', { name: /^Cook$/i }).click();
-        const step = dialog.locator('#recipe-instructions p').first();
+        const step = dialog.getByTestId('recipe-step-text-0');
         await expect(step).toBeVisible();
         const fontSize = await step.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
         expect(fontSize).toBeGreaterThanOrEqual(18);

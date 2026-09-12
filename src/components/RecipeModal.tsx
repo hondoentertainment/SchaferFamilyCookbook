@@ -1387,7 +1387,9 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                                             </span>
                                                         )}
                                                         <div className="flex-1 space-y-4">
-                                                            <p className={`${detailMode === 'cook' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'} leading-relaxed ${
+                                                            <p
+                                                                data-testid={`recipe-step-text-${i}`}
+                                                                className={`${detailMode === 'cook' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'} leading-relaxed ${
                                                                 stepDone && detailMode === 'cook'
                                                                     ? 'text-stone-400 line-through dark:text-stone-500'
                                                                     : 'text-stone-800 dark:text-stone-100'

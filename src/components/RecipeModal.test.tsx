@@ -330,7 +330,7 @@ describe('RecipeModal', () => {
     it('uses larger cook-step type and keeps sms/mailto share invites', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
         fireEvent.click(screen.getByRole('tab', { name: 'Cook' }));
-        expect(screen.getByText('Mix ingredients').className).toMatch(/text-xl/);
+        expect(screen.getByTestId('recipe-step-text-0').className).toMatch(/text-xl/);
         fireEvent.click(screen.getByRole('tab', { name: 'Share' }));
         expect(screen.getByRole('link', { name: /text recipe invite/i })).toHaveAttribute(
             'href',
