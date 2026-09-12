@@ -49,7 +49,7 @@ test.describe('Sitewide search', () => {
     await page.getByRole('button', { name: 'Family', exact: true }).click();
     await expect(page.getByTestId('gallery-cookbook-search-input')).toBeVisible();
     await page.getByTestId('gallery-cookbook-search-input').fill('oyster stew');
-    await expect(page.getByTestId('site-search-results').getByRole('option').filter({ hasText: /Oehler|Family Story/i })).toBeVisible();
+    await expect(page.getByTestId('site-search-results').getByRole('option').filter({ hasText: /Oehler Family/i }).first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Groceries', exact: true }).click();
     await expect(page.getByTestId('grocery-cookbook-search-input')).toBeVisible();
@@ -93,7 +93,7 @@ test.describe('Search on a phone', () => {
     const fontSize = await search.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
     expect(fontSize).toBeGreaterThanOrEqual(16);
 
-    await search.tap();
+    await search.click();
     await search.fill('pie');
     const results = page.getByTestId('site-search-results');
     await expect(results).toBeVisible();
