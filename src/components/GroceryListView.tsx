@@ -14,6 +14,9 @@ import {
     toggleItem,
     type GroceryItem,
 } from '../utils/groceryList';
+import { fuzzyMatch } from '../utils/fuzzySearch';
+import { SiteSearch } from './SiteSearch';
+import { useSiteSearchOptional } from '../context/SearchContext';
 
 const OTHER_GROUP = 'Other';
 
@@ -45,6 +48,8 @@ interface GroceryListViewProps {
     onOpenMealPlan?: () => void;
     /** When set, scrolls to the recipe group and highlights it briefly */
     highlightRecipeTitle?: string | null;
+    /** When set, scrolls to a single grocery item from sitewide search */
+    highlightItemId?: string | null;
     onHighlightConsumed?: () => void;
 }
 
@@ -53,9 +58,11 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
     onOpenCollections,
     onOpenMealPlan,
     highlightRecipeTitle = null,
+    highlightItemId = null,
     onHighlightConsumed,
 }) => {
     const { toast, confirm } = useUI();
+    const siteSearch = useSiteSearchOptional();
     const [items, setItems] = useState<GroceryItem[]>(() => getItems());
     const [manualText, setManualText] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +75,14 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
         return unsubscribe;
     }, []);
 
-    const groups = useMemo(() => groupByRecipe(items), [items]);
+    const searchQuery = siteSearch?.query.trim() ?? '';
+    const visibleItems = useMemo(() => {
+        if (!searchQuery) return items;
+        return items.filter(
+            (item) => fuzzyMatch(item.text, searchQuery) || fuzzyMatch(item.recipeTitle ?? '', searchQuery),
+        );
+    }, [items, searchQuery]);
+    const groups = useMemo(() => groupByRecipe(visibleItems), [visibleItems]);
     const uncheckedGroups = useMemo(
         () =>
             groups
@@ -81,6 +95,14 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
     const hasItems = items.length > 0;
 
     useEffect(() => {
+        if (highlightItemId) {
+            const el = document.getElementById(`grocery-item-${highlightItemId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const t = window.setTimeout(() => onHighlightConsumed?.(), 4500);
+                return () => window.clearTimeout(t);
+            }
+        }
         if (!highlightRecipeTitle || !onHighlightConsumed) return;
         const idx = groups.findIndex((g) => g.title === highlightRecipeTitle);
         if (idx < 0) {
@@ -91,7 +113,7 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         const t = window.setTimeout(() => onHighlightConsumed(), 4500);
         return () => window.clearTimeout(t);
-    }, [highlightRecipeTitle, groups, onHighlightConsumed]);
+    }, [highlightRecipeTitle, highlightItemId, groups, onHighlightConsumed]);
 
     useEffect(() => {
         const vv = window.visualViewport;
@@ -222,6 +244,8 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                 }
             />
 
+            {siteSearch && <SiteSearch id="grocery-cookbook-search" />}
+
             <form
                 onSubmit={handleAddManual}
                 className="flex flex-col sm:flex-row gap-3"
@@ -248,7 +272,14 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                 </button>
             </form>
 
-            {!hasItems ? (
+            {hasItems && visibleItems.length === 0 && searchQuery ? (
+                <p
+                    role="status"
+                    className="rounded-[2rem] border border-dashed border-stone-200 bg-white/60 px-5 py-6 text-center font-serif italic text-stone-600 dark:border-stone-700 dark:bg-stone-900/40 dark:text-stone-300"
+                >
+                    No grocery items match “{searchQuery}”. Recipe and family matches stay in the search results above.
+                </p>
+            ) : !hasItems ? (
                 <div
                     role="status"
                     className="py-10 text-center space-y-4 bg-white/60 dark:bg-stone-900/40 rounded-[2rem] border border-dashed border-stone-200 dark:border-stone-700"
@@ -317,7 +348,15 @@ export const GroceryListView: React.FC<GroceryListViewProps> = ({
                             </header>
                             <ul className="divide-y divide-stone-100 dark:divide-stone-800">
                                 {group.items.map((item) => (
-                                    <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                                    <li
+                                        key={item.id}
+                                        id={`grocery-item-${item.id}`}
+                                        className={`flex items-center gap-3 px-4 py-2.5 ${
+                                            highlightItemId === item.id
+                                                ? 'bg-amber-50 ring-2 ring-inset ring-amber-400/80 dark:bg-amber-950/40'
+                                                : ''
+                                        }`}
+                                    >
                                         <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none">
                                             <input
                                                 type="checkbox"

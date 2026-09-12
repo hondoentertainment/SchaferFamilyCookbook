@@ -39,6 +39,18 @@ import { isSuperAdmin, siteConfig } from './config/site';
 import { mergeContributorsForDisplay } from './utils/mergeContributorsForDisplay';
 import { contributorAvatarUrlForName } from './utils/contributorAvatar';
 import { fuzzyMatch } from './utils/fuzzySearch';
+import { searchCookbook } from './utils/siteSearch';
+import type { SearchHit } from './utils/siteSearch';
+import { getItems as getGroceryItems, subscribeGroceryList } from './utils/groceryList';
+import { getAllNotes } from './utils/ratings';
+import { FAMILY_STORY_SEARCH_ENTRIES } from './data/familyStorySearch';
+import {
+    clearRecentSearches,
+    getRecentSearches,
+    rememberRecentSearch,
+} from './utils/recentSearches';
+import { SiteSearchProvider } from './context/SearchContext';
+import { SiteSearch } from './components/SiteSearch';
 import { LoginScreen } from './components/LoginScreen';
 import {
     historyForContributor,
@@ -763,6 +775,10 @@ const App: React.FC = () => {
     const [cookModeRecipe, setCookModeRecipe] = useState<Recipe | null>(null);
     const [cookModeFromOfflineCache, setCookModeFromOfflineCache] = useState(false);
     const [groceryHighlightTitle, setGroceryHighlightTitle] = useState<string | null>(null);
+    const [groceryHighlightItemId, setGroceryHighlightItemId] = useState<string | null>(null);
+    const [groceryItems, setGroceryItems] = useState(() => getGroceryItems());
+    const [recentSearches, setRecentSearches] = useState(() => getRecentSearches());
+    const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
 
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [showCookbookPrint, setShowCookbookPrint] = useState(false);
@@ -782,8 +798,6 @@ const App: React.FC = () => {
             return false;
         }
     });
-    const recipeSearchRef = useRef<HTMLInputElement>(null);
-
     const handleSetTab = useCallback((newTab: string) => {
         setTab(newTab);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -828,7 +842,12 @@ const App: React.FC = () => {
         handleSetTab('Meal Plan');
     }, [handleSetTab]);
 
-    const clearGroceryHighlight = useCallback(() => setGroceryHighlightTitle(null), []);
+    const clearGroceryHighlight = useCallback(() => {
+        setGroceryHighlightTitle(null);
+        setGroceryHighlightItemId(null);
+    }, []);
+
+    useEffect(() => subscribeGroceryList(() => setGroceryItems(getGroceryItems())), []);
 
     const defaultRecipeIds = useMemo(
         () => new Set(normalizeRecipes(defaultRecipes as Recipe[]).map(r => r.id)),
@@ -842,8 +861,13 @@ const App: React.FC = () => {
 
     const displayGallery = useMemo(() => {
         const visible = filterGalleryForViewer(gallery, currentUser?.name);
-        return filterGalleryByContributor(visible, galleryContributorFilter);
-    }, [gallery, currentUser?.name, galleryContributorFilter]);
+        const byContributor = filterGalleryByContributor(visible, galleryContributorFilter);
+        const q = search.trim();
+        if (!q) return byContributor;
+        return byContributor.filter(
+            (item) => fuzzyMatch(item.caption, q) || fuzzyMatch(item.contributor, q),
+        );
+    }, [gallery, currentUser?.name, galleryContributorFilter, search]);
 
     const galleryContributorOptions = useMemo(() => {
         const names = new Set<string>();
@@ -993,8 +1017,9 @@ const App: React.FC = () => {
             return;
         }
         requestAnimationFrame(() => {
-            recipeSearchRef.current?.focus();
-            recipeSearchRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            const field = document.querySelector<HTMLInputElement>('#recipe-search');
+            field?.focus();
+            field?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         });
     }, [tab]);
 
@@ -1220,12 +1245,23 @@ const App: React.FC = () => {
     useEffect(() => {
         if (!currentUser) return;
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey) return;
             const el = e.target as HTMLElement | null;
             if (!el) return;
             if (el.isContentEditable || el.closest('[contenteditable="true"]')) return;
             const tag = el.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typing) {
+                e.preventDefault();
+                const pageField = document.querySelector<HTMLInputElement>('[data-site-search-input="page"]');
+                if (pageField) {
+                    pageField.focus();
+                    pageField.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    return;
+                }
+                setHeaderSearchOpen(true);
+                return;
+            }
+            if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey || typing) return;
             e.preventDefault();
             setShortcutsOpen(true);
         };
@@ -1244,27 +1280,47 @@ const App: React.FC = () => {
     const allTags = useMemo(() => getTagOptions(recipes), [recipes]);
     const contributorOptions = useMemo(() => getContributorOptions(recipes), [recipes]);
 
+    const notesByRecipeId = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const note of getAllNotes()) {
+            map[note.recipeId] = `${map[note.recipeId] ?? ''} ${note.text}`.trim();
+        }
+        return map;
+    }, [prefsHydrationVersion, search]);
+
+    const visibleGalleryForSearch = useMemo(
+        () => filterGalleryForViewer(gallery, currentUser?.name),
+        [gallery, currentUser?.name],
+    );
+
+    const siteSearchResult = useMemo(
+        () =>
+            searchCookbook({
+                query: search,
+                recipes,
+                contributors: contributorsForDisplay,
+                gallery: visibleGalleryForSearch,
+                groceryItems,
+                stories: FAMILY_STORY_SEARCH_ENTRIES,
+                notesByRecipeId,
+            }),
+        [search, recipes, contributorsForDisplay, visibleGalleryForSearch, groceryItems, notesByRecipeId],
+    );
+
     const filteredRecipes = useMemo(() => {
         const q = search.trim();
-        return recipes.filter(r => {
-            // Fuzzy match (typo + word-order tolerant) across the recipe's
-            // searchable text: title, ingredients, instructions, notes, author.
-            const matchS = !q || fuzzyMatch(
-                [
-                    r.title,
-                    r.ingredients.join(' '),
-                    r.instructions.join(' '),
-                    r.notes ?? '',
-                    r.contributor,
-                ].join(' \n '),
-                q,
-            );
+        const ranked = q
+            ? siteSearchResult.recipeHits
+                .map((hit) => recipes.find((recipe) => recipe.id === hit.recipeId))
+                .filter((recipe): recipe is Recipe => !!recipe)
+            : recipes;
+        return ranked.filter((r) => {
             const matchC = category === 'All' || r.category === category;
             const matchA = contributor === 'All' || normalizeContributorName(r.contributor) === contributor;
             const matchT = !selectedTag || (r.tags?.includes(selectedTag) ?? false);
-            return matchS && matchC && matchA && matchT;
+            return matchC && matchA && matchT;
         });
-    }, [recipes, search, category, contributor, selectedTag]);
+    }, [recipes, search, category, contributor, selectedTag, siteSearchResult.recipeHits]);
 
     const recentIds = useMemo(() => getRecentRecipeIds(), [recipes, selectedRecipe]);
     const activeFilterCount = [category !== 'All', contributor !== 'All', !!selectedTag, sortBy !== 'title-asc'].filter(Boolean).length;
@@ -1281,6 +1337,9 @@ const App: React.FC = () => {
     }, [tab, isBrowsingFiltered]);
 
     const sortedRecipes = useMemo(() => {
+        // Keep relevance order while a query is active so exact titles beat
+        // ingredient-only matches instead of falling back to A–Z.
+        if (search.trim()) return filteredRecipes;
         const list = [...filteredRecipes];
         switch (sortBy) {
             case 'title-desc':
@@ -1305,7 +1364,7 @@ const App: React.FC = () => {
             default:
                 return list.sort((a, b) => a.title.localeCompare(b.title));
         }
-    }, [filteredRecipes, sortBy, recentIds]);
+    }, [filteredRecipes, sortBy, recentIds, search]);
 
     const recentlyViewedRecipes = useMemo(() => {
         return getRecentlyViewedEntries()
@@ -1393,11 +1452,74 @@ const App: React.FC = () => {
     ) : null;
 
     const handleSelectRecipe = (recipe: Recipe) => {
+        if (search.trim()) {
+            rememberRecentSearch(search);
+            setRecentSearches(getRecentSearches());
+        }
         recordRecipeView(recipe.id, recipe.title);
         void cacheRecipeOffline(recipe);
         setSelectedRecipe(recipe);
         trackEvent('recipe_viewed', { recipeId: recipe.id, title: recipe.title });
         window.history.replaceState(null, '', `#recipe/${encodeURIComponent(recipe.id)}`);
+    };
+
+    const handleSearchSelect = useCallback((hit: SearchHit) => {
+        rememberRecentSearch(search);
+        setRecentSearches(getRecentSearches());
+        setHeaderSearchOpen(false);
+        if (hit.kind === 'recipe' && hit.recipeId) {
+            const recipe = recipes.find((item) => item.id === hit.recipeId);
+            if (recipe) handleSelectRecipe(recipe);
+            return;
+        }
+        if (hit.kind === 'person' && hit.contributorName) {
+            setContributor(normalizeContributorName(hit.contributorName));
+            setCategory('All');
+            setSelectedTag('');
+            setSearch('');
+            handleSetTab('Recipes');
+            return;
+        }
+        if (hit.kind === 'grocery' && hit.groceryItemId) {
+            setGroceryHighlightItemId(hit.groceryItemId);
+            setSelectedRecipe(null);
+            handleSetTab('Grocery List');
+            return;
+        }
+        if (hit.kind === 'gallery' && hit.galleryId) {
+            const item = gallery.find((entry) => entry.id === hit.galleryId);
+            setGalleryContributorFilter('All');
+            setHighlightGalleryId(hit.galleryId);
+            window.setTimeout(() => setHighlightGalleryId(null), 4000);
+            if (item) setSelectedGalleryItem(item);
+            handleSetTab('Gallery');
+            return;
+        }
+        if (hit.kind === 'story' && hit.storySectionId) {
+            try {
+                sessionStorage.setItem(SESSION_KEYS.focusStorySection, hit.storySectionId);
+            } catch {
+                /* sessionStorage unavailable */
+            }
+            window.history.replaceState(null, '', `#story/${encodeURIComponent(hit.storySectionId)}`);
+            handleSetTab('Family Story');
+        }
+    }, [gallery, handleSetTab, recipes, search]);
+
+    const siteSearchValue = {
+        query: search,
+        setQuery: setSearch,
+        hits: siteSearchResult.hits,
+        recent: recentSearches,
+        clearQuery: () => setSearch(''),
+        clearRecent: () => {
+            clearRecentSearches();
+            setRecentSearches([]);
+        },
+        applyRecent: (value: string) => setSearch(value),
+        onSelectHit: handleSearchSelect,
+        headerOpen: headerSearchOpen,
+        setHeaderOpen: setHeaderSearchOpen,
     };
 
     const handleStartCookFromHome = (recipe: Recipe) => {
@@ -1511,6 +1633,7 @@ const App: React.FC = () => {
     // Gallery View
     if (tab === 'Gallery') {
         return (
+            <SiteSearchProvider value={siteSearchValue}>
             <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
                 <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                     Skip to main content
@@ -1526,6 +1649,7 @@ const App: React.FC = () => {
                         title="Family Gallery"
                         description="Captured moments across the generations."
                     />
+                    <SiteSearch id="gallery-cookbook-search" />
                     {myModerationPendingCount > 0 && (
                         <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-50 border border-sky-200 text-sky-900 text-xs font-bold -mt-2" role="status" aria-live="polite">
                             <span aria-hidden="true">⏳</span>
@@ -1866,12 +1990,14 @@ const App: React.FC = () => {
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
                 <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
+            </SiteSearchProvider>
         );
     }
 
     // Trivia View
     if (tab === 'Trivia') {
         return (
+            <SiteSearchProvider value={siteSearchValue}>
             <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
                 <a href="#main-content-trivia" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                     Skip to main content
@@ -1941,10 +2067,12 @@ const App: React.FC = () => {
                 <BottomNav activeTab={tab} setTab={handleSetTab} currentUser={currentUser} />
                 <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
+            </SiteSearchProvider>
         );
     }
 
     return (
+        <SiteSearchProvider value={siteSearchValue}>
         <div className="cookbook-paper min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
             <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                 Skip to main content
@@ -2229,31 +2357,7 @@ const App: React.FC = () => {
 
                     <div className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 -mx-1 space-y-2 rounded-[1.5rem] border border-[#E8DCCB]/75 bg-[#FFF8EC]/88 px-2 py-1.5 shadow-[0_10px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl md:top-20 md:space-y-3 md:rounded-[2rem] md:px-3 md:py-2 dark:border-stone-800 dark:bg-stone-950/80">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:gap-3">
-                            <div className="relative flex-1 min-w-0">
-                                <label htmlFor="recipe-search" className="sr-only">Search recipes, ingredients, or instructions</label>
-                                <span className="absolute left-4 top-1/2 hidden -translate-y-1/2 text-sm text-stone-600 dark:text-stone-300 md:block" aria-hidden="true">Search</span>
-                                <input
-                                    ref={recipeSearchRef}
-                                    id="recipe-search"
-                                    type="text"
-                                    inputMode="search"
-                                    placeholder="Search recipes, ingredients…"
-                                    aria-label="Search recipes, ingredients, or instructions"
-                                    className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-4 pr-11 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] md:pl-16 md:pr-10 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                />
-                                {search && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearch('')}
-                                        aria-label="Clear search"
-                                        className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-700 hover:bg-stone-200"
-                                    >
-                                        ✕
-                                    </button>
-                                )}
-                            </div>
+                            <SiteSearch id="recipe-search" openOn="focus" className="flex-1" />
                             <div className="flex shrink-0 gap-2 md:hidden">
                                 <button
                                     type="button"
@@ -2746,6 +2850,7 @@ const App: React.FC = () => {
                             onOpenCollections={() => handleSetTab('Collections')}
                             onOpenMealPlan={() => handleSetTab('Meal Plan')}
                             highlightRecipeTitle={groceryHighlightTitle}
+                            highlightItemId={groceryHighlightItemId}
                             onHighlightConsumed={clearGroceryHighlight}
                         />
                     </section>
@@ -2963,6 +3068,7 @@ const App: React.FC = () => {
             <Suspense fallback={null}><InstallPrompt /></Suspense>
             </div>
         </div>
+        </SiteSearchProvider>
     );
 };
 

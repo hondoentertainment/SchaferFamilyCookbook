@@ -9,6 +9,8 @@ import { getEntriesForDate, MEAL_PLAN_UPDATED_EVENT, toDateKey } from '../utils/
 import { recipeOfTheWeek } from '../utils/recipeOfTheWeek';
 import { RecipeImage } from './RecipeImage';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { SiteSearch } from './SiteSearch';
+import { useSiteSearchOptional } from '../context/SearchContext';
 
 interface HomeViewProps {
     currentUser: UserProfile;
@@ -200,6 +202,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }, [recipes, contributors]);
 
     const openRecipes = onBrowseAllRecipes ?? (() => onSetTab('Recipes'));
+    const siteSearch = useSiteSearchOptional();
 
     return (
         <main
@@ -222,6 +225,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <p className="max-w-2xl font-serif text-lg italic leading-relaxed text-stone-700 dark:text-stone-300">
                             Heirloom recipes and notes from the family archive — pick up where you left off, or try something new tonight.
                         </p>
+                        {siteSearch && (
+                            <div className="max-w-xl pt-1">
+                                <SiteSearch id="home-cookbook-search" />
+                            </div>
+                        )}
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
                         <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">

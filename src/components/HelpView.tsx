@@ -6,9 +6,12 @@ import { PageHeader } from './PageHeader';
 import { CollapsiblePanel } from './CollapsiblePanel';
 import { useUI } from '../context/UIContext';
 import { isSentryConfigured, sendSentryTestEvent } from '../monitoring/sentry';
+import { SiteSearch } from './SiteSearch';
+import { useSiteSearchOptional } from '../context/SearchContext';
 
 export const HelpView: React.FC = () => {
     const { toast } = useUI();
+    const siteSearch = useSiteSearchOptional();
     const openPrivacy = () => {
         hapticLight();
         window.dispatchEvent(new CustomEvent('schafer:navigate', { detail: 'Privacy' }));
@@ -34,6 +37,8 @@ export const HelpView: React.FC = () => {
                 title="Help & shortcuts"
                 description="Quick answers for navigating the cookbook and sharing recipes with family."
             />
+
+            {siteSearch && <SiteSearch id="help-cookbook-search" />}
 
             <nav aria-label="Find your way" data-testid="help-wayfinding" className="space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
@@ -73,7 +78,7 @@ export const HelpView: React.FC = () => {
             <CollapsiblePanel id="help-tips" title="Tips" defaultOpen>
                 <ul className="list-disc pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
                     <li>
-                        <strong className="font-bold">Home</strong> picks up favorites, tonight&apos;s meal plan, and seasonal ideas. Use <strong className="font-bold">Recipes</strong> to search the full archive.
+                        <strong className="font-bold">Search</strong> from Home, Recipes, Family, Groceries, or Me — or press <kbd className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-xs dark:bg-stone-800">/</kbd> — to find a dish, ingredient, person, grocery item, or story. Use <strong className="font-bold">Recipes</strong> when you want to browse the full archive.
                     </li>
                     <li>
                         The pill bar under the header switches sub-sections — e.g. Groceries → Meal Plan, or Recipes → Collections — without losing your place.
