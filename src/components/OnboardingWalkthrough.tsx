@@ -7,13 +7,13 @@ const STEPS = [
     icon: '🏠',
     title: 'Your home dashboard',
     description:
-      'Home picks up where you left off — favorites, recently viewed, and seasonal ideas. Use Recipes when you want to search the full archive.',
+      'Home picks up where you left off — favorites, recently viewed, and seasonal ideas. Search from Home or any tab for a dish, ingredient, or family member.',
   },
   {
     icon: '📖',
     title: 'Find recipes',
     description:
-      'Search and filter from Recipes, or open A–Z from the browse pills. Tap any card for ingredients, notes, and step-by-step cooking when you are ready.',
+      'Recipes still has the full archive search. Type a dish, ingredient, or person — exact titles rise to the top. Tap any card for ingredients, notes, and cooking.',
   },
   {
     icon: '🍳',

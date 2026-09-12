@@ -107,9 +107,7 @@ export async function loginAs(
   await waitForHomeMainHeading(page);
 
   await page.getByRole('button', { name: /^Recipes$/, exact: true }).first().click();
-  await page
-    .getByRole('textbox', { name: /Search recipes, ingredients/i })
-    .waitFor({ state: 'visible', timeout: 15000 });
+  await cookbookSearch(page).waitFor({ state: 'visible', timeout: 15000 });
 
   // Safety net: if onboarding somehow appears, dismiss it.
   const skipBtn = page.getByRole('button', { name: /Skip Tour/i });
@@ -145,6 +143,11 @@ export async function loginAsHome(
   if (await skipBtn.isVisible().catch(() => false)) {
     await skipBtn.click();
   }
+}
+
+/** Sitewide search field — `type="search"` is a searchbox, not a textbox. */
+export function cookbookSearch(page: import('@playwright/test').Page) {
+  return page.getByLabel(/Search recipes, ingredients/i).first();
 }
 
 /** Main Recipes grid recipe openers — excludes horizontal shelf cards. */

@@ -3,6 +3,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import { Header } from './Header';
 import { renderWithProviders, createMockContributor } from '../test/utils';
 import { siteConfig } from '../config/site';
+import { SiteSearchProvider } from '../context/SearchContext';
 
 describe('Header', () => {
     const mockSetTab = vi.fn();
@@ -116,5 +117,27 @@ describe('Header', () => {
         expect(mockSetTab).toHaveBeenCalledWith('Profile');
 
         fireEvent.keyDown(profileBtn, { key: ' ' });
+    });
+
+    it('shows the header search toggle when site search is available', () => {
+        renderWithProviders(
+            <SiteSearchProvider
+                value={{
+                    query: '',
+                    setQuery: vi.fn(),
+                    hits: [],
+                    recent: [],
+                    clearQuery: vi.fn(),
+                    clearRecent: vi.fn(),
+                    applyRecent: vi.fn(),
+                    onSelectHit: vi.fn(),
+                    headerOpen: false,
+                    setHeaderOpen: vi.fn(),
+                }}
+            >
+                <Header {...defaultProps} />
+            </SiteSearchProvider>,
+        );
+        expect(screen.getByTestId('header-search-toggle')).toHaveAttribute('aria-label', 'Search the cookbook');
     });
 });

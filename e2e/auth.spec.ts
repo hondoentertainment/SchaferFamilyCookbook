@@ -69,7 +69,7 @@ test.describe('Login', () => {
     await page.getByTestId('login-browse-guest').click();
     await expect(page.getByTestId('guest-sign-in-banner')).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: 'Recipes', exact: true }).first().click();
-    await expect(page.getByRole('textbox', { name: /Search recipes, ingredients/i })).toBeVisible();
+    await expect(page.getByLabel(/Search recipes, ingredients/i).first()).toBeVisible();
 
     const storedUser = await page.evaluate(() => localStorage.getItem('schafer_user'));
     expect(storedUser).toBeNull();
