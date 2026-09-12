@@ -11,6 +11,7 @@ describe('HelpView', () => {
         expect(screen.getByRole('main', { name: /help and shortcuts/i })).toBeInTheDocument();
         expect(screen.getByText(/help & shortcuts/i)).toBeInTheDocument();
         expect(screen.getAllByText(/keyboard shortcuts/i).length).toBeGreaterThan(0);
+        expect(screen.getByTestId('add-to-home-screen-card')).toBeInTheDocument();
     });
 
     it('opens every collapsible panel and clicks all actions without crashing', () => {

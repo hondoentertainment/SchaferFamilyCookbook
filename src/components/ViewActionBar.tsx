@@ -7,6 +7,7 @@ interface ViewActionBarProps {
     className?: string;
     /** Sticky above bottom nav on mobile; default true */
     sticky?: boolean;
+    'data-testid'?: string;
 }
 
 /** Primary actions row — same sticky position and button layout across views. */
@@ -15,10 +16,12 @@ export const ViewActionBar: React.FC<ViewActionBarProps> = ({
     meta,
     className = '',
     sticky = true,
+    'data-testid': testId,
 }) => (
     <div
         className={`view-action-bar ${sticky ? 'view-action-bar--sticky' : ''} ${className}`.trim()}
         role="group"
+        data-testid={testId}
     >
         <div className="view-action-bar__actions">{children}</div>
         {meta ? <div className="view-action-bar__meta">{meta}</div> : null}

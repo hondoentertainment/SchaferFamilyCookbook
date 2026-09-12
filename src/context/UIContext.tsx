@@ -103,7 +103,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
             {/* Toast container - aria-live for screen readers */}
             <div
                 data-testid="toast-stack"
-                className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] md:bottom-6 left-1/2 -translate-x-1/2 z-[300] flex w-[min(92vw,32rem)] flex-col gap-2 pointer-events-none"
+                className="fixed bottom-[var(--app-toast-clearance)] md:bottom-6 left-1/2 -translate-x-1/2 z-[300] flex w-[min(92vw,32rem)] flex-col gap-2 pointer-events-none"
                 aria-live="polite"
                 aria-atomic="true"
             >

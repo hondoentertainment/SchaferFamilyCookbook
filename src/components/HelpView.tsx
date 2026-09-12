@@ -4,6 +4,7 @@ import { WAYFINDING_DESTINATIONS, navigateToTab } from '../config/navConfig';
 import { hapticLight } from '../utils/haptics';
 import { PageHeader } from './PageHeader';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { AddToHomeScreenCard } from './AddToHomeScreenCard';
 import { useUI } from '../context/UIContext';
 import { isSentryConfigured, sendSentryTestEvent } from '../monitoring/sentry';
 
@@ -34,6 +35,8 @@ export const HelpView: React.FC = () => {
                 title="Help & shortcuts"
                 description="Quick answers for navigating the cookbook and sharing recipes with family."
             />
+
+            <AddToHomeScreenCard />
 
             <nav aria-label="Find your way" data-testid="help-wayfinding" className="space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
@@ -72,6 +75,9 @@ export const HelpView: React.FC = () => {
 
             <CollapsiblePanel id="help-tips" title="Tips" defaultOpen>
                 <ul className="list-disc pl-5 space-y-2 text-sm text-stone-700 dark:text-stone-300">
+                    <li>
+                        <strong className="font-bold">Add to Home Screen</strong> keeps the cookbook one tap away. On iPhone tap Share → Add to Home Screen. On Android use Install when the banner appears — it only asks once.
+                    </li>
                     <li>
                         <strong className="font-bold">Home</strong> picks up favorites, tonight&apos;s meal plan, and seasonal ideas. Use <strong className="font-bold">Recipes</strong> to search the full archive.
                     </li>

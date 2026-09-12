@@ -1511,7 +1511,7 @@ const App: React.FC = () => {
     // Gallery View
     if (tab === 'Gallery') {
         return (
-            <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+            <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[var(--app-bottom-nav-clearance)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
                 <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                     Skip to main content
                 </a>
@@ -1872,7 +1872,7 @@ const App: React.FC = () => {
     // Trivia View
     if (tab === 'Trivia') {
         return (
-            <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+            <div className="cookbook-paper min-h-screen bg-[#FDFBF7] pb-[var(--app-bottom-nav-clearance)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
                 <a href="#main-content-trivia" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                     Skip to main content
                 </a>
@@ -1945,7 +1945,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="cookbook-paper min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+        <div className="cookbook-paper min-h-screen bg-[#FDFBF7] text-stone-800 selection:bg-[#A0522D] selection:text-white pb-[var(--app-bottom-nav-clearance)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
             <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-[var(--color-brand)] focus:rounded-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]">
                 Skip to main content
             </a>
@@ -2522,7 +2522,7 @@ const App: React.FC = () => {
                                                         hapticLight();
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     }}
-                                                    className="min-h-8 truncate rounded-full bg-[#FDF6EC] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#A0522D] transition-colors hover:bg-[#F3E4D2] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:bg-stone-800 dark:text-amber-300"
+                                                    className="min-h-11 truncate rounded-full bg-[#FDF6EC] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#A0522D] transition-colors hover:bg-[#F3E4D2] focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:bg-stone-800 dark:text-amber-300"
                                                     aria-label={`Filter recipes by ${recipe.category}`}
                                                 >
                                                     {recipe.category}
@@ -2557,7 +2557,7 @@ const App: React.FC = () => {
                                                         hapticLight();
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     }}
-                                                    className="flex min-h-9 min-w-0 items-center gap-1.5 rounded-full pr-2 text-left transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:hover:bg-stone-800"
+                                                    className="flex min-h-11 min-w-0 items-center gap-1.5 rounded-full pr-2 text-left transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-[#A0522D] dark:hover:bg-stone-800"
                                                     aria-label={`Filter recipes by contributor ${recipe.contributor}`}
                                                 >
                                                     <img

@@ -316,6 +316,28 @@ describe('RecipeModal', () => {
         expect(screen.getByTestId('toast-stack')).toHaveTextContent(/today/i);
     });
 
+    it('keeps Read/Cook/Share tabs at a 44px target in one sticky chrome strip', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        const chrome = screen.getByTestId('recipe-sticky-chrome');
+        expect(chrome.className).toMatch(/sticky/);
+        for (const name of ['Read', 'Cook', 'Share']) {
+            expect(screen.getByRole('tab', { name })).toHaveClass('min-h-11');
+        }
+        expect(screen.getByRole('button', { name: /jump to ingredients/i })).toHaveClass('min-h-11');
+        expect(screen.getByRole('button', { name: /jump to steps/i })).toHaveClass('min-h-11');
+    });
+
+    it('uses larger cook-step type and keeps sms/mailto share invites', () => {
+        renderWithProviders(<RecipeModal {...defaultProps} />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Cook' }));
+        expect(screen.getByTestId('recipe-step-text-0').className).toMatch(/text-xl/);
+        fireEvent.click(screen.getByRole('tab', { name: 'Share' }));
+        expect(screen.getByRole('link', { name: /text recipe invite/i })).toHaveAttribute(
+            'href',
+            expect.stringMatching(/^sms:/),
+        );
+    });
+
     it('Share tab leads with Send to family text and email invites', () => {
         renderWithProviders(<RecipeModal {...defaultProps} />);
         fireEvent.click(screen.getByRole('tab', { name: 'Share' }));
