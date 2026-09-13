@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, recipeCardOpenInMainGrid } from './fixtures';
+import { cookbookSearch, loginAs, recipeCardOpenInMainGrid } from './fixtures';
 
 test.describe('Recipes tab', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('Recipes tab', () => {
   });
 
   test('search filter narrows recipes', async ({ page }) => {
-    await page.getByRole('textbox', { name: /Search recipes, ingredients/i }).fill('Festive');
+    await cookbookSearch(page).fill('Festive');
     await expect(recipeCardOpenInMainGrid(page).filter({ has: page.getByAltText(/Festive/) })).toBeVisible({
       timeout: 3000,
     });
@@ -36,7 +36,7 @@ test.describe('Recipes tab', () => {
   });
 
   test('empty filter shows empty message', async ({ page }) => {
-    await page.getByRole('textbox', { name: /Search recipes, ingredients/i }).fill('xyznonexistent123');
+    await cookbookSearch(page).fill('xyznonexistent123');
     await expect(page.getByText(/No recipes match your search or filters/i)).toBeVisible({ timeout: 3000 });
   });
 

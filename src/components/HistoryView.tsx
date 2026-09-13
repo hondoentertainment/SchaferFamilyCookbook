@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { StorySection } from '../types';
 import { CloudArchive } from '../services/db';
+import { SESSION_KEYS } from '../constants/storage';
 
 const SECTIONS = [
     { id: 'intro', label: 'Introduction' },
@@ -47,6 +48,32 @@ export const HistoryView: React.FC = () => {
                 : [...SECTIONS],
         [dynamicSections]
     );
+
+    useEffect(() => {
+        const focusSection = (id: string) => {
+            requestAnimationFrame(() => {
+                document.getElementById(id)?.scrollIntoView({ behavior: getScrollBehavior(), block: 'start' });
+                setActiveSection(id);
+            });
+        };
+        try {
+            const pending = sessionStorage.getItem(SESSION_KEYS.focusStorySection);
+            if (pending) {
+                sessionStorage.removeItem(SESSION_KEYS.focusStorySection);
+                focusSection(pending);
+            }
+        } catch {
+            /* sessionStorage unavailable */
+        }
+        const hash = window.location.hash.match(/^#story\/(.+)$/);
+        if (hash) {
+            try {
+                focusSection(decodeURIComponent(hash[1]));
+            } catch {
+                focusSection(hash[1]);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         let cancelled = false;

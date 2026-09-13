@@ -27,6 +27,8 @@ export const STORAGE_KEYS = {
   familySubNavHintDismissed: 'schafer_family_subnav_hint_dismissed',
   /** Permanently hides the Add to Home Screen banner (iOS instructions or Android prompt). */
   installDismissed: 'schafer_install_dismissed',
+  /** Recent sitewide search queries (most recent first) */
+  recentSearches: 'schafer_recent_searches',
 } as const;
 
 /** sessionStorage keys — cleared when the browser tab ends */
@@ -40,4 +42,6 @@ export const SESSION_KEYS = {
   guestBrowse: 'schafer_guest_browse_session',
   /** Shown once after login when archive recipes are linked to the user */
   affiliationWelcomeShown: 'schafer_affiliation_welcome_shown',
+  /** Family Story: scroll to this section id after the Story tab mounts */
+  focusStorySection: 'schafer_focus_story_section',
 } as const;
