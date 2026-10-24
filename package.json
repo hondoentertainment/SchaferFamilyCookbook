@@ -106,7 +106,7 @@
     "svgo": "^4.1.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vite-plugin-image-optimizer": "^2.0.3",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^4.1.12",
