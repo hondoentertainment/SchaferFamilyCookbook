@@ -18,17 +18,14 @@ export const FeaturedStrip: React.FC<FeaturedStripProps> = ({ recipes, onSelect 
             data-testid="featured-strip"
             className="-mx-1 px-1"
         >
-            <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
-                        <span aria-hidden="true">★</span>
-                        Featured
-                    </span>
-                    <span className="font-serif text-sm italic text-stone-600 dark:text-stone-400">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+                <h2 className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                    Featured
+                    <span className="ml-2 font-sans text-sm not-italic text-stone-500 dark:text-stone-400">
                         Hand-picked by the family
                     </span>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                </h2>
+                <span className="text-xs text-stone-500 dark:text-stone-400">
                     {featured.length} {featured.length === 1 ? 'pick' : 'picks'}
                 </span>
             </div>
@@ -44,16 +41,12 @@ export const FeaturedStrip: React.FC<FeaturedStripProps> = ({ recipes, onSelect 
                             onClick={() => onSelect(recipe)}
                             data-testid="featured-strip-card"
                             aria-label={`Open featured recipe: ${recipe.title}`}
-                            className="group relative flex w-[72vw] max-w-[280px] min-w-[220px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white text-left shadow-sm transition-all min-h-[44px] hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-900"
+                            className="group relative flex w-44 sm:w-52 min-h-11 flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-900"
                         >
                             <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-100 dark:bg-stone-800">
                                 <RecipeImage recipe={recipe} imgClassName="group-hover:scale-105" compact />
-                                <span className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-amber-500/95 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white shadow-md backdrop-blur-sm">
-                                    <span aria-hidden="true">★</span>
-                                    Featured
-                                </span>
                             </div>
-                            <div className="flex flex-col gap-1 p-4">
+                            <div className="flex flex-col gap-1 p-3">
                                 <span className="line-clamp-2 font-serif text-base font-bold leading-tight text-[var(--color-brand)] dark:text-emerald-100">
                                     {recipe.title}
                                 </span>

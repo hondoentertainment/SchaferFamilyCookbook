@@ -21,10 +21,9 @@ export const FamilySubNavHint: React.FC<FamilySubNavHintProps> = ({ onDismiss })
             className="mx-auto max-w-[1400px] px-3 md:px-6 pt-2"
             data-testid="family-subnav-hint"
         >
-            <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[#E8DCCB] bg-[#FFF8EC] px-4 py-3 text-sm text-stone-700 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#E8DCCB] bg-[#FFF8EC] px-3 py-2 text-sm text-stone-700 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200">
                 <p>
-                    <span className="font-bold text-[var(--color-brand)] dark:text-emerald-200">Family hub:</span>{' '}
-                    switch between gallery, trivia, story, and contributors using the pills below.
+                    Gallery, trivia, story, and people are in the row below.
                 </p>
                 <button
                     type="button"
