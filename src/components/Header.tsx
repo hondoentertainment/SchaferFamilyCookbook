@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                     </button>
                     {currentUser && (
                         <p
-                            className="md:hidden min-w-0 truncate text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400"
+                            className="md:hidden min-w-0 truncate text-xs font-medium text-stone-500 dark:text-stone-400"
                             data-testid="header-location"
                             aria-live="polite"
                         >
@@ -141,7 +141,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setTab, currentUser, 
                                 title="Switch identity"
                                 aria-label="Log out and switch identity"
                             >
-                                Log out
+                                <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M10 7V5a2 2 0 0 1 2-2h7v18h-7a2 2 0 0 1-2-2v-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                    <path d="M4 12h10M11 9l3 3-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <span className="max-sm:sr-only">Log out</span>
                             </button>
                         </div>
                     )}

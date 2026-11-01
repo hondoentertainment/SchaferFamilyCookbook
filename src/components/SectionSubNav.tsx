@@ -21,18 +21,14 @@ export const SectionSubNav: React.FC<SectionSubNavProps> = ({
     <section
         aria-label={ariaLabel}
         data-testid="section-subnav"
-        className="max-w-[1400px] mx-auto px-3 md:px-6 pt-2 md:pt-4 pb-1"
+        className="max-w-[1400px] mx-auto px-3 md:px-6 pt-2 md:pt-3 pb-0"
     >
         {hub && (
             <p
-                className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400"
+                className="hidden px-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 md:block dark:text-stone-400"
                 data-testid="section-subnav-hub"
             >
                 {hub.label}
-                <span className="hidden sm:inline font-normal normal-case tracking-normal text-stone-400 dark:text-stone-500">
-                    {' '}
-                    · {hub.hint}
-                </span>
             </p>
         )}
         <div

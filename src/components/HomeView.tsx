@@ -72,7 +72,7 @@ const RecipeMiniCard: React.FC<{
     const rating = getAverageRating(recipe.id);
     const ratingCount = getRatingCount(recipe.id);
     return (
-        <article className="group relative w-44 shrink-0 sm:w-52">
+        <article className="group relative w-40 shrink-0 sm:w-48">
             <div className="recipe-card-surface flex w-full flex-col overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl dark:border-stone-800">
                 <button
                     type="button"
@@ -83,7 +83,7 @@ const RecipeMiniCard: React.FC<{
                     <div className="relative aspect-[4/5] overflow-hidden bg-stone-100 dark:bg-stone-800">
                         <RecipeImage recipe={recipe} imgClassName="group-hover:scale-[1.04] motion-reduce:group-hover:scale-100" />
                     </div>
-                    <div className="space-y-1.5 p-4 pb-3">
+                    <div className="space-y-1 p-3">
                         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A0522D]/85">{recipe.category}</p>
                         <h3 className="text-sm font-serif italic text-[var(--color-brand)] dark:text-emerald-100 line-clamp-2 leading-snug">{recipe.title}</h3>
                         <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
@@ -92,19 +92,21 @@ const RecipeMiniCard: React.FC<{
                         </p>
                     </div>
                 </button>
-                {onStartCook && (
-                    <div className="border-t border-[#E8DCCB]/80 px-3 py-2.5 dark:border-stone-700">
-                        <button
-                            type="button"
-                            onClick={() => { hapticLight(); onStartCook(); }}
-                            className="btn btn-primary btn-body w-full"
-                            aria-label={`Start cooking ${recipe.title}`}
-                        >
-                            Cook now
-                        </button>
-                    </div>
-                )}
             </div>
+            {onStartCook && (
+                <button
+                    type="button"
+                    onClick={() => { hapticLight(); onStartCook(); }}
+                    className="absolute left-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[var(--color-brand)] shadow-md"
+                    aria-label={`Start cooking ${recipe.title}`}
+                    title="Cook now"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M8 3v3M12 3v3M16 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M6 8h12l-1 13H7L6 8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    </svg>
+                </button>
+            )}
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
@@ -219,7 +221,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <p className="text-xs font-semibold uppercase tracking-wider text-[#7A3F22] dark:text-orange-200">
                             <span aria-hidden>{season.emoji}</span> {season.label}
                         </p>
-                        <h1 className="font-serif text-4xl italic leading-[1.02] text-[var(--color-brand)] dark:text-emerald-100 sm:text-5xl md:text-6xl">
+                        <h1 className="font-serif text-3xl italic leading-[1.05] text-[var(--color-brand)] dark:text-emerald-100 sm:text-5xl md:text-6xl">
                             {greeting}, <span className="text-[#A0522D]">{currentUser.name.split(' ')[0]}</span>.
                         </h1>
                         <p className="max-w-2xl font-serif text-lg italic leading-relaxed text-stone-700 dark:text-stone-300">
@@ -231,53 +233,60 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             </div>
                         )}
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
-                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
-                            <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">{recipes.length}</p>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Recipes</p>
+                    <div className="grid grid-cols-3 gap-2 text-center sm:min-w-64">
+                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 px-2 py-2 dark:border-stone-700 dark:bg-stone-900/60 sm:p-3">
+                            <p className="font-serif text-xl italic text-[var(--color-brand)] dark:text-emerald-100 sm:text-2xl">{recipes.length}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300 sm:text-xs">Recipes</p>
                         </div>
-                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
-                            <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">{favoriteRecipes.length}</p>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Saved</p>
+                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 px-2 py-2 dark:border-stone-700 dark:bg-stone-900/60 sm:p-3">
+                            <p className="font-serif text-xl italic text-[var(--color-brand)] dark:text-emerald-100 sm:text-2xl">{favoriteRecipes.length}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300 sm:text-xs">Saved</p>
                         </div>
-                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 p-3 dark:border-stone-700 dark:bg-stone-900/60">
-                            <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">{contributors.length}</p>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Cooks</p>
+                        <div className="rounded-2xl border border-[#E8DCCB] bg-white/60 px-2 py-2 dark:border-stone-700 dark:bg-stone-900/60 sm:p-3">
+                            <p className="font-serif text-xl italic text-[var(--color-brand)] dark:text-emerald-100 sm:text-2xl">{contributors.length}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300 sm:text-xs">Cooks</p>
                         </div>
                     </div>
                 </div>
-                <div className="hero-actions">
+                <div className="flex flex-wrap gap-2 pt-4 sm:pt-6">
                     <button
                         type="button"
                         onClick={() => { hapticLight(); openRecipes(); }}
-                        className="btn btn-primary btn-body"
+                        className="btn btn-primary btn-body shrink-0"
                     >
                         Browse all recipes
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Grocery List'); }}
-                        className="btn btn-secondary btn-body"
+                        className="btn btn-secondary btn-body shrink-0"
                     >
                         Plan & shop
                     </button>
                     <button
                         type="button"
                         onClick={() => { hapticLight(); onSetTab('Gallery'); }}
-                        className="btn btn-secondary btn-body"
+                        className="btn btn-secondary btn-body shrink-0"
                     >
                         Family hub
                     </button>
+                    {triviaQuestionCount > 0 && (
+                        <button
+                            type="button"
+                            data-testid="home-open-trivia"
+                            onClick={() => { hapticLight(); onSetTab('Trivia'); }}
+                            className="btn btn-secondary btn-body shrink-0"
+                        >
+                            Play trivia
+                        </button>
+                    )}
                 </div>
-            </section>
-
-            {tonightRecipes.length === 0 && (
-                <section
-                    aria-labelledby="tonight-empty-heading"
-                    data-testid="home-tonight-empty"
-                    className="heirloom-card overflow-hidden rounded-[2rem] border border-dashed border-[#E8DCCB] bg-white/40 p-5 dark:border-stone-700 dark:bg-stone-900/40 sm:p-6"
-                >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {tonightRecipes.length === 0 && (
+                    <section
+                        aria-labelledby="tonight-empty-heading"
+                        data-testid="home-tonight-empty"
+                        className="mt-4 flex flex-col gap-3 border-t border-[#E8DCCB]/80 pt-4 dark:border-stone-700 sm:flex-row sm:items-center sm:justify-between"
+                    >
                         <div>
                             <h2 id="tonight-empty-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
                                 Nothing planned for tonight
@@ -286,25 +295,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 Line up a recipe for this evening, or browse the archive for something new.
                             </p>
                         </div>
-                        <div className="flex flex-wrap gap-2 shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => { hapticLight(); onOpenMealPlan(); }}
-                                className="btn btn-primary btn-body"
-                            >
-                                Plan this week
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { hapticLight(); openRecipes(); }}
-                                className="btn btn-secondary btn-body"
-                            >
-                                Browse recipes
-                            </button>
-                        </div>
-                    </div>
-                </section>
-            )}
+                        <button
+                            type="button"
+                            onClick={() => { hapticLight(); onOpenMealPlan(); }}
+                            className="btn btn-primary btn-body shrink-0"
+                        >
+                            Plan this week
+                        </button>
+                    </section>
+                )}
+            </section>
 
             {tonightRecipes.length > 0 && (
                 <section
@@ -365,46 +365,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </section>
             )}
 
-            {triviaQuestionCount > 0 && (
-                <section
-                    aria-labelledby="home-trivia-teaser-heading"
-                    className="heirloom-card overflow-hidden rounded-[2rem] border border-white/80 p-5 dark:border-stone-800 sm:p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                >
-                    <div className="space-y-1">
-                        <h2 id="home-trivia-teaser-heading" className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                            Family Heritage Quiz
-                        </h2>
-                        <p className="font-serif text-lg italic text-[var(--color-brand)] dark:text-emerald-100">
-                            {triviaQuestionCount} question{triviaQuestionCount !== 1 ? 's' : ''} waiting — test what you know about the family.
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        data-testid="home-open-trivia"
-                        onClick={() => { hapticLight(); onSetTab('Trivia'); }}
-                        className="btn btn-accent btn-body shrink-0"
-                    >
-                        Play trivia
-                    </button>
-                </section>
-            )}
-
             {/* Recipe of the week */}
             {recipeOfWeek && (
-                <section aria-labelledby="recipe-of-week-heading" className="space-y-4">
-                    <div className="flex items-baseline justify-between">
-                        <h2 id="recipe-of-week-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
-                            <span aria-hidden>✦ </span>Recipe of the Week
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={() => onSelectRecipe(recipeOfWeek)}
-                            className="btn btn-link"
-                            aria-label={`Open ${recipeOfWeek.title}`}
-                        >
-                            Open →
-                        </button>
-                    </div>
+                <section aria-labelledby="recipe-of-week-heading" className="space-y-3">
+                    <h2 id="recipe-of-week-heading" className="font-serif text-lg italic text-stone-600 dark:text-stone-400">
+                        <span aria-hidden>✦ </span>Recipe of the Week
+                    </h2>
                     <article
                         className="recipe-card-surface group relative block w-full overflow-hidden rounded-[2rem] border text-left transition-all hover:-translate-y-1 hover:shadow-2xl dark:border-stone-800"
                     >
@@ -552,7 +518,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                             type="button"
                             onClick={() => { onSelectCategory('All'); onSetTab('Recipes'); }}
-                            className="text-[10px] font-bold uppercase tracking-widest text-[#A0522D] hover:underline"
+                            className="inline-flex min-h-11 items-center px-2 text-xs font-semibold text-[#A0522D] hover:underline"
                         >
                             See all →
                         </button>
