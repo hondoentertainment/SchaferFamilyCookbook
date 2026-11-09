@@ -57,7 +57,7 @@ export const SiteSearch: React.FC<SiteSearchProps> = ({
     variant = 'page',
     openOn = 'query',
     autoFocus = false,
-    placeholder = 'Search recipes, ingredients, people…',
+    placeholder = 'Search recipes or people',
     className = '',
 }) => {
     const {
@@ -177,6 +177,9 @@ export const SiteSearch: React.FC<SiteSearchProps> = ({
             <label htmlFor={id} className="sr-only">
                 {SITE_SEARCH_LABEL}
             </label>
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500">
+                <SearchGlyph />
+            </span>
             <input
                 ref={inputRef}
                 id={id}
@@ -196,7 +199,7 @@ export const SiteSearch: React.FC<SiteSearchProps> = ({
                 onChange={(event) => setQuery(event.target.value)}
                 onFocus={() => setFocused(true)}
                 onKeyDown={onKeyDown}
-                className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-4 pr-12 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
+                className="min-h-12 w-full rounded-2xl border border-[#E8DCCB] bg-white/95 py-3 pl-11 pr-12 text-base text-stone-900 shadow-inner outline-none transition-all placeholder:text-stone-500 focus:border-[#A0522D] dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-400"
             />
             {query ? (
                 <button

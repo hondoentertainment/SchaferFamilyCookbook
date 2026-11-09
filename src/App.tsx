@@ -610,7 +610,7 @@ const RecipeShelfCard: React.FC<{
     const ratingCount = getRatingCount(recipe.id);
     const effortLabel = getRecipeEffortLabel(recipe);
     return (
-        <article className="recipe-card-surface group relative flex h-full w-60 shrink-0 flex-col overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
+        <article className="recipe-card-surface group relative flex h-full w-44 shrink-0 flex-col overflow-hidden rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-[#A0522D] focus-within:ring-offset-2 focus-within:ring-offset-[#FDFBF7] sm:w-52 dark:border-stone-800 dark:focus-within:ring-offset-stone-950">
             <button
                 type="button"
                 onClick={() => onSelect(recipe)}
@@ -623,24 +623,13 @@ const RecipeShelfCard: React.FC<{
                     <RecipeCardImage recipe={recipe} />
                     {isOffline && <OfflineRecipeBadge position="left" />}
                 </div>
-                <div className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-xs font-semibold text-[#A0522D]">{recipe.category}</p>
-                        <span className="rounded-full bg-[#FDF6EC] px-2 py-1 text-xs font-semibold text-[var(--color-brand)] dark:bg-stone-800 dark:text-emerald-100">
-                            {effortLabel}
-                        </span>
-                    </div>
-                    <h3 className="line-clamp-2 min-h-[2.75rem] font-serif text-lg italic leading-tight text-[var(--color-brand)] dark:text-emerald-100">{recipe.title}</h3>
-                    <p className="line-clamp-1 text-xs text-stone-500 dark:text-stone-400">
-                        {getRecipeCardMicrocopy(recipe, ratingCount, isFavorite, wasViewed)}
+                <div className="flex min-h-0 flex-1 flex-col gap-1 p-3">
+                    <p className="truncate text-xs font-semibold text-[#A0522D]">{recipe.category}</p>
+                    <h3 className="line-clamp-2 font-serif text-base italic leading-tight text-[var(--color-brand)] dark:text-emerald-100">{recipe.title}</h3>
+                    <p className="truncate text-xs text-stone-500 dark:text-stone-400">
+                        By {recipe.contributor}
+                        {rating > 0 && <span className="ml-1 font-semibold text-amber-600">★ {rating.toFixed(1)}</span>}
                     </p>
-                    <div className="flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
-                        <span className="truncate font-serif italic">By {recipe.contributor}</span>
-                        {rating > 0 && <span className="shrink-0 font-semibold text-amber-600">★ {rating.toFixed(1)}</span>}
-                    </div>
-                    <span className="btn btn-secondary btn-body mt-auto w-full pointer-events-none">
-                        View recipe →
-                    </span>
                 </div>
             </button>
             <button
@@ -649,7 +638,7 @@ const RecipeShelfCard: React.FC<{
                     event.stopPropagation();
                     onToggleFavorite(recipe.id);
                 }}
-                className={`absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur transition-transform active:scale-95 ${
+                className={`absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition-transform active:scale-95 ${
                     isFavorite ? 'bg-white/95 text-red-500 shadow-md' : 'bg-black/35 text-white hover:bg-white/95 hover:text-red-500'
                 }`}
                 aria-label={isFavorite ? `Remove ${recipe.title} from favorites` : `Add ${recipe.title} to favorites`}
@@ -748,6 +737,7 @@ const App: React.FC = () => {
     const [selectedTag, setSelectedTag] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'category' | 'contributor' | 'recent'>('title-asc');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [activeBrowseShelf, setActiveBrowseShelf] = useState('desserts');
     const [galleryContributorFilter, setGalleryContributorFilter] = useState<string>('All');
 
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds());
@@ -1401,6 +1391,10 @@ const App: React.FC = () => {
             { id: 'desserts', label: 'Sweet finish', detail: 'Desserts and baking', recipes: desserts, action: () => setCategory('Dessert') },
         ].filter((shelf) => shelf.recipes.length > 0);
     }, [recipes]);
+
+    const shelfToShow = browseShelves.find((shelf) => shelf.id === activeBrowseShelf)
+        ?? browseShelves.find((shelf) => shelf.id === 'desserts')
+        ?? browseShelves[0];
 
     const localGeneratedImageCount = useMemo(
         () => recipes.filter((recipe) => recipe.imageSource === 'local-generated').length,
@@ -2225,31 +2219,12 @@ const App: React.FC = () => {
                             </div>
                         </section>
                     )}
-                    {isBrowsingFiltered ? (
-                        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                            <p className="text-sm text-stone-600 dark:text-stone-400">
-                                {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'} found
-                                {activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active` : ''}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={clearRecipeFilters}
-                                className="text-sm font-semibold text-[#A0522D] hover:underline"
-                            >
-                                Clear all
-                            </button>
-                        </div>
-                    ) : (
+                    {!isBrowsingFiltered && (
                         <>
-                            <section className="md:hidden rounded-2xl bg-[var(--color-brand)] text-white px-5 py-4 shadow-sm">
-                                <h1 className="font-serif text-xl italic leading-snug">Find something worth cooking tonight.</h1>
-                                <button
-                                    type="button"
-                                    onClick={() => { handleSetTab('Home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100/85 underline-offset-2 hover:underline"
-                                >
-                                    ← Back to home
-                                </button>
+                            <section className="order-1 flex items-end justify-between gap-3 md:hidden">
+                                <h1 className="font-serif text-2xl italic leading-tight text-[var(--color-brand)] dark:text-emerald-100">
+                                    Find something worth cooking tonight.
+                                </h1>
                                 <button
                                     type="button"
                                     data-testid="open-cookbook-print-mobile"
@@ -2258,80 +2233,62 @@ const App: React.FC = () => {
                                         trackEvent('cookbook_print_opened', { recipeCount: recipes.length });
                                         setShowCookbookPrint(true);
                                     }}
-                                    className="mt-2 ml-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100/85 underline-offset-2 hover:underline"
+                                    className="btn btn-secondary btn-body shrink-0"
                                 >
-                                    🖨 Print cookbook
+                                    Print
                                 </button>
                             </section>
 
-                            <section className="relative hidden overflow-hidden rounded-[2.75rem] bg-[var(--color-brand)] text-white shadow-[0_20px_60px_rgba(45,70,53,0.18)] md:block">
+                            <section className="relative order-1 hidden overflow-hidden rounded-3xl bg-[var(--color-brand)] text-white md:block">
                                 {(() => {
                                     const featured = sortedRecipes.find(r => r.image && isValidRecipeImageUrl(r.image));
                                     return featured ? (
                                         <div className="absolute inset-0 opacity-90">
                                             <HeroRecipeImage recipe={featured} />
-                                            <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/95 via-[#1a2a20]/75 to-[#1a2a20]/30" />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-[#1a2a20]/95 via-[#1a2a20]/80 to-[#1a2a20]/45" />
                                         </div>
                                     ) : null;
                                 })()}
-                                <div className="relative z-10 p-8 lg:p-10">
-                                    <div className="max-w-3xl space-y-5">
-                                        <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-emerald-100/80">
-                                            <span className="inline-block h-px w-8 bg-emerald-100/40" aria-hidden />
+                                <div className="relative z-10 flex flex-wrap items-end justify-between gap-6 px-8 py-6">
+                                    <div className="max-w-2xl space-y-2">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-100/80">
                                             The Schafer Cookbook
                                         </p>
-                                        <h1 className="font-serif text-4xl italic leading-[1.03] md:text-6xl">
+                                        <h1 className="font-serif text-4xl italic leading-tight">
                                             Find something worth cooking tonight.
                                         </h1>
-                                        <p className="max-w-xl font-serif text-lg italic leading-relaxed text-emerald-50/85">
+                                        <p className="max-w-xl text-base text-emerald-50/90">
                                             Search {dbStats.recipeCount} family recipes by dish, ingredient, person, season, or occasion.
                                         </p>
-                                        <button
-                                            type="button"
-                                            data-testid="open-cookbook-print"
-                                            onClick={() => {
-                                                hapticLight();
-                                                trackEvent('cookbook_print_opened', { recipeCount: recipes.length });
-                                                setShowCookbookPrint(true);
-                                            }}
-                                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-emerald-100/40 px-5 py-2 text-xs font-black uppercase tracking-widest text-emerald-50 transition-colors hover:bg-white/10"
-                                        >
-                                            <span aria-hidden>🖨</span> Print the family cookbook
-                                        </button>
                                     </div>
+                                    <button
+                                        type="button"
+                                        data-testid="open-cookbook-print"
+                                        onClick={() => {
+                                            hapticLight();
+                                            trackEvent('cookbook_print_opened', { recipeCount: recipes.length });
+                                            setShowCookbookPrint(true);
+                                        }}
+                                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-emerald-100/40 px-5 py-2 text-sm font-semibold text-emerald-50 transition-colors hover:bg-white/10"
+                                    >
+                                        Print the family cookbook
+                                    </button>
                                 </div>
                             </section>
 
-                            {recipes.some(r => r.featured === true) && (
-                                <Suspense fallback={null}>
-                                    <FeaturedStrip recipes={recipes} onSelect={handleSelectRecipe} />
-                                </Suspense>
-                            )}
-
-                            <section aria-label="Quick browse" className="-mx-1 px-1">
-                                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <section aria-label="Quick browse" className="order-3 -mx-1 px-1">
+                                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                                     <button
                                         type="button"
                                         onClick={resetBrowse}
-                                        className="min-h-11 shrink-0 rounded-full bg-[var(--color-brand)] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]"
+                                        className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                                            category === 'All'
+                                                ? 'bg-[var(--color-brand)] text-white shadow-sm'
+                                                : 'border border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
+                                        }`}
                                     >
                                         All
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { resetBrowse(); setCategory('Main'); }}
-                                        className="min-h-11 shrink-0 rounded-full border border-[#E8DCCB] bg-white/80 px-5 py-2 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                                    >
-                                        Main dishes
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { resetBrowse(); setCategory('Dessert'); }}
-                                        className="min-h-11 shrink-0 rounded-full border border-[#E8DCCB] bg-white/80 px-5 py-2 text-sm font-semibold text-stone-700 transition-colors hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                                    >
-                                        Desserts
-                                    </button>
-                                    <span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700 shrink-0" aria-hidden />
                                     {quickCategoryCounts.map(({ name, count }) => (
                                         <button
                                             key={name}
@@ -2343,7 +2300,10 @@ const App: React.FC = () => {
                                                     : 'border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
                                             }`}
                                         >
-                                            {name} · {count}
+                                            {name}
+                                            <span className={`ml-1.5 text-xs font-medium ${category === name ? 'text-emerald-100' : 'text-stone-500 dark:text-stone-400'}`}>
+                                                {count}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -2357,7 +2317,7 @@ const App: React.FC = () => {
                         </>
                     )}
 
-                    <div className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 -mx-1 space-y-2 rounded-[1.5rem] border border-[#E8DCCB]/75 bg-[#FFF8EC]/88 px-2 py-1.5 shadow-[0_10px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl md:top-20 md:space-y-3 md:rounded-[2rem] md:px-3 md:py-2 dark:border-stone-800 dark:bg-stone-950/80">
+                    <div className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 order-2 -mx-1 space-y-2 rounded-[1.5rem] border border-[#E8DCCB]/75 bg-[#FFF8EC]/95 px-2 py-1.5 shadow-[0_10px_30px_rgba(45,70,53,0.08)] backdrop-blur-xl md:top-20 md:space-y-3 md:rounded-[2rem] md:px-3 md:py-2 dark:border-stone-800 dark:bg-stone-950/95">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:gap-3">
                             <SiteSearch id="recipe-search" openOn="focus" className="flex-1" />
                             <div className="flex shrink-0 gap-2 md:hidden">
@@ -2429,7 +2389,7 @@ const App: React.FC = () => {
                                 {sortedRecipes.length} {sortedRecipes.length === 1 ? 'recipe' : 'recipes'}
                                 {activeFilterCount > 0
                                     ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active`
-                                    : !isBrowsingFiltered ? <span className="hidden sm:inline"> · tap a card to view, or start cooking from the card</span> : ''}
+                                    : ''}
                             </span>
                             {activeFilterCount > 0 && (
                                 <button type="button" onClick={clearRecipeFilters} className="shrink-0 text-[#A0522D] hover:underline font-semibold">Reset filters</button>
@@ -2520,7 +2480,7 @@ const App: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={clearRecipeFilters}
-                                    className="rounded-full border border-[#E8DCCB] px-4 py-2 label text-stone-700 dark:border-stone-700 dark:text-stone-200"
+                                    className="inline-flex min-h-11 items-center rounded-full border border-[#E8DCCB] px-4 py-2 label text-stone-700 dark:border-stone-700 dark:text-stone-200"
                                 >
                                     Reset
                                 </button>
@@ -2528,56 +2488,82 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
-                    {!isBrowsingFiltered && !isDataLoading && recipes.length > 0 && browseShelves.length > 0 && (
-                        <div id="quick-access-recipes" className="scroll-mt-40 space-y-5">
-                            {browseShelves.map((shelf) => (
-                                <section key={shelf.id} aria-label={shelf.label} className="space-y-3">
-                                    <div className="flex items-end justify-between gap-3">
-                                        <div>
-                                            <h2 className="font-serif text-2xl italic leading-none text-[var(--color-brand)] dark:text-emerald-100">{shelf.label}</h2>
-                                            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{shelf.detail}</p>
-                                        </div>
-                                        {shelf.action && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                        setSearch('');
-                                                        setSelectedTag('');
-                                                        setContributor('All');
-                                                        setCategory('All');
-                                                        setSortBy('title-asc');
-                                                        shelf.action?.();
-                                                        handleSetTab('Recipes');
-                                                        setTimeout(() => document.getElementById('quick-access-recipes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-                                                }}
-                                                className="hidden min-h-10 items-center rounded-full border border-[#E8DCCB] bg-white/80 px-4 label text-stone-700 hover:bg-white sm:inline-flex dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                                            >
-                                                View all
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
-                                        {shelf.recipes.map((recipe) => (
-                                            <RecipeShelfCard
-                                                key={`${shelf.id}-${recipe.id}`}
-                                                recipe={recipe}
-                                                onSelect={handleSelectRecipe}
-                                                isFavorite={favoriteIds.has(recipe.id)}
-                                                onToggleFavorite={handleToggleFavorite}
-                                                wasViewed={recentIds.includes(recipe.id)}
-                                                isOffline={offlineRecipeIds.has(recipe.id)}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            ))}
+                    {!isBrowsingFiltered && recipes.some(r => r.featured === true) && (
+                        <div className="order-6 md:order-4">
+                            <Suspense fallback={null}>
+                                <FeaturedStrip recipes={recipes} onSelect={handleSelectRecipe} />
+                            </Suspense>
+                        </div>
+                    )}
+
+                    {!isBrowsingFiltered && !isDataLoading && recipes.length > 0 && shelfToShow && (
+                        <div id="quick-access-recipes" className="order-7 scroll-mt-40 space-y-3 md:order-4">
+                            <div className="flex flex-wrap items-end justify-between gap-3">
+                                <h2 className="font-serif text-lg italic text-stone-600 dark:text-stone-400">Suggested</h2>
+                                {shelfToShow.action && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearch('');
+                                            setSelectedTag('');
+                                            setContributor('All');
+                                            setCategory('All');
+                                            setSortBy('title-asc');
+                                            shelfToShow.action?.();
+                                            handleSetTab('Recipes');
+                                            setTimeout(() => document.getElementById('recipe-card-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+                                        }}
+                                        className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-[#A0522D] hover:bg-[#A0522D]/10"
+                                    >
+                                        View all
+                                    </button>
+                                )}
+                            </div>
+                            <div role="group" aria-label="Suggested shelves" className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                {browseShelves.map((shelf) => {
+                                    const selected = shelf.id === shelfToShow.id;
+                                    return (
+                                        <button
+                                            key={shelf.id}
+                                            type="button"
+                                            aria-pressed={selected}
+                                            onClick={() => { hapticLight(); setActiveBrowseShelf(shelf.id); }}
+                                            className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                                                selected
+                                                    ? 'bg-[var(--color-brand)] text-white'
+                                                    : 'border border-[#E8DCCB] bg-white/80 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300'
+                                            }`}
+                                        >
+                                            {shelf.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <section aria-label={shelfToShow.label} className="space-y-2">
+                                <p className="text-sm text-stone-600 dark:text-stone-400">{shelfToShow.detail}</p>
+                                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                    {shelfToShow.recipes.map((recipe) => (
+                                        <RecipeShelfCard
+                                            key={`${shelfToShow.id}-${recipe.id}`}
+                                            recipe={recipe}
+                                            onSelect={handleSelectRecipe}
+                                            isFavorite={favoriteIds.has(recipe.id)}
+                                            onToggleFavorite={handleToggleFavorite}
+                                            wasViewed={recentIds.includes(recipe.id)}
+                                            isOffline={offlineRecipeIds.has(recipe.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
                         </div>
                     )}
 
                     {isDataLoading ? (
-                        <RecipeGridSkeleton />
+                        <div className="order-5">
+                            <RecipeGridSkeleton />
+                        </div>
                     ) : (
-                        <div className="grid grid-cols-1 items-stretch min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
+                        <div className="order-5 grid grid-cols-1 items-stretch min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 scroll-mt-36" data-testid="recipe-card-grid" id="recipe-card-grid">
                             {sortedRecipes.map(recipe => {
                                 const isFav = favoriteIds.has(recipe.id);
                                 const rating = getAverageRating(recipe.id);
@@ -2682,7 +2668,7 @@ const App: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
+                                            <div className="mt-auto pt-3">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -2695,17 +2681,7 @@ const App: React.FC = () => {
                                                     className="btn btn-primary btn-body w-full"
                                                     aria-label={`Start cooking ${recipe.title}`}
                                                 >
-                                                    <span className="sm:hidden">Cook</span>
-                                                    <span className="hidden sm:inline">Start Cooking</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSelectRecipe(recipe)}
-                                                    className="btn btn-secondary btn-body w-full"
-                                                    aria-label={`View recipe details for ${recipe.title}`}
-                                                >
-                                                    <span className="sm:hidden">View</span>
-                                                    <span className="hidden sm:inline">View Recipe</span>
+                                                    Cook
                                                 </button>
                                             </div>
                                         </div>
@@ -2744,7 +2720,7 @@ const App: React.FC = () => {
                     )}
 
                     {!isDataLoading && filteredRecipes.length === 0 && (
-                        <div className="py-20 text-center space-y-6">
+                        <div className="order-8 py-20 text-center space-y-6">
                             <span className="text-5xl" aria-hidden="true">🍂</span>
                             <div className="mx-auto max-w-xl space-y-2 rounded-[2rem] border border-[#E8DCCB] bg-white/75 p-8 shadow-sm dark:border-stone-800 dark:bg-stone-900/75">
                                 <p className="font-serif text-2xl italic text-[var(--color-brand)] dark:text-emerald-100">
