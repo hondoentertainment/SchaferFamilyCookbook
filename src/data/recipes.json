@@ -29,6 +29,7 @@
     "generatedImagePrompt": "Realistic appetizing food photography of Festive Apple Dip, a dip/sauce family recipe from Megan. Show the finished dish as it would look after these ingredients and method: 8 oz cream cheese, \u00bd cup peanut butter, \u2153 cup brown sugar, 1 tsp vanilla extract, 1 Tbsp crushed peanuts (for topping). Combine cream cheese, peanut butter, brown sugar, and vanilla in a bowl. Mix with a hand mixer until smooth and well blended. Transfer to serving dish and sprinkle with crushed peanuts.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
     "featured": true,
+    "cookTime": "10 min",
     "servings": "Serves 8"
   },
   {
@@ -196,6 +197,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Puppy Chow, a dessert family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1 box Crispix cereal, 4 cups powdered sugar, 1 cup peanut butter, 12 oz semi-sweet chocolate chips, 1 stick butter or margarine. Melt peanut butter, chocolate chips, and butter together. Pour mixture over cereal and toss to coat. Place coated cereal and powdered sugar in large bag.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Serves 12"
   },
   {
@@ -312,6 +314,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Mark\u2019s Chow Mein, a dessert family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1 lb pork, 1 large onion, chopped, 4\u20136 stalks celery, sliced, 2 cups reserved celery cooking water, 2 Tbsp molasses, 2 Tbsp soy sauce, \u00bc cup cornstarch, \u2153 cup water. Brown pork and onion together. Boil celery until soft; reserve cooking water. Add celery, reserved water, molasses, and soy sauce to pork.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "30 min",
     "servings": "Serves 6"
   },
   {
@@ -383,6 +386,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Wren\u2019s Bagel Dip, a dip/sauce family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1\u00bd cups mayonnaise, 1\u00bd cups sour cream, 2 tsp Accent seasoning salt, 2 tsp dried dill weed, 2 Tbsp parsley flakes, 2 packets Budding corned beef, chopped, 1 very small onion, finely chopped (optional), Bagels, sliced (for serving). Combine mayonnaise and sour cream in a large bowl. Stir in seasoning salt, dill weed, and parsley. Fold in corned beef and onion if using.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 12"
   },
   {
@@ -491,6 +495,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Wren\u2019s Taco Dip, a dip/sauce family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 1 cup sour cream, 8 oz cream cheese, softened, \u00bd packet taco seasoning, Prepared salsa, Shredded lettuce, Shredded cheese, Tortilla chips (for serving). Blend sour cream, cream cheese, and taco seasoning until smooth. Spread mixture evenly onto serving platter. Top with salsa, lettuce, and shredded cheese.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 10"
   },
   {
@@ -732,6 +737,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Sausage Skillet Supper, a main family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 1 lb smoked sausage, sliced, 1 medium onion, sliced, 2 cups potatoes, diced, 1 green pepper, sliced, 2 Tbsp olive oil, Salt and pepper, to taste. Heat olive oil in large skillet over medium heat. Add sausage and cook until browned. Add potatoes and cook until tender.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "35 min",
     "servings": "Serves 4"
   },
   {
@@ -837,6 +843,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Spinach Dip, a dip/sauce family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 1 package frozen chopped spinach, thawed and drained, 1 cup sour cream, 1 cup mayonnaise, 1 packet vegetable soup mix, 1 can water chestnuts, chopped, 3 green onions, sliced. Thaw spinach completely and squeeze out excess moisture. Combine sour cream, mayonnaise, and vegetable soup mix. Stir in spinach, water chestnuts, and green onions.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 10"
   },
   {
@@ -870,6 +877,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Broccoli Salad, a side family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 4 cups fresh broccoli florets, chopped, \u00bd cup red onion, finely diced, \u00bd cup shredded cheddar cheese, \u00bd cup cooked bacon, crumbled, \u2153 cup mayonnaise, 2 Tbsp apple cider vinegar, 2 Tbsp sugar. Combine broccoli, onion, cheese, and bacon in large bowl. Whisk mayonnaise, vinegar, and sugar together. Pour dressing over broccoli mixture.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 6"
   },
   {
@@ -907,6 +915,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Cowboy Caviar, a main family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 1 can black beans, rinsed and drained, 1 can black-eyed peas, rinsed and drained, 1 cup corn, 1 cup diced tomatoes, \u00bd cup red onion, diced, \u00bd cup bell pepper, diced, \u00bc cup olive oil, 2 Tbsp red wine vinegar. Combine beans, peas, corn, tomatoes, onion, and bell pepper. Whisk olive oil and vinegar together. Pour dressing over mixture and toss to combine.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 10"
   },
   {
@@ -945,6 +954,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Pretzel Salad, a side family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 2 cups crushed pretzels, \u00be cup butter, melted, 3 Tbsp sugar, 1 package cream cheese, softened, 1 cup sugar, 1 container whipped topping, 2 packages strawberry gelatin, 2 cups boiling water. Preheat oven to 350\u00b0F. Mix pretzels, melted butter, and sugar; press into baking dish. Bake crust for 10 minutes; cool completely.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 12"
   },
   {
@@ -1018,6 +1028,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Skinny Pancakes, a dessert family recipe from Emily. Show the finished dish as it would look after these ingredients and method: 1 cup all-purpose flour, 1 tsp baking powder, \u00bc tsp salt, 1 cup milk, 1 egg, 1 Tbsp melted butter or oil. Whisk flour, baking powder, and salt together. In a separate bowl, whisk milk, egg, and melted butter. Combine wet and dry ingredients until just mixed.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "15 min",
     "servings": "Makes 8 pancakes"
   },
   {
@@ -1048,6 +1059,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Egg Kaka, a breakfast family recipe from Julie. Show the finished dish as it would look after these ingredients and method: 6 eggs, \u00bd cup milk, Salt and pepper, to taste, Butter or oil for pan. Whisk eggs, milk, salt, and pepper together. Heat butter or oil in skillet over medium heat. Pour egg mixture into skillet.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 4"
   },
   {
@@ -1133,6 +1145,7 @@
     "generatedImagePrompt": "Realistic appetizing food photography of Cinnamon Rolls, a main family recipe from Dawn (Schafer) Tessmer. Show the finished dish as it would look after these ingredients and method: 2 packages active dry yeast, \u00bd cup warm water, 1 cup milk, warmed, \u00bd cup sugar, \u00bd cup butter, melted, 2 eggs, 1 tsp salt, 5\u20136 cups all-purpose flour. Dissolve yeast in warm water and let stand 5 minutes. Combine milk, sugar, melted butter, eggs, and salt. Add yeast mixture and flour gradually to form soft dough.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
     "featured": true,
+    "cookTime": "25 min",
     "servings": "Makes 24 rolls"
   },
   {
@@ -1656,6 +1669,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Gladys Hotdish, a main family recipe from Emily. Show the finished dish as it would look after these ingredients and method: 1 lb ground beef, 1 medium onion, chopped, 1 can cream of mushroom soup, 1 can cream of chicken soup, 1 package frozen mixed vegetables, Salt and pepper, to taste, Cooked egg noodles or rice. Brown ground beef with onion; drain. Stir in soups, vegetables, salt, and pepper. Simmer until vegetables are heated through.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "25 min",
     "servings": "Serves 6"
   },
   {
@@ -1928,6 +1942,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Shrimp Dip, a dip/sauce family recipe from Spring. Show the finished dish as it would look after these ingredients and method: 1 package cream cheese, softened, \u00bd cup sour cream, 1 can small shrimp, drained, 2 Tbsp lemon juice, Salt and pepper, to taste. Mix cream cheese and sour cream until smooth. Fold in shrimp and lemon juice. Season with salt and pepper.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 8"
   },
   {
@@ -1957,6 +1972,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Coleslaw Dressing, a main family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 cup mayonnaise, 2 Tbsp apple cider vinegar, 2 Tbsp sugar, \u00bd tsp salt, \u00bc tsp black pepper. Whisk mayonnaise, vinegar, sugar, salt, and pepper until smooth. Taste and adjust seasoning as desired.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Makes about 1\u00bc cups"
   },
   {
@@ -1987,6 +2003,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Julie Tartar Sauce, a main family recipe from Julie. Show the finished dish as it would look after these ingredients and method: 1 cup mayonnaise, 2 Tbsp sweet pickle relish, 1 Tbsp lemon juice, 1 tsp Dijon mustard, Salt and pepper, to taste. Combine all ingredients in a small bowl. Mix until smooth and well blended. Chill before serving.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Makes about 1\u00bc cups"
   },
   {
@@ -2052,6 +2069,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Glaze for Cinnamon Rolls, a main family recipe from Harriet (Oehler) Schafer. Show the finished dish as it would look after these ingredients and method: 1 cup powdered sugar, 2 Tbsp milk, \u00bd tsp vanilla extract. Whisk powdered sugar, milk, and vanilla until smooth. Drizzle over warm cinnamon rolls.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Glazes 24 rolls"
   },
   {
@@ -2086,6 +2104,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Refrigerator Pickles, a main family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 4 cups sliced cucumbers, 1 cup white vinegar, 1 cup water, \u00bd cup sugar, 1 Tbsp salt, 1 tsp dill seed, 1 tsp mustard seed. Combine vinegar, water, sugar, salt, dill seed, and mustard seed in saucepan. Bring mixture to a boil, stirring until sugar dissolves. Place cucumbers in a heatproof container.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "8 min",
     "servings": "Makes 1 quart"
   },
   {
@@ -2215,6 +2234,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Fish Fry (Grandma & Grandpa\u2019s), a main family recipe from Family. Show the finished dish as it would look after these ingredients and method: 2 lbs fresh fish fillets, 1 cup all-purpose flour, 1 tsp salt, \u00bd tsp black pepper, Oil for frying. Heat oil in deep skillet to 350\u00b0F. Mix flour, salt, and pepper. Dredge fish fillets in flour mixture.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "20 min",
     "servings": "Serves 6"
   },
   {
@@ -2247,6 +2267,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Mustard Marinated Steak, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 2 lbs steak, \u00bd cup Dijon mustard, 2 Tbsp olive oil, 2 cloves garlic, minced, Salt and pepper, to taste. Whisk mustard, olive oil, garlic, salt, and pepper. Coat steak evenly with marinade. Marinate at least 2 hours or overnight.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "15 min",
     "servings": "Serves 6"
   },
   {
@@ -2307,6 +2328,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Orange Jello, a main family recipe from Kyle. Show the finished dish as it would look after these ingredients and method: 1 package orange gelatin, 1 cup boiling water, 1 cup cold water. Dissolve gelatin in boiling water. Stir in cold water. Pour into dish and refrigerate until set.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Serves 4"
   },
   {
@@ -2336,6 +2358,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Jello Salad, a side family recipe from Jana. Show the finished dish as it would look after these ingredients and method: 1 package flavored gelatin, 1 cup boiling water, 1 cup cold water, 1 cup fruit or marshmallows. Dissolve gelatin in boiling water. Stir in cold water. Fold in fruit or marshmallows.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Serves 6"
   },
   {
@@ -2366,6 +2389,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Winter Salad, a side family recipe from Robin. Show the finished dish as it would look after these ingredients and method: 2 cups apples, diced, 1 cup celery, sliced, \u00bd cup walnuts, \u00bd cup mayonnaise, 1 Tbsp lemon juice. Combine apples, celery, and walnuts. Mix mayonnaise and lemon juice. Toss salad with dressing.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "10 min",
     "servings": "Serves 6"
   },
   {
@@ -2394,6 +2418,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of Chocolate Martini, a main family recipe from Wren. Show the finished dish as it would look after these ingredients and method: 2 oz vodka, 1 oz chocolate liqueur, 1 oz cream or half-and-half. Combine ingredients in shaker with ice. Shake until chilled. Strain into martini glass.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Serves 1"
   },
   {
@@ -2426,6 +2451,7 @@
     "generatedImageFallback": true,
     "generatedImagePrompt": "Realistic appetizing food photography of White Russian Pudding Shots, a main family recipe from Lex. Show the finished dish as it would look after these ingredients and method: 1 package instant vanilla pudding, 1\u00bd cups milk, \u00bd cup vodka, \u00bc cup coffee liqueur, Whipped cream. Whisk pudding mix and milk until thick. Stir in vodka and coffee liqueur. Spoon into small cups.. Natural window light, homemade Midwestern family cookbook style, plated on a simple ceramic plate or bowl on a warm kitchen table, shallow depth of field, no text, no hands, no labels, no logos, accurate ingredients visible.",
     "imageApprovalStatus": "generated-fallback",
+    "cookTime": "5 min",
     "servings": "Makes 12 shots"
   },
   {
@@ -2455,6 +2481,7 @@
     "occasions": [],
     "collections": [],
     "created_at": "2026-06-29T00:00:00.000Z",
+    "cookTime": "15 min",
     "servings": "Makes about 24 wontons"
   }
 ]
